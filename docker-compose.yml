@@ -1,0 +1,35 @@
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: template
+    ports:
+      - "8853:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d template"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build: .
+    ports:
+      - "8852:8852"
+    environment:
+      ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DB_URL: postgres://postgres:postgres@postgres:5432/template?sslmode=disable
+      DB_AUTO_MIGRATE: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

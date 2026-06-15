@@ -1,0 +1,1 @@
+{"type":"object","required":["email","name","password","role"],"properties":{"email":{"type":"string"},"name":{"type":"string"},"password":{"type":"string"},"role":{"enum":["user","admin"],"allOf":[{"type":"string","enum":["user","admin"],"x-enum-varnames":["RoleUser","RoleAdmin"],"x-readme-ref-name":"model.Role"}]}},"x-readme-ref-name":"user.CreateUserDTO"}
