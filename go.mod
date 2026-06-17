@@ -1,4 +1,4 @@
-module github.com/usesnipet/go-template
+module github.com/usesnipet/snipet/app
 
 go 1.26.3
 

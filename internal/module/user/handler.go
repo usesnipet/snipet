@@ -2,9 +2,9 @@ package user
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/usesnipet/go-template/internal/crud"
-	"github.com/usesnipet/go-template/internal/logger"
-	"github.com/usesnipet/go-template/internal/model"
+	"github.com/usesnipet/snipet/app/internal/crud"
+	"github.com/usesnipet/snipet/app/internal/logger"
+	"github.com/usesnipet/snipet/app/internal/model"
 )
 
 type UserHandler struct {

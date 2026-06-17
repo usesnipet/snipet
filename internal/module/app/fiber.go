@@ -11,9 +11,9 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/responsetime"
 	"github.com/gofiber/fiber/v3/middleware/static"
-	"github.com/usesnipet/go-template/config"
-	errorhandler "github.com/usesnipet/go-template/internal/module/app/error-handler"
-	"github.com/usesnipet/go-template/web"
+	"github.com/usesnipet/snipet/app/config"
+	errorhandler "github.com/usesnipet/snipet/app/internal/module/app/error-handler"
+	"github.com/usesnipet/snipet/app/web"
 )
 
 func NewFiber(cfg *config.Config) (*fiber.App, fiber.Router, error) {

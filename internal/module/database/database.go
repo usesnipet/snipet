@@ -6,7 +6,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/usesnipet/go-template/config"
+	"github.com/usesnipet/snipet/app/config"
 
 	_ "ariga.io/atlas-provider-gorm/gormschema"
 )

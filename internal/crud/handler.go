@@ -2,9 +2,9 @@ package crud
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/usesnipet/go-template/internal/filter"
-	"github.com/usesnipet/go-template/internal/logger"
-	"github.com/usesnipet/go-template/internal/model"
+	"github.com/usesnipet/snipet/app/internal/filter"
+	"github.com/usesnipet/snipet/app/internal/logger"
+	"github.com/usesnipet/snipet/app/internal/model"
 )
 
 type Handler[T model.Model] struct {

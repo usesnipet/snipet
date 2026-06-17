@@ -1,4 +1,4 @@
-.PHONY: test install dev build build-prod db-generate swagger
+.PHONY: test install dev-app build-app build-prod-app db-generate
 
 GO ?= go
 ATLAS ?= atlas
@@ -12,20 +12,14 @@ $(RUN_ARGS):
 install:
 	$(GO) install ./...
 
-dev:
-	air
+dev-app:
+	cd app && air
 
-build:
-	$(GO) build -o ./tmp/api ./cmd/api
+build-app:
+	cd app && $(GO) build -o ./tmp/api ./cmd/api
 
-build-prod:
-	$(GO) build -ldflags "-s -w" -o ./out/api-prod ./cmd/api
-
-swagger:
-	@command -v swag >/dev/null 2>&1 || go install github.com/swaggo/swag/cmd/swag@latest
-	swag init -g main.go -d cmd/api,internal/api,internal/module -o docs --parseDependency
-	# $(GO) run ./tools/normalizeswagger ./docs
-	cd web && pnpm codegen
+build-prod-app:
+	cd app && $(GO) build -ldflags "-s -w" -o ./out/api-prod ./cmd/api
 
 db-generate:
 	@set -a && [ -f .env ] && . ./.env; set +a; \

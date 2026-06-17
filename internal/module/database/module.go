@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/usesnipet/go-template/config"
-	"github.com/usesnipet/go-template/internal/logger"
+	"github.com/usesnipet/snipet/app/config"
+	"github.com/usesnipet/snipet/app/internal/logger"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 )

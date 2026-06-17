@@ -8,8 +8,8 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/usesnipet/go-template/config"
-	"github.com/usesnipet/go-template/internal/logger"
+	"github.com/usesnipet/snipet/app/config"
+	"github.com/usesnipet/snipet/app/internal/logger"
 )
 
 func runMigrations(cfg *config.Config, logger *logger.Logger) error {
