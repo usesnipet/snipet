@@ -13,6 +13,13 @@
 - RemoveUserFromConversationDTO: Remove a user from a conversation
   - ConversationID: string (UUID)
   - UserIDs: []string (UUID) - list of user IDs (min: 1)
+- SendMessageDTO: Send a message to a conversation
+  - ConversationID: string (UUID)
+  - UserID: string (UUID)
+  - Parts: []PartDTO - array of parts
+- PartDTO: Part of a message
+  - Type: string - text, image, video, audio, etc
+  - Content: string - content of the part
 
 ---
 
@@ -23,8 +30,27 @@
   - BotID: uuid (FK to Bot.ID)
   - CreatedAt: timestamp
   - UpdatedAt: timestamp
+- ConversationMessage: ConversationMessage model
+  - ID: uuid
+  - ConversationID: uuid (FK to Conversation.ID)
+  - UserID: uuid (FK to User.ID)
+  - Role: varchar(255) - user, bot
+  - Parts: jsonb - array of objects with type and content
+  - CreatedAt: timestamp
+  - UpdatedAt: timestamp
 
 ---
+
+## Conversation Message Service
+
+### SendMessage: Send a message to a conversation
+- Receive: SendMessageDTO
+- Return: void
+- Logic:
+  - Check if the conversation ID is valid and exists
+  - Check if the user ID is valid and exists
+  - Create the conversation message
+  - Return void
 
 ## Conversation Service
 - Extend crud service.
