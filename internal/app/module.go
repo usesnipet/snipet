@@ -11,12 +11,16 @@ import (
 	"github.com/usesnipet/snipet/app/internal/infra/database"
 	"github.com/usesnipet/snipet/app/internal/logger"
 	"github.com/usesnipet/snipet/app/internal/module/organization"
+	"github.com/usesnipet/snipet/app/internal/module/token"
+	"github.com/usesnipet/snipet/app/internal/module/user"
 	"go.uber.org/fx"
 )
 
 var Module = fx.Module("app",
 	database.Module,
+	token.Module,
 	organization.Module,
+	user.Module,
 	fx.Provide(api.NewFiber),
 	fx.Invoke(func(
 		app *fiber.App,

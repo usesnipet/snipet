@@ -13,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/usesnipet/snipet/app/config"
 	errorhandler "github.com/usesnipet/snipet/app/internal/api/error-handler"
+	"github.com/usesnipet/snipet/app/internal/validate"
 	"github.com/usesnipet/snipet/app/web"
 )
 
@@ -31,8 +32,9 @@ func NewFiber(cfg *config.Config) (*fiber.App, fiber.Router, error) {
 
 	// region Fiber App
 	app := fiber.New(fiber.Config{
-		AppName:      "API Template",
-		ErrorHandler: errorHandler,
+		AppName:         "API Template",
+		ErrorHandler:    errorHandler,
+		StructValidator: validate.NewValidator(),
 	})
 	// endregion Fiber App
 
