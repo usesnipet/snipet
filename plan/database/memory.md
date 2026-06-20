@@ -1,5 +1,6 @@
 # Memory
 ID - uuid
+OrganizationID - uuid (FK to Organization.ID)
 Name - varchar(255)
 Type - varchar(255) - conversation, bot
 IsDefault - boolean - default: false

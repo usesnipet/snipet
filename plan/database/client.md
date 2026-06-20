@@ -1,5 +1,6 @@
 # Client
 ID - uuid
+OrganizationID - uuid (FK to Organization.ID)
 Name - varchar(255)
 CreatedAt - timestamp
 UpdatedAt - timestamp

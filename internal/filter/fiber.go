@@ -6,10 +6,9 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/usesnipet/snipet/app/internal/model"
 )
 
-func FromFiber[T model.Model](c fiber.Ctx) (*Options[T], error) {
+func FromFiber[T any](c fiber.Ctx) (*Options[T], error) {
 	take, err := strconv.Atoi(c.Query("take", "2000"))
 	if err != nil {
 		take = 2000

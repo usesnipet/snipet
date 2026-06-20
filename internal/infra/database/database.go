@@ -7,11 +7,16 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/usesnipet/snipet/app/config"
+	"github.com/usesnipet/snipet/app/internal/logger"
 
 	_ "ariga.io/atlas-provider-gorm/gormschema"
 )
 
-func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
+func NewDatabase(cfg *config.Config, logger *logger.Logger) (*gorm.DB, error) {
+	if err := ensureDatabase(cfg, logger); err != nil {
+		return nil, fmt.Errorf("ensure database: %w", err)
+	}
+
 	gormDB, err := gorm.Open(
 		postgres.Open(cfg.Database.URL),
 		&gorm.Config{},

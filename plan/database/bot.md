@@ -1,5 +1,6 @@
 # Bot
 ID - uuid
+OrganizationID - uuid (FK to Organization.ID)
 Name - varchar(255)
 Configuration - jsonb - configuration to connect to the models
 Description - text

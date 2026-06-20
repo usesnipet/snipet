@@ -11,8 +11,8 @@ import (
 
 	"github.com/usesnipet/snipet/app/config"
 	_ "github.com/usesnipet/snipet/app/docs"
+	"github.com/usesnipet/snipet/app/internal/app"
 	"github.com/usesnipet/snipet/app/internal/logger"
-	"github.com/usesnipet/snipet/app/internal/module/app"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 )

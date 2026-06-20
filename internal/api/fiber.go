@@ -1,4 +1,4 @@
-package app
+package api
 
 import (
 	"io/fs"
@@ -12,20 +12,31 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/responsetime"
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/usesnipet/snipet/app/config"
-	errorhandler "github.com/usesnipet/snipet/app/internal/module/app/error-handler"
+	errorhandler "github.com/usesnipet/snipet/app/internal/api/error-handler"
 	"github.com/usesnipet/snipet/app/web"
 )
 
 func NewFiber(cfg *config.Config) (*fiber.App, fiber.Router, error) {
+	// region Error Handler
 	builder := errorhandler.NewErrorHandlerBuilder()
+	builder.AddMapper(func(err error) (error, bool) {
+		if appErr, ok := err.(*AppError); ok {
+			return fiber.NewError(appErr.StatusCode, appErr.Err.Error()), true
+		}
+		return err, false
+	})
 	builder.AddMapper(errorhandler.GormMapper)
 	errorHandler := builder.Build()
+	// endregion Error Handler
+
+	// region Fiber App
 	app := fiber.New(fiber.Config{
 		AppName:      "API Template",
 		ErrorHandler: errorHandler,
 	})
+	// endregion Fiber App
 
-	// Middlewares
+	// region Middlewares
 	app.Use(recover.New())
 	app.Use(cors.New())
 	app.Use(responsetime.New())
@@ -35,9 +46,13 @@ func NewFiber(cfg *config.Config) (*fiber.App, fiber.Router, error) {
 			return !strings.HasSuffix(c.Path(), ".html")
 		},
 	}))
+	// endregion Middlewares
 
+	// region Swagger
 	app.Get("/swagger/*", swaggo.HandlerDefault)
+	// endregion Swagger
 
+	// region Static Files
 	// Serve the static files from the web/dist directory
 	dist, _ := fs.Sub(web.Dist, "dist")
 	app.Get("/*", static.New("", static.Config{
@@ -45,6 +60,14 @@ func NewFiber(cfg *config.Config) (*fiber.App, fiber.Router, error) {
 		// Optional: Configure caching, browsing, etc.
 		Browse: false,
 	}))
+	// endregion Static Files
 
-	return app, app.Group(config.APIPrefix), nil
+	// region API Routes
+	api := app.Group(config.APIPrefix)
+	api.Get("/health", func(c fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "ok"})
+	})
+	// endregion API Routes
+
+	return app, api, nil
 }

@@ -7,16 +7,17 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/usesnipet/snipet/app/config"
+	"github.com/usesnipet/snipet/app/internal/api"
+	"github.com/usesnipet/snipet/app/internal/infra/database"
 	"github.com/usesnipet/snipet/app/internal/logger"
-	"github.com/usesnipet/snipet/app/internal/module/database"
-	"github.com/usesnipet/snipet/app/internal/module/user"
+	"github.com/usesnipet/snipet/app/internal/module/organization"
 	"go.uber.org/fx"
 )
 
 var Module = fx.Module("app",
 	database.Module,
-	user.Module,
-	fx.Provide(NewFiber),
+	organization.Module,
+	fx.Provide(api.NewFiber),
 	fx.Invoke(func(
 		app *fiber.App,
 		cfg *config.Config,

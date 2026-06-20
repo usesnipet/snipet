@@ -6,4 +6,5 @@ type DatabaseConfig struct {
 	MaxIdleConns int    `env:"MAX_IDLE_CONNS, default=5"`
 	MigrationDir string `env:"MIGRATION_DIR, default=migrations"`
 	AutoMigrate  bool   `env:"AUTO_MIGRATE, default=true"`
+	AutoCreate   bool   `env:"AUTO_CREATE, default=true"`
 }

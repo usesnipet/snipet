@@ -1,5 +1,6 @@
 # Knowledge Base
 ID - uuid
+OrganizationID - uuid (FK to Organization.ID)
 Name - varchar(255)
 Description - text
 Provider - varchar(255) - s3, local, postgres, etc

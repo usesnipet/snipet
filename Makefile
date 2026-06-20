@@ -12,14 +12,14 @@ $(RUN_ARGS):
 install:
 	$(GO) install ./...
 
-dev-app:
-	cd app && air
+dev:
+	air
 
-build-app:
-	cd app && $(GO) build -o ./tmp/api ./cmd/api
+build:
+	$(GO) build -o ./tmp/api ./cmd/api
 
-build-prod-app:
-	cd app && $(GO) build -ldflags "-s -w" -o ./out/api-prod ./cmd/api
+build-prod:
+	$(GO) build -ldflags "-s -w" -o ./out/api-prod ./cmd/api
 
 db-generate:
 	@set -a && [ -f .env ] && . ./.env; set +a; \
