@@ -1,21 +1,22 @@
-# User Module
+# Client User Module
 
 ## DTOs
-- CreateUserDTO: Create a new user
+- CreateClientUserDTO: Create a new client user
   - Name: string
   - Anonymous: boolean
   - SessionID: string (optional)
   - ExternalID: string (optional)
 
-- AuthenticateUserDTO: Authenticate a user
-  Should provide UserID or SessionID
-  - UserID: string (UUID) (optional)
+- AuthenticateClientUserDTO: Authenticate a client user
+  Should provide ClientUserID or SessionID
+  - ClientUserID: string (UUID) (optional)
   - SessionID: string (optional)
   - ExternalID: string
+
 ---
 
 # Models
-- User: User model
+- ClientUser: ClientUser model
   ID - uuid
   Name - varchar(255)
   Anonymous - boolean
@@ -26,11 +27,11 @@
 
 ---
 
-# User Service
+# ClientUser Service
 - Extend crud service.
 
-### Authenticate: Authenticate a user
-- Receive: AuthenticateUserDTO
+### Authenticate: Authenticate a client user
+- Receive: AuthenticateClientUserDTO
 - Return: void
 - Logic:
   - Check if the user ID is valid and exists
@@ -43,13 +44,13 @@
 
 ---
 
-# User Handler
+# ClientUser Handler
 - Extend crud handler.
 - Register all crud handlers.
 
-### Authenticate: Authenticate a user
-- Endpoint: POST /api/users/authenticate
-- Body: AuthenticateUserDTO
+### Authenticate: Authenticate a client user
+- Endpoint: POST /api/client-users/authenticate
+- Body: AuthenticateClientUserDTO
 - Response: 200 OK, 400 Bad Request, 401 Unauthorized, 500 Internal Server Error
 - Logic:
   - Validate the body

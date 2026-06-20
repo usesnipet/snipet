@@ -1,0 +1,109 @@
+---
+description: Pattern for creating CRUD modules in internal/module/ (based on organization)
+globs: internal/module/**/*.go,internal/model/**/*.go
+alwaysApply: false
+---
+
+# CRUD Module (organization pattern)
+
+Reference: `internal/module/organization/`. Each module exposes a REST resource via Fiber + Uber FX.
+
+## File structure
+
+```
+internal/module/{name}/
+  module.go      # FX registration + routes
+  handler.go     # HTTP (Fiber)
+  service.go     # business rules
+  repository.go  # data access (generic embed)
+  dto.go         # input structs
+  error.go       # domain errors (errors.New)
+internal/model/{name}.go  # GORM entity
+```
+
+Register the module in `internal/app/module.go` with `{name}.Module`.
+
+## module.go
+
+```go
+var Module = fx.Module("{name}",
+    fx.Provide(NewRepository, NewService, NewHandler),
+    fx.Invoke(func(api fiber.Router, handler *Handler) {
+        handler.RegisterRoutes(api)
+    }),
+)
+```
+
+## repository.go
+
+Embed the generic repository — do not reimplement CRUD:
+
+```go
+type Repository struct {
+    *database.Repository[model.{Entity}]
+}
+
+func NewRepository(db *gorm.DB) *Repository {
+    return &Repository{
+        Repository: database.NewRepository[model.{Entity}](db),
+    }
+}
+```
+
+Add custom methods here only when the generic repository is not enough.
+
+## service.go
+
+- Accept `*Repository` in the constructor.
+- Standard methods: `Create`, `Update`, `FindByID`, `FindBy`, `Delete`.
+- Business validation in `Create`/`Update` (e.g. uniqueness via `filter.New` + `filter.WhereEq`).
+- HTTP errors with `api.NewError(statusCode, ErrDomain)`; domain errors live in `error.go`.
+
+## handler.go
+
+- Struct with `service *Service` and `logger *logger.Logger`.
+- `RegisterRoutes`: plural kebab-case group (`/organizations`).
+- CRUD routes: `GET /:id`, `GET /`, `POST /`, `PUT /:id`, `DELETE /:id`.
+- Log with `h.logger.Verbosef("%s %s {Action}", c.Method(), c.Path())`.
+- `FindBy`: `filter.FromFiber[model.{Entity}](c)`.
+- Bind body: `c.Bind().Body(dto)`; propagate `err` (global error handler handles it).
+- `FindByID`/`FindBy`: respond with `c.Status(fiber.StatusOK).JSON(...)`.
+
+## dto.go
+
+```go
+type Create{Entity}DTO struct {
+    Name string `json:"name"`
+}
+type Update{Entity}DTO struct {
+    Name string `json:"name"`
+}
+```
+
+API-exposed fields use `json` tags in camelCase.
+
+## error.go
+
+```go
+var Err{Entity}{Reason} = errors.New("{entity} {reason}")
+```
+
+## Model (internal/model)
+
+```go
+type {Entity} struct {
+    ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+    CreatedAt time.Time `gorm:"type:timestamp;not null;default:CURRENT_TIMESTAMP;autoCreateTime" json:"createdAt"`
+    UpdatedAt time.Time `gorm:"type:timestamp;not null;default:CURRENT_TIMESTAMP;autoUpdateTime" json:"updatedAt"`
+}
+```
+
+Unique indexes: `uniqueIndex:{table}_{column}_key`. Create the corresponding SQL migration.
+
+## Module creation checklist
+
+1. Model in `internal/model/{name}.go`
+2. Up/down migration in `migrations/`
+3. Six files in `internal/module/{name}/`
+4. Import in `internal/app/module.go`
+5. Document DTOs and rules in `plan/modules/{name}.md` (if a plan exists)

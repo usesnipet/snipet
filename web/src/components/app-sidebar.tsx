@@ -75,7 +75,7 @@ export function AppSidebar() {
           className="flex items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
         >
           <img src="/favicon.svg" alt="Snipet" className="size-7 shrink-0" />
-          <p className="text-sm font-semibold group-data-[collapsible=icon]:hidden">My app</p>
+          <p className="text-sm font-semibold group-data-[collapsible=icon]:hidden">Snipet</p>
         </Link>
       </SidebarHeader>
       <SidebarContent>

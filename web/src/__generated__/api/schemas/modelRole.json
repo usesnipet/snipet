@@ -1,1 +1,0 @@
-{"type":"string","enum":["user","admin"],"x-enum-varnames":["RoleUser","RoleAdmin"],"x-readme-ref-name":"model.Role"}
