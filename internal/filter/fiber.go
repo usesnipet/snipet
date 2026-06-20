@@ -43,6 +43,10 @@ func FromFiber[T any](c fiber.Ctx) (*Options[T], error) {
 	}
 	options.Where = WhereOptions{Fields: whereFields}
 
+	if err := options.Validate(); err != nil {
+		return nil, err
+	}
+
 	return options, nil
 }
 

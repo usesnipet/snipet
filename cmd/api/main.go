@@ -1,7 +1,3 @@
-// @title           API Template
-// @version         1.0
-// @description     Documentation for the API Template.
-// @BasePath        /api
 package main
 
 import (
@@ -10,7 +6,6 @@ import (
 	"os"
 
 	"github.com/usesnipet/snipet/app/config"
-	_ "github.com/usesnipet/snipet/app/docs"
 	"github.com/usesnipet/snipet/app/internal/app"
 	"github.com/usesnipet/snipet/app/internal/logger"
 	"go.uber.org/fx"

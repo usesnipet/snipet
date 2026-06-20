@@ -12,6 +12,9 @@ $(RUN_ARGS):
 install:
 	$(GO) install ./...
 
+test:
+	$(GO) test ./...
+
 dev:
 	air
 

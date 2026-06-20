@@ -23,8 +23,6 @@ func (s *Service) CreateAccount(
 	dto CreateAccountDTO,
 	role model.Role,
 ) (CreateAccountResponseDTO, error) {
-	password := dto.Password
-
 	withEmail, err := s.repository.FindBy(
 		ctx,
 		filter.New[model.User](
@@ -32,6 +30,9 @@ func (s *Service) CreateAccount(
 			filter.WhereEq("email", dto.Email),
 		),
 	)
+	if err != nil {
+		return CreateAccountResponseDTO{}, err
+	}
 	if withEmail.Count() > 0 {
 		return CreateAccountResponseDTO{}, api.NewError(http.StatusBadRequest, ErrUserEmailAlreadyExists)
 	}
@@ -43,20 +44,18 @@ func (s *Service) CreateAccount(
 			filter.WhereEq("nickname", dto.Nickname),
 		),
 	)
-	if withNickname.Count() > 0 {
-		return CreateAccountResponseDTO{}, api.NewError(http.StatusBadRequest, ErrUserNicknameAlreadyExists)
-	}
-
-	hashedPassword, err := auth.HashPassword(password)
 	if err != nil {
 		return CreateAccountResponseDTO{}, err
+	}
+	if withNickname.Count() > 0 {
+		return CreateAccountResponseDTO{}, api.NewError(http.StatusBadRequest, ErrUserNicknameAlreadyExists)
 	}
 
 	user := &model.User{
 		Nickname: dto.Nickname,
 		Name:     dto.Name,
 		Email:    dto.Email,
-		Password: hashedPassword,
+		Password: dto.Password,
 		Role:     role,
 	}
 

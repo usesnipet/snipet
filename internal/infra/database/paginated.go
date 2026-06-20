@@ -3,8 +3,8 @@ package database
 type Paginated[T any] struct {
 	Data  []T   `json:"data"`
 	Total int64 `json:"total"`
-	Page  int   `json:"page"`
-	Limit int   `json:"limit"`
+	Skip  int64 `json:"skip"`
+	Take  int64 `json:"take"`
 }
 
 func (p *Paginated[T]) IsEmpty() bool {
@@ -27,11 +27,19 @@ func (p *Paginated[T]) Count() int {
 	return len(p.Data)
 }
 
-func NewPaginated[T any](data []T, total int64, page int, limit int) *Paginated[T] {
+func (p *Paginated[T]) HasNext() bool {
+	return p.Skip+p.Take < p.Total
+}
+
+func (p *Paginated[T]) HasPrevious() bool {
+	return p.Skip > 0
+}
+
+func NewPaginated[T any](data []T, total int64, skip int64, take int64) *Paginated[T] {
 	return &Paginated[T]{
 		Data:  data,
 		Total: total,
-		Page:  page,
-		Limit: limit,
+		Skip:  skip,
+		Take:  take,
 	}
 }

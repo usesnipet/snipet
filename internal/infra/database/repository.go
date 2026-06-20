@@ -26,9 +26,13 @@ func (r *Repository[T]) FindBy(ctx context.Context, filter *filter.Options[T]) (
 	if err != nil {
 		return nil, err
 	}
-	chain := filter.ToGorm(gorm.G[T](r.DB))
+
+	chain, err := filter.ToGorm(gorm.G[T](r.DB))
+	if err != nil {
+		return nil, err
+	}
 	orgs, err := chain.Find(ctx)
-	return NewPaginated(orgs, total, filter.Skip, filter.Take), err
+	return NewPaginated(orgs, total, int64(filter.Skip), int64(filter.Take)), err
 }
 
 func (r *Repository[T]) UpdateByID(ctx context.Context, id string, model *T) error {
