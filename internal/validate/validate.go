@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-playground/mold/v4"
+	"github.com/go-playground/mold/v4/modifiers"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -22,7 +23,8 @@ func (v *Validator) Validate(out any) error {
 
 func NewValidator() *Validator {
 	v := validator.New()
-	m := mold.New()
+	m := modifiers.New()
+
 	return &Validator{
 		validate: v,
 		mold:     m,

@@ -19,8 +19,10 @@ func newTestService(t *testing.T, expiration time.Duration) *token.Service {
 	t.Helper()
 	return token.NewService(&config.Config{
 		Auth: config.AuthConfig{
-			JWTSecret:     testSecret,
-			JWTExpiration: expiration,
+			JWTSecret:              testSecret,
+			JWTExpiration:          expiration,
+			RefreshTokenSecret:     "test-refresh-secret",
+			RefreshTokenExpiration: 72 * time.Hour,
 		},
 	})
 }
@@ -51,12 +53,12 @@ func TestGenerateReturnsValidToken(t *testing.T) {
 	svc := newTestService(t, time.Hour)
 	user := testUser(model.RoleUser)
 
-	tokenString, expiresAt, err := svc.Generate(user)
+	tokens, err := svc.Generate(user)
 	require.NoError(t, err)
-	assert.NotEmpty(t, tokenString)
-	assert.WithinDuration(t, time.Now().Add(time.Hour), expiresAt, 2*time.Second)
+	assert.NotEmpty(t, tokens.AccessToken.Token)
+	assert.WithinDuration(t, time.Now().Add(time.Hour), tokens.AccessToken.ExpiresAt, 2*time.Second)
 
-	claims := parseClaims(t, tokenString, testSecret)
+	claims := parseClaims(t, tokens.AccessToken.Token, testSecret)
 	assert.Equal(t, user.ID.String(), claims["sub"])
 	assert.Equal(t, user.Email, claims["email"])
 	assert.Equal(t, user.Name, claims["name"])
@@ -70,19 +72,19 @@ func TestGenerateUsesConfiguredExpiration(t *testing.T) {
 	svc := newTestService(t, 30*time.Minute)
 	user := testUser(model.RoleUser)
 
-	_, expiresAt, err := svc.Generate(user)
+	tokens, err := svc.Generate(user)
 	require.NoError(t, err)
-	assert.WithinDuration(t, time.Now().Add(30*time.Minute), expiresAt, 2*time.Second)
+	assert.WithinDuration(t, time.Now().Add(30*time.Minute), tokens.AccessToken.ExpiresAt, 2*time.Second)
 }
 
 func TestGenerateWithAdminRole(t *testing.T) {
 	svc := newTestService(t, time.Hour)
 	user := testUser(model.RoleAdmin)
 
-	tokenString, _, err := svc.Generate(user)
+	tokens, err := svc.Generate(user)
 	require.NoError(t, err)
 
-	claims := parseClaims(t, tokenString, testSecret)
+	claims := parseClaims(t, tokens.AccessToken.Token, testSecret)
 	assert.Equal(t, string(model.RoleAdmin), claims["role"])
 }
 
@@ -90,11 +92,11 @@ func TestGenerateRejectsWrongSecret(t *testing.T) {
 	svc := newTestService(t, time.Hour)
 	user := testUser(model.RoleUser)
 
-	tokenString, _, err := svc.Generate(user)
+	tokens, err := svc.Generate(user)
 	require.NoError(t, err)
 
 	claims := jwt.MapClaims{}
-	_, err = jwt.ParseWithClaims(tokenString, claims, func(*jwt.Token) (any, error) {
+	_, err = jwt.ParseWithClaims(tokens.AccessToken.Token, claims, func(*jwt.Token) (any, error) {
 		return []byte("wrong-secret"), nil
 	})
 	require.Error(t, err)
@@ -104,10 +106,14 @@ func TestGenerateUsesHS256(t *testing.T) {
 	svc := newTestService(t, time.Hour)
 	user := testUser(model.RoleUser)
 
-	tokenString, _, err := svc.Generate(user)
+	tokens, err := svc.Generate(user)
 	require.NoError(t, err)
 
-	parsed, _, err := jwt.NewParser().ParseUnverified(tokenString, &token.Claims{})
+	parsed, _, err := jwt.NewParser().ParseUnverified(tokens.AccessToken.Token, &token.Claims{})
 	require.NoError(t, err)
 	assert.Equal(t, jwt.SigningMethodHS256.Alg(), parsed.Method.Alg())
+
+	parsed2, _, err := jwt.NewParser().ParseUnverified(tokens.RefreshToken.Token, &token.Claims{})
+	require.NoError(t, err)
+	assert.Equal(t, jwt.SigningMethodHS256.Alg(), parsed2.Method.Alg())
 }

@@ -19,37 +19,67 @@ type Claims struct {
 }
 
 type Service struct {
-	secret     []byte
-	expiration time.Duration
+	secret            []byte
+	expiration        time.Duration
+	refreshSecret     []byte
+	refreshExpiration time.Duration
 }
 
 func NewService(cfg *config.Config) *Service {
 	return &Service{
-		secret:     []byte(cfg.Auth.JWTSecret),
-		expiration: cfg.Auth.JWTExpiration,
+		secret:            []byte(cfg.Auth.JWTSecret),
+		expiration:        cfg.Auth.JWTExpiration,
+		refreshSecret:     []byte(cfg.Auth.RefreshTokenSecret),
+		refreshExpiration: cfg.Auth.RefreshTokenExpiration,
 	}
 }
 
-func (s *Service) Generate(user model.User) (string, time.Time, error) {
+func (s *Service) Generate(user model.User) (TokenResponseDTO, error) {
 	expiresAt := time.Now().Add(s.expiration)
-
-	claims := Claims{
-		UserID:   user.ID.String(),
-		Email:    user.Email,
-		Name:     user.Name,
-		Nickname: user.Nickname,
-		Role:     user.Role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   user.ID.String(),
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+	refreshExpiresAt := time.Now().Add(s.refreshExpiration)
+	accessToken, err := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		Claims{
+			UserID:   user.ID.String(),
+			Email:    user.Email,
+			Name:     user.Name,
+			Nickname: user.Nickname,
+			Role:     user.Role,
+			RegisteredClaims: jwt.RegisteredClaims{
+				Subject:   user.ID.String(),
+				ExpiresAt: jwt.NewNumericDate(expiresAt),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+			},
 		},
-	}
-
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(s.secret)
+	).SignedString(s.secret)
 	if err != nil {
-		return "", time.Time{}, fmt.Errorf("sign token: %w", err)
+		return TokenResponseDTO{}, fmt.Errorf("sign token: %w", err)
 	}
 
-	return token, expiresAt, nil
+	refreshToken, err := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		Claims{
+			UserID: user.ID.String(),
+			RegisteredClaims: jwt.RegisteredClaims{
+				Subject:   user.ID.String(),
+				ExpiresAt: jwt.NewNumericDate(refreshExpiresAt),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+			},
+		},
+	).SignedString(s.refreshSecret)
+
+	if err != nil {
+		return TokenResponseDTO{}, fmt.Errorf("sign token: %w", err)
+	}
+
+	return TokenResponseDTO{
+		AccessToken: Token{
+			Token:     accessToken,
+			ExpiresAt: expiresAt,
+		},
+		RefreshToken: Token{
+			Token:     refreshToken,
+			ExpiresAt: refreshExpiresAt,
+		},
+	}, nil
 }

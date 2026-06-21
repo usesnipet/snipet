@@ -47,7 +47,7 @@ func (h *Handler) FindBy(c fiber.Ctx) error {
 func (h *Handler) Create(c fiber.Ctx) error {
 	var dto CreateOrganizationDTO
 	h.logger.Verbosef("%s %s Create", c.Method(), c.Path())
-	if err := c.Bind().Body(dto); err != nil {
+	if err := c.Bind().Body(&dto); err != nil {
 		return err
 	}
 	return h.service.Create(c.Context(), dto)
@@ -56,7 +56,7 @@ func (h *Handler) Create(c fiber.Ctx) error {
 func (h *Handler) Update(c fiber.Ctx) error {
 	var dto UpdateOrganizationDTO
 	h.logger.Verbosef("%s %s Update", c.Method(), c.Path())
-	if err := c.Bind().Body(dto); err != nil {
+	if err := c.Bind().Body(&dto); err != nil {
 		return err
 	}
 	return h.service.Update(c.Context(), c.Params("id"), dto)

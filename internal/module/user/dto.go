@@ -1,5 +1,7 @@
 package user
 
+import "github.com/usesnipet/snipet/app/internal/module/token"
+
 type CreateAccountDTO struct {
 	Nickname string `json:"nickname" validate:"required,min=3,max=255" mold:"trim,lcase"`
 	Name     string `json:"name" validate:"required,min=3,max=255" mold:"trim"`
@@ -13,12 +15,11 @@ type LoginDTO struct {
 }
 
 type LoginResponseDTO struct {
-	Token     string `json:"token"`
-	ExpiresAt string `json:"expiresAt"`
-	Email     string `json:"email"`
-	Name      string `json:"name"`
-	Nickname  string `json:"nickname"`
-	Role      string `json:"role"`
+	Tokens   token.TokenResponseDTO `json:"tokens"`
+	Email    string                 `json:"email"`
+	Name     string                 `json:"name"`
+	Nickname string                 `json:"nickname"`
+	Role     string                 `json:"role"`
 }
 
 type CreateAccountResponseDTO struct {

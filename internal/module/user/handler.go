@@ -33,15 +33,27 @@ func (h *Handler) CreateAccount(c fiber.Ctx) error {
 
 func (h *Handler) Login(c fiber.Ctx) error {
 	var dto LoginDTO
-	h.logger.Verbosef("%s %s Login", c.Method(), c.Path())
+	h.logger.Debugf("%s %s Login", c.Method(), c.Path())
 	if err := c.Bind().Body(&dto); err != nil {
 		return err
 	}
+	h.logger.Debugf("LoginDTO: %+v", dto)
 
 	response, err := h.service.Login(c.Context(), dto)
 	if err != nil {
 		return err
 	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:    "access_token",
+		Value:   response.Tokens.AccessToken.Token,
+		Expires: response.Tokens.AccessToken.ExpiresAt,
+	})
+	c.Cookie(&fiber.Cookie{
+		Name:    "refresh_token",
+		Value:   response.Tokens.RefreshToken.Token,
+		Expires: response.Tokens.RefreshToken.ExpiresAt,
+	})
 
 	return c.Status(fiber.StatusOK).JSON(response)
 }

@@ -85,18 +85,17 @@ func (s *Service) Login(ctx context.Context, dto LoginDTO) (LoginResponseDTO, er
 		return LoginResponseDTO{}, api.NewError(http.StatusUnauthorized, ErrInvalidCredentials)
 	}
 
-	token, expiresAt, err := s.tokenService.Generate(user)
+	tokens, err := s.tokenService.Generate(user)
 	if err != nil {
 		return LoginResponseDTO{}, err
 	}
 
 	return LoginResponseDTO{
-		Token:     token,
-		ExpiresAt: expiresAt.Format(time.RFC3339),
-		Email:     user.Email,
-		Name:      user.Name,
-		Nickname:  user.Nickname,
-		Role:      string(user.Role),
+		Tokens:   tokens,
+		Email:    user.Email,
+		Name:     user.Name,
+		Nickname: user.Nickname,
+		Role:     string(user.Role),
 	}, nil
 }
 

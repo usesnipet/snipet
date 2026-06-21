@@ -157,15 +157,15 @@ func TestLoginWithEmail(t *testing.T) {
 		Password: "password123",
 	})
 	require.NoError(t, err)
-	assert.NotEmpty(t, response.Token)
+	assert.NotEmpty(t, response.Tokens.AccessToken.Token)
 	assert.Equal(t, "mayron@example.com", response.Email)
 	assert.Equal(t, "Mayron", response.Name)
 	assert.Equal(t, "mayron", response.Nickname)
 	assert.Equal(t, "user", response.Role)
-	assert.NotEmpty(t, response.ExpiresAt)
+	assert.NotEmpty(t, response.Tokens.AccessToken.ExpiresAt)
 
 	claims := jwt.MapClaims{}
-	_, err = jwt.ParseWithClaims(response.Token, claims, func(token *jwt.Token) (any, error) {
+	_, err = jwt.ParseWithClaims(response.Tokens.AccessToken.Token, claims, func(token *jwt.Token) (any, error) {
 		return []byte("test-secret"), nil
 	})
 	require.NoError(t, err)
@@ -190,7 +190,7 @@ func TestLoginWithNickname(t *testing.T) {
 		Password: "password123",
 	})
 	require.NoError(t, err)
-	assert.NotEmpty(t, response.Token)
+	assert.NotEmpty(t, response.Tokens.AccessToken.Token)
 	assert.Equal(t, "mayron", response.Nickname)
 }
 
