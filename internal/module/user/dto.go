@@ -11,7 +11,7 @@ type CreateAccountDTO struct {
 
 type LoginDTO struct {
 	Account  string `json:"account" validate:"required,min=3,max=255" mold:"trim,lcase"`
-	Password string `json:"password" validate:"required,min=8,max=255" mold:"trim"`
+	Password string `json:"password" validate:"required" mold:"trim"`
 }
 
 type LoginResponseDTO struct {

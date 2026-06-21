@@ -1,7 +1,6 @@
+import { cn } from "@/lib/utils";
 import * as React from "react";
 import { Link as RouterLink } from "react-router-dom";
-
-import { cn } from "@/lib/utils";
 
 type Props = React.ComponentProps<"a"> & {
   href: string;
@@ -13,7 +12,7 @@ const Link = React.forwardRef<HTMLAnchorElement, Props>(
       <RouterLink
         {...props}
         ref={ref}
-        className={cn(className)}
+        className={cn("underline-offset-4 hover:underline text-primary", className)}
         to={{
           pathname: path,
           search: query ? `?${query}` : "",

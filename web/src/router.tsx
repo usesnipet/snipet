@@ -2,20 +2,24 @@ import type { ComponentType } from "react";
 import { lazy } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import { AppLayout } from "./components/app-layout";
-import { LoginPage } from "./pages/login/page";
-
 const lazyPage = (importFn: () => Promise<Record<string, ComponentType>>, name: string) =>
   lazy(() => importFn().then((module) => ({ default: module[name] })));
 
-const HomePage = lazyPage(() => import("./pages/page"), "HomePage");
-const SettingsPage = lazyPage(() => import("./pages/settings/page"), "SettingsPage");
+const AppLayout = lazyPage(() => import("./pages/app/app-layout"), "AppLayout");
+const AuthLayout = lazyPage(() => import("./pages/auth/layout"), "AuthLayout");
+const HomePage = lazyPage(() => import("./pages/app/page"), "HomePage");
+const SettingsPage = lazyPage(() => import("./pages/app/settings/page"), "SettingsPage");
+const LoginPage = lazyPage(() => import("./pages/auth/login/page"), "LoginPage");
+const RegisterPage = lazyPage(() => import("./pages/auth/register/page"), "RegisterPage");
 
 export const Router = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/settings" element={<SettingsPage />} />

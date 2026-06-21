@@ -58,13 +58,10 @@ func (s *Service) Generate(user model.User) (TokenResponseDTO, error) {
 
 	refreshToken, err := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
-		Claims{
-			UserID: user.ID.String(),
-			RegisteredClaims: jwt.RegisteredClaims{
-				Subject:   user.ID.String(),
-				ExpiresAt: jwt.NewNumericDate(refreshExpiresAt),
-				IssuedAt:  jwt.NewNumericDate(time.Now()),
-			},
+		jwt.RegisteredClaims{
+			Subject:   user.ID.String(),
+			ExpiresAt: jwt.NewNumericDate(refreshExpiresAt),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	).SignedString(s.refreshSecret)
 
