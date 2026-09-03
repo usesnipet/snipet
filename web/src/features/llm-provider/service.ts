@@ -3,6 +3,7 @@ import http from "@/lib/http";
 import {
   createLlmProviderSchema,
   listLlmProvidersSearchParamsSchema,
+  llmProviderRegistrySchema,
   paginatedLlmProviderSchema,
   updateLlmProviderSchema,
   llmProviderSchema,
@@ -11,6 +12,7 @@ import {
 import type {
   CreateLlmProvider,
   ListLlmProvidersSearchParams,
+  LlmProviderRegistry,
   PaginatedLlmProvider,
   UpdateLlmProvider,
   LlmProvider,
@@ -33,6 +35,15 @@ const list = async (
       response: paginatedLlmProviderSchema,
       searchParams: listLlmProvidersSearchParamsSchema,
     },
+    ...opts,
+  });
+
+const listRegistry = async (
+  opts: ServiceGetOptions<LlmProviderRegistry> = {},
+): Promise<LlmProviderRegistry> =>
+  http.get({
+    url: `${LLM_PROVIDER_URL}/registry`,
+    schemas: { response: llmProviderRegistrySchema },
     ...opts,
   });
 
@@ -78,4 +89,11 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
-export const llmProviderService = { list, findById, create, update, delete: remove };
+export const llmProviderService = {
+  list,
+  listRegistry,
+  findById,
+  create,
+  update,
+  delete: remove,
+};

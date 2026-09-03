@@ -3,7 +3,7 @@ import { Link } from "@/components/ui/link";
 import { Sidebar, SidebarHeader } from "@/components/ui/sidebar";
 import { ToggleTheme } from "@/components/ui/toggle-theme";
 import { ROUTES } from "@/routes";
-import { Home } from "lucide-react";
+import { Home, Cpu } from "lucide-react";
 
 import type { NavEntry } from "@/components/sidebar/types";
 
@@ -13,6 +13,11 @@ const navItems: NavEntry[] = [
     href: ROUTES.home,
     icon: Home,
     exact: true,
+  },
+  {
+    title: "LLM Providers",
+    href: ROUTES.llmProviders,
+    icon: Cpu,
   },
 ];
 

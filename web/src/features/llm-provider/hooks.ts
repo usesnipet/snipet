@@ -8,6 +8,7 @@ import { llmProviderService } from "./service";
 import type {
   CreateLlmProvider,
   ListLlmProvidersSearchParams,
+  LlmProviderRegistry,
   PaginatedLlmProvider,
   UpdateLlmProvider,
   LlmProvider,
@@ -29,6 +30,16 @@ export const useListLlmProviders = (
   useQuery({
     queryKey: [...listLlmProvidersQueryKey(), opts?.searchParams],
     queryFn: () => llmProviderService.list(opts),
+  });
+
+export const llmProviderRegistryQueryKey = () =>
+  [BASE_QUERY_KEY, "registry"] as const;
+export const useLlmProviderRegistry = (
+  opts?: ServiceGetOptions<LlmProviderRegistry>,
+): UseQueryResult<LlmProviderRegistry, Error> =>
+  useQuery({
+    queryKey: llmProviderRegistryQueryKey(),
+    queryFn: () => llmProviderService.listRegistry(opts),
   });
 
 export const llmProviderQueryKey = (id: string) => [BASE_QUERY_KEY, id] as const;

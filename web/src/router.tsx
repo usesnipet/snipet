@@ -10,6 +10,8 @@ const Layout = lazy(() =>
   import("./routes/layout").then((m) => ({ default: m.Layout })));
 const HomePage = lazy(() =>
   import("./routes/page").then((m) => ({ default: m.HomePage })));
+const LlmProvidersPage = lazy(() =>
+  import("./routes/llm-providers/page").then((m) => ({ default: m.LlmProvidersPage })));
 
 const toReactRouterPath = (path: RoutePath) => {
   return path.replaceAll(/{([^}]+)}/g, (_, p1) => `:${p1}`);
@@ -22,6 +24,7 @@ export const Router = () => {
         <Routes>
           <Route element={<Layout />}>
             <Route path={toReactRouterPath(ROUTES.home)} element={<HomePage />} />
+            <Route path={toReactRouterPath(ROUTES.llmProviders)} element={<LlmProvidersPage />} />
           </Route>
         </Routes>
       </Suspense>
