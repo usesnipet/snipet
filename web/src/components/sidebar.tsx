@@ -13,10 +13,10 @@ const navItems: NavEntry[] = [
     label: "Workspace",
     items: [
       { title: "Home", href: ROUTES.home, icon: Home, exact: true },
-      { title: "Agents", href: ROUTES.agents, icon: MessageSquare },
+      { title: "Agents", href: ROUTES.agents, icon: MessageSquare, comingSoon: true },
       { title: "LLM Providers", href: ROUTES.llmProviders, icon: Server },
-      { title: "Knowledge", href: ROUTES.knowledge, icon: BookText },
-      { title: "Connections", href: ROUTES.connections, icon: Waypoints },
+      { title: "Knowledge", href: ROUTES.knowledge, icon: BookText, comingSoon: true },
+      { title: "Connections", href: ROUTES.connections, icon: Waypoints, comingSoon: true },
     ],
   },
   {
