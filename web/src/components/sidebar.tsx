@@ -2,11 +2,11 @@ import { SidebarContent } from "@/components/sidebar/content";
 import { Link } from "@/components/ui/link";
 import { Sidebar as SidebarContainer, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 import { ToggleTheme } from "@/components/ui/toggle-theme";
-import { useGetSystemInfo } from "@/features/system/hooks";
 import { ROUTES } from "@/routes";
 import { BookText, Home, MessageSquare, Server, Settings, Waypoints } from "lucide-react";
 
 import type { NavEntry } from "@/components/sidebar/types";
+import { Version } from "./version";
 
 const navItems: NavEntry[] = [
   {
@@ -34,12 +34,10 @@ function GithubIcon({ className }: { className?: string }) {
 }
 
 function SidebarFooterInfo() {
-  const { data } = useGetSystemInfo();
-  const version = data?.version ? `v${data.version}` : "v0.1.0-dev";
 
   return (
     <SidebarFooter className="flex-row items-center justify-between border-sidebar-border border-t group-data-[collapsible=icon]:hidden">
-      <span className="text-sidebar-foreground/50 px-1 font-mono text-[11px] tabular-nums">{version}</span>
+      <Version />
       <div className="flex items-center gap-0.5">
         <ToggleTheme />
         <a
