@@ -34,25 +34,23 @@ export function Page({ title, description, documentTitle, children, actions, lef
 
   return (
     <PageActionsContext.Provider value={{ setActions: setSlotActions, setLeftActions: setSlotLeftActions }}>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-4">
-        <div className="flex min-h-0 flex-1 flex-col gap-2 divide-y">
-          <header className="flex shrink-0 items-center justify-between pb-2">
-            <div className="flex items-center gap-2">
-              {headerLeftActions && <div>{headerLeftActions}</div>}
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-                <p className="text-muted-foreground text-sm">{description}</p>
-              </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-8 lg:px-10">
+        <header className="flex w-full max-w-6xl mx-auto shrink-0 items-start justify-between gap-4 pb-8">
+          <div className="flex items-start gap-3">
+            {headerLeftActions && <div>{headerLeftActions}</div>}
+            <div className="space-y-1.5">
+              <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+              <p className="text-muted-foreground max-w-xl text-sm text-pretty">{description}</p>
             </div>
-            {headerActions && <div className="flex items-center gap-2 justify-end">{headerActions}</div>}
-          </header>
-          <div className="flex min-h-0 flex-1 flex-col pt-2">
-            <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error as Error} />}>
-              <Suspense fallback={<LoadingFallback />}>
-                {children}
-              </Suspense>
-            </ErrorBoundary>
           </div>
+          {headerActions && <div className="flex shrink-0 items-center gap-2">{headerActions}</div>}
+        </header>
+        <div className="flex w-full max-w-6xl mx-auto flex-1 flex-col">
+          <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error as Error} />}>
+            <Suspense fallback={<LoadingFallback />}>
+              {children}
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
     </PageActionsContext.Provider>

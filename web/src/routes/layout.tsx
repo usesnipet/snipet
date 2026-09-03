@@ -8,10 +8,8 @@ export function Layout() {
   return (
     <SidebarProvider>
       <Sidebar />
-      <SidebarInset className="h-dvh overflow-hidden bg-sidebar p-4">
-        <div className="border-border bg-background flex min-h-0 flex-1 overflow-hidden rounded-xl border shadow-sm">
-          <AnimatedOutlet />
-        </div>
+      <SidebarInset className="h-dvh min-w-0 overflow-hidden">
+        <AnimatedOutlet />
       </SidebarInset>
     </SidebarProvider>
   )
