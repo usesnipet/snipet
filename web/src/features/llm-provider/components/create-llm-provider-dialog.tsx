@@ -24,6 +24,7 @@ const defaultValues: CreateLlmProvider = {
   name: "",
   provider: "",
   config: {},
+  enabled: true
 };
 
 export function CreateLlmProviderDialog({ onCreated, close }: CreateLlmProviderDialogProps) {
