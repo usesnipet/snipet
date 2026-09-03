@@ -9,35 +9,35 @@ import (
 	"github.com/usesnipet/snipet/internal/logger"
 )
 
-// Registry is a concurrency-safe registry of driver instances, keyed by their own
-// Info().Key rather than a name supplied by the caller — a driver declares
+// Registry is a concurrency-safe registry of provider instances, keyed by their own
+// Info().Key rather than a name supplied by the caller — a provider declares
 // its own identity, the registry just holds it.
-type Registry[T IProvider] struct {
+type Registry struct {
 	log   *logger.Logger
 	mu    sync.RWMutex
-	items map[string]T
+	items map[string]IProvider
 }
 
-func NewRegistry[T IProvider](log *logger.Logger) *Registry[T] {
-	return &Registry[T]{
+func NewRegistry(log *logger.Logger) *Registry {
+	return &Registry{
 		log:   log,
-		items: make(map[string]T),
+		items: make(map[string]IProvider),
 	}
 }
 
 // Register validates value (see IProvider.Validate) and adds it under its own
 // Info().Key. It fails if value is invalid or its key is already taken —
-// this is the boundary every driver must clear to enter the registry,
+// this is the boundary every provider must clear to enter the registry,
 // regardless of how it was constructed.
-func (r *Registry[T]) Register(value T, err error) error {
+func (r *Registry) Register(value IProvider, err error) error {
 	if err != nil {
-		r.log.Errorf("driver: skip register: %v", err)
+		r.log.Errorf("provider: skip register: %v", err)
 		return err
 	}
 
 	if err := value.Validate(); err != nil {
-		err = fmt.Errorf("invalid driver: %w", err)
-		r.log.Errorf("driver: skip register: %v", err)
+		err = fmt.Errorf("invalid provider: %w", err)
+		r.log.Errorf("provider: skip register: %v", err)
 		return err
 	}
 
@@ -48,7 +48,7 @@ func (r *Registry[T]) Register(value T, err error) error {
 
 	if _, exists := r.items[key]; exists {
 		err := fmt.Errorf("%q already registered", key)
-		r.log.Errorf("driver: skip register: %v", err)
+		r.log.Errorf("provider: skip register: %v", err)
 		return err
 	}
 
@@ -56,13 +56,13 @@ func (r *Registry[T]) Register(value T, err error) error {
 	return nil
 }
 
-func (r *Registry[T]) MustRegister(value T, err error) {
+func (r *Registry) MustRegister(value IProvider, err error) {
 	if err := r.Register(value, err); err != nil {
 		panic(err)
 	}
 }
 
-func (r *Registry[T]) Get(name string) (T, bool) {
+func (r *Registry) Get(name string) (IProvider, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -70,7 +70,7 @@ func (r *Registry[T]) Get(name string) (T, bool) {
 	return value, ok
 }
 
-func (r *Registry[T]) MustGet(name string) T {
+func (r *Registry) MustGet(name string) IProvider {
 	value, ok := r.Get(name)
 	if !ok {
 		panic(fmt.Sprintf("registry: %q not found", name))
@@ -78,7 +78,7 @@ func (r *Registry[T]) MustGet(name string) T {
 	return value
 }
 
-func (r *Registry[T]) Has(name string) bool {
+func (r *Registry) Has(name string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -86,7 +86,7 @@ func (r *Registry[T]) Has(name string) bool {
 	return ok
 }
 
-func (r *Registry[T]) Names() []string {
+func (r *Registry) Names() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

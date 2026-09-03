@@ -6,7 +6,7 @@ import (
 	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
-// llmProvider is the concrete Driver built by CreateProvider, delegating each
+// llmProvider is the concrete Provider built by CreateProvider, delegating each
 // method to the corresponding func in api, if configured.
 type llmProvider struct {
 	info        Info
@@ -20,7 +20,7 @@ func (d *llmProvider) Info() Info {
 
 // Validate checks Info is well-formed and TestConnection, Stream, and
 // Generate are all configured. It's called by CreateProvider and again by
-// R.Register, so a driver missing any of these never enters a registry.
+// R.Register, so a provider missing any of these never enters a registry.
 func (d *llmProvider) Validate() error {
 	if err := d.info.Validate(); err != nil {
 		return err

@@ -12,8 +12,8 @@ connection/migrations, an in-memory cache, and a background job pool.
    `postgres` admin database and `CREATE DATABASE`s the target if it
    doesn't exist yet (convenience for local dev; skipped by default).
 2. Opens the real `*sql.DB`/`*gorm.DB` (via `pgx` + GORM's postgres
-   driver), with `TranslateError: true` so GORM surfaces typed errors
-   (`gorm.ErrDuplicatedKey`, etc.) instead of raw driver errors, and
+   provider), with `TranslateError: true` so GORM surfaces typed errors
+   (`gorm.ErrDuplicatedKey`, etc.) instead of raw provider errors, and
    `SkipDefaultTransaction: true` (services opt into transactions
    explicitly via `repository.ITxManager`, see
    [repository.md](./repository.md), rather than paying for one on every

@@ -13,7 +13,7 @@ var schemaJSON []byte
 
 var DefaultConfigSchema = llm.MustLoadSchema(schemaJSON)
 
-// Config holds OpenAI-compatible provider settings from the driver configuration schema.
+// Config holds OpenAI-compatible provider settings from the provider configuration schema.
 type Config struct {
 	APIKey      string  `json:"api_key"`
 	Model       string  `json:"model"`
@@ -23,7 +23,7 @@ type Config struct {
 	Endpoint    string  `json:"endpoint"`
 }
 
-// NewConfig parses and validates a driver config map into a Config. It fails
+// NewConfig parses and validates a provider config map into a Config. It fails
 // if the map doesn't match Config's shape or required fields (e.g. Model)
 // are missing.
 func NewConfig(config jsonx.JSONMap) (Config, error) {

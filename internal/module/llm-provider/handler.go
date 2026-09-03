@@ -18,6 +18,7 @@ func NewHandler(service *Service) api.Handler {
 func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 	r.Route("/llm-provider", func(r chi.Router) {
 		r.Get("/", serve(h.filter))
+		r.Get("/registry", serve(h.listProvidersFromRegistry))
 		r.Post("/", serve(h.create))
 		r.Get("/{id}", serve(h.findByID))
 		r.Put("/{id}", serve(h.update))
@@ -103,4 +104,20 @@ func (h *Handler) deleteByID(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return api.WriteNoContent(w)
+}
+
+// @Summary		List LLM providers
+// @Description	Lists the available LLM provider providers.
+// @Tags			llm
+// @Produce		json
+// @Security		BasicAuth
+// @Success		200			{array}		DriverInfo
+// @Failure		400			{object}	api.Error
+// @Router			/llm/providers [get]
+func (h *Handler) listProvidersFromRegistry(w http.ResponseWriter, r *http.Request) error {
+	providers, err := h.service.ListProvidersFromRegistry(r.Context())
+	if err != nil {
+		return err
+	}
+	return api.WriteJSON(w, http.StatusOK, providers)
 }

@@ -104,7 +104,7 @@ func getModel(ctx context.Context, config jsonx.JSONMap) (llm.Model, error) {
 }
 
 // tagsURL derives Ollama's native /api/tags endpoint from the
-// OpenAI-compatible base URL used by the rest of this driver.
+// OpenAI-compatible base URL used by the rest of this provider.
 func tagsURL() string {
 	return strings.TrimSuffix(baseURL, "/v1") + "/api/tags"
 }

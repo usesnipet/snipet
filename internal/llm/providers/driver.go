@@ -10,11 +10,11 @@ import (
 	"github.com/usesnipet/snipet/internal/logger"
 )
 
-// Registry builds the LLM driver registry. A driver that fails to
+// Registry builds the LLM provider registry. A provider that fails to
 // construct (e.g. a required option wasn't set) is logged and skipped
 // rather than crashing the whole registry.
-func Registry(log *logger.Logger) *llm.Registry[llm.IProvider] {
-	r := llm.NewRegistry[llm.IProvider](log)
+func Registry(log *logger.Logger) *llm.Registry {
+	r := llm.NewRegistry(log)
 
 	r.Register(openai.New())
 	r.Register(groq.New())

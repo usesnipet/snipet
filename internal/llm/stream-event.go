@@ -21,7 +21,7 @@ type TextDeltaEvent struct {
 	Text string `json:"text"`
 }
 
-// StreamIterator walks the events produced by Driver.Stream, cursor-style:
+// StreamIterator walks the events produced by Provider.Stream, cursor-style:
 // call Next until it returns false, reading Event after each successful
 // Next. Err reports any error that stopped iteration (nil on a clean
 // end-of-stream); Close releases underlying resources regardless of how

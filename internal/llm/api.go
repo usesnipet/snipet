@@ -6,7 +6,7 @@ import (
 	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
-// API holds the provider methods used by a driver for connectivity checks and generation.
+// API holds the provider methods used by a provider for connectivity checks and generation.
 type API struct {
 	TestConnection func(ctx context.Context, config jsonx.JSONMap) error
 	Stream         func(ctx context.Context, config jsonx.JSONMap, options GenerateOptions) (StreamIterator, error)
