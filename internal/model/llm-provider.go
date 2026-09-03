@@ -18,7 +18,7 @@ type LlmProvider struct {
 
 	Config jsonx.JSONMap `gorm:"type:jsonb;not null" json:"config"`
 
-	Enabled jsonx.JSONMap `gorm:"type:jsonb" json:"enabled"`
+	Enabled bool `gorm:"type:boolean" json:"enabled"`
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`

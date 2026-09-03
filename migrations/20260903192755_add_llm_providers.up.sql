@@ -4,7 +4,7 @@ CREATE TABLE "llm_providers" (
   "name" character varying(255) NOT NULL,
   "provider" character varying(255) NOT NULL,
   "config" jsonb NOT NULL,
-  "enabled" jsonb NULL,
+  "enabled" boolean NULL,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id")

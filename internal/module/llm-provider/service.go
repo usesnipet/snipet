@@ -79,7 +79,7 @@ func (s *Service) Update(ctx context.Context, id string, dto UpdateLlmProviderDT
 		updates.Config = dto.Config
 	}
 	if dto.Enabled != nil {
-		updates.Enabled = dto.Enabled
+		updates.Enabled = *dto.Enabled
 	}
 	return s.repo.UpdateByID(ctx, id, updates)
 }

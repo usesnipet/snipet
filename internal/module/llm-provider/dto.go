@@ -20,7 +20,7 @@ type CreateLlmProviderDTO struct {
 	Name     string        `json:"name" validate:"required,max=255"`
 	Provider string        `json:"provider" validate:"required,max=255"`
 	Config   jsonx.JSONMap `json:"config" validate:"required"`
-	Enabled  jsonx.JSONMap `json:"enabled" validate:"omitempty"`
+	Enabled  bool          `json:"enabled" validate:"omitempty"`
 }
 
 // UpdateLlmProviderDTO is the PUT body — every field a pointer + `omitempty`:
@@ -29,7 +29,7 @@ type UpdateLlmProviderDTO struct {
 	Name     *string       `json:"name" validate:"omitempty,max=255"`
 	Provider *string       `json:"provider" validate:"omitempty,max=255"`
 	Config   jsonx.JSONMap `json:"config" validate:"omitempty"`
-	Enabled  jsonx.JSONMap `json:"enabled" validate:"omitempty"`
+	Enabled  *bool         `json:"enabled" validate:"omitempty"`
 }
 
 // FindLlmProvidersFilterDTO is the list query string; ToFilter turns it
