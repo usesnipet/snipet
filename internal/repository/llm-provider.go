@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/usesnipet/go-template/internal/model"
+	"github.com/usesnipet/snipet/internal/model"
 	"gorm.io/gorm"
 )
 

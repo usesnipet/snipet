@@ -10,7 +10,7 @@ import (
 	"github.com/go-playground/form/v4"
 	"github.com/go-playground/mold/v4/modifiers"
 	"github.com/go-playground/validator/v10"
-	apperr "github.com/usesnipet/go-template/internal/app-err"
+	apperr "github.com/usesnipet/snipet/internal/app-err"
 )
 
 var (

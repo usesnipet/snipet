@@ -13,8 +13,8 @@ import (
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 
-	"github.com/usesnipet/go-template/config"
-	"github.com/usesnipet/go-template/internal/logger"
+	"github.com/usesnipet/snipet/config"
+	"github.com/usesnipet/snipet/internal/logger"
 )
 
 // startEmbeddedPostgres boots an embedded Postgres server for cfg.Database.URL.

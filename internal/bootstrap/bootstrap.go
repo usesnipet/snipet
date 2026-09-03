@@ -10,15 +10,15 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/usesnipet/go-template/config"
-	_ "github.com/usesnipet/go-template/docs/swagger"
-	"github.com/usesnipet/go-template/internal/api"
-	"github.com/usesnipet/go-template/internal/guard"
-	"github.com/usesnipet/go-template/internal/infra/database"
-	"github.com/usesnipet/go-template/internal/logger"
-	systemmodule "github.com/usesnipet/go-template/internal/module/system"
-	"github.com/usesnipet/go-template/internal/repository"
-	"github.com/usesnipet/go-template/web"
+	"github.com/usesnipet/snipet/config"
+	_ "github.com/usesnipet/snipet/docs/swagger"
+	"github.com/usesnipet/snipet/internal/api"
+	"github.com/usesnipet/snipet/internal/guard"
+	"github.com/usesnipet/snipet/internal/infra/database"
+	"github.com/usesnipet/snipet/internal/logger"
+	systemmodule "github.com/usesnipet/snipet/internal/module/system"
+	"github.com/usesnipet/snipet/internal/repository"
+	"github.com/usesnipet/snipet/web"
 )
 
 // Bootstrap wires the application: database, repositories, services,

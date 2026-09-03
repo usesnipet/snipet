@@ -5,9 +5,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/usesnipet/go-template/config"
-	"github.com/usesnipet/go-template/internal/bootstrap"
-	"github.com/usesnipet/go-template/internal/logger"
+	"github.com/usesnipet/snipet/config"
+	"github.com/usesnipet/snipet/internal/bootstrap"
+	"github.com/usesnipet/snipet/internal/logger"
 )
 
 // @title						orders API

@@ -15,8 +15,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
-	"github.com/usesnipet/go-template/config"
-	"github.com/usesnipet/go-template/internal/logger"
+	"github.com/usesnipet/snipet/config"
+	"github.com/usesnipet/snipet/internal/logger"
 )
 
 func ensureDatabase(cfg *config.Config, logger *logger.Logger) error {

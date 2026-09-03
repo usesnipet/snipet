@@ -3,9 +3,9 @@ package llmprovider
 import (
 	"context"
 
-	"github.com/usesnipet/go-template/internal/model"
-	"github.com/usesnipet/go-template/internal/page"
-	"github.com/usesnipet/go-template/internal/repository"
+	"github.com/usesnipet/snipet/internal/model"
+	"github.com/usesnipet/snipet/internal/page"
+	"github.com/usesnipet/snipet/internal/repository"
 )
 
 // Service owns the llm-provider business logic. It depends on the repository

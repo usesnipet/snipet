@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/usesnipet/go-template/config"
+	"github.com/usesnipet/snipet/config"
 )
 
 // Claims is the constraint every concrete claims type must satisfy to be

@@ -1,9 +1,9 @@
 package llmprovider
 
 import (
-	"github.com/usesnipet/go-template/internal/filter"
-	"github.com/usesnipet/go-template/internal/model"
-	"github.com/usesnipet/go-template/pkg/jsonx"
+	"github.com/usesnipet/snipet/internal/filter"
+	"github.com/usesnipet/snipet/internal/model"
+	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
 // CreateLlmProviderDTO is the POST body — value fields, `validate:"required"`

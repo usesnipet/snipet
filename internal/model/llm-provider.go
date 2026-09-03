@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/usesnipet/go-template/pkg/jsonx"
+	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
 // LlmProvider is the persistence shape of the llm-provider domain.

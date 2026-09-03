@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/usesnipet/go-template/config"
-	"github.com/usesnipet/go-template/internal/auth"
+	"github.com/usesnipet/snipet/config"
+	"github.com/usesnipet/snipet/internal/auth"
 )
 
 func testAuthConfig() config.AuthConfig {

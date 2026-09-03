@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/usesnipet/go-template/internal/logger"
+	"github.com/usesnipet/snipet/internal/logger"
 )
 
 var (

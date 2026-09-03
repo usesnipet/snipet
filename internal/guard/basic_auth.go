@@ -5,9 +5,9 @@ import (
 	"crypto/subtle"
 	"net/http"
 
-	"github.com/usesnipet/go-template/internal/api"
-	apperr "github.com/usesnipet/go-template/internal/app-err"
-	"github.com/usesnipet/go-template/internal/auth"
+	"github.com/usesnipet/snipet/internal/api"
+	apperr "github.com/usesnipet/snipet/internal/app-err"
+	"github.com/usesnipet/snipet/internal/auth"
 )
 
 // RequireBasicAuth requires an "Authorization: Basic ..." header matching

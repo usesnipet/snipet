@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 
-	"github.com/usesnipet/go-template/internal/filter"
-	"github.com/usesnipet/go-template/internal/page"
+	"github.com/usesnipet/snipet/internal/filter"
+	"github.com/usesnipet/snipet/internal/page"
 )
 
 type IFilterableRepository[T any] interface {

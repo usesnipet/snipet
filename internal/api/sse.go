@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	apperr "github.com/usesnipet/go-template/internal/app-err"
+	apperr "github.com/usesnipet/snipet/internal/app-err"
 )
 
 type SSEWriter struct {

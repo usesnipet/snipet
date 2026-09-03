@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/usesnipet/go-template/internal/auth"
+	"github.com/usesnipet/snipet/internal/auth"
 )
 
 // verifyBearerJWT extracts and verifies an "Authorization: Bearer ..."

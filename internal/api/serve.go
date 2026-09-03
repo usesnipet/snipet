@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	apperr "github.com/usesnipet/go-template/internal/app-err"
-	"github.com/usesnipet/go-template/internal/infra/database"
+	apperr "github.com/usesnipet/snipet/internal/app-err"
+	"github.com/usesnipet/snipet/internal/infra/database"
 )
 
 func (a *Api) Serve(handler HandlerFunc) http.HandlerFunc {

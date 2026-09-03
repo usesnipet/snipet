@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/usesnipet/go-template/internal/auth"
+	"github.com/usesnipet/snipet/internal/auth"
 )
 
 type MiddlewareFunc func(next http.Handler) http.Handler

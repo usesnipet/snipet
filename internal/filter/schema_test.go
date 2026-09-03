@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/usesnipet/go-template/internal/filter"
+	"github.com/usesnipet/snipet/internal/filter"
 )
 
 type User struct {

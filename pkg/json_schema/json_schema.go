@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/usesnipet/go-template/pkg/jsonx"
+	"github.com/usesnipet/snipet/pkg/jsonx"
 	"github.com/xeipuuv/gojsonschema"
 )
 
