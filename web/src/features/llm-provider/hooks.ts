@@ -1,7 +1,6 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-
 import { toast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/query-client";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { llmProviderService } from "./service";
 
@@ -55,9 +54,9 @@ export const useLlmProvider = (
 
 export const useCreateLlmProvider = (
   opts?: ServicePostOptions<CreateLlmProvider, LlmProvider>,
-): UseMutationResult<LlmProvider, Error, CreateLlmProvider> =>
+): UseMutationResult<LlmProvider, Error, { data: CreateLlmProvider }> =>
   useMutation({
-    mutationFn: (data: CreateLlmProvider) => llmProviderService.create(data, opts),
+    mutationFn: ({ data }) => llmProviderService.create(data, opts),
     onSuccess: () => {
       toast({ title: "LlmProvider created" });
       queryClient.invalidateQueries({ queryKey: listLlmProvidersQueryKey() });
@@ -68,12 +67,11 @@ export const useCreateLlmProvider = (
   });
 
 export const useUpdateLlmProvider = (
-  id: string,
   opts?: ServicePutOptions<UpdateLlmProvider, void>,
-): UseMutationResult<void, Error, UpdateLlmProvider> =>
+): UseMutationResult<void, Error, { id: string, data: UpdateLlmProvider }> =>
   useMutation({
-    mutationFn: (data: UpdateLlmProvider) => llmProviderService.update(id, data, opts),
-    onSuccess: () => {
+    mutationFn: ({ data, id }) => llmProviderService.update(id, data, opts),
+    onSuccess: (_, { id }) => {
       toast({ title: "LlmProvider updated" });
       queryClient.invalidateQueries({ queryKey: listLlmProvidersQueryKey() });
       queryClient.invalidateQueries({ queryKey: llmProviderQueryKey(id) });

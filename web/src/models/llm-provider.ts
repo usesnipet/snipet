@@ -9,7 +9,7 @@ export const llmProviderSchema = z
     name: z.string(),
     provider: z.string(),
     config: z.record(z.string(), z.unknown()),
-    enabled: z.record(z.string(), z.unknown()).optional(),
+    enabled: z.boolean(),
     created_at: z.coerce.date(),
     updated_at: z.coerce.date(),
   })
