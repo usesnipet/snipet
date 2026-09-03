@@ -1,7 +1,9 @@
-import { CatalogCard, CatalogList } from "@/components/catalog";
+import { CatalogList } from "@/components/catalog";
 import { LoadingFallback } from "@/components/loading-fallback";
 
 import { useListLlmProviders } from "../hooks";
+
+import { LLMProviderCatalogCard } from "./llm-provider-catalog-card";
 
 import type { LlmProvider } from "../schemas";
 
@@ -25,11 +27,7 @@ export function LlmProviderCatalog() {
       items={providers}
       emptyMessage="No LLM providers yet."
       renderItem={(provider) => (
-        <CatalogCard
-          title={provider.name}
-          badge={provider.provider}
-          updatedAt={provider.updated_at.toISOString()}
-        />
+        <LLMProviderCatalogCard provider={provider} />
       )}
     />
   );
