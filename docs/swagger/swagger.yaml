@@ -1,0 +1,34 @@
+basePath: /api
+definitions:
+  InfoDTO:
+    properties:
+      version:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API for the orders platform.
+  title: orders API
+  version: "1.0"
+paths:
+  /system/info:
+    get:
+      description: Returns application system information.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InfoDTO'
+      summary: Get system info
+      tags:
+      - system
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-API-Key
+    type: apiKey
+  BasicAuth:
+    type: basic
+swagger: "2.0"

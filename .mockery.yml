@@ -1,0 +1,22 @@
+all: false
+dir: internal/repository/mocks
+filename: '{{.InterfaceName}}.go'
+force-file-write: true
+formatter: goimports
+formatter-options:
+  goimports:
+    local-prefix: github.com/usesnipet/go-template
+generate: true
+include-auto-generated: false
+log-level: info
+structname: 'Mock{{.InterfaceName}}'
+pkgname: mocks
+recursive: false
+require-template-schema-exists: true
+template: testify
+template-schema: '{{.Template}}.schema.json'
+packages:
+  github.com/usesnipet/go-template/internal/repository:
+    config:
+      include-interface-regex: '^I([A-Z].*Repository|TxManager)$'
+      exclude-interface-regex: '^I(Filterable|Findable|Creatable|Updatable|Deletable)Repository$|^IRepository$'

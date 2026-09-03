@@ -1,0 +1,15 @@
+.git
+.cursor
+.vscode
+.env
+.env.*
+
+tmp
+out
+node_modules
+web/node_modules
+web/dist
+
+*.md
+*.log
+.DS_Store

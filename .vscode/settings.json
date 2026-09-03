@@ -1,0 +1,6 @@
+{
+  "go.buildTags": "web",
+  "gopls": {
+    "buildFlags": ["-tags=web"]
+  }
+}
