@@ -11,12 +11,12 @@ the field-spec grammar.
 
 ```
 hygen module new Order --fields "title:string:required,qty:int,spec:jsonb:required"   # full CRUD
-hygen module model Order --fields "..."          # internal/model/order.go + web/src/models/order.ts
+hygen module model Order --fields "..."          # internal/model/snipet.go + web/src/models/snipet.ts
 hygen module handler Order                       # handler.go + hooks.ts   (skeletons)
-hygen module repository Order                    # internal/repository/order.go   (backend only)
-hygen module dto Approve --module order --fields "reason:string:required,notify:bool"
-hygen module service Pricing --module order      # internal/module/order/pricing.go
-hygen module method Void --module order --kind command
+hygen module repository Order                    # internal/repository/snipet.go   (backend only)
+hygen module dto Approve --module snipet --fields "reason:string:required,notify:bool"
+hygen module service Pricing --module snipet      # internal/module/snipet/pricing.go
+hygen module method Void --module snipet --kind command
 ```
 
 - **`module new`** = full CRUD across all nine files (5 Go + 4 TS).
@@ -26,7 +26,7 @@ hygen module method Void --module order --kind command
   `GET /{id}` (Go) and a `use<X>` hook (TS). A skeleton to grow.
 - **`module repository`** — `IXxxRepository` + impl (already minimal).
 - **`module dto <Name> --module <x>`** — appends a **named DTO** to an
-  existing `internal/module/<x>/dto.go` (`Approve` + `order` →
+  existing `internal/module/<x>/dto.go` (`Approve` + `snipet` →
   `ApproveOrderDTO`, `time`/`jsonx` imports added if the fields need them)
   **and** a matching `<name>OrderSchema` + type to
   `web/src/features/<x>/schemas.ts`. Idempotent (`skip_if`). The module must

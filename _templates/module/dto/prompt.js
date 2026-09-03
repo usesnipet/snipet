@@ -14,7 +14,7 @@ module.exports = {
         await prompter.prompt({
           type: 'input',
           name: 'mod',
-          message: 'Existing module / feature (e.g. order):',
+          message: 'Existing module / feature (e.g. snipet):',
         })
       ).mod
     }

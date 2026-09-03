@@ -48,9 +48,9 @@ func main() {
 Its only job is to load config, build the root logger, and hand off to
 `bootstrap.Bootstrap`.
 
-## `internal/bootstrap.Bootstrap` — the wiring order
+## `internal/bootstrap.Bootstrap` — the wiring snipet
 
-Everything is built by hand (no DI framework), in dependency order, inside
+Everything is built by hand (no DI framework), in dependency snipet, inside
 one function. The skeleton version is short:
 
 1. **Database** — `database.NewDatabase(cfg, logger)` (ensures the DB
@@ -59,7 +59,7 @@ one function. The skeleton version is short:
 2. **Repositories** — `repository.NewTxManager(db)` plus one
    `repository.NewXRepository(db, ...)` per entity (see
    [repository.md](./repository.md)). Some repositories depend on another —
-   construct in the order that satisfies those dependencies.
+   construct in the snipet that satisfies those dependencies.
 3. **Auth primitives** — `auth.NewAPIKeyGenerator`, `auth.NewKeyHasher`,
    `auth.NewJWTService(cfg.Auth, ...)` when a module needs them (see
    [auth-middleware.md](./auth-middleware.md)).

@@ -14,7 +14,7 @@ const (
 
 	// KeyPrefix helps identify the key type
 	// Format: {prefix}_{randomPart}
-	KeyPrefix = "or" // orders Key
+	KeyPrefix = "or" // snipet Key
 )
 
 // APIKeyGenerator handles secure API key generation

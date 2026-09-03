@@ -97,5 +97,5 @@ func defaultEmbeddedDataPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, "orders", "postgres"), nil
+	return filepath.Join(configDir, "snipet", "postgres"), nil
 }

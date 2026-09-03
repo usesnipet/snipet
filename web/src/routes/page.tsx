@@ -5,7 +5,7 @@ export const HomePage = () => {
   return (
     <Page
       title="Home"
-      description="Your orders workspace."
+      description="Your snipet workspace."
       documentTitle="Home"
     >
       <div className="space-y-4">

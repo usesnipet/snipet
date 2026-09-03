@@ -15,8 +15,8 @@ func testAuthConfig() config.AuthConfig {
 	return config.AuthConfig{
 		JWTSecret:     "test-secret-key-with-enough-length",
 		JWTExpiration: time.Hour,
-		JWTIssuer:     "https://test.orders.example.com",
-		JWTAudience:   "https://test.orders.example.com",
+		JWTIssuer:     "https://test.snipet.example.com",
+		JWTAudience:   "https://test.snipet.example.com",
 	}
 }
 

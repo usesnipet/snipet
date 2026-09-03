@@ -6,7 +6,7 @@ connection/migrations, an in-memory cache, and a background job pool.
 ## `internal/infra/database`
 
 `database.NewDatabase(cfg, logger)` (called once, in `bootstrap`, see
-[bootstrap.md](./bootstrap.md)) does three things in order:
+[bootstrap.md](./bootstrap.md)) does three things in snipet:
 
 1. **`ensureDatabase`** — if `DB_AUTO_CREATE` is set, connects to the
    `postgres` admin database and `CREATE DATABASE`s the target if it

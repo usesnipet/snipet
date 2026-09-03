@@ -14,10 +14,10 @@ backend). Reach for `web` only when there is no backend module to generate
 
 ```
 hygen web new Order --fields "title:string:required,qty:int,spec:jsonb"   # model + schemas + service + hooks (full CRUD)
-hygen web model Order --fields "..."     # web/src/models/order.ts
-hygen web schemas Order --fields "..."   # web/src/features/order/schemas.ts   (Create/Update only)
-hygen web service Order                  # web/src/features/order/service.ts   (findById skeleton)
-hygen web hooks Order                    # web/src/features/order/hooks.ts     (use<X> skeleton)
+hygen web model Order --fields "..."     # web/src/models/snipet.ts
+hygen web schemas Order --fields "..."   # web/src/features/snipet/schemas.ts   (Create/Update only)
+hygen web service Order                  # web/src/features/snipet/service.ts   (findById skeleton)
+hygen web hooks Order                    # web/src/features/snipet/hooks.ts     (use<X> skeleton)
 ```
 
 - **`web new`** = full CRUD (list/findById/create/update/delete + all hooks +

@@ -118,8 +118,8 @@ definitions:
     type: object
 info:
   contact: {}
-  description: API for the orders platform.
-  title: orders API
+  description: API for the snipets platform.
+  title: snipets API
   version: "1.0"
 paths:
   /llm-provider:

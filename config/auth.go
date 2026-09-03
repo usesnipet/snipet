@@ -8,8 +8,8 @@ type AuthConfig struct {
 
 	JWTSecret     string        `env:"JWT_SECRET, default=change-me-in-production"`
 	JWTExpiration time.Duration `env:"JWT_EXPIRATION, default=15m"`
-	JWTIssuer     string        `env:"JWT_ISSUER, default=https://orders.example.com"`
-	JWTAudience   string        `env:"JWT_AUDIENCE, default=https://orders.example.com"`
+	JWTIssuer     string        `env:"JWT_ISSUER, default=https://snipets.example.com"`
+	JWTAudience   string        `env:"JWT_AUDIENCE, default=https://snipets.example.com"`
 
 	RefreshTokenExpiration time.Duration `env:"REFRESH_TOKEN_EXPIRATION, default=720h"`
 }

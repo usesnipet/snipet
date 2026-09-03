@@ -1,7 +1,7 @@
 # `internal/module/<name>`
 
 A module is one business domain (`system`, and whatever you add — `widget`,
-`order`, ...): everything needed to expose CRUD (and any domain-specific
+`snipet`, ...): everything needed to expose CRUD (and any domain-specific
 operations) for that entity over HTTP. Scaffolding one is covered
 step-by-step by the
 [`create-backend-module` skill](../../.claude/skills/create-backend-module/SKILL.md);
@@ -162,5 +162,5 @@ status/message, not just that an error occurred.
 
 A module's `Service`/`Handler` don't construct their own dependencies —
 `internal/bootstrap` builds the repository, then the service, then the
-handler, in that order, and calls `RegisterRoutes`. See
+handler, in that snipet, and calls `RegisterRoutes`. See
 [bootstrap.md](./bootstrap.md).

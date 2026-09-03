@@ -17,12 +17,12 @@ the backend file *and* its frontend sibling (`web/src/models/…`,
 
 ```
 hygen module new Order --fields "title:string:required,qty:int,spec:jsonb:required"   # full CRUD, 5 Go + 4 TS
-hygen module model Order --fields "..."       # internal/model/order.go  + web/src/models/order.ts
+hygen module model Order --fields "..."       # internal/model/snipet.go  + web/src/models/snipet.ts
 hygen module handler Order                     # handler.go + hooks.ts    (skeleton: one GET /{id} route)
-hygen module repository Order                  # internal/repository/order.go   (backend only)
-hygen module dto Approve --module order --fields "..."   # append ApproveOrderDTO to dto.go + approveOrderSchema to schemas.ts
-hygen module service Pricing --module order    # internal/module/order/pricing.go — a named PricingService (several per module)
-hygen module method Void --module order --kind command   # append a stub to service.go
+hygen module repository Order                  # internal/repository/snipet.go   (backend only)
+hygen module dto Approve --module snipet --fields "..."   # append ApproveOrderDTO to dto.go + approveOrderSchema to schemas.ts
+hygen module service Pricing --module snipet    # internal/module/snipet/pricing.go — a named PricingService (several per module)
+hygen module method Void --module snipet --kind command   # append a stub to service.go
 ```
 
 `module new` emits full CRUD. `module model`/`handler` emit a lean skeleton

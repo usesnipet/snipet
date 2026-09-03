@@ -12,7 +12,7 @@ module.exports = {
         await prompter.prompt({
           type: 'input',
           name: 'mod',
-          message: 'Which module? (e.g. order)',
+          message: 'Which module? (e.g. snipet)',
         })
       ).mod
     }

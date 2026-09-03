@@ -10,9 +10,9 @@ import (
 	"github.com/usesnipet/snipet/internal/logger"
 )
 
-// @title						orders API
+// @title						snipets API
 // @version					1.0
-// @description				API for the orders platform.
+// @description				API for the snipets platform.
 // @BasePath					/api
 // @securityDefinitions.apikey	ApiKeyAuth
 // @in							header

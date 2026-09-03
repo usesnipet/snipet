@@ -21,8 +21,8 @@ export function AdminSidebar() {
     <Sidebar>
       <SidebarHeader className="flex flex-row items-center justify-between">
         <Link href="/" className="flex items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <img src="/favicon.svg" alt="orders" className="size-7 shrink-0" />
-          <p className="text-sm font-semibold group-data-[collapsible=icon]:hidden">orders</p>
+          <img src="/favicon.svg" alt="snipet" className="size-7 shrink-0" />
+          <p className="text-sm font-semibold group-data-[collapsible=icon]:hidden">snipet</p>
         </Link>
         <ToggleTheme />
       </SidebarHeader>
