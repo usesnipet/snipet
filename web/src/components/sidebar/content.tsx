@@ -15,6 +15,7 @@ import { useLocation } from "react-router";
 import { isNavActive, isNavGroup, isNavGroupActive, isNavItemWithChildren } from "./utils";
 
 import type { NavEntry, NavLeafEntry } from "./types";
+
 type Props = {
   navItems: NavEntry[]
 }
@@ -22,6 +23,14 @@ type Props = {
 type NavSection = {
   label?: string
   items: NavLeafEntry[]
+}
+
+function ComingSoonBadge() {
+  return (
+    <span className="ml-2 rounded-md bg-sidebar-foreground/10 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-foreground/50">
+      Coming Soon
+    </span>
+  )
 }
 
 function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: string }) {
@@ -51,6 +60,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
                   <item.icon />
                   <span>{item.title}</span>
                   <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  {item.comingSoon && <ComingSoonBadge />}
                 </SidebarMenuButton>
               </CollapsibleTrigger>
               <CollapsibleContent>
@@ -64,6 +74,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
                       >
                         <Link href={subItem.href}>
                           <span>{subItem.title}</span>
+                          {subItem.comingSoon && <ComingSoonBadge />}
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
@@ -84,6 +95,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
               <Link href={item.href}>
                 <item.icon />
                 <span>{item.title}</span>
+                {item.comingSoon && <ComingSoonBadge />}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

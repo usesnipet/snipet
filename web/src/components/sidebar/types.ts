@@ -7,6 +7,7 @@ export type NavSubItem = {
   exact?: boolean
   visible?: boolean | (() => boolean)
   disabled?: boolean | (() => boolean)
+  comingSoon?: boolean
 }
 
 export type NavItem = {
@@ -16,6 +17,7 @@ export type NavItem = {
   exact?: boolean
   visible?: boolean | (() => boolean)
   disabled?: boolean | (() => boolean)
+  comingSoon?: boolean
 }
 
 export type NavItemWithChildren = {
@@ -24,6 +26,7 @@ export type NavItemWithChildren = {
   items: NavSubItem[]
   visible?: boolean | (() => boolean)
   disabled?: boolean | (() => boolean)
+  comingSoon?: boolean
 }
 
 export type NavLeafEntry = NavItem | NavItemWithChildren
