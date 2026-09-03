@@ -1,8 +1,119 @@
 basePath: /api
 definitions:
+  CreateLlmProviderDTO:
+    properties:
+      config:
+        $ref: '#/definitions/JSONMap'
+      enabled:
+        $ref: '#/definitions/JSONMap'
+      name:
+        maxLength: 255
+        type: string
+      provider:
+        maxLength: 255
+        type: string
+    required:
+    - config
+    - name
+    - provider
+    type: object
+  Error:
+    properties:
+      details:
+        additionalProperties: {}
+        type: object
+      message:
+        type: string
+      statusCode:
+        type: integer
+    type: object
   InfoDTO:
     properties:
       version:
+        type: string
+    type: object
+  JSONMap:
+    additionalProperties: {}
+    type: object
+  LLMProviderRegistry:
+    properties:
+      configuration_schema:
+        $ref: '#/definitions/JSONMap'
+      description:
+        type: string
+      icon:
+        type: string
+      key:
+        type: string
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    required:
+    - description
+    - key
+    - name
+    type: object
+  LLMProviderResponse:
+    properties:
+      config:
+        $ref: '#/definitions/JSONMap'
+      created_at:
+        type: string
+      enabled:
+        $ref: '#/definitions/JSONMap'
+      id:
+        type: string
+      name:
+        type: string
+      provider:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  LLMProvidersPage:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/LlmProvider'
+        type: array
+      skip:
+        type: integer
+      take:
+        type: integer
+      total:
+        type: integer
+    type: object
+  LlmProvider:
+    properties:
+      config:
+        $ref: '#/definitions/JSONMap'
+      created_at:
+        type: string
+      enabled:
+        $ref: '#/definitions/JSONMap'
+      id:
+        type: string
+      name:
+        type: string
+      provider:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  UpdateLlmProviderDTO:
+    properties:
+      config:
+        $ref: '#/definitions/JSONMap'
+      enabled:
+        $ref: '#/definitions/JSONMap'
+      name:
+        maxLength: 255
+        type: string
+      provider:
+        maxLength: 255
         type: string
     type: object
 info:
@@ -11,6 +122,111 @@ info:
   title: orders API
   version: "1.0"
 paths:
+  /llm-provider:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/LLMProvidersPage'
+      summary: List LlmProviders
+      tags:
+      - llm-provider
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateLlmProviderDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/LLMProviderResponse'
+      summary: Create a LlmProvider
+      tags:
+      - llm-provider
+  /llm-provider/{id}:
+    delete:
+      parameters:
+      - description: LlmProvider ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a LlmProvider
+      tags:
+      - llm-provider
+    get:
+      parameters:
+      - description: LlmProvider ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/LLMProviderResponse'
+      summary: Get a LlmProvider by ID
+      tags:
+      - llm-provider
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: LlmProvider ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: partial payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateLlmProviderDTO'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a LlmProvider
+      tags:
+      - llm-provider
+  /llm-provider/registry:
+    get:
+      description: Lists the available LLM provider providers on registry.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/LLMProviderRegistry'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      summary: List LLM providers registry
+      tags:
+      - llm-provider
   /system/info:
     get:
       description: Returns application system information.

@@ -15,7 +15,10 @@ import (
 	"github.com/usesnipet/snipet/internal/api"
 	"github.com/usesnipet/snipet/internal/guard"
 	"github.com/usesnipet/snipet/internal/infra/database"
+	"github.com/usesnipet/snipet/internal/llm"
+	"github.com/usesnipet/snipet/internal/llm/providers"
 	"github.com/usesnipet/snipet/internal/logger"
+	llmprovider "github.com/usesnipet/snipet/internal/module/llm-provider"
 	systemmodule "github.com/usesnipet/snipet/internal/module/system"
 	"github.com/usesnipet/snipet/internal/repository"
 	"github.com/usesnipet/snipet/web"
@@ -25,22 +28,22 @@ import (
 // handlers, HTTP server. Add a new module here after scaffolding it with
 // the create-backend-module skill — construct its repo, then its service,
 // then its handler, then call RegisterRoutes inside the /api group.
-func Bootstrap(cfg *config.Config, logger *logger.Logger) error {
+func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	// database
-	db, _, embeddedDB, err := database.NewDatabase(cfg, logger)
+	db, _, embeddedDB, err := database.NewDatabase(cfg, log)
 	if err != nil {
-		logger.Errorf("failed to create database: %v", err)
+		log.Errorf("failed to create database: %v", err)
 		return err
 	}
 
 	if embeddedDB != nil {
 		defer func() {
-			logger.Infof("stopping embedded database...")
+			log.Infof("stopping embedded database...")
 			if err := embeddedDB.Stop(); err != nil {
-				logger.Errorf("failed to stop embedded database: %v", err)
+				log.Errorf("failed to stop embedded database: %v", err)
 				return
 			}
-			logger.Infof("embedded database stopped successfully")
+			log.Infof("embedded database stopped successfully")
 		}()
 	}
 
@@ -48,6 +51,10 @@ func Bootstrap(cfg *config.Config, logger *logger.Logger) error {
 	//   txManager := repository.NewTxManager(db)
 	//   fooRepo := repository.NewFooRepository(db)
 	_ = repository.NewTxManager(db)
+	llmProviderRepo := repository.NewLlmProviderRepository(db)
+
+	llmRegistry := providers.Registry(log.Child(logger.WithPrefix("llm-registry:")))
+	llmManager := llm.NewManager(llmRegistry)
 
 	// guards
 	requireBasicAuth := guard.RequireBasicAuth(cfg.Auth.BasicAuthUsername, cfg.Auth.BasicAuthPassword)
@@ -55,15 +62,18 @@ func Bootstrap(cfg *config.Config, logger *logger.Logger) error {
 
 	// services
 	systemService := systemmodule.NewService()
+	llmProviderService := llmprovider.NewService(llmProviderRepo, llmManager)
 
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)
+	llmProviderHandler := llmprovider.NewHandler(llmProviderService)
 
 	// register routes
 	api := api.New()
 	api.Router.Handle("/*", web.Handler())
 	api.Router.Route(config.APIPrefix, func(r chi.Router) {
 		systemHandler.RegisterRoutes(r, api.Serve)
+		llmProviderHandler.RegisterRoutes(r, api.Serve)
 	})
 
 	srv := &http.Server{
@@ -72,9 +82,9 @@ func Bootstrap(cfg *config.Config, logger *logger.Logger) error {
 	}
 
 	go func() {
-		logger.Infof("server started on port %d", cfg.Server.Port)
+		log.Infof("server started on port %d", cfg.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Errorf("failed to start server: %v", err)
+			log.Errorf("failed to start server: %v", err)
 		}
 	}()
 
@@ -82,11 +92,11 @@ func Bootstrap(cfg *config.Config, logger *logger.Logger) error {
 	defer stop()
 	<-ctx.Done()
 
-	logger.Infof("shutting down server...")
+	log.Infof("shutting down server...")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Errorf("failed to shutdown server: %v", err)
+		log.Errorf("failed to shutdown server: %v", err)
 	}
 
 	return nil

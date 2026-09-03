@@ -2,9 +2,17 @@ package llmprovider
 
 import (
 	"github.com/usesnipet/snipet/internal/filter"
+	"github.com/usesnipet/snipet/internal/llm"
 	"github.com/usesnipet/snipet/internal/model"
+	"github.com/usesnipet/snipet/internal/page"
 	"github.com/usesnipet/snipet/pkg/jsonx"
 )
+
+type LLMProviderResponse = model.LlmProvider
+
+type LLMProvidersPage = page.Paginated[model.LlmProvider]
+
+type LLMProviderRegistry = llm.Info
 
 // CreateLlmProviderDTO is the POST body — value fields, `validate:"required"`
 // on what the entity cannot exist without.

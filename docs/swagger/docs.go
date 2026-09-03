@@ -15,6 +15,170 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/llm-provider": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-provider"
+                ],
+                "summary": "List LlmProviders",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/LLMProvidersPage"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-provider"
+                ],
+                "summary": "Create a LlmProvider",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateLlmProviderDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/LLMProviderResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/llm-provider/registry": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Lists the available LLM provider providers on registry.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-provider"
+                ],
+                "summary": "List LLM providers registry",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/LLMProviderRegistry"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/llm-provider/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-provider"
+                ],
+                "summary": "Get a LlmProvider by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "LlmProvider ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/LLMProviderResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-provider"
+                ],
+                "summary": "Update a LlmProvider",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "LlmProvider ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "partial payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateLlmProviderDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "llm-provider"
+                ],
+                "summary": "Delete a LlmProvider",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "LlmProvider ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/system/info": {
             "get": {
                 "description": "Returns application system information.",
@@ -37,11 +201,176 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "CreateLlmProviderDTO": {
+            "type": "object",
+            "required": [
+                "config",
+                "name",
+                "provider"
+            ],
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "enabled": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "Error": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "message": {
+                    "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
+                }
+            }
+        },
         "InfoDTO": {
             "type": "object",
             "properties": {
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "JSONMap": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "LLMProviderRegistry": {
+            "type": "object",
+            "required": [
+                "description",
+                "key",
+                "name"
+            ],
+            "properties": {
+                "configuration_schema": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "LLMProviderResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "LLMProvidersPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LlmProvider"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "LlmProvider": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpdateLlmProviderDTO": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "enabled": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 255
                 }
             }
         }

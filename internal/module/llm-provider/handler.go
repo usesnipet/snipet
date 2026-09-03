@@ -29,7 +29,7 @@ func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 // @Summary		List LlmProviders
 // @Tags			llm-provider
 // @Produce		json
-// @Success		200	{object}	page.Paginated[model.LlmProvider]
+// @Success		200	{object}	LLMProvidersPage
 // @Router			/llm-provider [get]
 func (h *Handler) filter(w http.ResponseWriter, r *http.Request) error {
 	var dto FindLlmProvidersFilterDTO
@@ -48,7 +48,7 @@ func (h *Handler) filter(w http.ResponseWriter, r *http.Request) error {
 // @Accept			json
 // @Produce		json
 // @Param			body	body		CreateLlmProviderDTO	true	"payload"
-// @Success		201		{object}	model.LlmProvider
+// @Success		201		{object}	LLMProviderResponse
 // @Router			/llm-provider [post]
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) error {
 	var dto CreateLlmProviderDTO
@@ -66,7 +66,7 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) error {
 // @Tags			llm-provider
 // @Produce		json
 // @Param			id	path		string	true	"LlmProvider ID"
-// @Success		200	{object}	model.LlmProvider
+// @Success		200	{object}	LLMProviderResponse
 // @Router			/llm-provider/{id} [get]
 func (h *Handler) findByID(w http.ResponseWriter, r *http.Request) error {
 	found, err := h.service.FindByID(r.Context(), chi.URLParam(r, "id"))
@@ -106,14 +106,14 @@ func (h *Handler) deleteByID(w http.ResponseWriter, r *http.Request) error {
 	return api.WriteNoContent(w)
 }
 
-// @Summary		List LLM providers
-// @Description	Lists the available LLM provider providers.
-// @Tags			llm
+// @Summary		List LLM providers registry
+// @Description	Lists the available LLM provider providers on registry.
+// @Tags			llm-provider
 // @Produce		json
 // @Security		BasicAuth
-// @Success		200			{array}		DriverInfo
+// @Success		200			{array}		LLMProviderRegistry
 // @Failure		400			{object}	api.Error
-// @Router			/llm/providers [get]
+// @Router			/llm-provider/registry [get]
 func (h *Handler) listProvidersFromRegistry(w http.ResponseWriter, r *http.Request) error {
 	providers, err := h.service.ListProvidersFromRegistry(r.Context())
 	if err != nil {
