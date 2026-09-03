@@ -13,7 +13,7 @@ $(RUN_ARGS):
 	@:
 
 install:
-	$(GO) install ./...
+	$(GO) install ./... && cd web && $(PNPM) install
 
 test:
 	$(GO) test ./...

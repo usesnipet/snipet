@@ -109,13 +109,13 @@
     --chart-3: oklch(0.616 0.117 76.014);       /* gold */
     --chart-4: oklch(0.447 0.057 175.602);      /* deep teal */
     --chart-5: oklch(0.761 0.015 124.623);      /* neutral, light enough for dark bg */
-    --sidebar: oklch(0.242 0.007 248.129);      /* surface #1D2023 */
+    --sidebar: oklch(0.172 0.006 264.367);      /* deep shell, darker than paper */
     --sidebar-foreground: oklch(0.944 0.008 114.224);
     --sidebar-primary: oklch(0.766 0.134 85.744);
     --sidebar-primary-foreground: oklch(0.204 0.009 264.367);
-    --sidebar-accent: oklch(0.282 0.008 240.134);
+    --sidebar-accent: oklch(0.272 0.008 248.130);   /* active / hover row */
     --sidebar-accent-foreground: oklch(0.944 0.008 114.224);
-    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-border: oklch(1 0 0 / 8%);
     --sidebar-ring: oklch(0.766 0.134 85.744);
 }
 

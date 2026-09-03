@@ -12,6 +12,8 @@ const HomePage = lazy(() =>
   import("./routes/page").then((m) => ({ default: m.HomePage })));
 const LlmProvidersPage = lazy(() =>
   import("./routes/llm-providers/page").then((m) => ({ default: m.LlmProvidersPage })));
+const PlaceholderPage = lazy(() =>
+  import("./routes/placeholder/page").then((m) => ({ default: m.PlaceholderPage })));
 
 const toReactRouterPath = (path: RoutePath) => {
   return path.replaceAll(/{([^}]+)}/g, (_, p1) => `:${p1}`);
@@ -24,7 +26,11 @@ export const Router = () => {
         <Routes>
           <Route element={<Layout />}>
             <Route path={toReactRouterPath(ROUTES.home)} element={<HomePage />} />
+            <Route path={toReactRouterPath(ROUTES.agents)} element={<PlaceholderPage title="Agents" />} />
             <Route path={toReactRouterPath(ROUTES.llmProviders)} element={<LlmProvidersPage />} />
+            <Route path={toReactRouterPath(ROUTES.knowledge)} element={<PlaceholderPage title="Knowledge" />} />
+            <Route path={toReactRouterPath(ROUTES.connections)} element={<PlaceholderPage title="Connections" />} />
+            <Route path={toReactRouterPath(ROUTES.settings)} element={<PlaceholderPage title="Settings" />} />
           </Route>
         </Routes>
       </Suspense>
