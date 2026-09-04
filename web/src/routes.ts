@@ -1,4 +1,5 @@
 export const ROUTES = {
+  login: "/login",
   home: "/",
   agents: "/agents",
   llmConnections: "/llm-connections",

@@ -1,5 +1,8 @@
 import { z, ZodType } from "zod";
 
+import { useAuthStore } from "@/features/auth/store";
+import { ROUTES } from "@/routes";
+
 import { logger } from "../logger";
 
 import { handleApiError, parseZodErrors } from "./errors";
@@ -33,6 +36,21 @@ export type ApiRequestOptions<
     headers?: ZodType<THeaders>;
   }
 };
+
+// handleUnauthorized clears an expired/revoked session and bounces to
+// /login, preserving the current path to return to after signing back in.
+// A 401 on a request made with no access token (e.g. a bad login attempt)
+// isn't a session expiry, so it's left for the caller to handle instead.
+export function handleUnauthorized() {
+  const { accessToken, clearSession } = useAuthStore.getState();
+  if (!accessToken) return;
+
+  clearSession();
+  if (window.location.pathname === ROUTES.login) return;
+
+  const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+  window.location.assign(`${ROUTES.login}?redirect=${redirect}`);
+}
 
 export function applyPathParams(url: string, params: PathParamsRecord): string {
   return Object.entries(params).reduce(
@@ -86,16 +104,22 @@ export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams 
     ? applySearchParams(pathUrl, searchParams as SearchParamsRecord)
     : pathUrl;
 
+  // access_token already carries the "Bearer " prefix (see auth.AuthResponse
+  // on the backend) — send it as-is.
+  const accessToken = useAuthStore.getState().accessToken;
+
   const response = await fetch(requestUrl, {
     method,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(accessToken ? { Authorization: accessToken } : {}),
       ...headers,
     },
   });
 
   if (!response.ok) {
+    if (response.status === 401) handleUnauthorized();
     await handleApiError(response);
   }
 

@@ -2,12 +2,15 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
 
 import { LoadingFallback } from "./components/loading-fallback";
+import { RequireAuth } from "./components/require-auth";
 import { ROUTES } from "./routes";
 
 import type { RoutePath } from "./routes";
 
 const Layout = lazy(() =>
   import("./routes/layout").then((m) => ({ default: m.Layout })));
+const LoginPage = lazy(() =>
+  import("./routes/login/page").then((m) => ({ default: m.LoginPage })));
 const HomePage = lazy(() =>
   import("./routes/page").then((m) => ({ default: m.HomePage })));
 const LlmConnectionsPage = lazy(() =>
@@ -24,7 +27,14 @@ export const Router = () => {
     <BrowserRouter>
       <Suspense fallback={<LoadingFallback className="min-h-svh" />}>
         <Routes>
-          <Route element={<Layout />}>
+          <Route path={toReactRouterPath(ROUTES.login)} element={<LoginPage />} />
+          <Route
+            element={
+              <RequireAuth>
+                <Layout />
+              </RequireAuth>
+            }
+          >
             <Route path={toReactRouterPath(ROUTES.home)} element={<HomePage />} />
             <Route path={toReactRouterPath(ROUTES.agents)} element={<PlaceholderPage title="Agents" />} />
             <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />

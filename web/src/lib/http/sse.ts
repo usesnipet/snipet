@@ -1,9 +1,11 @@
 import { z, ZodType } from "zod";
 
+import { useAuthStore } from "@/features/auth/store";
+
 import { logger } from "../logger";
 
 import { handleApiError, parseZodErrors } from "./errors";
-import { applyPathParams, applySearchParams } from "./http";
+import { applyPathParams, applySearchParams, handleUnauthorized } from "./http";
 
 import type { ApiMethod, PathParamsRecord, SearchParamsRecord } from "./http";
 export type SseEventHandler = (event: string, data: unknown) => void;
@@ -112,6 +114,8 @@ export async function httpSse<TBody = unknown>(
     ? applySearchParams(pathUrl, searchParams)
     : pathUrl;
 
+  const accessToken = useAuthStore.getState().accessToken;
+
   const response = await fetch(requestUrl, {
     method,
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -119,11 +123,13 @@ export async function httpSse<TBody = unknown>(
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
       Accept: "text/event-stream",
+      ...(accessToken ? { Authorization: accessToken } : {}),
       ...headers,
     },
   });
 
   if (!response.ok) {
+    if (response.status === 401) handleUnauthorized();
     await handleApiError(response);
   }
 
