@@ -13,6 +13,9 @@ type IRefreshTokenRepository interface {
 	Create(ctx context.Context, token *model.RefreshToken) error
 	FindByHash(ctx context.Context, hash string) (*model.RefreshToken, error)
 	RevokeByID(ctx context.Context, id string) error
+	// RevokeAllByUserID revokes every not-yet-revoked token for a user —
+	// used on password change so a stolen refresh token doesn't survive it.
+	RevokeAllByUserID(ctx context.Context, userID string) error
 }
 
 type RefreshTokenRepository struct {
@@ -47,4 +50,11 @@ func (r *RefreshTokenRepository) RevokeByID(ctx context.Context, id string) erro
 		return apperr.NotFound("refresh token not found")
 	}
 	return nil
+}
+
+func (r *RefreshTokenRepository) RevokeAllByUserID(ctx context.Context, userID string) error {
+	_, err := gorm.G[model.RefreshToken](r.db(ctx)).
+		Where("user_id = ? AND revoked_at IS NULL", userID).
+		Update(ctx, "revoked_at", time.Now())
+	return err
 }

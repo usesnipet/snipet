@@ -1,5 +1,18 @@
 basePath: /api
 definitions:
+  AuthResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      refresh_expires_at:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/User'
+    type: object
   ChangeOwnPasswordDTO:
     properties:
       current_password:
@@ -145,17 +158,6 @@ definitions:
     - password
     - username
     type: object
-  LoginResponse:
-    properties:
-      access_token:
-        type: string
-      expires_at:
-        type: string
-      token_type:
-        type: string
-      user:
-        $ref: '#/definitions/User'
-    type: object
   MeResponse:
     properties:
       created_at:
@@ -174,6 +176,13 @@ definitions:
       username:
         description: Username is the login handle — unique, case-sensitive.
         type: string
+    type: object
+  RefreshTokenDTO:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
     type: object
   Role:
     enum:
@@ -282,12 +291,30 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/LoginResponse'
+            $ref: '#/definitions/AuthResponse'
         "401":
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
       summary: Login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revokes the given refresh token. Idempotent.
+      parameters:
+      - description: refresh token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/RefreshTokenDTO'
+      responses:
+        "204":
+          description: No Content
+      summary: Logout
       tags:
       - auth
   /auth/me:
@@ -329,6 +356,31 @@ paths:
           schema:
             $ref: '#/definitions/Error'
       summary: Change own password
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: refresh token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/RefreshTokenDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Refresh an access token
       tags:
       - auth
   /llm-connection:

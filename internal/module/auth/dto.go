@@ -15,9 +15,9 @@ type LoginDTO struct {
 	Password string `json:"password" validate:"required"`
 }
 
-// LoginResponse carries the issued token plus the logged-in user (without
+// AuthResponse carries the issued token plus the logged-in user (without
 // its password hash) and refresh token.
-type LoginResponse struct {
+type AuthResponse struct {
 	AccessToken           string     `json:"access_token"`
 	AccessTokenExpiresAt  time.Time  `json:"expires_at"`
 	RefreshToken          string     `json:"refresh_token"`
@@ -29,4 +29,10 @@ type LoginResponse struct {
 type ChangeOwnPasswordDTO struct {
 	CurrentPassword string `json:"current_password" validate:"required"`
 	NewPassword     string `json:"new_password" validate:"required,min=8,max=255"`
+}
+
+// RefreshTokenDTO is the body for both POST /auth/refresh and
+// POST /auth/logout — both just need the opaque refresh token.
+type RefreshTokenDTO struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
 }
