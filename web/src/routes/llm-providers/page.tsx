@@ -17,11 +17,11 @@ export const LlmProvidersPage = () => {
   return (
     <Page
       title="LLM Providers"
-      description="Configured LLM providers for your workspace."
+      description="Bring your own API keys or run models locally. Connect a provider to make it available to your agents."
       documentTitle="LLM Providers"
     >
       <CatalogPageContent
-        createLabel="New LLM Provider"
+        createLabel="Add provider"
         onCreate={openCreate}
       >
         <LlmProviderCatalog />
