@@ -15,10 +15,12 @@ import (
 	"github.com/usesnipet/snipet/internal/api"
 	"github.com/usesnipet/snipet/internal/auth"
 	"github.com/usesnipet/snipet/internal/guard"
+	"github.com/usesnipet/snipet/internal/infra/cache"
 	"github.com/usesnipet/snipet/internal/infra/database"
 	"github.com/usesnipet/snipet/internal/llm"
 	"github.com/usesnipet/snipet/internal/llm/providers"
 	"github.com/usesnipet/snipet/internal/logger"
+	apikey "github.com/usesnipet/snipet/internal/module/api-key"
 	authmodule "github.com/usesnipet/snipet/internal/module/auth"
 	llmconnection "github.com/usesnipet/snipet/internal/module/llm-connection"
 	systemmodule "github.com/usesnipet/snipet/internal/module/system"
@@ -57,6 +59,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	llmConnectionRepo := repository.NewLlmConnectionRepository(db)
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
+	apiKeyRepo := repository.NewApiKeyRepository(db)
 
 	llmRegistry := providers.Registry(log.Child(logger.WithPrefix("llm-registry:")))
 	llmManager := llm.NewManager(llmRegistry)
@@ -65,9 +68,8 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	userJWTService := auth.NewJWTService(cfg.Auth)
 	tokenService := auth.NewTokenService()
 
-	// guards
-	requireUserAuth := guard.RequireUserJWT(userJWTService)
-	requireRole := guard.RequireRole
+	// cache
+	apiKeyCache := cache.NewMemoryCache(1000, 1*time.Hour)
 
 	// services
 	systemService := systemmodule.NewService()
@@ -75,13 +77,25 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	userService := usermodule.NewService(userRepo, log.Child(logger.WithPrefix("user-service: ")))
 	userService.InitializeRootUser(context.Background(), cfg.Auth)
 
+	apiKeyService := apikey.NewService(
+		log.Child(logger.WithPrefix("api-key-service: ")),
+		apiKeyRepo,
+		auth.NewAPIKeyGenerator(),
+		auth.NewKeyHasher(),
+	)
 	authService := authmodule.NewService(userRepo, userJWTService, cfg.Auth, refreshTokenRepo, tokenService)
+
+	// guards
+	requireUserAuth := guard.RequireUserJWT(userJWTService)
+	requireRole := guard.RequireRole
+	requireApiKey := guard.RequireApiKey(apiKeyService, apiKeyCache)
 
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)
 	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService, requireUserAuth)
 	userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
 	authHandler := authmodule.NewHandler(authService, requireUserAuth)
+	apiKeyHandler := apikey.NewHandler(apiKeyService, requireRole, requireUserAuth, requireApiKey)
 
 	// register routes
 	api := api.New()
@@ -91,6 +105,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 		llmConnectionHandler.RegisterRoutes(r, api.Serve)
 		userHandler.RegisterRoutes(r, api.Serve)
 		authHandler.RegisterRoutes(r, api.Serve)
+		apiKeyHandler.RegisterRoutes(r, api.Serve)
 	})
 
 	srv := &http.Server{

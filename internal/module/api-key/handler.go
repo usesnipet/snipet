@@ -18,16 +18,18 @@ import (
 // would be a cycle.
 type Handler struct {
 	service     *Service
+	authGate    api.Gate
 	requireRole api.RoleGate
 	apiKeyGate  api.Gate
 }
 
-func NewHandler(service *Service, requireRole api.RoleGate, apiKeyGate api.Gate) api.Handler {
-	return &Handler{service: service, requireRole: requireRole, apiKeyGate: apiKeyGate}
+func NewHandler(service *Service, requireRole api.RoleGate, authGate, apiKeyGate api.Gate) api.Handler {
+	return &Handler{service: service, requireRole: requireRole, authGate: authGate, apiKeyGate: apiKeyGate}
 }
 
 func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 	r.Route("/api-keys", func(r chi.Router) {
+		r.Use(h.authGate.Handler())
 		r.Use(h.requireRole(model.RoleAdmin).Handler())
 		r.Get("/", serve(h.filter))
 		r.Post("/", serve(h.create))
