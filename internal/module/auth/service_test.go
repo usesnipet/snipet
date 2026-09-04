@@ -28,9 +28,9 @@ func testAuthConfig() config.AuthConfig {
 	}
 }
 
-func newTestService(repo *mocks.MockIUserRepository) *auth.Service {
+func newTestService(t *testing.T, repo *mocks.MockIUserRepository) *auth.Service {
 	cfg := testAuthConfig()
-	return auth.NewService(repo, coreauth.NewJWTService(cfg), cfg)
+	return auth.NewService(repo, coreauth.NewJWTService(cfg), cfg, mocks.NewMockIRefreshTokenRepository(t), coreauth.NewTokenService())
 }
 
 func hashed(t *testing.T, password string) string {
@@ -51,7 +51,7 @@ func TestLogin_UnknownUsername(t *testing.T) {
 	t.Parallel()
 	repo := mocks.NewMockIUserRepository(t)
 	repo.EXPECT().FindByUsername(mock.Anything, "ghost").Return(nil, apperr.NotFound("user not found"))
-	svc := newTestService(repo)
+	svc := newTestService(t, repo)
 
 	_, err := svc.Login(context.Background(), auth.LoginDTO{Username: "ghost", Password: "whatever"})
 	assertStatus(t, err, http.StatusUnauthorized)
@@ -63,7 +63,7 @@ func TestLogin_WrongPassword(t *testing.T) {
 	repo.EXPECT().FindByUsername(mock.Anything, "alice").Return(&model.User{
 		ID: "u1", Username: "alice", Password: hashed(t, "correct-password"), Role: model.RoleUser,
 	}, nil)
-	svc := newTestService(repo)
+	svc := newTestService(t, repo)
 
 	_, err := svc.Login(context.Background(), auth.LoginDTO{Username: "alice", Password: "wrong-password"})
 	assertStatus(t, err, http.StatusUnauthorized)
@@ -75,7 +75,7 @@ func TestLogin_Success(t *testing.T) {
 	repo.EXPECT().FindByUsername(mock.Anything, "alice").Return(&model.User{
 		ID: "u1", Username: "alice", Password: hashed(t, "correct-password"), Role: model.RoleAdmin,
 	}, nil)
-	svc := newTestService(repo)
+	svc := newTestService(t, repo)
 
 	result, err := svc.Login(context.Background(), auth.LoginDTO{Username: "alice", Password: "correct-password"})
 	require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestChangeOwnPassword_WrongCurrentPassword(t *testing.T) {
 	repo.EXPECT().FindByID(mock.Anything, "u1").Return(&model.User{
 		ID: "u1", Password: hashed(t, "correct-password"),
 	}, nil)
-	svc := newTestService(repo)
+	svc := newTestService(t, repo)
 
 	err := svc.ChangeOwnPassword(context.Background(), "u1", auth.ChangeOwnPasswordDTO{
 		CurrentPassword: "wrong-password", NewPassword: "brand-new-password",
@@ -125,7 +125,7 @@ func TestChangeOwnPassword_Success(t *testing.T) {
 	repo.EXPECT().UpdateByID(mock.Anything, "u1", mock.Anything).Run(func(_ context.Context, _ string, u *model.User) {
 		updates = u
 	}).Return(nil)
-	svc := newTestService(repo)
+	svc := newTestService(t, repo)
 
 	err := svc.ChangeOwnPassword(context.Background(), "u1", auth.ChangeOwnPasswordDTO{
 		CurrentPassword: "correct-password", NewPassword: "brand-new-password",
@@ -139,7 +139,7 @@ func TestMe_PassesThrough(t *testing.T) {
 	t.Parallel()
 	repo := mocks.NewMockIUserRepository(t)
 	repo.EXPECT().FindByID(mock.Anything, "u1").Return(&model.User{ID: "u1"}, nil)
-	svc := newTestService(repo)
+	svc := newTestService(t, repo)
 
 	found, err := svc.Me(context.Background(), "u1")
 	require.NoError(t, err)

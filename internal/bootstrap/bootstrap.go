@@ -56,12 +56,14 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	_ = repository.NewTxManager(db)
 	llmConnectionRepo := repository.NewLlmConnectionRepository(db)
 	userRepo := repository.NewUserRepository(db)
+	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 
 	llmRegistry := providers.Registry(log.Child(logger.WithPrefix("llm-registry:")))
 	llmManager := llm.NewManager(llmRegistry)
 
 	// auth primitives
 	userJWTService := auth.NewJWTService(cfg.Auth)
+	tokenService := auth.NewTokenService()
 
 	// guards
 	requireUserAuth := guard.RequireUserJWT(userJWTService)
@@ -73,7 +75,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	systemService := systemmodule.NewService()
 	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmManager)
 	userService := usermodule.NewService(userRepo)
-	authService := authmodule.NewService(userRepo, userJWTService, cfg.Auth)
+	authService := authmodule.NewService(userRepo, userJWTService, cfg.Auth, refreshTokenRepo, tokenService)
 
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)

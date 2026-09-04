@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"time"
 
 	"github.com/usesnipet/snipet/config"
 	apperr "github.com/usesnipet/snipet/internal/app-err"
@@ -15,17 +16,27 @@ import (
 // no guard.RequireRole — so, like the users module, this service takes no
 // position on roles; it only ever acts on the caller's own account.
 type Service struct {
-	repo       repository.IUserRepository
-	jwtService *coreauth.JWTService
-	authConfig config.AuthConfig
+	repo                 repository.IUserRepository
+	jwtService           *coreauth.JWTService
+	userRefreshTokenRepo repository.IRefreshTokenRepository
+	tokenService         *coreauth.TokenService
+	authConfig           config.AuthConfig
 }
 
 func NewService(
 	repo repository.IUserRepository,
 	jwtService *coreauth.JWTService,
 	authConfig config.AuthConfig,
+	userRefreshTokenRepo repository.IRefreshTokenRepository,
+	tokenService *coreauth.TokenService,
 ) *Service {
-	return &Service{repo: repo, jwtService: jwtService, authConfig: authConfig}
+	return &Service{
+		repo:                 repo,
+		jwtService:           jwtService,
+		userRefreshTokenRepo: userRefreshTokenRepo,
+		tokenService:         tokenService,
+		authConfig:           authConfig,
+	}
 }
 
 // Login verifies username+password and issues a JWT. Returns the same
@@ -40,15 +51,30 @@ func (s *Service) Login(ctx context.Context, dto LoginDTO) (*LoginResponse, erro
 		return nil, apperr.Unauthorized("invalid credentials")
 	}
 
-	token, expiresAt, err := s.jwtService.GenerateToken(user)
+	accessToken, accessTokenExpiresAt, err := s.jwtService.GenerateToken(user)
 	if err != nil {
 		return nil, apperr.InternalServerError("failed to issue token")
 	}
+	refreshToken, err := s.tokenService.GenerateToken()
+	if err != nil {
+		return nil, err
+	}
+
+	record := &model.RefreshToken{
+		Hash:      s.tokenService.HashToken(refreshToken),
+		ExpiresAt: time.Now().Add(s.authConfig.RefreshTokenExpiration),
+		UserID:    user.ID,
+	}
+	if err := s.userRefreshTokenRepo.Create(ctx, record); err != nil {
+		return nil, err
+	}
 
 	return &LoginResponse{
-		AccessToken:          token,
-		AccessTokenExpiresAt: expiresAt,
-		User:                 *user,
+		AccessToken:           accessToken,
+		AccessTokenExpiresAt:  accessTokenExpiresAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: record.ExpiresAt,
+		User:                  *user,
 	}, nil
 }
 
