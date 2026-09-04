@@ -20,6 +20,7 @@ import (
 	"github.com/usesnipet/snipet/internal/logger"
 	llmconnection "github.com/usesnipet/snipet/internal/module/llm-connection"
 	systemmodule "github.com/usesnipet/snipet/internal/module/system"
+	usermodule "github.com/usesnipet/snipet/internal/module/user"
 	"github.com/usesnipet/snipet/internal/repository"
 	"github.com/usesnipet/snipet/web"
 )
@@ -52,21 +53,28 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	//   fooRepo := repository.NewFooRepository(db)
 	_ = repository.NewTxManager(db)
 	llmConnectionRepo := repository.NewLlmConnectionRepository(db)
+	userRepo := repository.NewUserRepository(db)
 
 	llmRegistry := providers.Registry(log.Child(logger.WithPrefix("llm-registry:")))
 	llmManager := llm.NewManager(llmRegistry)
 
 	// guards
 	requireBasicAuth := guard.RequireBasicAuth(cfg.Auth.BasicAuthUsername, cfg.Auth.BasicAuthPassword)
-	_ = requireBasicAuth
+	// TODO(auth-guards issue): replace with the JWT authentication gate.
+	// The users module's role authorization reads auth.CurrentUser, which
+	// only the JWT guard populates — until it lands these routes are gated
+	// on admin basic auth as an interim measure.
+	requireUserAuth := requireBasicAuth
 
 	// services
 	systemService := systemmodule.NewService()
 	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmManager)
+	userService := usermodule.NewService(userRepo)
 
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)
 	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService)
+	userHandler := usermodule.NewHandler(userService, requireUserAuth)
 
 	// register routes
 	api := api.New()
@@ -74,6 +82,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	api.Router.Route(config.APIPrefix, func(r chi.Router) {
 		systemHandler.RegisterRoutes(r, api.Serve)
 		llmConnectionHandler.RegisterRoutes(r, api.Serve)
+		userHandler.RegisterRoutes(r, api.Serve)
 	})
 
 	srv := &http.Server{
