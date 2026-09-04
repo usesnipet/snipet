@@ -11,13 +11,6 @@ import (
 	"github.com/usesnipet/snipet/pkg/collections/set"
 )
 
-// RoleGate is RequireRole's shape: a factory a handler calls with the
-// specific roles *that route group* needs, rather than a single api.Gate
-// pre-built with fixed roles in bootstrap. Bootstrap builds the factory
-// once and hands it to every module that needs role authorization; each
-// module's handler.go decides its own roles per route group.
-type RoleGate func(roles ...model.Role) api.Gate
-
 // RequireRole authorizes the caller loaded by an earlier authentication
 // gate (e.g. the JWT gate — see auth-middleware.md): it rejects the request
 // with Forbidden unless auth.CurrentUser's role is one of roles. It must run

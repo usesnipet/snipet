@@ -5,14 +5,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/usesnipet/snipet/internal/api"
-	"github.com/usesnipet/snipet/internal/guard"
 	"github.com/usesnipet/snipet/internal/model"
 )
 
 type Handler struct {
 	service     *Service
 	authGate    api.Gate
-	requireRole guard.RoleGate
+	requireRole api.RoleGate
 }
 
 // NewHandler builds the users HTTP layer. authGate authenticates the caller
@@ -20,7 +19,7 @@ type Handler struct {
 // (guard.RequireRole) bootstrap builds once — this handler is the one that
 // decides which roles it needs (admin, for the whole /users group), not
 // bootstrap.
-func NewHandler(service *Service, authGate api.Gate, requireRole guard.RoleGate) api.Handler {
+func NewHandler(service *Service, authGate api.Gate, requireRole api.RoleGate) api.Handler {
 	return &Handler{service: service, authGate: authGate, requireRole: requireRole}
 }
 
