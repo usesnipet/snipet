@@ -1,10 +1,7 @@
 import { SidebarContent } from "@/components/sidebar/content";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/components/ui/link";
 import { Sidebar as SidebarContainer, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
@@ -12,11 +9,11 @@ import { ToggleTheme } from "@/components/ui/toggle-theme";
 import { useCurrentUser, useLogout } from "@/features/auth/hooks";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
-import { BookText, Home, LogOut, MessageSquare, Server, Settings, Users, Waypoints } from "lucide-react";
+import { BookText, Home, Key, LogOut, MessageSquare, Server, Settings, Users, Waypoints } from "lucide-react";
 
-import type { NavEntry } from "@/components/sidebar/types";
 import { Version } from "./version";
 
+import type { NavEntry } from "@/components/sidebar/types";
 const navItems: NavEntry[] = [
   {
     label: "Workspace",
@@ -36,6 +33,12 @@ const navItems: NavEntry[] = [
         title: "Users",
         href: ROUTES.users,
         icon: Users,
+        visible: () => useAuthStore.getState().user?.role === "admin",
+      },
+      {
+        title: "Api Key",
+        href: ROUTES.apiKey,
+        icon: Key,
         visible: () => useAuthStore.getState().user?.role === "admin",
       },
     ],

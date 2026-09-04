@@ -7,6 +7,7 @@ export const ROUTES = {
   connections: "/connections",
   settings: "/settings",
   users: "/users",
+  apiKey: "/api-keys"
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

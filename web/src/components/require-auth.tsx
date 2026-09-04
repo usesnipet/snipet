@@ -1,9 +1,8 @@
-import { Navigate, useLocation } from "react-router";
-
 import { useIsAuthenticated } from "@/features/auth/hooks";
 import { ROUTES } from "@/routes";
+import { Navigate, Outlet, useLocation } from "react-router";
 
-export function RequireAuth({ children }: { children: React.ReactNode }) {
+export function RequireAuth() {
   const isAuthenticated = useIsAuthenticated();
   const location = useLocation();
 
@@ -12,5 +11,5 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     return <Navigate to={`${ROUTES.login}?redirect=${redirect}`} replace />;
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 }
