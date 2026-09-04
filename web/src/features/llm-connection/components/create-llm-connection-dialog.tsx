@@ -5,6 +5,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useId } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCreateLlmConnection } from "../hooks";
@@ -28,6 +29,7 @@ const defaultValues: CreateLlmConnection = {
 };
 
 export function CreateLlmConnectionDialog({ onCreated, close }: CreateLlmConnectionDialogProps) {
+  const formId = `create-llm-connection-${useId()}`;
   const form = useForm<CreateLlmConnection>({
     resolver: zodResolver(createLlmConnectionSchema),
     defaultValues,
@@ -45,27 +47,27 @@ export function CreateLlmConnectionDialog({ onCreated, close }: CreateLlmConnect
   return (
     <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>Create LLM connection</DialogTitle>
+        <DialogTitle>New LLM connection</DialogTitle>
         <DialogDescription>
-          Add a named connection to a language model provider.
+          Point at a provider and drop in your API key — it becomes available to your agents.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <form id={formId} onSubmit={onSubmit}>
           <LlmFormFields />
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isPending}>
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Spinner size="sm" />}
-              Create
-            </Button>
-          </DialogFooter>
         </form>
       </Form>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button type="button" variant="outline" disabled={isPending}>
+            Cancel
+          </Button>
+        </DialogClose>
+        <Button type="submit" form={formId} disabled={isPending}>
+          {isPending && <Spinner size="sm" />}
+          Create connection
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 }

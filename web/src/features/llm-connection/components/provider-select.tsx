@@ -1,63 +1,37 @@
 import { FormSelect } from "@/components/form/select";
-import { SchemaFormDialog } from "@/components/schema-form";
-import { useDialog } from "@/lib/dialog";
-import { Settings } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 
-import type { RJSFSchema } from "@rjsf/utils";
 import type { LlmProvider } from "../schemas";
 
 type ProviderSelectProps = {
   name: string;
+  /** Field that holds the provider config — reset when the provider changes. */
   configName: string;
-  llms: LlmProvider[];
+  providers: LlmProvider[];
   label?: string;
   placeholder?: string;
   disabled?: boolean;
   fieldclassname?: string;
+  /** Called after the provider changes, with the new driver key. */
+  onAfterChange?: (key: string) => void;
 };
 
 export function ProviderSelect({
   name,
   configName,
-  llms,
+  providers,
   label,
-  placeholder = "Select a driver",
+  placeholder = "Select a provider",
   disabled,
   fieldclassname,
+  onAfterChange,
 }: ProviderSelectProps) {
   const form = useFormContext();
-  const { openDialog } = useDialog();
-  const selectedKey = form.watch(name) as string | undefined;
 
-  const selectedDriver = llms.find((d) => d.key === selectedKey);
-  const schema = selectedDriver?.configuration_schema as RJSFSchema | undefined;
-  const canConfigure = Boolean(selectedDriver && schema);
-
-  const options = llms.map((driver) => ({
-    label: driver.name,
-    value: driver.key,
+  const options = providers.map((provider) => ({
+    label: provider.name,
+    value: provider.key,
   }));
-
-  const openConfigDialog = () => {
-    if (!selectedDriver || !schema) return;
-
-    openDialog({
-      component: SchemaFormDialog,
-      props: {
-        title: selectedDriver.name,
-        description: selectedDriver.description,
-        schema,
-        formData: (form.getValues(configName) as Record<string, unknown>) ?? {},
-        onSubmit: (data) => {
-          form.setValue(configName, data, {
-            shouldDirty: true,
-            shouldTouch: true,
-          });
-        },
-      },
-    });
-  };
 
   return (
     <FormSelect
@@ -69,16 +43,8 @@ export function ProviderSelect({
       fieldclassname={fieldclassname}
       onValueChange={(nextKey) => {
         form.setValue(configName, {}, { shouldDirty: true, shouldTouch: true });
+        onAfterChange?.(nextKey);
         return nextKey;
-      }}
-      action={{
-        type: "button",
-        size: "icon",
-        variant: "outline",
-        disabled: disabled || !canConfigure,
-        onClick: openConfigDialog,
-        "aria-label": "Configure driver",
-        icon: <Settings className="size-4" />,
       }}
     />
   );

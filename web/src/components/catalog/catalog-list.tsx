@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { cva } from "class-variance-authority";
 
 import type { VariantProps } from "class-variance-authority";
+import { ScrollArea } from "../ui/scroll-area";
 
 const catalogListVariants = cva(
   "grid gap-4",
@@ -24,6 +25,7 @@ type CatalogListProps<T extends { id: string }> = VariantProps<typeof catalogLis
   emptyMessage: string;
   renderItem: (item: T) => React.ReactNode;
   className?: string;
+  containerClassName?: string;
 };
 
 export function CatalogList<T extends { id: string }>({
@@ -32,16 +34,21 @@ export function CatalogList<T extends { id: string }>({
   renderItem,
   size,
   className,
+  containerClassName,
 }: CatalogListProps<T>) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">{emptyMessage}</p>;
   }
 
   return (
-    <ul className={cn(catalogListVariants({ size, className }))}>
-      {items.map((item) => (
-        <li key={item.id}>{renderItem(item)}</li>
-      ))}
-    </ul>
+    <div className={cn(containerClassName)}>
+      <ScrollArea>
+        <ul className={cn(catalogListVariants({ size, className }))}>
+            {items.map((item) => (
+              <li key={item.id}>{renderItem(item)}</li>
+            ))}
+        </ul>
+      </ScrollArea>
+    </div>
   );
 }

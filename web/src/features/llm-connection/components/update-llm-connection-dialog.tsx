@@ -5,6 +5,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useId } from "react";
 import { useForm } from "react-hook-form";
 
 import { useUpdateLlmConnection } from "../hooks";
@@ -20,12 +21,14 @@ type UpdateLlmConnectionDialogProps = DialogInstanceProps<{
 }>;
 
 export function UpdateLlmConnectionDialog({ llm, close }: UpdateLlmConnectionDialogProps) {
+  const formId = `update-llm-connection-${useId()}`;
   const form = useForm<CreateLlmConnection>({
     resolver: zodResolver(createLlmConnectionSchema),
     defaultValues: {
       name: llm.name,
       provider: llm.provider,
       config: llm.config,
+      enabled: llm.enabled,
     },
   });
 
@@ -46,21 +49,21 @@ export function UpdateLlmConnectionDialog({ llm, close }: UpdateLlmConnectionDia
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <form id={formId} onSubmit={onSubmit}>
           <LlmFormFields />
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isPending}>
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Spinner size="sm" />}
-              Save
-            </Button>
-          </DialogFooter>
         </form>
       </Form>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button type="button" variant="outline" disabled={isPending}>
+            Cancel
+          </Button>
+        </DialogClose>
+        <Button type="submit" form={formId} disabled={isPending}>
+          {isPending && <Spinner size="sm" />}
+          Save changes
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 }
