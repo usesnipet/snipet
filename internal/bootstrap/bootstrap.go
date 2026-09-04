@@ -61,10 +61,13 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	// guards
 	requireBasicAuth := guard.RequireBasicAuth(cfg.Auth.BasicAuthUsername, cfg.Auth.BasicAuthPassword)
 	// TODO(auth-guards issue): replace with the JWT authentication gate.
-	// The users module's role authorization reads auth.CurrentUser, which
-	// only the JWT guard populates — until it lands these routes are gated
-	// on admin basic auth as an interim measure.
+	// auth.CurrentUser (read by guard.RequireRole below) is only ever
+	// populated by that JWT guard — until it lands, /users is gated on
+	// admin basic auth as an interim measure.
 	requireUserAuth := requireBasicAuth
+	// The role-gate factory itself — built once here, parameterized with
+	// the actual roles by whichever handler needs it (see usermodule.NewHandler).
+	requireRole := guard.RequireRole
 
 	// services
 	systemService := systemmodule.NewService()
@@ -74,7 +77,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)
 	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService)
-	userHandler := usermodule.NewHandler(userService, requireUserAuth)
+	userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
 
 	// register routes
 	api := api.New()

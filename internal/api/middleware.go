@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	apperr "github.com/usesnipet/snipet/internal/app-err"
 	"github.com/usesnipet/snipet/internal/auth"
 )
 
@@ -19,15 +20,22 @@ type MiddlewareFunc func(next http.Handler) http.Handler
 type Gate func(r *http.Request) (context.Context, error)
 
 // Handler turns a Gate into chi-compatible middleware that requires it to
-// succeed. The gate's error is forwarded to WriteError as-is, so a gate
-// returning an *apperr.Error (e.g. guard.RequireRole's Forbidden) renders
-// with its own status code instead of a flat 401.
+// succeed. The status written is whatever the gate's own error carries —
+// every gate in this codebase fails with an *apperr.Error (RequireBasicAuth
+// and Or's fallback both use apperr.Unauthorized, guard.RequireRole uses
+// apperr.Forbidden, ...), so Handler never hardcodes a status itself. A
+// gate that broke that convention and returned a bare error falls back to
+// Unauthorized, since that's what a Gate is for.
 func (g Gate) Handler() MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, err := g(r)
 			if err != nil {
-				WriteError(w, http.StatusUnauthorized, err)
+				var appErr *apperr.Error
+				if !errors.As(err, &appErr) {
+					appErr = apperr.Unauthorized(err.Error())
+				}
+				WriteAppError(w, appErr)
 				return
 			}
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -53,6 +61,6 @@ func Or(gates ...Gate) Gate {
 			}
 			return ctx, nil
 		}
-		return nil, errors.New("unauthorized")
+		return nil, apperr.Unauthorized("unauthorized")
 	}
 }
