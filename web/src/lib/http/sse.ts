@@ -1,16 +1,17 @@
-import { z, ZodType } from "zod";
-
 import { useAuthStore } from "@/features/auth/store";
+import { z, ZodType } from "zod";
 
 import { logger } from "../logger";
 
 import { handleApiError, parseZodErrors } from "./errors";
-import { applyPathParams, applySearchParams, handleUnauthorized } from "./http";
+import { applyPathParams, applySearchParams, handleRefreshToken, handleUnauthorized } from "./utils";
 
 import type { ApiMethod, PathParamsRecord, SearchParamsRecord } from "./http";
+
 export type SseEventHandler = (event: string, data: unknown) => void;
 
 export type HttpSseOptions<TBody = unknown> = {
+  retry?: boolean;
   url: string;
   method?: ApiMethod;
   body?: TBody;
@@ -98,7 +99,7 @@ export async function httpSse<TBody = unknown>(
     signal,
     onEvent,
   } = options;
-  const { params, searchParams, headers } = options;
+  const { params, searchParams, headers, retry } = options;
   let { body } = options;
   const pathUrl = params ? applyPathParams(url, params) : url;
 
@@ -129,9 +130,17 @@ export async function httpSse<TBody = unknown>(
   });
 
   if (!response.ok) {
-    if (response.status === 401) handleUnauthorized();
+    if (response.status === 401) {
+      if (!retry) {
+        const refreshed = await handleRefreshToken()
+        if (refreshed) return httpSse({ ...options, retry: true })
+      } else {
+        handleUnauthorized();
+      }
+    }
     await handleApiError(response);
   }
+
 
   if (!response.body) {
     throw new Error("SSE response has no body");

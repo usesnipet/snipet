@@ -2,7 +2,6 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
 
 import { LoadingFallback } from "./components/loading-fallback";
-import { RequireAuth } from "./components/require-auth";
 import { ROUTES } from "./routes";
 
 import type { RoutePath } from "./routes";
@@ -28,13 +27,7 @@ export const Router = () => {
       <Suspense fallback={<LoadingFallback className="min-h-svh" />}>
         <Routes>
           <Route path={toReactRouterPath(ROUTES.login)} element={<LoginPage />} />
-          <Route
-            element={
-              <RequireAuth>
-                <Layout />
-              </RequireAuth>
-            }
-          >
+          <Route element={<Layout />}>
             <Route path={toReactRouterPath(ROUTES.home)} element={<HomePage />} />
             <Route path={toReactRouterPath(ROUTES.agents)} element={<PlaceholderPage title="Agents" />} />
             <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />

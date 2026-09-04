@@ -1,11 +1,10 @@
-import { z, ZodType } from "zod";
-
 import { useAuthStore } from "@/features/auth/store";
-import { ROUTES } from "@/routes";
+import { z, ZodType } from "zod";
 
 import { logger } from "../logger";
 
 import { handleApiError, parseZodErrors } from "./errors";
+import { applyPathParams, applySearchParams, handleRefreshToken, handleUnauthorized } from "./utils";
 
 export type ApiMethod = "GET" | "POST" | "PUT" | "DELETE";
 export type SearchParamsRecord = Record<
@@ -22,6 +21,7 @@ export type ApiRequestOptions<
   TPathParams = PathParamsRecord,
   THeaders = Record<string, string>
 > = {
+  retry?: boolean;
   method: ApiMethod;
   url: string;
   body?: TBody;
@@ -37,55 +37,10 @@ export type ApiRequestOptions<
   }
 };
 
-// handleUnauthorized clears an expired/revoked session and bounces to
-// /login, preserving the current path to return to after signing back in.
-// A 401 on a request made with no access token (e.g. a bad login attempt)
-// isn't a session expiry, so it's left for the caller to handle instead.
-export function handleUnauthorized() {
-  const { accessToken, clearSession } = useAuthStore.getState();
-  if (!accessToken) return;
-
-  clearSession();
-  if (window.location.pathname === ROUTES.login) return;
-
-  const redirect = encodeURIComponent(window.location.pathname + window.location.search);
-  window.location.assign(`${ROUTES.login}?redirect=${redirect}`);
-}
-
-export function applyPathParams(url: string, params: PathParamsRecord): string {
-  return Object.entries(params).reduce(
-    (result, [key, value]) =>
-      result.replaceAll(`{${key}}`, encodeURIComponent(String(value))),
-    url,
-  );
-}
-
-export function buildSearchParams(params: SearchParamsRecord): string {
-  const searchParams = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null) continue;
-    searchParams.append(key, String(value));
-  }
-
-  return searchParams.toString();
-}
-
-export function applySearchParams(
-  url: string,
-  params: SearchParamsRecord,
-): string {
-  const query = buildSearchParams(params);
-  if (!query) return url;
-
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}${query}`;
-}
-
 export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(
   options: ApiRequestOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>,
 ): Promise<TResponse> {
-  const { url, method, schemas } = options;
+  const { url, method, schemas, retry } = options;
   let { body, headers, params, searchParams } = options;
   const pathUrl = params ? applyPathParams(url, params as PathParamsRecord) : url;
 
@@ -119,7 +74,14 @@ export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams 
   });
 
   if (!response.ok) {
-    if (response.status === 401) handleUnauthorized();
+    if (response.status === 401) {
+      if (!retry) {
+        const refreshed = await handleRefreshToken();
+        if (refreshed) return httpx({ ...options, retry: true });
+      } else {
+        handleUnauthorized();
+      }
+    }
     await handleApiError(response);
   }
 
