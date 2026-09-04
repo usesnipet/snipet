@@ -67,11 +67,66 @@ embedding `auth.BaseClaims` (see `auth.UserClaims` for the shape), build a
 the way `RequireBasicAuth` does. `guard.verifyBearerJWT` is a ready helper
 for extracting and verifying the bearer token.
 
+## Role authorization — `guard.RequireRole`
+
+Authentication (who is this?) and authorization (are they allowed?) are two
+separate gates, chained in sequence — not one gate doing both, and not a
+check living inside the service:
+
+```go
+r.Use(h.authGate.Handler())                       // authenticate: populates auth.CurrentUser
+r.Use(h.requireRole(model.RoleAdmin).Handler())    // authorize: rejects the wrong role
+```
+
+`guard.RequireRole(roles ...model.Role) api.Gate` reads `auth.CurrentUser(ctx)`
+(so it must run after a gate that calls `auth.SetUserIdentity`) and returns
+`apperr.Forbidden(...)` when the caller's role isn't in the allowed set.
+Unlike the authentication gates above, it always resolves — it never
+returns `auth.ErrNotApplicable` — so it isn't meant to compose with `api.Or`.
+
+**`RequireRole` is a factory, not a pre-built gate** — the roles a route
+group needs are that module's decision, not bootstrap's. So bootstrap
+builds it once and hands down the bare function (typed `guard.RoleGate` —
+`func(roles ...model.Role) api.Gate`), and each module's `handler.go` calls
+it with its own roles:
+
+```go
+// bootstrap.go
+requireRole := guard.RequireRole
+userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
+
+// module/user/handler.go
+func NewHandler(service *Service, authGate api.Gate, requireRole guard.RoleGate) api.Handler {
+    return &Handler{service: service, authGate: authGate, requireRole: requireRole}
+}
+```
+
+This is why a module needing role authorization takes a `guard.RoleGate`
+parameter instead of a plain `api.Gate` like `basicAuthGate` in
+[modules.md](./modules.md) — a pre-built gate can't be re-parameterized per
+route group the way a factory can.
+
+**Why authorization moved out of the service:** an admin-only check baked
+into a service method also blocks that method from being called for
+self-service (a user changing their own password calls the same
+`Update` a `/users` admin route calls, from `/auth/me/password`). Keeping
+services caller-agnostic and gating at the route instead makes both
+callers work. A service still enforces domain invariants that aren't about
+*who's* calling — e.g. the users module refusing to delete the last
+remaining admin — those stay in the service because they'd be wrong for
+every caller, not just unprivileged ones.
+
 ## Failure path
 
 Guards run *outside* the `HandlerFunc`/`api.Serve` flow (see
-[api.md](./api.md)) — on an auth failure they write the error response
-themselves and never call `next`. A `Forbidden` returned from *inside* a
-service method is the opposite: it flows back through the normal
-`*apperr.Error` → `api.Serve` → HTTP-status path like any other domain
-error (see [errors.md](./errors.md)).
+[api.md](./api.md)) — on failure they write the error response themselves
+and never call `next`. `Gate.Handler()` never hardcodes a status: it writes
+whatever `*apperr.Error` the gate itself returned (`RequireBasicAuth` and
+`Or`'s fallback both use `apperr.Unauthorized`, `guard.RequireRole` uses
+`apperr.Forbidden`), and only falls back to `apperr.Unauthorized` for a gate
+that broke convention and returned a bare `error`. Every gate in this
+codebase should return an `*apperr.Error`, never a bare `error`, so that
+fallback is never expected to trigger. A `Forbidden` returned from *inside*
+a service method (a domain invariant, not a route gate) takes the ordinary
+path instead: it flows back through `*apperr.Error` → `api.Serve` →
+HTTP-status like any other domain error (see [errors.md](./errors.md)).

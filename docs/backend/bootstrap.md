@@ -67,8 +67,11 @@ one function. The skeleton version is short:
    each depending only on repository interfaces and other services it
    genuinely needs (see [modules.md](./modules.md)).
 5. **Guards** — `guard.RequireBasicAuth(cfg.Auth...)` (and any others you
-   add), passed as raw `api.Gate`s into modules (see
-   [auth-middleware.md](./auth-middleware.md)).
+   add). An authentication gate with fixed config is passed down as a
+   built `api.Gate`; a role-authorization gate like `guard.RequireRole` is
+   parameterized per route group, so it's passed down as the bare factory
+   (`guard.RoleGate`) instead — the module decides the roles, not bootstrap
+   (see [auth-middleware.md](./auth-middleware.md)).
 6. **Handlers** — one `<module>.NewHandler(service, gate...)` per module.
 7. **Routes** — `api.New()`, mount the built SPA (`web.Handler()`) as the
    catch-all, then every `handler.RegisterRoutes(r, api.Serve)` under
