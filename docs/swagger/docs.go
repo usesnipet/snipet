@@ -15,20 +15,20 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/llm-provider": {
+        "/llm-connection": {
             "get": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "llm-provider"
+                    "llm-connection"
                 ],
-                "summary": "List LlmProviders",
+                "summary": "List LlmConnections",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/LLMProvidersPage"
+                            "$ref": "#/definitions/LLMConnectionsPage"
                         }
                     }
                 }
@@ -41,9 +41,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "llm-provider"
+                    "llm-connection"
                 ],
-                "summary": "Create a LlmProvider",
+                "summary": "Create a LlmConnection",
                 "parameters": [
                     {
                         "description": "payload",
@@ -51,7 +51,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateLlmProviderDTO"
+                            "$ref": "#/definitions/CreateLlmConnectionDTO"
                         }
                     }
                 ],
@@ -59,25 +59,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/LLMProviderResponse"
+                            "$ref": "#/definitions/LLMConnectionResponse"
                         }
                     }
                 }
             }
         },
-        "/llm-provider/registry": {
+        "/llm-connection/registry": {
             "get": {
                 "security": [
                     {
                         "BasicAuth": []
                     }
                 ],
-                "description": "Lists the available LLM provider providers on registry.",
+                "description": "Lists the available LLM provider drivers on registry.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "llm-provider"
+                    "llm-connection"
                 ],
                 "summary": "List LLM providers registry",
                 "responses": {
@@ -99,19 +99,19 @@ const docTemplate = `{
                 }
             }
         },
-        "/llm-provider/{id}": {
+        "/llm-connection/{id}": {
             "get": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "llm-provider"
+                    "llm-connection"
                 ],
-                "summary": "Get a LlmProvider by ID",
+                "summary": "Get a LlmConnection by ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "LlmProvider ID",
+                        "description": "LlmConnection ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -121,7 +121,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/LLMProviderResponse"
+                            "$ref": "#/definitions/LLMConnectionResponse"
                         }
                     }
                 }
@@ -131,13 +131,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "llm-provider"
+                    "llm-connection"
                 ],
-                "summary": "Update a LlmProvider",
+                "summary": "Update a LlmConnection",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "LlmProvider ID",
+                        "description": "LlmConnection ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -148,7 +148,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateLlmProviderDTO"
+                            "$ref": "#/definitions/UpdateLlmConnectionDTO"
                         }
                     }
                 ],
@@ -160,13 +160,13 @@ const docTemplate = `{
             },
             "delete": {
                 "tags": [
-                    "llm-provider"
+                    "llm-connection"
                 ],
-                "summary": "Delete a LlmProvider",
+                "summary": "Delete a LlmConnection",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "LlmProvider ID",
+                        "description": "LlmConnection ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -201,7 +201,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "CreateLlmProviderDTO": {
+        "CreateLlmConnectionDTO": {
             "type": "object",
             "required": [
                 "config",
@@ -213,7 +213,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/JSONMap"
                 },
                 "enabled": {
-                    "$ref": "#/definitions/JSONMap"
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string",
@@ -252,6 +252,52 @@ const docTemplate = `{
             "type": "object",
             "additionalProperties": {}
         },
+        "LLMConnectionResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "LLMConnectionsPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LlmConnection"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "LLMProviderRegistry": {
             "type": "object",
             "required": [
@@ -283,7 +329,7 @@ const docTemplate = `{
                 }
             }
         },
-        "LLMProviderResponse": {
+        "LlmConnection": {
             "type": "object",
             "properties": {
                 "config": {
@@ -293,7 +339,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "enabled": {
-                    "$ref": "#/definitions/JSONMap"
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"
@@ -309,60 +355,14 @@ const docTemplate = `{
                 }
             }
         },
-        "LLMProvidersPage": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/LlmProvider"
-                    }
-                },
-                "skip": {
-                    "type": "integer"
-                },
-                "take": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "LlmProvider": {
-            "type": "object",
-            "properties": {
-                "config": {
-                    "$ref": "#/definitions/JSONMap"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "$ref": "#/definitions/JSONMap"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "UpdateLlmProviderDTO": {
+        "UpdateLlmConnectionDTO": {
             "type": "object",
             "properties": {
                 "config": {
                     "$ref": "#/definitions/JSONMap"
                 },
                 "enabled": {
-                    "$ref": "#/definitions/JSONMap"
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string",

@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 
-import { useListLlmProviders, useLlmProviderRegistry } from "../hooks";
+import { useListLlmConnections, useLlmProviders } from "../hooks";
 import {
   buildRegistryViews,
   filterRegistryViews,
@@ -20,7 +20,7 @@ import {
   sortRegistryViews,
 } from "../lib/registry-view";
 
-import { LlmProviderCatalogCard } from "./llm-provider-catalog-card";
+import { LlmConnectionCatalogCard } from "./llm-connection-catalog-card";
 
 import type { RegistryFilter, RegistrySort } from "../lib/registry-view";
 
@@ -57,9 +57,9 @@ function StatToggle({ active, count, label, onClick }: StatToggleProps) {
   );
 }
 
-export function LlmProviderCatalog() {
-  const registryQuery = useLlmProviderRegistry();
-  const providersQuery = useListLlmProviders();
+export function LlmConnectionCatalog() {
+  const registryQuery = useLlmProviders();
+  const connectionsQuery = useListLlmConnections();
 
   const [filter, setFilter] = useState<RegistryFilter>("all");
   const [search, setSearch] = useState("");
@@ -69,9 +69,9 @@ export function LlmProviderCatalog() {
     () =>
       buildRegistryViews(
         registryQuery.data ?? [],
-        providersQuery.data?.data ?? [],
+        connectionsQuery.data?.data ?? [],
       ),
-    [registryQuery.data, providersQuery.data],
+    [registryQuery.data, connectionsQuery.data],
   );
 
   const stats = useMemo(() => registryStats(views), [views]);
@@ -81,8 +81,8 @@ export function LlmProviderCatalog() {
     [views, filter, search, sort],
   );
 
-  const isLoading = registryQuery.isLoading || providersQuery.isLoading;
-  const isError = registryQuery.isError || providersQuery.isError;
+  const isLoading = registryQuery.isLoading || connectionsQuery.isLoading;
+  const isError = registryQuery.isError || connectionsQuery.isError;
 
   return (
     <div className="flex flex-col gap-5">
@@ -140,7 +140,7 @@ export function LlmProviderCatalog() {
               ? "No providers match your filters."
               : "No providers available."
           }
-          renderItem={({ view }) => <LlmProviderCatalogCard view={view} />}
+          renderItem={({ view }) => <LlmConnectionCatalogCard view={view} />}
         />
       )}
     </div>

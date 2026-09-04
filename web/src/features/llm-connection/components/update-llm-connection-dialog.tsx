@@ -7,21 +7,21 @@ import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { useUpdateLlmProvider } from "../hooks";
-import { createLlmProviderSchema } from "../schemas";
+import { useUpdateLlmConnection } from "../hooks";
+import { createLlmConnectionSchema } from "../schemas";
 
 import { LlmFormFields } from "./llm-form-fields";
 
-import type { CreateLlmProvider, LlmProvider } from "../schemas";
+import type { CreateLlmConnection, LlmConnection } from "../schemas";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
-type UpdateLlmProviderDialogProps = DialogInstanceProps<{
-  llm: LlmProvider;
+type UpdateLlmConnectionDialogProps = DialogInstanceProps<{
+  llm: LlmConnection;
 }>;
 
-export function UpdateLlmProviderDialog({ llm, close }: UpdateLlmProviderDialogProps) {
-  const form = useForm<CreateLlmProvider>({
-    resolver: zodResolver(createLlmProviderSchema),
+export function UpdateLlmConnectionDialog({ llm, close }: UpdateLlmConnectionDialogProps) {
+  const form = useForm<CreateLlmConnection>({
+    resolver: zodResolver(createLlmConnectionSchema),
     defaultValues: {
       name: llm.name,
       provider: llm.provider,
@@ -29,7 +29,7 @@ export function UpdateLlmProviderDialog({ llm, close }: UpdateLlmProviderDialogP
     },
   });
 
-  const { mutateAsync, isPending } = useUpdateLlmProvider();
+  const { mutateAsync, isPending } = useUpdateLlmConnection();
 
   const onSubmit = form.handleSubmit(async (data) => {
     await mutateAsync({ id: llm.id, data });
@@ -39,7 +39,7 @@ export function UpdateLlmProviderDialog({ llm, close }: UpdateLlmProviderDialogP
   return (
     <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>Edit LLM</DialogTitle>
+        <DialogTitle>Edit LLM connection</DialogTitle>
         <DialogDescription>
           Update settings for{" "}
           <span className="font-medium text-foreground">{llm.name}</span>.

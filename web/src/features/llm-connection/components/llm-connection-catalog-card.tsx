@@ -5,17 +5,17 @@ import { ProviderIcon } from "./provider-icon";
 
 import type { RegistryView } from "../lib/registry-view";
 
-export type LlmProviderCatalogCardProps = {
+export type LlmConnectionCatalogCardProps = {
   view: RegistryView;
 };
 
-export function LlmProviderCatalogCard({ view }: LlmProviderCatalogCardProps) {
-  const { name, key, description, icon, tags, providerCount, connected } = view;
+export function LlmConnectionCatalogCard({ view }: LlmConnectionCatalogCardProps) {
+  const { name, key, description, icon, tags, connectionCount, connected } = view;
 
   const countLabel =
-    providerCount === 0
-      ? "No llm providers yet"
-      : `${providerCount} llm provider${providerCount === 1 ? "" : "s"}`;
+    connectionCount === 0
+      ? "No connections yet"
+      : `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
 
   return (
     <CatalogCard

@@ -1,4 +1,4 @@
-package llmprovider
+package llmconnection
 
 import (
 	"net/http"
@@ -16,9 +16,9 @@ func NewHandler(service *Service) api.Handler {
 }
 
 func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
-	r.Route("/llm-provider", func(r chi.Router) {
+	r.Route("/llm-connection", func(r chi.Router) {
 		r.Get("/", serve(h.filter))
-		r.Get("/registry", serve(h.listProvidersFromRegistry))
+		r.Get("/providers", serve(h.listProviders))
 		r.Post("/", serve(h.create))
 		r.Get("/{id}", serve(h.findByID))
 		r.Put("/{id}", serve(h.update))
@@ -26,13 +26,13 @@ func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 	})
 }
 
-// @Summary		List LlmProviders
-// @Tags			llm-provider
+// @Summary		List LlmConnections
+// @Tags			llm-connection
 // @Produce		json
-// @Success		200	{object}	LLMProvidersPage
-// @Router			/llm-provider [get]
+// @Success		200	{object}	LLMConnectionsPage
+// @Router			/llm-connection [get]
 func (h *Handler) filter(w http.ResponseWriter, r *http.Request) error {
-	var dto FindLlmProvidersFilterDTO
+	var dto FindLlmConnectionsFilterDTO
 	if err := api.ParseQuery(r, &dto); err != nil {
 		return err
 	}
@@ -43,15 +43,15 @@ func (h *Handler) filter(w http.ResponseWriter, r *http.Request) error {
 	return api.WriteJSON(w, http.StatusOK, result)
 }
 
-// @Summary		Create a LlmProvider
-// @Tags			llm-provider
+// @Summary		Create a LlmConnection
+// @Tags			llm-connection
 // @Accept			json
 // @Produce		json
-// @Param			body	body		CreateLlmProviderDTO	true	"payload"
-// @Success		201		{object}	LLMProviderResponse
-// @Router			/llm-provider [post]
+// @Param			body	body		CreateLlmConnectionDTO	true	"payload"
+// @Success		201		{object}	LLMConnectionResponse
+// @Router			/llm-connection [post]
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) error {
-	var dto CreateLlmProviderDTO
+	var dto CreateLlmConnectionDTO
 	if err := api.ParseBody(r, &dto); err != nil {
 		return err
 	}
@@ -62,12 +62,12 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) error {
 	return api.WriteJSON(w, http.StatusCreated, created)
 }
 
-// @Summary		Get a LlmProvider by ID
-// @Tags			llm-provider
+// @Summary		Get a LlmConnection by ID
+// @Tags			llm-connection
 // @Produce		json
-// @Param			id	path		string	true	"LlmProvider ID"
-// @Success		200	{object}	LLMProviderResponse
-// @Router			/llm-provider/{id} [get]
+// @Param			id	path		string	true	"LlmConnection ID"
+// @Success		200	{object}	LLMConnectionResponse
+// @Router			/llm-connection/{id} [get]
 func (h *Handler) findByID(w http.ResponseWriter, r *http.Request) error {
 	found, err := h.service.FindByID(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
@@ -76,15 +76,15 @@ func (h *Handler) findByID(w http.ResponseWriter, r *http.Request) error {
 	return api.WriteJSON(w, http.StatusOK, found)
 }
 
-// @Summary		Update a LlmProvider
-// @Tags			llm-provider
+// @Summary		Update a LlmConnection
+// @Tags			llm-connection
 // @Accept			json
-// @Param			id		path	string			true	"LlmProvider ID"
-// @Param			body	body	UpdateLlmProviderDTO	true	"partial payload"
+// @Param			id		path	string			true	"LlmConnection ID"
+// @Param			body	body	UpdateLlmConnectionDTO	true	"partial payload"
 // @Success		204
-// @Router			/llm-provider/{id} [put]
+// @Router			/llm-connection/{id} [put]
 func (h *Handler) update(w http.ResponseWriter, r *http.Request) error {
-	var dto UpdateLlmProviderDTO
+	var dto UpdateLlmConnectionDTO
 	if err := api.ParseBody(r, &dto); err != nil {
 		return err
 	}
@@ -94,11 +94,11 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) error {
 	return api.WriteNoContent(w)
 }
 
-// @Summary		Delete a LlmProvider
-// @Tags			llm-provider
-// @Param			id	path	string	true	"LlmProvider ID"
+// @Summary		Delete a LlmConnection
+// @Tags			llm-connection
+// @Param			id	path	string	true	"LlmConnection ID"
 // @Success		204
-// @Router			/llm-provider/{id} [delete]
+// @Router			/llm-connection/{id} [delete]
 func (h *Handler) deleteByID(w http.ResponseWriter, r *http.Request) error {
 	if err := h.service.DeleteByID(r.Context(), chi.URLParam(r, "id")); err != nil {
 		return err
@@ -106,16 +106,16 @@ func (h *Handler) deleteByID(w http.ResponseWriter, r *http.Request) error {
 	return api.WriteNoContent(w)
 }
 
-// @Summary		List LLM providers registry
-// @Description	Lists the available LLM provider providers on registry.
-// @Tags			llm-provider
+// @Summary		List LLM provider
+// @Description	Lists the available LLM providers.
+// @Tags			llm-connection
 // @Produce		json
 // @Security		BasicAuth
 // @Success		200			{array}		LLMProviderRegistry
 // @Failure		400			{object}	api.Error
-// @Router			/llm-provider/registry [get]
-func (h *Handler) listProvidersFromRegistry(w http.ResponseWriter, r *http.Request) error {
-	providers, err := h.service.ListProvidersFromRegistry(r.Context())
+// @Router			/llm-connection/providers [get]
+func (h *Handler) listProviders(w http.ResponseWriter, r *http.Request) error {
+	providers, err := h.service.ListProviders(r.Context())
 	if err != nil {
 		return err
 	}

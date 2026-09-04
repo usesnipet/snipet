@@ -7,33 +7,33 @@ import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { useCreateLlmProvider } from "../hooks";
-import { createLlmProviderSchema } from "../schemas";
+import { useCreateLlmConnection } from "../hooks";
+import { createLlmConnectionSchema } from "../schemas";
 
 import { LlmFormFields } from "./llm-form-fields";
 
-import type { CreateLlmProvider, LlmProvider } from "../schemas";
+import type { CreateLlmConnection, LlmConnection } from "../schemas";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
 
-type CreateLlmProviderDialogProps = DialogInstanceProps<{
-  onCreated?: (llm: LlmProvider) => void;
+type CreateLlmConnectionDialogProps = DialogInstanceProps<{
+  onCreated?: (llm: LlmConnection) => void;
 }>;
 
-const defaultValues: CreateLlmProvider = {
+const defaultValues: CreateLlmConnection = {
   name: "",
   provider: "",
   config: {},
   enabled: true
 };
 
-export function CreateLlmProviderDialog({ onCreated, close }: CreateLlmProviderDialogProps) {
-  const form = useForm<CreateLlmProvider>({
-    resolver: zodResolver(createLlmProviderSchema),
+export function CreateLlmConnectionDialog({ onCreated, close }: CreateLlmConnectionDialogProps) {
+  const form = useForm<CreateLlmConnection>({
+    resolver: zodResolver(createLlmConnectionSchema),
     defaultValues,
   });
 
-  const { mutateAsync, isPending } = useCreateLlmProvider();
+  const { mutateAsync, isPending } = useCreateLlmConnection();
 
   const onSubmit = form.handleSubmit(async (values) => {
     const result = await mutateAsync({ data: values });
@@ -45,9 +45,9 @@ export function CreateLlmProviderDialog({ onCreated, close }: CreateLlmProviderD
   return (
     <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>Create LLM</DialogTitle>
+        <DialogTitle>Create LLM connection</DialogTitle>
         <DialogDescription>
-          Add a named language model provider configuration.
+          Add a named connection to a language model provider.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>

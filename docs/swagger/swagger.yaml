@@ -1,11 +1,11 @@
 basePath: /api
 definitions:
-  CreateLlmProviderDTO:
+  CreateLlmConnectionDTO:
     properties:
       config:
         $ref: '#/definitions/JSONMap'
       enabled:
-        $ref: '#/definitions/JSONMap'
+        type: boolean
       name:
         maxLength: 255
         type: string
@@ -35,6 +35,36 @@ definitions:
   JSONMap:
     additionalProperties: {}
     type: object
+  LLMConnectionResponse:
+    properties:
+      config:
+        $ref: '#/definitions/JSONMap'
+      created_at:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: string
+      name:
+        type: string
+      provider:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  LLMConnectionsPage:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/LlmConnection'
+        type: array
+      skip:
+        type: integer
+      take:
+        type: integer
+      total:
+        type: integer
+    type: object
   LLMProviderRegistry:
     properties:
       configuration_schema:
@@ -56,14 +86,14 @@ definitions:
     - key
     - name
     type: object
-  LLMProviderResponse:
+  LlmConnection:
     properties:
       config:
         $ref: '#/definitions/JSONMap'
       created_at:
         type: string
       enabled:
-        $ref: '#/definitions/JSONMap'
+        type: boolean
       id:
         type: string
       name:
@@ -73,42 +103,12 @@ definitions:
       updated_at:
         type: string
     type: object
-  LLMProvidersPage:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/LlmProvider'
-        type: array
-      skip:
-        type: integer
-      take:
-        type: integer
-      total:
-        type: integer
-    type: object
-  LlmProvider:
-    properties:
-      config:
-        $ref: '#/definitions/JSONMap'
-      created_at:
-        type: string
-      enabled:
-        $ref: '#/definitions/JSONMap'
-      id:
-        type: string
-      name:
-        type: string
-      provider:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  UpdateLlmProviderDTO:
+  UpdateLlmConnectionDTO:
     properties:
       config:
         $ref: '#/definitions/JSONMap'
       enabled:
-        $ref: '#/definitions/JSONMap'
+        type: boolean
       name:
         maxLength: 255
         type: string
@@ -122,7 +122,7 @@ info:
   title: snipets API
   version: "1.0"
 paths:
-  /llm-provider:
+  /llm-connection:
     get:
       produces:
       - application/json
@@ -130,10 +130,10 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/LLMProvidersPage'
-      summary: List LlmProviders
+            $ref: '#/definitions/LLMConnectionsPage'
+      summary: List LlmConnections
       tags:
-      - llm-provider
+      - llm-connection
     post:
       consumes:
       - application/json
@@ -143,21 +143,21 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreateLlmProviderDTO'
+          $ref: '#/definitions/CreateLlmConnectionDTO'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/LLMProviderResponse'
-      summary: Create a LlmProvider
+            $ref: '#/definitions/LLMConnectionResponse'
+      summary: Create a LlmConnection
       tags:
-      - llm-provider
-  /llm-provider/{id}:
+      - llm-connection
+  /llm-connection/{id}:
     delete:
       parameters:
-      - description: LlmProvider ID
+      - description: LlmConnection ID
         in: path
         name: id
         required: true
@@ -165,12 +165,12 @@ paths:
       responses:
         "204":
           description: No Content
-      summary: Delete a LlmProvider
+      summary: Delete a LlmConnection
       tags:
-      - llm-provider
+      - llm-connection
     get:
       parameters:
-      - description: LlmProvider ID
+      - description: LlmConnection ID
         in: path
         name: id
         required: true
@@ -181,15 +181,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/LLMProviderResponse'
-      summary: Get a LlmProvider by ID
+            $ref: '#/definitions/LLMConnectionResponse'
+      summary: Get a LlmConnection by ID
       tags:
-      - llm-provider
+      - llm-connection
     put:
       consumes:
       - application/json
       parameters:
-      - description: LlmProvider ID
+      - description: LlmConnection ID
         in: path
         name: id
         required: true
@@ -199,16 +199,16 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/UpdateLlmProviderDTO'
+          $ref: '#/definitions/UpdateLlmConnectionDTO'
       responses:
         "204":
           description: No Content
-      summary: Update a LlmProvider
+      summary: Update a LlmConnection
       tags:
-      - llm-provider
-  /llm-provider/registry:
+      - llm-connection
+  /llm-connection/registry:
     get:
-      description: Lists the available LLM provider providers on registry.
+      description: Lists the available LLM provider drivers on registry.
       produces:
       - application/json
       responses:
@@ -226,7 +226,7 @@ paths:
       - BasicAuth: []
       summary: List LLM providers registry
       tags:
-      - llm-provider
+      - llm-connection
   /system/info:
     get:
       description: Returns application system information.

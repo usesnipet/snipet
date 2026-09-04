@@ -1,12 +1,12 @@
 import { FormInput } from "@/components/form/input";
 import { FieldGroup } from "@/components/ui/field";
 
-import { useLlmProviderRegistry } from "../hooks";
+import { useLlmProviders } from "../hooks";
 
 import { ProviderSelect } from "./provider-select";
 
 export function LlmFormFields() {
-  const { data } = useLlmProviderRegistry();
+  const { data } = useLlmProviders();
 
   return (
     <FieldGroup>

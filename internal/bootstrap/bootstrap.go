@@ -18,7 +18,7 @@ import (
 	"github.com/usesnipet/snipet/internal/llm"
 	"github.com/usesnipet/snipet/internal/llm/providers"
 	"github.com/usesnipet/snipet/internal/logger"
-	llmprovider "github.com/usesnipet/snipet/internal/module/llm-provider"
+	llmconnection "github.com/usesnipet/snipet/internal/module/llm-connection"
 	systemmodule "github.com/usesnipet/snipet/internal/module/system"
 	"github.com/usesnipet/snipet/internal/repository"
 	"github.com/usesnipet/snipet/web"
@@ -51,7 +51,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	//   txManager := repository.NewTxManager(db)
 	//   fooRepo := repository.NewFooRepository(db)
 	_ = repository.NewTxManager(db)
-	llmProviderRepo := repository.NewLlmProviderRepository(db)
+	llmConnectionRepo := repository.NewLlmConnectionRepository(db)
 
 	llmRegistry := providers.Registry(log.Child(logger.WithPrefix("llm-registry:")))
 	llmManager := llm.NewManager(llmRegistry)
@@ -62,18 +62,18 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 
 	// services
 	systemService := systemmodule.NewService()
-	llmProviderService := llmprovider.NewService(llmProviderRepo, llmManager)
+	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmManager)
 
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)
-	llmProviderHandler := llmprovider.NewHandler(llmProviderService)
+	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService)
 
 	// register routes
 	api := api.New()
 	api.Router.Handle("/*", web.Handler())
 	api.Router.Route(config.APIPrefix, func(r chi.Router) {
 		systemHandler.RegisterRoutes(r, api.Serve)
-		llmProviderHandler.RegisterRoutes(r, api.Serve)
+		llmConnectionHandler.RegisterRoutes(r, api.Serve)
 	})
 
 	srv := &http.Server{

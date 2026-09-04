@@ -5,12 +5,12 @@ import { Settings } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 
 import type { RJSFSchema } from "@rjsf/utils";
-import type { LlmProviderRegistryEntry } from "../schemas";
+import type { LlmProvider } from "../schemas";
 
 type ProviderSelectProps = {
   name: string;
   configName: string;
-  llms: LlmProviderRegistryEntry[];
+  llms: LlmProvider[];
   label?: string;
   placeholder?: string;
   disabled?: boolean;

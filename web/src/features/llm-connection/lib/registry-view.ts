@@ -1,9 +1,9 @@
-import type { LlmProvider, LlmProviderRegistryEntry } from "../schemas";
+import type { LlmConnection, LlmProvider } from "../schemas";
 
 /**
  * A registry entry (the provider driver available on the backend) joined with
- * the configured {@link LlmProvider} instances that point at it. One registry
- * entry can back many llm providers.
+ * the configured {@link LlmConnection} instances that point at it. One registry
+ * entry can back many llm connections.
  */
 export type RegistryView = {
   key: string;
@@ -11,11 +11,11 @@ export type RegistryView = {
   description: string;
   icon?: string;
   tags: string[];
-  /** Configured llm provider instances for this registry key. */
-  instances: LlmProvider[];
-  /** How many llm providers reference this registry entry. */
-  providerCount: number;
-  /** True when at least one llm provider is configured for this entry. */
+  /** Configured llm connection instances for this registry key. */
+  instances: LlmConnection[];
+  /** How many llm connections reference this registry entry. */
+  connectionCount: number;
+  /** True when at least one llm connection is configured for this entry. */
   connected: boolean;
 };
 
@@ -25,24 +25,24 @@ export type RegistrySort =
   | "connected-first"
   | "name-asc"
   | "name-desc"
-  | "providers-desc";
+  | "connections-desc";
 
 export const REGISTRY_SORTS: { value: RegistrySort; label: string }[] = [
   { value: "connected-first", label: "Connected first" },
   { value: "name-asc", label: "Name (A–Z)" },
   { value: "name-desc", label: "Name (Z–A)" },
-  { value: "providers-desc", label: "Most providers" },
+  { value: "connections-desc", label: "Most connections" },
 ];
 
 export function buildRegistryViews(
-  registry: LlmProviderRegistryEntry[],
-  providers: LlmProvider[],
+  registry: LlmProvider[],
+  connections: LlmConnection[],
 ): RegistryView[] {
-  const byKey = new Map<string, LlmProvider[]>();
-  for (const provider of providers) {
-    const list = byKey.get(provider.provider) ?? [];
-    list.push(provider);
-    byKey.set(provider.provider, list);
+  const byKey = new Map<string, LlmConnection[]>();
+  for (const connection of connections) {
+    const list = byKey.get(connection.provider) ?? [];
+    list.push(connection);
+    byKey.set(connection.provider, list);
   }
 
   return registry.map((entry) => {
@@ -54,7 +54,7 @@ export function buildRegistryViews(
       icon: entry.icon,
       tags: entry.tags ?? [],
       instances,
-      providerCount: instances.length,
+      connectionCount: instances.length,
       connected: instances.length > 0,
     };
   });
@@ -91,9 +91,9 @@ export function sortRegistryViews(
       return sorted.sort(byName);
     case "name-desc":
       return sorted.sort((a, b) => byName(b, a));
-    case "providers-desc":
+    case "connections-desc":
       return sorted.sort(
-        (a, b) => b.providerCount - a.providerCount || byName(a, b),
+        (a, b) => b.connectionCount - a.connectionCount || byName(a, b),
       );
     case "connected-first":
     default:

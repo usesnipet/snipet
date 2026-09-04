@@ -1,4 +1,4 @@
-package llmprovider
+package llmconnection
 
 import (
 	"github.com/usesnipet/snipet/internal/filter"
@@ -8,39 +8,41 @@ import (
 	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
-type LLMProviderResponse = model.LlmProvider
+type LLMConnectionResponse = model.LlmConnection
 
-type LLMProvidersPage = page.Paginated[model.LlmProvider]
+type LLMConnectionsPage = page.Paginated[model.LlmConnection]
 
+// LLMProviderRegistry is one entry of the available provider drivers (internal/llm),
+// as returned by GET /llm-connection/registry.
 type LLMProviderRegistry = llm.Info
 
-// CreateLlmProviderDTO is the POST body — value fields, `validate:"required"`
+// CreateLlmConnectionDTO is the POST body — value fields, `validate:"required"`
 // on what the entity cannot exist without.
-type CreateLlmProviderDTO struct {
+type CreateLlmConnectionDTO struct {
 	Name     string        `json:"name" validate:"required,max=255"`
 	Provider string        `json:"provider" validate:"required,max=255"`
 	Config   jsonx.JSONMap `json:"config" validate:"required"`
 	Enabled  bool          `json:"enabled" validate:"omitempty"`
 }
 
-// UpdateLlmProviderDTO is the PUT body — every field a pointer + `omitempty`:
+// UpdateLlmConnectionDTO is the PUT body — every field a pointer + `omitempty`:
 // nil means "leave unchanged", which makes PUT a partial patch.
-type UpdateLlmProviderDTO struct {
+type UpdateLlmConnectionDTO struct {
 	Name     *string       `json:"name" validate:"omitempty,max=255"`
 	Provider *string       `json:"provider" validate:"omitempty,max=255"`
 	Config   jsonx.JSONMap `json:"config" validate:"omitempty"`
 	Enabled  *bool         `json:"enabled" validate:"omitempty"`
 }
 
-// FindLlmProvidersFilterDTO is the list query string; ToFilter turns it
+// FindLlmConnectionsFilterDTO is the list query string; ToFilter turns it
 // into the repository's filter options.
-type FindLlmProvidersFilterDTO struct {
+type FindLlmConnectionsFilterDTO struct {
 	Take *int `form:"take" validate:"omitempty,min=1"`
 	Skip *int `form:"skip" validate:"omitempty,min=0"`
 }
 
-func (dto *FindLlmProvidersFilterDTO) ToFilter() *filter.Options[model.LlmProvider] {
-	return filter.New[model.LlmProvider](
+func (dto *FindLlmConnectionsFilterDTO) ToFilter() *filter.Options[model.LlmConnection] {
+	return filter.New[model.LlmConnection](
 		filter.PtrTake(dto.Take),
 		filter.PtrSkip(dto.Skip),
 	)
