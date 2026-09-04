@@ -85,8 +85,8 @@ export function LlmConnectionCatalog() {
   const isError = registryQuery.isError || connectionsQuery.isError;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-5">
+      <div className="flex shrink-0 flex-wrap gap-2">
         <StatToggle
           active={filter === "all"}
           count={stats.available}
@@ -101,7 +101,7 @@ export function LlmConnectionCatalog() {
         />
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
         <div className="sm:w-72">
           <InputSearch
             value={search}
@@ -127,22 +127,25 @@ export function LlmConnectionCatalog() {
         </div>
       </div>
 
-      {isLoading ? (
-        <LoadingFallback className="min-h-40" />
-      ) : isError ? (
-        <p className="text-destructive text-sm">Failed to load providers.</p>
-      ) : (
-        <CatalogList
-          items={visible.map((view) => ({ id: view.key, view }))}
-          size="lg"
-          emptyMessage={
-            search || filter === "connected"
-              ? "No providers match your filters."
-              : "No providers available."
-          }
-          renderItem={({ view }) => <LlmConnectionCatalogCard view={view} />}
-        />
-      )}
+      <div className="min-h-0 flex-1">
+        {isLoading ? (
+          <LoadingFallback className="min-h-40" />
+        ) : isError ? (
+          <p className="text-destructive text-sm">Failed to load providers.</p>
+        ) : (
+          <CatalogList
+            items={visible.map((view) => ({ id: view.key, view }))}
+            size="lg"
+            containerClassName="h-full"
+            emptyMessage={
+              search || filter === "connected"
+                ? "No providers match your filters."
+                : "No providers available."
+            }
+            renderItem={({ view }) => <LlmConnectionCatalogCard view={view} />}
+          />
+        )}
+      </div>
     </div>
   );
 }

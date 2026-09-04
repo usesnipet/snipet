@@ -45,7 +45,7 @@ export function Page({ title, description, documentTitle, children, actions, lef
           </div>
           {headerActions && <div className="flex shrink-0 items-center gap-2">{headerActions}</div>}
         </header>
-        <div className="flex w-full max-w-6xl mx-auto flex-1 flex-col">
+        <div className="flex w-full max-w-6xl mx-auto min-h-0 flex-1 flex-col">
           <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error as Error} />}>
             <Suspense fallback={<LoadingFallback />}>
               {children}

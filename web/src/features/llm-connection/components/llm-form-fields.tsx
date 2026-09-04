@@ -24,7 +24,6 @@ export function LlmFormFields() {
     | undefined;
 
   const [previousProviderKey, setPreviousProviderKey] = useState<string | undefined>(providerKey);
-  console.log(previousProviderKey, providerKey);
 
   return (
     <FieldGroup>

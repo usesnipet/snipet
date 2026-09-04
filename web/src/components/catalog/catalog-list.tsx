@@ -41,9 +41,9 @@ export function CatalogList<T extends { id: string }>({
   }
 
   return (
-    <div className={cn(containerClassName)}>
-      <ScrollArea>
-        <ul className={cn(catalogListVariants({ size, className }))}>
+    <div className={cn("min-h-0", containerClassName)}>
+      <ScrollArea className="h-full">
+        <ul className={cn(catalogListVariants({ size, className }), "pb-1 pr-3")}>
             {items.map((item) => (
               <li key={item.id}>{renderItem(item)}</li>
             ))}
