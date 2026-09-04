@@ -4,8 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/usesnipet/snipet/config"
 	apperr "github.com/usesnipet/snipet/internal/app-err"
 	"github.com/usesnipet/snipet/internal/auth"
+	"github.com/usesnipet/snipet/internal/logger"
 	"github.com/usesnipet/snipet/internal/model"
 	"github.com/usesnipet/snipet/internal/page"
 	"github.com/usesnipet/snipet/internal/repository"
@@ -14,10 +16,36 @@ import (
 // Service owns the users business logic.
 type Service struct {
 	repo repository.IUserRepository
+	log  *logger.Logger
 }
 
-func NewService(repo repository.IUserRepository) *Service {
-	return &Service{repo: repo}
+func NewService(repo repository.IUserRepository, log *logger.Logger) *Service {
+	return &Service{repo: repo, log: log}
+}
+
+func (s *Service) InitializeRootUser(ctx context.Context, cfg config.AuthConfig) error {
+	rootCreated, err := EnsureRoot(ctx, s.repo, cfg)
+	if err != nil {
+		s.log.Errorf("failed to provision root user: %v", err)
+		return err
+	}
+	if rootCreated {
+		s.log.Infof("created root user %q (role admin)", cfg.RootUsername)
+	}
+
+	if cfg.RootPasswordReset && !rootCreated {
+		if err := ResetRoot(ctx, s.repo, cfg); err != nil {
+			s.log.Errorf("failed to reset root password: %v", err)
+			return err
+		} else {
+			s.log.Warnf(
+				"reset root password for user %q \ndisable AUTH_ROOT_PASSWORD_RESET and restart the server",
+				cfg.RootUsername,
+			)
+		}
+	}
+
+	return nil
 }
 
 func (s *Service) Filter(ctx context.Context, dto FindUsersFilterDTO) (*page.Paginated[model.User], error) {

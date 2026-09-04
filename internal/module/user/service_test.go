@@ -12,6 +12,7 @@ import (
 
 	apperr "github.com/usesnipet/snipet/internal/app-err"
 	"github.com/usesnipet/snipet/internal/auth"
+	"github.com/usesnipet/snipet/internal/logger"
 	"github.com/usesnipet/snipet/internal/model"
 	"github.com/usesnipet/snipet/internal/module/user"
 	"github.com/usesnipet/snipet/internal/page"
@@ -19,7 +20,7 @@ import (
 )
 
 func newTestService(repo *mocks.MockIUserRepository) *user.Service {
-	return user.NewService(repo)
+	return user.NewService(repo, logger.NewLogger(logger.LevelDebug))
 }
 
 func assertStatus(t *testing.T, err error, want int) {

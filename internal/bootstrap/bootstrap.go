@@ -74,7 +74,9 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	// services
 	systemService := systemmodule.NewService()
 	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmManager)
-	userService := usermodule.NewService(userRepo)
+	userService := usermodule.NewService(userRepo, log.Child(logger.WithPrefix("user-service: ")))
+	userService.InitializeRootUser(context.Background(), cfg.Auth)
+
 	authService := authmodule.NewService(userRepo, userJWTService, cfg.Auth, refreshTokenRepo, tokenService)
 
 	// handlers
