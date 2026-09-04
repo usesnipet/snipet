@@ -10,8 +10,9 @@ import { Link } from "@/components/ui/link";
 import { Sidebar as SidebarContainer, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 import { ToggleTheme } from "@/components/ui/toggle-theme";
 import { useCurrentUser, useLogout } from "@/features/auth/hooks";
+import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
-import { BookText, Home, LogOut, MessageSquare, Server, Settings, Waypoints } from "lucide-react";
+import { BookText, Home, LogOut, MessageSquare, Server, Settings, Users, Waypoints } from "lucide-react";
 
 import type { NavEntry } from "@/components/sidebar/types";
 import { Version } from "./version";
@@ -29,7 +30,15 @@ const navItems: NavEntry[] = [
   },
   {
     label: "Configure",
-    items: [{ title: "Settings", href: ROUTES.settings, icon: Settings }],
+    items: [
+      { title: "Settings", href: ROUTES.settings, icon: Settings },
+      {
+        title: "Users",
+        href: ROUTES.users,
+        icon: Users,
+        visible: () => useAuthStore.getState().user?.role === "admin",
+      },
+    ],
   },
 ];
 
