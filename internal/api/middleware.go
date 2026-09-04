@@ -19,13 +19,15 @@ type MiddlewareFunc func(next http.Handler) http.Handler
 type Gate func(r *http.Request) (context.Context, error)
 
 // Handler turns a Gate into chi-compatible middleware that requires it to
-// succeed.
+// succeed. The gate's error is forwarded to WriteError as-is, so a gate
+// returning an *apperr.Error (e.g. guard.RequireRole's Forbidden) renders
+// with its own status code instead of a flat 401.
 func (g Gate) Handler() MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, err := g(r)
 			if err != nil {
-				WriteError(w, http.StatusUnauthorized, errors.New("unauthorized"))
+				WriteError(w, http.StatusUnauthorized, err)
 				return
 			}
 			next.ServeHTTP(w, r.WithContext(ctx))

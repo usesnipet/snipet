@@ -4,6 +4,7 @@ import (
 	"context"
 
 	apperr "github.com/usesnipet/snipet/internal/app-err"
+	"github.com/usesnipet/snipet/internal/model"
 )
 
 // UserIdentity is the operator authenticated via a JWT issued by the auth
@@ -14,12 +15,12 @@ import (
 type UserIdentity struct {
 	ID       string
 	Username string
-	Role     string
+	Role     model.Role
 }
 
 // IsAdmin reports whether the identity carries the admin role.
 func (u UserIdentity) IsAdmin() bool {
-	return u.Role == "admin"
+	return u.Role == model.RoleAdmin
 }
 
 type userIdentityKeyType struct{}

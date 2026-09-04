@@ -1,6 +1,7 @@
 package apperr
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -13,7 +14,30 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
+	if e.Err == nil {
+		return e.Message
+	}
 	return e.Err.Error()
+}
+
+func (e *Error) Is(target error) bool {
+	return errors.Is(e.Err, target)
+}
+
+func FromError(err error) (*Error, bool) {
+	var appErr *Error
+	if !errors.As(err, &appErr) {
+		return nil, false
+	}
+	return appErr, true
+}
+
+func (e *Error) Unwrap() error {
+	return e.Err
+}
+
+func (e *Error) IsStatus(statusCode int) bool {
+	return e.StatusCode == statusCode
 }
 
 func NotFound(message string) *Error {

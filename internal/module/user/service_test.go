@@ -22,22 +22,6 @@ func newTestService(repo *mocks.MockIUserRepository) *user.Service {
 	return user.NewService(repo)
 }
 
-func adminCtx() context.Context {
-	return auth.SetUserIdentity(context.Background(), auth.UserIdentity{
-		ID:       "admin-1",
-		Username: "root",
-		Role:     "admin",
-	})
-}
-
-func userCtx() context.Context {
-	return auth.SetUserIdentity(context.Background(), auth.UserIdentity{
-		ID:       "user-1",
-		Username: "bob",
-		Role:     "user",
-	})
-}
-
 func assertStatus(t *testing.T, err error, want int) {
 	t.Helper()
 	var appErr *apperr.Error
@@ -45,34 +29,16 @@ func assertStatus(t *testing.T, err error, want int) {
 	assert.Equal(t, want, appErr.StatusCode)
 }
 
-func TestCreate_RequiresAdmin(t *testing.T) {
-	t.Parallel()
-	repo := mocks.NewMockIUserRepository(t)
-	svc := newTestService(repo)
-
-	_, err := svc.Create(userCtx(), user.CreateUserDTO{
-		Username: "alice", Name: "Alice", Password: "supersecret", Role: "user",
-	})
-	assertStatus(t, err, http.StatusForbidden)
-}
-
-func TestCreate_Unauthenticated(t *testing.T) {
-	t.Parallel()
-	repo := mocks.NewMockIUserRepository(t)
-	svc := newTestService(repo)
-
-	_, err := svc.Create(context.Background(), user.CreateUserDTO{
-		Username: "alice", Name: "Alice", Password: "supersecret", Role: "user",
-	})
-	assertStatus(t, err, http.StatusUnauthorized)
-}
+// Service methods take no position on who's calling — authorization is
+// guard.RequireRole's job at the HTTP boundary (see handler_test.go /
+// internal/guard). A plain context.Background() is enough here.
 
 func TestCreate_InvalidRole(t *testing.T) {
 	t.Parallel()
 	repo := mocks.NewMockIUserRepository(t)
 	svc := newTestService(repo)
 
-	_, err := svc.Create(adminCtx(), user.CreateUserDTO{
+	_, err := svc.Create(context.Background(), user.CreateUserDTO{
 		Username: "alice", Name: "Alice", Password: "supersecret", Role: "superuser",
 	})
 	assertStatus(t, err, http.StatusBadRequest)
@@ -84,7 +50,7 @@ func TestCreate_DuplicateUsername(t *testing.T) {
 	repo.EXPECT().FindByUsername(mock.Anything, "alice").Return(&model.User{ID: "u1"}, nil)
 	svc := newTestService(repo)
 
-	_, err := svc.Create(adminCtx(), user.CreateUserDTO{
+	_, err := svc.Create(context.Background(), user.CreateUserDTO{
 		Username: "alice", Name: "Alice", Password: "supersecret", Role: "user",
 	})
 	assertStatus(t, err, http.StatusConflict)
@@ -102,7 +68,7 @@ func TestCreate_HashesPasswordAndPersists(t *testing.T) {
 
 	svc := newTestService(repo)
 
-	created, err := svc.Create(adminCtx(), user.CreateUserDTO{
+	created, err := svc.Create(context.Background(), user.CreateUserDTO{
 		Username: "alice", Name: "Alice", Password: "supersecret", Role: "user",
 	})
 	require.NoError(t, err)
@@ -113,22 +79,13 @@ func TestCreate_HashesPasswordAndPersists(t *testing.T) {
 	require.NoError(t, auth.ComparePassword(created.Password, "supersecret"))
 }
 
-func TestFilter_RequiresAdmin(t *testing.T) {
-	t.Parallel()
-	repo := mocks.NewMockIUserRepository(t)
-	svc := newTestService(repo)
-
-	_, err := svc.Filter(userCtx(), user.FindUsersFilterDTO{})
-	assertStatus(t, err, http.StatusForbidden)
-}
-
-func TestFilter_Admin(t *testing.T) {
+func TestFilter_PassesThrough(t *testing.T) {
 	t.Parallel()
 	repo := mocks.NewMockIUserRepository(t)
 	repo.EXPECT().Filter(mock.Anything, mock.Anything).Return(&page.Paginated[model.User]{}, nil)
 	svc := newTestService(repo)
 
-	_, err := svc.Filter(adminCtx(), user.FindUsersFilterDTO{})
+	_, err := svc.Filter(context.Background(), user.FindUsersFilterDTO{})
 	require.NoError(t, err)
 }
 
@@ -139,7 +96,7 @@ func TestDelete_LastAdminRejected(t *testing.T) {
 	repo.EXPECT().CountByRole(mock.Anything, model.RoleAdmin).Return(int64(1), nil)
 	svc := newTestService(repo)
 
-	err := svc.DeleteByID(adminCtx(), "a1")
+	err := svc.DeleteByID(context.Background(), "a1")
 	assertStatus(t, err, http.StatusForbidden)
 }
 
@@ -151,7 +108,7 @@ func TestDelete_AdminWithPeers(t *testing.T) {
 	repo.EXPECT().DeleteByID(mock.Anything, "a1").Return(nil)
 	svc := newTestService(repo)
 
-	require.NoError(t, svc.DeleteByID(adminCtx(), "a1"))
+	require.NoError(t, svc.DeleteByID(context.Background(), "a1"))
 }
 
 func TestUpdate_DemoteLastAdminRejected(t *testing.T) {
@@ -162,7 +119,7 @@ func TestUpdate_DemoteLastAdminRejected(t *testing.T) {
 	svc := newTestService(repo)
 
 	demoted := "user"
-	err := svc.Update(adminCtx(), "a1", user.UpdateUserDTO{Role: &demoted})
+	err := svc.Update(context.Background(), "a1", user.UpdateUserDTO{Role: &demoted})
 	assertStatus(t, err, http.StatusForbidden)
 }
 
@@ -178,19 +135,29 @@ func TestUpdate_NameOnlyPatch(t *testing.T) {
 	svc := newTestService(repo)
 
 	name := "New Name"
-	require.NoError(t, svc.Update(adminCtx(), "u1", user.UpdateUserDTO{Name: &name}))
+	require.NoError(t, svc.Update(context.Background(), "u1", user.UpdateUserDTO{Name: &name}))
 	require.NotNil(t, updates)
 	assert.Equal(t, "New Name", updates.Name)
 	assert.Empty(t, updates.Password)
 	assert.Empty(t, string(updates.Role))
 }
 
-func TestUpdate_RequiresAdmin(t *testing.T) {
+// TestUpdate_SelfServicePasswordChange is the shape the auth module's
+// PUT /auth/me/password (issue #3) depends on: a non-admin caller changing
+// only their own password must work — Update carries no caller-role check.
+func TestUpdate_SelfServicePasswordChange(t *testing.T) {
 	t.Parallel()
 	repo := mocks.NewMockIUserRepository(t)
+	repo.EXPECT().FindByID(mock.Anything, "u1").Return(&model.User{ID: "u1", Role: model.RoleUser}, nil)
+
+	var updates *model.User
+	repo.EXPECT().UpdateByID(mock.Anything, "u1", mock.Anything).Run(func(_ context.Context, _ string, u *model.User) {
+		updates = u
+	}).Return(nil)
 	svc := newTestService(repo)
 
-	name := "x"
-	err := svc.Update(userCtx(), "u1", user.UpdateUserDTO{Name: &name})
-	assertStatus(t, err, http.StatusForbidden)
+	newPassword := "brand-new-password"
+	require.NoError(t, svc.Update(context.Background(), "u1", user.UpdateUserDTO{Password: &newPassword}))
+	require.NotNil(t, updates)
+	require.NoError(t, auth.ComparePassword(updates.Password, newPassword))
 }

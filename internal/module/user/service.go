@@ -12,9 +12,7 @@ import (
 	"github.com/usesnipet/snipet/internal/repository"
 )
 
-// Service owns the users business logic. Authorization lives here (not in
-// middleware): every method requires the caller to be an admin, and a
-// Forbidden returned from here flows back as a normal *apperr.Error.
+// Service owns the users business logic.
 type Service struct {
 	repo repository.IUserRepository
 }
@@ -29,37 +27,15 @@ func isNotFound(err error) bool {
 	return errors.As(err, &appErr) && appErr.StatusCode == http.StatusNotFound
 }
 
-// requireAdmin reads the caller from context and rejects non-admins.
-func (s *Service) requireAdmin(ctx context.Context) error {
-	caller, err := auth.CurrentUser(ctx)
-	if err != nil {
-		return err
-	}
-	if !caller.IsAdmin() {
-		return apperr.Forbidden("admin role required")
-	}
-	return nil
-}
-
 func (s *Service) Filter(ctx context.Context, dto FindUsersFilterDTO) (*page.Paginated[model.User], error) {
-	if err := s.requireAdmin(ctx); err != nil {
-		return nil, err
-	}
 	return s.repo.Filter(ctx, dto.ToFilter())
 }
 
 func (s *Service) FindByID(ctx context.Context, id string) (*model.User, error) {
-	if err := s.requireAdmin(ctx); err != nil {
-		return nil, err
-	}
 	return s.repo.FindByID(ctx, id)
 }
 
 func (s *Service) Create(ctx context.Context, dto CreateUserDTO) (*model.User, error) {
-	if err := s.requireAdmin(ctx); err != nil {
-		return nil, err
-	}
-
 	role := model.Role(dto.Role)
 	if !role.IsValid() {
 		return nil, apperr.BadRequest("invalid role")
@@ -92,10 +68,6 @@ func (s *Service) Create(ctx context.Context, dto CreateUserDTO) (*model.User, e
 // Update applies only the fields the caller set (non-nil pointers). Guards
 // against demoting the last remaining admin.
 func (s *Service) Update(ctx context.Context, id string, dto UpdateUserDTO) error {
-	if err := s.requireAdmin(ctx); err != nil {
-		return err
-	}
-
 	existing, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
@@ -129,10 +101,6 @@ func (s *Service) Update(ctx context.Context, id string, dto UpdateUserDTO) erro
 }
 
 func (s *Service) DeleteByID(ctx context.Context, id string) error {
-	if err := s.requireAdmin(ctx); err != nil {
-		return err
-	}
-
 	existing, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
