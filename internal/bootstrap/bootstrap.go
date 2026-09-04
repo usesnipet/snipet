@@ -67,8 +67,6 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 
 	// guards
 	requireUserAuth := guard.RequireUserJWT(userJWTService)
-	// The role-gate factory itself — built once here, parameterized with
-	// the actual roles by whichever handler needs it (see usermodule.NewHandler).
 	requireRole := guard.RequireRole
 
 	// services
@@ -81,7 +79,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)
-	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService)
+	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService, requireUserAuth)
 	userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
 	authHandler := authmodule.NewHandler(authService, requireUserAuth)
 

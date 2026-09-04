@@ -8,15 +8,17 @@ import (
 )
 
 type Handler struct {
-	service *Service
+	service  *Service
+	authGate api.Gate
 }
 
-func NewHandler(service *Service) api.Handler {
-	return &Handler{service: service}
+func NewHandler(service *Service, authGate api.Gate) api.Handler {
+	return &Handler{service: service, authGate: authGate}
 }
 
 func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 	r.Route("/llm-connection", func(r chi.Router) {
+		r.Use(h.authGate.Handler())
 		r.Get("/", serve(h.filter))
 		r.Get("/providers", serve(h.listProviders))
 		r.Post("/", serve(h.create))
