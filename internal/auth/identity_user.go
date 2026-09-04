@@ -8,14 +8,11 @@ import (
 )
 
 // UserIdentity is the operator authenticated via a JWT issued by the auth
-// module — the user-table-backed counterpart to BasicIdentity. It is set on
-// the context by the JWT authentication guard (see the Auth guards issue);
-// until that guard lands this type + helpers are the stub the users module
-// reads its caller from.
+// module.
 type UserIdentity struct {
-	ID       string
-	Username string
-	Role     model.Role
+	ID       string     `json:"id"`
+	Username string     `json:"username"`
+	Role     model.Role `json:"role"`
 }
 
 // IsAdmin reports whether the identity carries the admin role.

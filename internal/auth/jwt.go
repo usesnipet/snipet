@@ -7,69 +7,57 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/usesnipet/snipet/config"
+	"github.com/usesnipet/snipet/internal/model"
 )
 
-// Claims is the constraint every concrete claims type must satisfy to be
-// used with JWTService — the jwt-go library's own Claims interface.
-type Claims interface {
-	jwt.Claims
-}
-
-// BaseClaims is the registered-claims set every token in this codebase
-// carries. Each module embeds it in its own concrete claims type alongside
-// whatever additional fields that module needs.
-type BaseClaims struct {
+type UserClaims struct {
 	jwt.RegisteredClaims
+	Username string     `json:"username"`
+	Role     model.Role `json:"role"`
 }
 
-func NewBaseClaims(cfg config.AuthConfig, subject string) BaseClaims {
+// JWTService issues and verifies the HS256 UserClaims tokens this app
+// uses. Not generic — UserClaims is the only claims shape in the codebase.
+type JWTService struct {
+	config config.AuthConfig
+}
+
+func NewJWTService(config config.AuthConfig) *JWTService {
+	return &JWTService{config: config}
+}
+
+func (s *JWTService) GenerateToken(user *model.User) (string, time.Time, error) {
 	now := time.Now()
-	return BaseClaims{
+	expiresAt := now.Add(s.config.JWTExpiration)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    cfg.JWTIssuer,
-			Subject:   subject,
-			Audience:  jwt.ClaimStrings{cfg.JWTAudience},
+			Issuer:    s.config.JWTIssuer,
+			Subject:   user.ID,
+			Audience:  jwt.ClaimStrings{s.config.JWTAudience},
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(cfg.JWTExpiration)),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
 		},
-	}
-}
-
-// JWTService issues and verifies HS256 tokens carrying claims of type T.
-type JWTService[T Claims] struct {
-	config    config.AuthConfig
-	newClaims func() T // factory so VerifyToken has a fresh instance to unmarshal into
-}
-
-func NewJWTService[T Claims](config config.AuthConfig, newClaims func() T) *JWTService[T] {
-	return &JWTService[T]{config: config, newClaims: newClaims}
-}
-
-func (s *JWTService[T]) GenerateToken(claims T) (string, time.Time, error) {
-	expiresAt, err := claims.GetExpirationTime()
-	if err != nil || expiresAt == nil {
-		return "", time.Time{}, fmt.Errorf("auth: claims must carry an expiration time")
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		Username: user.Username,
+		Role:     user.Role,
+	})
 	tokenString, err := token.SignedString([]byte(s.config.JWTSecret))
 	if err != nil {
 		return "", time.Time{}, err
 	}
 
-	return fmt.Sprintf("Bearer %s", tokenString), expiresAt.Time, nil
+	return fmt.Sprintf("Bearer %s", tokenString), expiresAt, nil
 }
 
-func (s *JWTService[T]) VerifyToken(tokenString string) (T, error) {
+func (s *JWTService) VerifyToken(tokenString string) (*UserClaims, error) {
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
-	claims := s.newClaims()
+	claims := &UserClaims{}
 	_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 		return []byte(s.config.JWTSecret), nil
 	})
 	if err != nil {
-		return s.newClaims(), err
+		return nil, err
 	}
 
 	return claims, nil

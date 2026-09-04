@@ -1,5 +1,17 @@
 basePath: /api
 definitions:
+  ChangeOwnPasswordDTO:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        maxLength: 255
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
   CreateLlmConnectionDTO:
     properties:
       config:
@@ -27,9 +39,6 @@ definitions:
         minLength: 8
         type: string
       role:
-        enum:
-        - admin
-        - user
         type: string
       username:
         maxLength: 255
@@ -126,6 +135,46 @@ definitions:
       updated_at:
         type: string
     type: object
+  LoginDTO:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/User'
+    type: object
+  MeResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        description: Name is the display name.
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/Role'
+        description: Role is one of RoleAdmin | RoleUser.
+      updated_at:
+        type: string
+      username:
+        description: Username is the login handle — unique, case-sensitive.
+        type: string
+    type: object
   Role:
     enum:
     - admin
@@ -157,9 +206,6 @@ definitions:
         minLength: 8
         type: string
       role:
-        enum:
-        - admin
-        - user
         type: string
     type: object
   User:
@@ -219,6 +265,72 @@ info:
   title: snipets API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/LoginDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/LoginResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Login
+      tags:
+      - auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Current user
+      tags:
+      - auth
+  /auth/me/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: passwords
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ChangeOwnPasswordDTO'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Change own password
+      tags:
+      - auth
   /llm-connection:
     get:
       produces:

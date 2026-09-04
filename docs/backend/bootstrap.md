@@ -61,17 +61,20 @@ one function. The skeleton version is short:
    [repository.md](./repository.md)). Some repositories depend on another —
    construct in the snipet that satisfies those dependencies.
 3. **Auth primitives** — `auth.NewAPIKeyGenerator`, `auth.NewKeyHasher`,
-   `auth.NewJWTService(cfg.Auth, ...)` when a module needs them (see
-   [auth-middleware.md](./auth-middleware.md)).
+   or a JWT-issuing module's own constructor wrapping `auth.NewJWTService`
+   (e.g. `authmodule.NewJWTService(cfg.Auth)`, which hides that module's
+   claims factory from bootstrap — see [auth-middleware.md](./auth-middleware.md)).
 4. **Services** — one `<module>.NewService(repo, ..., logger)` per module,
    each depending only on repository interfaces and other services it
    genuinely needs (see [modules.md](./modules.md)).
-5. **Guards** — `guard.RequireBasicAuth(cfg.Auth...)` (and any others you
-   add). An authentication gate with fixed config is passed down as a
-   built `api.Gate`; a role-authorization gate like `guard.RequireRole` is
-   parameterized per route group, so it's passed down as the bare factory
-   (`guard.RoleGate`) instead — the module decides the roles, not bootstrap
-   (see [auth-middleware.md](./auth-middleware.md)).
+5. **Guards** — e.g. `guard.RequireBasicAuth(cfg.Auth...)`,
+   `guard.RequireUserJWT(userJWTService)`. An authentication gate with fixed
+   config is passed down as a built `api.Gate` (the same `RequireUserJWT`
+   instance goes to both the `auth` and `user` handlers); a
+   role-authorization gate like `guard.RequireRole` is parameterized per
+   route group, so it's passed down as the bare factory (`guard.RoleGate`)
+   instead — the module decides the roles, not bootstrap (see
+   [auth-middleware.md](./auth-middleware.md)).
 6. **Handlers** — one `<module>.NewHandler(service, gate...)` per module.
 7. **Routes** — `api.New()`, mount the built SPA (`web.Handler()`) as the
    catch-all, then every `handler.RegisterRoutes(r, api.Serve)` under

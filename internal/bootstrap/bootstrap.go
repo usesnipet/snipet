@@ -13,11 +13,13 @@ import (
 	"github.com/usesnipet/snipet/config"
 	_ "github.com/usesnipet/snipet/docs/swagger"
 	"github.com/usesnipet/snipet/internal/api"
+	"github.com/usesnipet/snipet/internal/auth"
 	"github.com/usesnipet/snipet/internal/guard"
 	"github.com/usesnipet/snipet/internal/infra/database"
 	"github.com/usesnipet/snipet/internal/llm"
 	"github.com/usesnipet/snipet/internal/llm/providers"
 	"github.com/usesnipet/snipet/internal/logger"
+	authmodule "github.com/usesnipet/snipet/internal/module/auth"
 	llmconnection "github.com/usesnipet/snipet/internal/module/llm-connection"
 	systemmodule "github.com/usesnipet/snipet/internal/module/system"
 	usermodule "github.com/usesnipet/snipet/internal/module/user"
@@ -58,13 +60,11 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	llmRegistry := providers.Registry(log.Child(logger.WithPrefix("llm-registry:")))
 	llmManager := llm.NewManager(llmRegistry)
 
+	// auth primitives
+	userJWTService := auth.NewJWTService(cfg.Auth)
+
 	// guards
-	requireBasicAuth := guard.RequireBasicAuth(cfg.Auth.BasicAuthUsername, cfg.Auth.BasicAuthPassword)
-	// TODO(auth-guards issue): replace with the JWT authentication gate.
-	// auth.CurrentUser (read by guard.RequireRole below) is only ever
-	// populated by that JWT guard — until it lands, /users is gated on
-	// admin basic auth as an interim measure.
-	requireUserAuth := requireBasicAuth
+	requireUserAuth := guard.RequireUserJWT(userJWTService)
 	// The role-gate factory itself — built once here, parameterized with
 	// the actual roles by whichever handler needs it (see usermodule.NewHandler).
 	requireRole := guard.RequireRole
@@ -73,11 +73,13 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	systemService := systemmodule.NewService()
 	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmManager)
 	userService := usermodule.NewService(userRepo)
+	authService := authmodule.NewService(userRepo, userJWTService, cfg.Auth)
 
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)
 	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService)
 	userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
+	authHandler := authmodule.NewHandler(authService, requireUserAuth)
 
 	// register routes
 	api := api.New()
@@ -86,6 +88,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 		systemHandler.RegisterRoutes(r, api.Serve)
 		llmConnectionHandler.RegisterRoutes(r, api.Serve)
 		userHandler.RegisterRoutes(r, api.Serve)
+		authHandler.RegisterRoutes(r, api.Serve)
 	})
 
 	srv := &http.Server{

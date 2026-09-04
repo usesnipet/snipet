@@ -33,7 +33,7 @@ func (g Gate) Handler() MiddlewareFunc {
 			if err != nil {
 				var appErr *apperr.Error
 				if !errors.As(err, &appErr) {
-					appErr = apperr.Unauthorized(err.Error())
+					appErr = apperr.Unauthorized("unauthorized")
 				}
 				WriteAppError(w, appErr)
 				return
