@@ -32,6 +32,11 @@ func FromError(err error) (*Error, bool) {
 	return appErr, true
 }
 
+func Is(err error, statusCode int) bool {
+	appErr, isAppErr := FromError(err)
+	return isAppErr && appErr.IsStatus(statusCode)
+}
+
 func (e *Error) Unwrap() error {
 	return e.Err
 }

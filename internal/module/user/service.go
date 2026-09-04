@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	apperr "github.com/usesnipet/snipet/internal/app-err"
@@ -19,12 +18,6 @@ type Service struct {
 
 func NewService(repo repository.IUserRepository) *Service {
 	return &Service{repo: repo}
-}
-
-// isNotFound reports whether err is an *apperr.Error with a 404 status.
-func isNotFound(err error) bool {
-	var appErr *apperr.Error
-	return errors.As(err, &appErr) && appErr.StatusCode == http.StatusNotFound
 }
 
 func (s *Service) Filter(ctx context.Context, dto FindUsersFilterDTO) (*page.Paginated[model.User], error) {
@@ -44,7 +37,7 @@ func (s *Service) Create(ctx context.Context, dto CreateUserDTO) (*model.User, e
 	switch _, err := s.repo.FindByUsername(ctx, dto.Username); {
 	case err == nil:
 		return nil, apperr.Conflict("username already taken")
-	case !isNotFound(err):
+	case !apperr.Is(err, http.StatusNotFound):
 		return nil, err
 	}
 
