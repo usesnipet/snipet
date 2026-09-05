@@ -7,7 +7,7 @@ import (
 
 // newClient builds an openai-go client pointed at the resolved base URL with
 // optional Bearer auth from cfg.APIKey.
-func newClient(baseURL string, cfg Config) openai.Client {
+func newClient(baseURL string, cfg AuthConfig) openai.Client {
 	opts := []option.RequestOption{
 		option.WithBaseURL(baseURL),
 	}

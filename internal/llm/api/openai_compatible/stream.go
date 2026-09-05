@@ -6,25 +6,28 @@ import (
 
 	"github.com/openai/openai-go/v3"
 	"github.com/usesnipet/snipet/internal/llm"
-	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
 // stream opens a chat completions SSE stream via openai-go and returns an
 // llm.StreamIterator that translates chunks into llm.StreamEvent values as
 // the caller pulls them via Next.
-func stream(ctx context.Context, defaultBaseURL string, config jsonx.JSONMap, options llm.GenerateOptions) (llm.StreamIterator, error) {
-	cfg, err := NewConfig(config)
+func stream(ctx context.Context, defaultBaseURL string, options llm.GenerateOptions) (llm.StreamIterator, error) {
+	authCfg, err := NewAuthConfig(options.AuthConfig)
+	if err != nil {
+		return nil, err
+	}
+	genCfg, err := NewGenerateConfig(options.GenerateConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	baseURL, err := resolveBaseURL(defaultBaseURL, cfg)
+	baseURL, err := resolveBaseURL(defaultBaseURL, authCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	client := newClient(baseURL, cfg)
-	params := buildChatParams(cfg, options)
+	client := newClient(baseURL, authCfg)
+	params := buildChatParams(genCfg, options)
 	sdkStream := client.Chat.Completions.NewStreaming(ctx, params)
 
 	return newStreamIterator(sdkStream, sdkStream.Close), nil

@@ -5,24 +5,27 @@ import (
 	"fmt"
 
 	"github.com/usesnipet/snipet/internal/llm"
-	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
 // generate performs a non-streaming chat completion and returns the
 // assistant text plus any tool calls from the first choice.
-func generate(ctx context.Context, defaultBaseURL string, config jsonx.JSONMap, options llm.GenerateOptions) (llm.GenerateResult, error) {
-	cfg, err := NewConfig(config)
+func generate(ctx context.Context, defaultBaseURL string, options llm.GenerateOptions) (llm.GenerateResult, error) {
+	authCfg, err := NewAuthConfig(options.AuthConfig)
+	if err != nil {
+		return llm.GenerateResult{}, err
+	}
+	genCfg, err := NewGenerateConfig(options.GenerateConfig)
 	if err != nil {
 		return llm.GenerateResult{}, err
 	}
 
-	baseURL, err := resolveBaseURL(defaultBaseURL, cfg)
+	baseURL, err := resolveBaseURL(defaultBaseURL, authCfg)
 	if err != nil {
 		return llm.GenerateResult{}, err
 	}
 
-	client := newClient(baseURL, cfg)
-	params := buildChatParams(cfg, options)
+	client := newClient(baseURL, authCfg)
+	params := buildChatParams(genCfg, options)
 
 	completion, err := client.Chat.Completions.New(ctx, params)
 	if err != nil {

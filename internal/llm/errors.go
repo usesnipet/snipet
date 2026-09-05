@@ -15,12 +15,11 @@ var (
 	// ErrStreamNotConfigured is returned by Stream when the provider was built
 	// without API.Stream.
 	ErrStreamNotConfigured = errors.New("stream not configured")
+	// ErrNoActionConfigured is returned by Validate when a provider has no
+	// action configured at all (e.g. neither API.Generate nor API.Stream).
+	ErrNoActionConfigured = errors.New("no action configured")
 
 	// ErrModelNotFound is returned by ModelLoader.Model when no model
 	// matches the requested config.
 	ErrModelNotFound = errors.New("model not found")
-
-	ErrProviderNotFound = errors.New("provider not found")
-
-	ErrProviderConnectionFailed = errors.New("provider connection failed")
 )

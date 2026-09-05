@@ -7,10 +7,10 @@ import (
 	openaicompatible "github.com/usesnipet/snipet/internal/llm/api/openai_compatible"
 )
 
-//go:embed schema.json
-var schemaJSON []byte
+//go:embed auth_schema.json
+var authSchemaJSON []byte
 
-const baseURL = "http://localhost:11434/v1"
+const defaultBaseURL = "http://localhost:11434/v1"
 
 func New() (llm.IProvider, error) {
 	return llm.CreateProvider(
@@ -19,8 +19,9 @@ func New() (llm.IProvider, error) {
 		llm.WithDescription("Local Ollama models."),
 		llm.WithIcon("https://ollama.com/public/icon.png"),
 		llm.WithTags("language", "model", "llm", "local"),
-		llm.WithConfigurationSchema(llm.MustLoadSchema(schemaJSON)),
-		llm.WithAPI(openaicompatible.New(baseURL)),
+		llm.WithAuthConfigSchema(llm.MustLoadSchema(authSchemaJSON)),
+		llm.WithGenerateConfigSchema(openaicompatible.DefaultGenerateConfigSchema),
+		llm.WithAPI(openaicompatible.New(defaultBaseURL)),
 		llm.WithModelLoader(modelLoader),
 	)
 }

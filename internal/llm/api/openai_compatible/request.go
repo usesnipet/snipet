@@ -5,12 +5,13 @@ import (
 	"github.com/usesnipet/snipet/internal/llm"
 )
 
-// buildChatParams translates a GenerateOptions/Config pair into openai-go
-// Chat Completions params. Optional numeric fields left at zero are omitted.
-func buildChatParams(cfg Config, options llm.GenerateOptions) openai.ChatCompletionNewParams {
+// buildChatParams translates a GenerateOptions/GenerateConfig pair into
+// openai-go Chat Completions params. Optional numeric fields left at zero
+// are omitted.
+func buildChatParams(cfg GenerateConfig, options llm.GenerateOptions) openai.ChatCompletionNewParams {
 	params := openai.ChatCompletionNewParams{
 		Model:    cfg.Model,
-		Messages: buildMessages(options.Prompt),
+		Messages: buildMessages(options.Messages),
 	}
 
 	if cfg.MaxTokens != 0 {
@@ -26,25 +27,21 @@ func buildChatParams(cfg Config, options llm.GenerateOptions) openai.ChatComplet
 	return params
 }
 
-// buildMessages converts a llm.Prompt into openai-go message params,
-// prepending a system message when Prompt.System is set and dropping any
-// message whose Role has no OpenAI equivalent.
-func buildMessages(prompt llm.Prompt) []openai.ChatCompletionMessageParamUnion {
-	messages := make([]openai.ChatCompletionMessageParamUnion, 0, len(prompt.Messages)+1)
-	if prompt.System != "" {
-		messages = append(messages, openai.SystemMessage(prompt.System))
-	}
-	for _, m := range prompt.Messages {
+// buildMessages converts llm.Messages into openai-go message params,
+// dropping any message whose Role has no OpenAI equivalent.
+func buildMessages(messages []llm.Message) []openai.ChatCompletionMessageParamUnion {
+	params := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages))
+	for _, m := range messages {
 		switch m.Role {
 		case llm.RoleSystem:
-			messages = append(messages, openai.SystemMessage(m.Content))
+			params = append(params, openai.SystemMessage(m.Content))
 		case llm.RoleUser:
-			messages = append(messages, openai.UserMessage(m.Content))
+			params = append(params, openai.UserMessage(m.Content))
 		case llm.RoleAssistant:
-			messages = append(messages, buildAssistantMessage(m))
+			params = append(params, buildAssistantMessage(m))
 		}
 	}
-	return messages
+	return params
 }
 
 // buildAssistantMessage builds an assistant turn, including tool_calls when

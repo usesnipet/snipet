@@ -5,6 +5,7 @@ import (
 
 	apperr "github.com/usesnipet/snipet/internal/app-err"
 	"github.com/usesnipet/snipet/internal/llm"
+	"github.com/usesnipet/snipet/internal/llm/registry"
 	"github.com/usesnipet/snipet/internal/model"
 	"github.com/usesnipet/snipet/internal/page"
 	"github.com/usesnipet/snipet/internal/repository"
@@ -14,10 +15,10 @@ import (
 // interface (never the concrete type) so it is mockable in tests.
 type Service struct {
 	repo       repository.ILlmConnectionRepository
-	llmManager *llm.Manager
+	llmManager *registry.Manager
 }
 
-func NewService(repo repository.ILlmConnectionRepository, llmManager *llm.Manager) *Service {
+func NewService(repo repository.ILlmConnectionRepository, llmManager *registry.Manager) *Service {
 	return &Service{repo: repo, llmManager: llmManager}
 }
 

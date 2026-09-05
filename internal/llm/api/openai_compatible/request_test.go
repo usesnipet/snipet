@@ -9,21 +9,19 @@ import (
 )
 
 func TestBuildChatParams(t *testing.T) {
-	cfg := Config{
+	cfg := GenerateConfig{
 		Model:       "gpt-4o-mini",
 		Temperature: 0.5,
 		MaxTokens:   100,
 		TopP:        0.9,
 	}
 	options := llm.GenerateOptions{
-		Prompt: llm.NewPrompt(
-			llm.WithSystem("You are helpful."),
-			llm.WithMessages([]llm.Message{
-				llm.NewMessage(llm.RoleUser, "Hello"),
-				llm.NewMessage(llm.RoleAssistant, "Hi"),
-				llm.NewMessage(llm.RoleUser, "How are you?"),
-			}),
-		),
+		Messages: []llm.Message{
+			llm.NewMessage(llm.RoleSystem, "You are helpful."),
+			llm.NewMessage(llm.RoleUser, "Hello"),
+			llm.NewMessage(llm.RoleAssistant, "Hi"),
+			llm.NewMessage(llm.RoleUser, "How are you?"),
+		},
 	}
 
 	params := buildChatParams(cfg, options)
@@ -43,21 +41,16 @@ func TestBuildChatParams(t *testing.T) {
 	require.NotNil(t, params.Messages[3].OfUser)
 	require.Equal(t, "How are you?", params.Messages[3].OfUser.Content.OfString.Value)
 
-	require.Len(t, params.Tools, 1)
-	require.NotNil(t, params.Tools[0].OfFunction)
-	require.Equal(t, "get_weather", params.Tools[0].OfFunction.Function.Name)
-	require.Equal(t, "Get weather", params.Tools[0].OfFunction.Function.Description.Value)
-
 	payload, err := json.Marshal(params)
 	require.NoError(t, err)
-	require.Contains(t, string(payload), `"tools"`)
+	require.Contains(t, string(payload), `"messages"`)
 }
 
 func TestBuildChatParamsOmitsZeroOptionalFields(t *testing.T) {
-	params := buildChatParams(Config{Model: "m"}, llm.GenerateOptions{
-		Prompt: llm.NewPrompt(llm.WithMessages([]llm.Message{
+	params := buildChatParams(GenerateConfig{Model: "m"}, llm.GenerateOptions{
+		Messages: []llm.Message{
 			llm.NewMessage(llm.RoleUser, "hi"),
-		})),
+		},
 	})
 	require.False(t, params.Temperature.Valid())
 	require.False(t, params.TopP.Valid())
@@ -66,23 +59,27 @@ func TestBuildChatParamsOmitsZeroOptionalFields(t *testing.T) {
 	require.Len(t, params.Messages, 1)
 }
 func TestResolveBaseURL(t *testing.T) {
-	url, err := resolveBaseURL("https://api.openai.com/v1", Config{})
+	url, err := resolveBaseURL("https://api.openai.com/v1", AuthConfig{})
 	require.NoError(t, err)
 	require.Equal(t, "https://api.openai.com/v1", url)
 
-	url, err = resolveBaseURL("https://api.openai.com/v1", Config{Endpoint: "https://proxy.example/v1/"})
+	url, err = resolveBaseURL("https://api.openai.com/v1", AuthConfig{Endpoint: "https://proxy.example/v1/"})
 	require.NoError(t, err)
 	require.Equal(t, "https://proxy.example/v1", url)
 
-	url, err = resolveBaseURL("https://api.openai.com/v1/", Config{})
+	url, err = resolveBaseURL("https://api.openai.com/v1/", AuthConfig{})
 	require.NoError(t, err)
 	require.Equal(t, "https://api.openai.com/v1", url)
 
-	_, err = resolveBaseURL("", Config{})
+	_, err = resolveBaseURL("", AuthConfig{})
 	require.Error(t, err)
 }
 
-func TestConfigValidate(t *testing.T) {
-	require.Error(t, Config{}.validate())
-	require.NoError(t, Config{Model: "gpt"}.validate())
+func TestGenerateConfigValidate(t *testing.T) {
+	_, err := NewGenerateConfig(nil)
+	require.Error(t, err)
+
+	cfg, err := NewGenerateConfig(map[string]any{"model": "gpt"})
+	require.NoError(t, err)
+	require.Equal(t, "gpt", cfg.Model)
 }

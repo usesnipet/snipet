@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "endpoint": {
+      "type": "string",
+      "description": "Override the default local Ollama endpoint",
+      "default": "http://localhost:11434"
+    }
+  }
+}

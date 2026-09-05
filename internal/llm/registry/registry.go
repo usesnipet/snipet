@@ -1,4 +1,9 @@
-package llm
+// Package registry holds the runtime-facing pieces built on top of
+// internal/llm's provider contract: a concurrency-safe collection of
+// registered providers (Registry) and a facade over it for config
+// validation and connecting (Manager). Where internal/llm defines what a
+// provider is, this package manages a live set of them.
+package registry
 
 import (
 	"fmt"
@@ -6,6 +11,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/usesnipet/snipet/internal/llm"
 	"github.com/usesnipet/snipet/internal/logger"
 )
 
@@ -15,13 +21,13 @@ import (
 type Registry struct {
 	log   *logger.Logger
 	mu    sync.RWMutex
-	items map[string]IProvider
+	items map[string]llm.IProvider
 }
 
 func NewRegistry(log *logger.Logger) *Registry {
 	return &Registry{
 		log:   log,
-		items: make(map[string]IProvider),
+		items: make(map[string]llm.IProvider),
 	}
 }
 
@@ -29,7 +35,7 @@ func NewRegistry(log *logger.Logger) *Registry {
 // Info().Key. It fails if value is invalid or its key is already taken —
 // this is the boundary every provider must clear to enter the registry,
 // regardless of how it was constructed.
-func (r *Registry) Register(value IProvider, err error) error {
+func (r *Registry) Register(value llm.IProvider, err error) error {
 	if err != nil {
 		r.log.Errorf("provider: skip register: %v", err)
 		return err
@@ -56,13 +62,13 @@ func (r *Registry) Register(value IProvider, err error) error {
 	return nil
 }
 
-func (r *Registry) MustRegister(value IProvider, err error) {
+func (r *Registry) MustRegister(value llm.IProvider, err error) {
 	if err := r.Register(value, err); err != nil {
 		panic(err)
 	}
 }
 
-func (r *Registry) Get(name string) (IProvider, bool) {
+func (r *Registry) Get(name string) (llm.IProvider, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -70,7 +76,7 @@ func (r *Registry) Get(name string) (IProvider, bool) {
 	return value, ok
 }
 
-func (r *Registry) MustGet(name string) IProvider {
+func (r *Registry) MustGet(name string) llm.IProvider {
 	value, ok := r.Get(name)
 	if !ok {
 		panic(fmt.Sprintf("registry: %q not found", name))

@@ -1,11 +1,27 @@
 package llm
 
-import (
-	"github.com/usesnipet/snipet/pkg/jsonx"
-)
+import "github.com/usesnipet/snipet/pkg/jsonx"
 
 // Option configures a Provider created via CreateProvider.
 type Option func(*llmProvider)
+
+// CreateProvider builds a Provider from the given Options. Key, TestConnection,
+// and at least one of Stream/Generate (set via WithAPI) are required;
+// CreateProvider returns an error instead of a Provider if any of them is
+// missing, so a misconfigured provider never gets registered. WithModelLoader
+// is optional.
+func CreateProvider(opts ...Option) (IProvider, error) {
+	d := &llmProvider{}
+	for _, opt := range opts {
+		opt(d)
+	}
+
+	if err := d.Validate(); err != nil {
+		return nil, err
+	}
+
+	return d, nil
+}
 
 func WithInfo(info Info) Option {
 	return func(o *llmProvider) {
@@ -57,12 +73,20 @@ func WithTags(tags ...string) Option {
 	}
 }
 
-// WithConfigurationSchema sets the raw JSON Schema (as a jsonx.JSONMap) used
-// to validate config passed to the provider. Prefer ConfigurationSchema or
-// MustConfigurationSchema to build this value from a JSON document.
-func WithConfigurationSchema(schema jsonx.JSONMap) Option {
+// WithAuthConfigSchema sets the JSON Schema (as a jsonx.JSONMap) used to
+// validate the authentication part of a provider's config (e.g. api_key,
+// endpoint). Build it from a JSON document with LoadSchema/MustLoadSchema.
+func WithAuthConfigSchema(schema jsonx.JSONMap) Option {
 	return func(o *llmProvider) {
-		o.info.ConfigurationSchema = schema
+		o.info.Schemas.Auth = schema
+	}
+}
+
+// WithGenerateConfigSchema sets the JSON Schema used to validate the
+// text-generation part of a provider's config (e.g. model, temperature).
+func WithGenerateConfigSchema(schema jsonx.JSONMap) Option {
+	return func(o *llmProvider) {
+		o.info.Schemas.Generate = schema
 	}
 }
 

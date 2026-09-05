@@ -14,7 +14,8 @@ func New() (llm.IProvider, error) {
 		llm.WithDescription("Groq high-speed inference models."),
 		llm.WithIcon("https://groq.com/favicon.ico"),
 		llm.WithTags("language", "model", "llm"),
-		llm.WithConfigurationSchema(openaicompatible.DefaultConfigSchema),
+		llm.WithAuthConfigSchema(openaicompatible.DefaultAuthConfigSchema),
+		llm.WithGenerateConfigSchema(openaicompatible.DefaultGenerateConfigSchema),
 		llm.WithAPI(openaicompatible.New(baseURL)),
 	)
 }

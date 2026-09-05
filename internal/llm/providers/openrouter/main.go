@@ -14,7 +14,8 @@ func New() (llm.IProvider, error) {
 		llm.WithDescription("OpenRouter multi-provider models."),
 		llm.WithIcon("https://openrouter.ai/favicon.ico"),
 		llm.WithTags("language", "model", "llm"),
-		llm.WithConfigurationSchema(openaicompatible.DefaultConfigSchema),
+		llm.WithAuthConfigSchema(openaicompatible.DefaultAuthConfigSchema),
+		llm.WithGenerateConfigSchema(openaicompatible.DefaultGenerateConfigSchema),
 		llm.WithAPI(openaicompatible.New(baseURL)),
 	)
 }

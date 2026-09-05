@@ -8,30 +8,30 @@ import (
 	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
-// testConnection verifies that config can reach and authenticate against
+// testConnection verifies that options can reach and authenticate against
 // baseURL by issuing a minimal non-streaming completion request.
-func testConnection(ctx context.Context, baseURL string, config jsonx.JSONMap) error {
-	cfg, err := NewConfig(config)
+func testConnection(ctx context.Context, baseURL string, options llm.TestConnectionOptions) error {
+	genCfg, err := NewGenerateConfig(options.GenerateConfig)
 	if err != nil {
 		return err
 	}
 
 	// Keep the probe cheap: one short completion proves auth, endpoint, and model.
-	probe := cfg
+	probe := genCfg
 	if probe.MaxTokens == 0 {
 		probe.MaxTokens = 5
 	}
-	probeConfig, err := jsonx.ToJSONMap(probe)
+	probeGenerateConfig, err := jsonx.ToJSONMap(probe)
 	if err != nil {
 		return fmt.Errorf("failed to encode config: %w", err)
 	}
 
-	_, err = generate(ctx, baseURL, probeConfig, llm.GenerateOptions{
-		Prompt: llm.NewPrompt(
-			llm.WithMessages([]llm.Message{
-				llm.NewMessage(llm.RoleUser, `Respond with "ok"`),
-			}),
-		),
+	_, err = generate(ctx, baseURL, llm.GenerateOptions{
+		AuthConfig:     options.AuthConfig,
+		GenerateConfig: probeGenerateConfig,
+		Messages: []llm.Message{
+			llm.NewMessage(llm.RoleUser, `Respond with "ok"`),
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to generate test response: %w", err)

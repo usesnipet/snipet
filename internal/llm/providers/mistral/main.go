@@ -14,7 +14,8 @@ func New() (llm.IProvider, error) {
 		llm.WithDescription("Mistral language models."),
 		llm.WithIcon("https://mistral.ai/favicon.ico"),
 		llm.WithTags("language", "model", "llm"),
-		llm.WithConfigurationSchema(openaicompatible.DefaultConfigSchema),
+		llm.WithAuthConfigSchema(openaicompatible.DefaultAuthConfigSchema),
+		llm.WithGenerateConfigSchema(openaicompatible.DefaultGenerateConfigSchema),
 		llm.WithAPI(openaicompatible.New(baseURL)),
 	)
 }

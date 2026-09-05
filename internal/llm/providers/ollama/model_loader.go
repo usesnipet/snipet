@@ -84,7 +84,7 @@ func listModels(ctx context.Context, config jsonx.JSONMap) ([]llm.Model, error) 
 }
 
 func getModel(ctx context.Context, config jsonx.JSONMap) (llm.Model, error) {
-	cfg, err := openaicompatible.NewConfig(config)
+	cfg, err := openaicompatible.NewGenerateConfig(config)
 	if err != nil {
 		return llm.Model{}, err
 	}
@@ -105,6 +105,6 @@ func getModel(ctx context.Context, config jsonx.JSONMap) (llm.Model, error) {
 
 // tagsURL derives Ollama's native /api/tags endpoint from the
 // OpenAI-compatible base URL used by the rest of this provider.
-func tagsURL() string {
+func tagsURL(baseURL string) string {
 	return strings.TrimSuffix(baseURL, "/v1") + "/api/tags"
 }

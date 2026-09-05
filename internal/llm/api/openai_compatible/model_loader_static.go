@@ -13,7 +13,7 @@ func NewStaticModelLoader(models []llm.Model) llm.ModelLoader {
 			return models, nil
 		},
 		Model: func(ctx context.Context, config jsonx.JSONMap) (llm.Model, error) {
-			cfg, err := NewConfig(config)
+			cfg, err := NewGenerateConfig(config)
 			if err != nil {
 				return llm.Model{}, err
 			}
