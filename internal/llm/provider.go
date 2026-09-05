@@ -70,6 +70,7 @@ type TestConnectionOptions struct {
 type GenerateOptions struct {
 	Messages []Message
 
+	ModelName      string
 	AuthConfig     jsonx.JSONMap
 	GenerateConfig jsonx.JSONMap
 }
@@ -93,9 +94,7 @@ type IProvider interface {
 	Generate(ctx context.Context, options GenerateOptions) (GenerateResult, error)
 	Stream(ctx context.Context, options GenerateOptions) (StreamIterator, error)
 
-	// Models and Model list a provider's catalog. config is the
-	// generate-config map (it identifies a model by name), not the auth
-	// config — see ModelLoader.
+	// Models and Model list a provider's catalog.
 	Models(ctx context.Context, authConfig jsonx.JSONMap) ([]Model, error)
 	Model(ctx context.Context, authConfig jsonx.JSONMap) (Model, error)
 }

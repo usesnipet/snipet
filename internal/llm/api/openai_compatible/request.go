@@ -5,13 +5,15 @@ import (
 	"github.com/usesnipet/snipet/internal/llm"
 )
 
-// buildChatParams translates a GenerateOptions/GenerateConfig pair into
+// BuildChatParams translates a GenerateOptions/GenerateConfig pair into
 // openai-go Chat Completions params. Optional numeric fields left at zero
-// are omitted.
-func buildChatParams(cfg GenerateConfig, options llm.GenerateOptions) openai.ChatCompletionNewParams {
+// are omitted. Exported so a provider can assemble its own Chat Completions
+// call (e.g. for an action Generate/Stream don't cover) from the same
+// translation.
+func BuildChatParams(cfg GenerateConfig, options llm.GenerateOptions) openai.ChatCompletionNewParams {
 	params := openai.ChatCompletionNewParams{
 		Model:    cfg.Model,
-		Messages: buildMessages(options.Messages),
+		Messages: BuildMessages(options.Messages),
 	}
 
 	if cfg.MaxTokens != 0 {
@@ -27,9 +29,9 @@ func buildChatParams(cfg GenerateConfig, options llm.GenerateOptions) openai.Cha
 	return params
 }
 
-// buildMessages converts llm.Messages into openai-go message params,
+// BuildMessages converts llm.Messages into openai-go message params,
 // dropping any message whose Role has no OpenAI equivalent.
-func buildMessages(messages []llm.Message) []openai.ChatCompletionMessageParamUnion {
+func BuildMessages(messages []llm.Message) []openai.ChatCompletionMessageParamUnion {
 	params := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages))
 	for _, m := range messages {
 		switch m.Role {

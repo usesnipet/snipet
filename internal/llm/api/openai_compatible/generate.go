@@ -7,9 +7,9 @@ import (
 	"github.com/usesnipet/snipet/internal/llm"
 )
 
-// generate performs a non-streaming chat completion and returns the
+// Generate performs a non-streaming chat completion and returns the
 // assistant text plus any tool calls from the first choice.
-func generate(ctx context.Context, defaultBaseURL string, options llm.GenerateOptions) (llm.GenerateResult, error) {
+func Generate(ctx context.Context, defaultBaseURL string, options llm.GenerateOptions) (llm.GenerateResult, error) {
 	authCfg, err := NewAuthConfig(options.AuthConfig)
 	if err != nil {
 		return llm.GenerateResult{}, err
@@ -19,13 +19,13 @@ func generate(ctx context.Context, defaultBaseURL string, options llm.GenerateOp
 		return llm.GenerateResult{}, err
 	}
 
-	baseURL, err := resolveBaseURL(defaultBaseURL, authCfg)
+	baseURL, err := ResolveBaseURL(defaultBaseURL, authCfg)
 	if err != nil {
 		return llm.GenerateResult{}, err
 	}
 
-	client := newClient(baseURL, authCfg)
-	params := buildChatParams(genCfg, options)
+	client := NewClient(baseURL, authCfg)
+	params := BuildChatParams(genCfg, options)
 
 	completion, err := client.Chat.Completions.New(ctx, params)
 	if err != nil {

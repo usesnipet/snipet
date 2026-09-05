@@ -8,10 +8,10 @@ import (
 	"github.com/usesnipet/snipet/internal/llm"
 )
 
-// stream opens a chat completions SSE stream via openai-go and returns an
+// Stream opens a chat completions SSE stream via openai-go and returns an
 // llm.StreamIterator that translates chunks into llm.StreamEvent values as
 // the caller pulls them via Next.
-func stream(ctx context.Context, defaultBaseURL string, options llm.GenerateOptions) (llm.StreamIterator, error) {
+func Stream(ctx context.Context, defaultBaseURL string, options llm.GenerateOptions) (llm.StreamIterator, error) {
 	authCfg, err := NewAuthConfig(options.AuthConfig)
 	if err != nil {
 		return nil, err
@@ -21,13 +21,13 @@ func stream(ctx context.Context, defaultBaseURL string, options llm.GenerateOpti
 		return nil, err
 	}
 
-	baseURL, err := resolveBaseURL(defaultBaseURL, authCfg)
+	baseURL, err := ResolveBaseURL(defaultBaseURL, authCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	client := newClient(baseURL, authCfg)
-	params := buildChatParams(genCfg, options)
+	client := NewClient(baseURL, authCfg)
+	params := BuildChatParams(genCfg, options)
 	sdkStream := client.Chat.Completions.NewStreaming(ctx, params)
 
 	return newStreamIterator(sdkStream, sdkStream.Close), nil

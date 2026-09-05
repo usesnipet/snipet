@@ -55,7 +55,16 @@ func capabilitiesToModelCapabilities(capabilities []capabilities) []llm.ModelCap
 }
 
 func listModels(ctx context.Context, config jsonx.JSONMap) ([]llm.Model, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, tagsURL(), nil)
+	authCfg, err := openaicompatible.NewAuthConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	baseURL, err := openaicompatible.ResolveBaseURL(defaultBaseURL, authCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, tagsURL(baseURL), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build tags request: %w", err)
 	}

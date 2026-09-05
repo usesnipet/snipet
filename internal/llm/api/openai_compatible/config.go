@@ -62,9 +62,11 @@ func (c GenerateConfig) validate() error {
 	return nil
 }
 
-// resolveBaseURL prefers a runtime endpoint override from auth config,
-// otherwise uses the base URL injected when the API was created.
-func resolveBaseURL(defaultBaseURL string, cfg AuthConfig) (string, error) {
+// ResolveBaseURL prefers a runtime endpoint override from auth config,
+// otherwise uses defaultBaseURL. Exported so a provider can compute the same
+// base URL for its own calls (e.g. a native endpoint outside Chat
+// Completions) as Generate/Stream/TestConnection use.
+func ResolveBaseURL(defaultBaseURL string, cfg AuthConfig) (string, error) {
 	base := cfg.Endpoint
 	if base == "" {
 		base = defaultBaseURL

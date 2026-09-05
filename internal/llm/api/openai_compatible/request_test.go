@@ -24,7 +24,7 @@ func TestBuildChatParams(t *testing.T) {
 		},
 	}
 
-	params := buildChatParams(cfg, options)
+	params := BuildChatParams(cfg, options)
 	require.Equal(t, "gpt-4o-mini", string(params.Model))
 	require.True(t, params.Temperature.Valid())
 	require.Equal(t, 0.5, params.Temperature.Value)
@@ -47,7 +47,7 @@ func TestBuildChatParams(t *testing.T) {
 }
 
 func TestBuildChatParamsOmitsZeroOptionalFields(t *testing.T) {
-	params := buildChatParams(GenerateConfig{Model: "m"}, llm.GenerateOptions{
+	params := BuildChatParams(GenerateConfig{Model: "m"}, llm.GenerateOptions{
 		Messages: []llm.Message{
 			llm.NewMessage(llm.RoleUser, "hi"),
 		},
@@ -59,19 +59,19 @@ func TestBuildChatParamsOmitsZeroOptionalFields(t *testing.T) {
 	require.Len(t, params.Messages, 1)
 }
 func TestResolveBaseURL(t *testing.T) {
-	url, err := resolveBaseURL("https://api.openai.com/v1", AuthConfig{})
+	url, err := ResolveBaseURL("https://api.openai.com/v1", AuthConfig{})
 	require.NoError(t, err)
 	require.Equal(t, "https://api.openai.com/v1", url)
 
-	url, err = resolveBaseURL("https://api.openai.com/v1", AuthConfig{Endpoint: "https://proxy.example/v1/"})
+	url, err = ResolveBaseURL("https://api.openai.com/v1", AuthConfig{Endpoint: "https://proxy.example/v1/"})
 	require.NoError(t, err)
 	require.Equal(t, "https://proxy.example/v1", url)
 
-	url, err = resolveBaseURL("https://api.openai.com/v1/", AuthConfig{})
+	url, err = ResolveBaseURL("https://api.openai.com/v1/", AuthConfig{})
 	require.NoError(t, err)
 	require.Equal(t, "https://api.openai.com/v1", url)
 
-	_, err = resolveBaseURL("", AuthConfig{})
+	_, err = ResolveBaseURL("", AuthConfig{})
 	require.Error(t, err)
 }
 

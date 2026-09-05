@@ -5,9 +5,11 @@ import (
 	"github.com/openai/openai-go/v3/option"
 )
 
-// newClient builds an openai-go client pointed at the resolved base URL with
-// optional Bearer auth from cfg.APIKey.
-func newClient(baseURL string, cfg AuthConfig) openai.Client {
+// NewClient builds an openai-go client pointed at the resolved base URL with
+// optional Bearer auth from cfg.APIKey. Exported so a provider can build its
+// own client for calls outside Generate/Stream (e.g. a native list-models
+// endpoint) against the same host.
+func NewClient(baseURL string, cfg AuthConfig) openai.Client {
 	opts := []option.RequestOption{
 		option.WithBaseURL(baseURL),
 	}

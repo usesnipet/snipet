@@ -8,9 +8,9 @@ import (
 	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
-// testConnection verifies that options can reach and authenticate against
+// TestConnection verifies that options can reach and authenticate against
 // baseURL by issuing a minimal non-streaming completion request.
-func testConnection(ctx context.Context, baseURL string, options llm.TestConnectionOptions) error {
+func TestConnection(ctx context.Context, baseURL string, options llm.TestConnectionOptions) error {
 	genCfg, err := NewGenerateConfig(options.GenerateConfig)
 	if err != nil {
 		return err
@@ -26,7 +26,7 @@ func testConnection(ctx context.Context, baseURL string, options llm.TestConnect
 		return fmt.Errorf("failed to encode config: %w", err)
 	}
 
-	_, err = generate(ctx, baseURL, llm.GenerateOptions{
+	_, err = Generate(ctx, baseURL, llm.GenerateOptions{
 		AuthConfig:     options.AuthConfig,
 		GenerateConfig: probeGenerateConfig,
 		Messages: []llm.Message{
