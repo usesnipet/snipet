@@ -13,7 +13,7 @@ internal/llm/stream.go (a stream yields the same kinds of pieces
 incrementally).
 
 ┌─────────────┬───────────────┬─────────────────────────────────┐
-│    type     │     onde      │             campos              │
+│    type     │     where     │             fields              │
 ├─────────────┼───────────────┼─────────────────────────────────┤
 │ text        │ qualquer role │ text                            |
 ├─────────────┼───────────────┼─────────────────────────────────┤
