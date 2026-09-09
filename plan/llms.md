@@ -51,17 +51,22 @@ Notes:
 # Errors
 
 The provider returns predefined, typed errors. Each predefined error has a
-fixed classification the Runner uses to decide failover:
+fixed classification the Runner uses to decide what to do:
 
-- ErrRateLimit - retryable
-- ErrUnavailable - retryable (provider down, upstream 5xx)
-- ErrAuth - retryable (auth invalid / rejected)
+- failover - give up on this llm and try the next one
+- fatal - stop and return immediately
+
+Predefined errors:
+
+- ErrRateLimit - failover
+- ErrUnavailable - failover (provider down, upstream 5xx)
+- ErrAuth - failover (auth invalid / rejected)
 - ErrBadRequest - fatal (malformed messages or options)
 - ErrModelNotFound - fatal
 - ErrContextTooLong - fatal
 
 Rule: if the error is one of the predefined types, the Runner uses its
-classification. Any other / unknown error is treated as retryable.
+classification. Any other / unknown error is treated as failover.
 
 # Provider
 
@@ -137,7 +142,7 @@ Responsible for running the llms.
 - Generate - run the generate method of an llm with failover
   Call Validate.
   Try to run generate.
-  If generate returns a retryable error, try the next llm.
+  If generate returns a failover error, try the next llm.
   If generate returns a fatal error, return immediately.
   If every llm fails, return a list with all the errors.
   - llms - list of llms to run
@@ -148,7 +153,7 @@ Responsible for running the llms.
 - Stream - run the stream method of an llm with failover
   Call Validate.
   Try to run stream.
-  Failover only happens before the first event is yielded: if a retryable
+  Failover only happens before the first event is yielded: if a failover
   error occurs before the first event, try the next llm; once the first
   event has been yielded, any error is propagated to the caller.
   A fatal error before the first event returns immediately.
