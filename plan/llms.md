@@ -27,7 +27,7 @@ incrementally).
 | text        | any role  | text                            |
 | image       | user      | source (url/base64), mime_type  |
 | tool_call   | assistant | id, name, arguments (JSON)      |
-| tool_result | role tool | tool_call_id, content, is_error |
+| tool_result | role tool | tool_call_id, content (string), is_error |
 
 - **`text`** — a run of plain text
   - **text** — the string
@@ -40,7 +40,7 @@ incrementally).
   - **arguments** — JSON arguments for the tool
 - **`tool_result`** — the result of a `tool_call` (tool messages)
   - **tool_call_id** — id of the `tool_call` this answers
-  - **content** — the result payload (parts or string)
+  - **content** — the result payload, a string
   - **is_error** — `true` if the tool failed
 
 **Notes**
@@ -70,8 +70,22 @@ classification the **Runner** uses to decide what to do:
 - **`ErrModelNotFound`** — fatal
 - **`ErrContextTooLong`** — fatal
 
-**Rule:** if the error is one of the predefined types, the Runner uses its
-classification. Any other / unknown error is treated as **failover**.
+**Rules**
+
+- If the error is one of the predefined types, the Runner uses its
+  classification.
+- Any other / unknown error is **fatal** — a provider must opt in to failover
+  by returning a predefined failover error.
+- `context.Canceled` / `context.DeadlineExceeded` are always fatal — never
+  fail over on them.
+
+### FailoverError
+
+When the Runner exhausts the llm list without success it returns a
+**`FailoverError`** that aggregates every attempt.
+
+- **errors** — ordered list of `{ llm, err }`, one per llm tried
+- unwraps to the individual errors (`errors.Is` / `errors.As` reach each one)
 
 ---
 
@@ -109,13 +123,16 @@ Check whether the provider is reachable right now.
 - **Params**
   - **auth_options** — auth options for the provider
 
-#### `Generate(messages, model, extra_options, auth_options) → Response`  *(optional)*
+#### `Generate(messages, model, tools, extra_options, auth_options) → Response`  *(optional)*
 
 Run the model once and return the full result (no stream).
 
 - **Params**
   - **messages** — the conversation, an array of messages
   - **model** — the provider model to use
+  - **tools** *(optional)* — tool definitions the model may call (`name`,
+    `description`, `parameters` JSON Schema); the provider maps these to its
+    own tool/function-calling format
   - **extra_options** — provider-specific options (validated against `GenerateExtraOptions`)
   - **auth_options** — auth options for the provider
 - **Returns** — `Response`
@@ -123,7 +140,7 @@ Run the model once and return the full result (no stream).
   - **finish_reason** — `stop` | `length` | `tool_call`
   - **usage** — `input_tokens`, `output_tokens`
 
-#### `Stream(messages, model, extra_options, auth_options) → StreamIterator`  *(optional)*
+#### `Stream(messages, model, tools, extra_options, auth_options) → StreamIterator`  *(optional)*
 
 Run the model and stream the result incrementally.
 
@@ -146,11 +163,14 @@ Check whether a provider exists by key.
 - **Params**
   - **key** — provider key
 
-#### `HasModel(...) → bool`
+#### `HasModel(..., auth_options) → bool`
 
-Check whether a provider has a given model.
+Check whether a provider has a given model. Resolves the model list through
+the same cache as `List` (see below).
 
-- **Params** — either (`key`, `model`) or a single `"provider-key/model"` string
+- **Params**
+  - the model, as either (`key`, `model`) or a single `"provider-key/model"` string
+  - **auth_options** — auth options for the provider (needed to fetch `Models`)
 
 #### `List() → []Provider`
 
@@ -172,7 +192,12 @@ Resolve a provider and hand back a ready-to-use handle.
 
 - The registry keeps an **LRU cache** of `Models` results so repeated lookups
   (`List`, `HasModel`) don't hit the provider API every time.
-- Cache size is configurable; entries are evicted LRU.
+- **Key:** `provider-key` + a hash of the `auth_options` — different
+  credentials / tiers can expose different model lists.
+- **Size:** configurable; entries evicted LRU. (TTL / explicit invalidation
+  still open — see open questions.)
+- **Single-flight:** concurrent misses for the same key collapse into one
+  `Models` call; the rest wait for its result.
 
 ---
 
@@ -199,30 +224,37 @@ Validate one llm before running it.
      `StreamExtraOptions` schema; on failure return a **fatal** `ErrBadRequest`
      (no failover).
 
-#### `Generate(llms, messages) → Response`
+#### `Generate(llms, messages, tools) → Response`
 
 Run `Generate` against the list of llms, failing over on error.
 
 - **Params**
   - **llms** — ordered list of llms to try
   - **messages** — the conversation
+  - **tools** *(optional)* — tool definitions, forwarded to the provider
 - **Behavior**
-  1. For each llm, call `Validate`, then run `Generate`.
+  1. For each llm:
+     a. If `ctx.Err() != nil`, stop and return it.
+     b. Call `Validate`, then run `Generate`.
   2. On a **failover** error, move to the next llm.
   3. On a **fatal** error, return immediately.
-  4. If every llm fails, return a list of all the errors.
+  4. If every llm fails, return a `FailoverError` aggregating all attempts.
 
-#### `Stream(llms, messages) → StreamIterator`
+#### `Stream(llms, messages, tools) → StreamIterator`
 
 Run `Stream` against the list of llms, failing over only before the stream starts.
 
 - **Params**
   - **llms** — ordered list of llms to try
   - **messages** — the conversation
+  - **tools** *(optional)* — tool definitions, forwarded to the provider
 - **Behavior**
-  1. For each llm, call `Validate`, then run `Stream`.
+  1. For each llm:
+     a. If `ctx.Err() != nil`, stop and return it.
+     b. Call `Validate`, then run `Stream`.
   2. Failover happens **only before the first event is yielded**: a failover
      error before the first event moves to the next llm.
   3. Once the first event has been yielded, any error is propagated to the caller.
   4. A **fatal** error before the first event returns immediately.
-  5. If every llm fails before its first event, return a list of all the errors.
+  5. If every llm fails before its first event, return a `FailoverError`
+     aggregating all attempts.
