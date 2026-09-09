@@ -15,7 +15,7 @@ incrementally).
 ┌─────────────┬───────────────┬─────────────────────────────────┐
 │    type     │     where     │             fields              │
 ├─────────────┼───────────────┼─────────────────────────────────┤
-│ text        │ qualquer role │ text                            |
+│ text        │ any role      │ text                            |
 ├─────────────┼───────────────┼─────────────────────────────────┤
 │ image       │ user          │ source (url/base64), mime_type  │
 ├─────────────┼───────────────┼─────────────────────────────────┤
@@ -50,10 +50,18 @@ Notes:
 
 # Errors
 
-Errors are typed so the Runner can decide whether to fail over.
+The provider returns predefined, typed errors. Each predefined error has a
+fixed classification the Runner uses to decide failover:
 
-- Retryable - the next llm should be tried (auth invalid, rate limit, provider unavailable, upstream 5xx)
-- Fatal - stop and return immediately (invalid request, unknown provider/model, code bug)
+- ErrRateLimit - retryable
+- ErrUnavailable - retryable (provider down, upstream 5xx)
+- ErrAuth - retryable (auth invalid / rejected)
+- ErrBadRequest - fatal (malformed messages or options)
+- ErrModelNotFound - fatal
+- ErrContextTooLong - fatal
+
+Rule: if the error is one of the predefined types, the Runner uses its
+classification. Any other / unknown error is treated as retryable.
 
 # Provider
 
@@ -73,16 +81,23 @@ Errors are typed so the Runner can decide whether to fail over.
 
 - API (can have more methods later)
   - Models (required) - get the list of models that this provider has
+    - ctx
     - auth_options - auth options for the provider
   - HealthCheck (optional) - check if the provider is available now
+    - ctx
     - auth_options - auth options for the provider
   - Generate (optional) - the method that runs to generate text with the llm (no stream)
+    - ctx
     - messages - array of messages of the conversation
     - model - the model of the provider that should be used
     - extra_options - extra options for the provider
     - auth_options - auth options for the provider
-    - returns: the generated text
+    - returns: a Response
+      - message - the assistant Message (parts; may include tool_call parts)
+      - finish_reason - stop | length | tool_call
+      - usage - input_tokens, output_tokens
   - Stream (optional) - the method that runs to generate text with the llm (with stream)
+    - ctx
     - messages - array of messages of the conversation
     - model - the model of the provider that should be used
     - extra_options - extra options for the provider
@@ -99,8 +114,15 @@ The registry of llm providers. The llm providers are defined in the code; on ser
 - List - list providers
 - Connect - connect to a provider and return it
   Get the provider by key; if it exists, run the health check (if available) and validate the auth options.
+  - ctx
   - key - key of the provider
   - auth_options - auth options for the provider
+
+Models cache:
+
+- The registry keeps an LRU cache of Models results so repeated lookups
+  (List, HasModel) don't hit the provider API every time.
+- Cache size is configurable; entries are evicted LRU.
 
 # Runner
 
@@ -109,11 +131,15 @@ Responsible for running the llms.
 - Validate - validate provider and model
   Call Registry.Connect (connects, health-checks, validates auth options).
   Call Registry.HasModel to check the model exists.
+  Validate extra_options against the provider's GenerateExtraOptions /
+  StreamExtraOptions JSON Schema; on failure return a fatal ErrBadRequest
+  (no failover).
 - Generate - run the generate method of an llm with failover
   Call Validate.
   Try to run generate.
-  If generate returns a Retryable error, try the next llm; if there is no next, return an error.
-  If generate returns a Fatal error, return immediately.
+  If generate returns a retryable error, try the next llm.
+  If generate returns a fatal error, return immediately.
+  If every llm fails, return a list with all the errors.
   - llms - list of llms to run
     - model (provider-key/model)
     - extra_options - extra options for the provider
@@ -122,8 +148,11 @@ Responsible for running the llms.
 - Stream - run the stream method of an llm with failover
   Call Validate.
   Try to run stream.
-  If stream returns a Retryable error, try the next llm; if there is no next, return an error.
-  If stream returns a Fatal error, return immediately.
+  Failover only happens before the first event is yielded: if a retryable
+  error occurs before the first event, try the next llm; once the first
+  event has been yielded, any error is propagated to the caller.
+  A fatal error before the first event returns immediately.
+  If every llm fails before its first event, return a list with all the errors.
   - llms - list of llms to run
     - model (provider-key/model)
     - extra_options - extra options for the provider
