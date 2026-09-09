@@ -19,6 +19,10 @@ var (
 	ErrContextTooLong = errors.New("llm: context too long")
 )
 
+// ErrProviderNotFound is returned by the Registry when no provider is
+// registered under a given key. It is not a failover error.
+var ErrProviderNotFound = errors.New("llm: provider not found")
+
 // failoverErrors are the predefined errors the Runner fails over on.
 var failoverErrors = []error{ErrRateLimit, ErrUnavailable, ErrAuth}
 
