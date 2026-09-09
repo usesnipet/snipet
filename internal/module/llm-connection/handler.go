@@ -117,9 +117,6 @@ func (h *Handler) deleteByID(w http.ResponseWriter, r *http.Request) error {
 // @Failure		400			{object}	api.Error
 // @Router			/llm-connection/providers [get]
 func (h *Handler) listProviders(w http.ResponseWriter, r *http.Request) error {
-	providers, err := h.service.ListProviders(r.Context())
-	if err != nil {
-		return err
-	}
+	providers := h.service.ListProviders(r.Context())
 	return api.WriteJSON(w, http.StatusOK, providers)
 }

@@ -84,16 +84,16 @@ func (r *Registry) Has(key string) bool {
 }
 
 // List returns every registered provider, ordered by key.
-func (r *Registry) List() []Provider {
+func (r *Registry) List() []Info {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	out := make([]Provider, 0, len(r.providers))
+	out := make([]Info, 0, len(r.providers))
 	for _, p := range r.providers {
-		out = append(out, p)
+		out = append(out, p.Info())
 	}
-	slices.SortFunc(out, func(a, b Provider) int {
-		return strings.Compare(a.Info().Key, b.Info().Key)
+	slices.SortFunc(out, func(a, b Info) int {
+		return strings.Compare(a.Key, b.Key)
 	})
 	return out
 }

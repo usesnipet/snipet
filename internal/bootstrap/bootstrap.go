@@ -17,8 +17,7 @@ import (
 	"github.com/usesnipet/snipet/internal/guard"
 	"github.com/usesnipet/snipet/internal/infra/cache"
 	"github.com/usesnipet/snipet/internal/infra/database"
-	"github.com/usesnipet/snipet/internal/llm/providers"
-	"github.com/usesnipet/snipet/internal/llm/registry"
+	"github.com/usesnipet/snipet/internal/llm"
 	"github.com/usesnipet/snipet/internal/logger"
 	apikey "github.com/usesnipet/snipet/internal/module/api-key"
 	authmodule "github.com/usesnipet/snipet/internal/module/auth"
@@ -61,8 +60,8 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	apiKeyRepo := repository.NewApiKeyRepository(db)
 
-	llmRegistry := providers.Registry(log.Child(logger.WithPrefix("llm-registry:")))
-	llmManager := registry.NewManager(llmRegistry)
+	llmRegistry := llm.NewRegistry(cache.NewMemoryCache(2000, 0), 0)
+	// _ := llm.NewRunner(llmRegistry)
 
 	// auth primitives
 	userJWTService := auth.NewJWTService(cfg.Auth)
@@ -73,7 +72,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 
 	// services
 	systemService := systemmodule.NewService()
-	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmManager)
+	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmRegistry)
 	userService := usermodule.NewService(userRepo, log.Child(logger.WithPrefix("user-service: ")))
 	userService.InitializeRootUser(context.Background(), cfg.Auth)
 

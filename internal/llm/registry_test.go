@@ -169,7 +169,7 @@ func TestList_OrderedByKey(t *testing.T) {
 
 	keys := make([]string, 0, 3)
 	for _, p := range r.List() {
-		keys = append(keys, p.Info().Key)
+		keys = append(keys, p.Key)
 	}
 
 	assert.Equal(t, []string{"alpha", "mid", "zeta"}, keys)
