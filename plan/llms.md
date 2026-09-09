@@ -1,7 +1,59 @@
 # Message
 
 - Role - role of the message (user, assistant, system, tool)
-- Content - content of the message (initially only a string)
+- Parts - ordered list of parts that make up the message content
+
+## Parts
+
+A part is one typed piece of a message. A message holds an ordered list of
+them, so a single message can mix text with an image or with tool activity.
+Each part has a `type` and the fields that type needs; a consumer
+type-switches on `type`. This mirrors the stream events in
+internal/llm/stream.go (a stream yields the same kinds of pieces
+incrementally).
+
+┌─────────────┬───────────────┬─────────────────────────────────┐
+│    type     │     onde      │             campos              │
+├─────────────┼───────────────┼─────────────────────────────────┤
+│ text        │ qualquer role │ text                            |
+├─────────────┼───────────────┼─────────────────────────────────┤
+│ image       │ user          │ source (url/base64), mime_type  │
+├─────────────┼───────────────┼─────────────────────────────────┤
+│ tool_call   │ assistant     │ id, name, arguments (JSON)      |
+├─────────────┼───────────────┼─────────────────────────────────┤
+│ tool_result │ role tool     │ tool_call_id, content, is_error |
+└─────────────┴───────────────┴─────────────────────────────────┘
+
+Part types:
+
+- text - a run of plain text
+  - text - the string
+- image - an image input
+  - source - url or base64 data
+  - mime_type - e.g. image/png, image/jpeg
+- tool_call - the assistant asks to run a tool (assistant messages)
+  - id - unique id for this call, referenced by the matching tool_result
+  - name - tool name
+  - arguments - JSON arguments for the tool
+- tool_result - the result of a tool_call (tool messages)
+  - tool_call_id - id of the tool_call this answers
+  - content - the result payload (parts or string)
+  - is_error - true if the tool failed
+
+Notes:
+
+- A plain text message is just one `text` part.
+- Providers that only accept a string flatten the parts to their `text`
+  parts joined together; non-text parts are dropped or rejected per provider.
+- `role: tool` messages carry `tool_result` parts; `role: assistant`
+  messages may carry `tool_call` parts.
+
+# Errors
+
+Errors are typed so the Runner can decide whether to fail over.
+
+- Retryable - the next llm should be tried (auth invalid, rate limit, provider unavailable, upstream 5xx)
+- Fatal - stop and return immediately (invalid request, unknown provider/model, code bug)
 
 # Provider
 
@@ -29,11 +81,13 @@
     - model - the model of the provider that should be used
     - extra_options - extra options for the provider
     - auth_options - auth options for the provider
+    - returns: the generated text
   - Stream (optional) - the method that runs to generate text with the llm (with stream)
     - messages - array of messages of the conversation
     - model - the model of the provider that should be used
     - extra_options - extra options for the provider
     - auth_options - auth options for the provider
+    - returns: a StreamIterator (see internal/llm/stream.go)
 
 # Registry
 
@@ -53,12 +107,13 @@ The registry of llm providers. The llm providers are defined in the code; on ser
 Responsible for running the llms.
 
 - Validate - validate provider and model
-  Connect to the llm.
-  Check if the model exists.
+  Call Registry.Connect (connects, health-checks, validates auth options).
+  Call Registry.HasModel to check the model exists.
 - Generate - run the generate method of an llm with failover
   Call Validate.
   Try to run generate.
-  If generate errors, try the next llm; if there is no next, return an error.
+  If generate returns a Retryable error, try the next llm; if there is no next, return an error.
+  If generate returns a Fatal error, return immediately.
   - llms - list of llms to run
     - model (provider-key/model)
     - extra_options - extra options for the provider
@@ -67,7 +122,8 @@ Responsible for running the llms.
 - Stream - run the stream method of an llm with failover
   Call Validate.
   Try to run stream.
-  If stream errors, try the next llm; if there is no next, return an error.
+  If stream returns a Retryable error, try the next llm; if there is no next, return an error.
+  If stream returns a Fatal error, return immediately.
   - llms - list of llms to run
     - model (provider-key/model)
     - extra_options - extra options for the provider
