@@ -89,6 +89,26 @@ When the Runner exhausts the llm list without success it returns a
 
 ---
 
+## Model
+
+One entry in a provider's catalog (`Models` returns `[]Model`).
+
+- **id** — the string used in API calls (`gpt-4o`, `claude-sonnet-4`); this is
+  what `HasModel` matches and what goes in `"provider-key/model"`
+- **name** — display name
+- **description**
+- **capabilities** — a set of enum values, used to filter / route:
+  - `text` — text output
+  - `vision` — accepts image input
+  - `tools` — supports tool / function calling
+  - `streaming` — supports `Stream`
+  - (later: `audio`, `json_mode`, `reasoning`)
+- **context_window** — max input tokens (enables an `ErrContextTooLong`
+  pre-check before hitting the network)
+- **max_output_tokens** *(optional)* — cap on generated tokens
+
+---
+
 ## Provider
 
 ### Data
