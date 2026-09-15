@@ -11,17 +11,18 @@ import (
 // wrapped with context, e.g. fmt.Errorf("openai: %w", llm.ErrRateLimit) — and
 // the Runner decides failover from it (see IsFailover).
 var (
-	ErrRateLimit      = errors.New("llm: rate limited")
-	ErrUnavailable    = errors.New("llm: provider unavailable")
-	ErrAuth           = errors.New("llm: authentication rejected")
-	ErrBadRequest     = errors.New("llm: bad request")
-	ErrModelNotFound  = errors.New("llm: model not found")
-	ErrContextTooLong = errors.New("llm: context too long")
+	ErrRateLimit      = errors.New("llm rate limited")
+	ErrUnavailable    = errors.New("llm provider unavailable")
+	ErrAuth           = errors.New("llm authentication rejected")
+	ErrInvalidOptions = errors.New("llm invalid options")
+	ErrBadRequest     = errors.New("llm bad request")
+	ErrModelNotFound  = errors.New("llm model not found")
+	ErrContextTooLong = errors.New("llm context too long")
 )
 
 // ErrProviderNotFound is returned by the Registry when no provider is
 // registered under a given key. It is not a failover error.
-var ErrProviderNotFound = errors.New("llm: provider not found")
+var ErrProviderNotFound = errors.New("llm provider not found")
 
 // failoverErrors are the predefined errors the Runner fails over on.
 var failoverErrors = []error{ErrRateLimit, ErrUnavailable, ErrAuth}

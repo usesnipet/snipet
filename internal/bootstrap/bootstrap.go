@@ -18,6 +18,7 @@ import (
 	"github.com/usesnipet/snipet/internal/infra/cache"
 	"github.com/usesnipet/snipet/internal/infra/database"
 	"github.com/usesnipet/snipet/internal/llm"
+	"github.com/usesnipet/snipet/internal/llm/providers/ollama"
 	"github.com/usesnipet/snipet/internal/logger"
 	apikey "github.com/usesnipet/snipet/internal/module/api-key"
 	authmodule "github.com/usesnipet/snipet/internal/module/auth"
@@ -61,6 +62,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	apiKeyRepo := repository.NewApiKeyRepository(db)
 
 	llmRegistry := llm.NewRegistry(cache.NewMemoryCache(2000, 0), 0)
+	llmRegistry.MustRegister(ollama.New())
 	// _ := llm.NewRunner(llmRegistry)
 
 	// auth primitives

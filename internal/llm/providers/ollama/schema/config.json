@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "base_url": {
+      "type": "string",
+      "default": "http://localhost:11434"
+    }
+  },
+  "additionalProperties": false
+}
