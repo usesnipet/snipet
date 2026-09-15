@@ -39,12 +39,3 @@ func connectionSection(m jsonx.JSONMap, key string) jsonx.JSONMap {
 		return nil
 	}
 }
-
-// orEmpty returns m, or an empty map when m is nil, so a "type: object" schema
-// with only optional properties still validates.
-func orEmpty(m jsonx.JSONMap) jsonx.JSONMap {
-	if m == nil {
-		return jsonx.JSONMap{}
-	}
-	return m
-}

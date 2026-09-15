@@ -113,7 +113,7 @@ func (r *Registry) Connect(ctx context.Context, key string, connectionOptions js
 		return nil, fmt.Errorf("%w: %v", ErrAuth, err)
 	}
 	if info.Schemas.Config != nil {
-		if err := jsonschema.Validate(info.Schemas.Config, orEmpty(ConfigSection(connectionOptions))); err != nil {
+		if _, err := jsonschema.Validate(info.Schemas.Config, ConfigSection(connectionOptions)); err != nil {
 			return nil, fmt.Errorf("%w: config: %v", ErrBadRequest, err)
 		}
 	}
@@ -208,7 +208,7 @@ func validateAuthSection(methods []Auth, authSection jsonx.JSONMap) error {
 			if m.Data == nil {
 				return nil
 			}
-			if err := jsonschema.Validate(m.Data, orEmpty(authSection)); err != nil {
+			if _, err := jsonschema.Validate(m.Data, authSection); err != nil {
 				lastErr = err
 				continue
 			}

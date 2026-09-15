@@ -26,7 +26,7 @@ type ConnectionOptions struct {
 // schema/config.json — so callers don't have to specify it), and decodes the
 // result into ConnectionOptions.
 func toOllamaConnectionOptions(info llm.Info, connectionOptions jsonx.JSONMap) (ConnectionOptions, error) {
-	config, err := jsonschema.NormalizeAndParse[Config](info.Schemas.Config, llm.ConfigSection(connectionOptions))
+	config, err := jsonschema.ParseAndValidate[Config](info.Schemas.Config, llm.ConfigSection(connectionOptions))
 	if err != nil {
 		return ConnectionOptions{}, fmt.Errorf("%w: %v", llm.ErrInvalidOptions, err)
 	}

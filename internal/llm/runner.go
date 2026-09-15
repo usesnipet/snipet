@@ -83,7 +83,7 @@ func (r *Runner) Stream(ctx context.Context, targets []Target, messages []Messag
 }
 
 func (r *Runner) generateOne(ctx context.Context, t Target, messages []Message, tools []Tool) (Response, error) {
-	p, modelKey, err := r.resolve(ctx, t, kindGenerate)
+	p, modelKey, extraOptions, err := r.resolve(ctx, t, kindGenerate)
 	if err != nil {
 		return Response{}, err
 	}
@@ -91,11 +91,11 @@ func (r *Runner) generateOne(ctx context.Context, t Target, messages []Message, 
 	if !ok {
 		return Response{}, fmt.Errorf("%w: %q does not support generate", ErrBadRequest, t.Model)
 	}
-	return g.Generate(ctx, r.request(t, modelKey, messages, tools))
+	return g.Generate(ctx, r.request(t, modelKey, extraOptions, messages, tools))
 }
 
 func (r *Runner) streamOne(ctx context.Context, t Target, messages []Message, tools []Tool) (StreamIterator, error) {
-	p, modelKey, err := r.resolve(ctx, t, kindStream)
+	p, modelKey, extraOptions, err := r.resolve(ctx, t, kindStream)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (r *Runner) streamOne(ctx context.Context, t Target, messages []Message, to
 		return nil, fmt.Errorf("%w: %q does not support stream", ErrBadRequest, t.Model)
 	}
 
-	inner, err := s.Stream(ctx, r.request(t, modelKey, messages, tools))
+	inner, err := s.Stream(ctx, r.request(t, modelKey, extraOptions, messages, tools))
 	if err != nil {
 		return nil, err
 	}
@@ -120,12 +120,12 @@ func (r *Runner) streamOne(ctx context.Context, t Target, messages []Message, to
 	return inner, nil // clean but empty stream
 }
 
-func (r *Runner) request(t Target, modelKey string, messages []Message, tools []Tool) GenerateRequest {
+func (r *Runner) request(t Target, modelKey string, extraOptions jsonx.JSONMap, messages []Message, tools []Tool) GenerateRequest {
 	return GenerateRequest{
 		Messages:          messages,
 		Model:             modelKey,
 		Tools:             tools,
-		ExtraOptions:      t.ExtraOptions,
+		ExtraOptions:      extraOptions,
 		ConnectionOptions: t.ConnectionOptions,
 	}
 }
@@ -141,25 +141,27 @@ const (
 // resolve runs the plan's "Validate" step for one target: split the model
 // ref, Connect (which validates the connection options and health-checks),
 // confirm the model exists, and validate the extra options against the
-// provider's schema. A bad ref, missing model, or schema failure is a fatal
-// ErrBadRequest / ErrModelNotFound — never a failover.
-func (r *Runner) resolve(ctx context.Context, t Target, kind callKind) (Provider, string, error) {
+// provider's schema. The returned extraOptions has the schema's defaults
+// applied — pass it to the provider instead of t.ExtraOptions. A bad ref,
+// missing model, or schema failure is a fatal ErrBadRequest / ErrModelNotFound
+// — never a failover.
+func (r *Runner) resolve(ctx context.Context, t Target, kind callKind) (p Provider, modelKey string, extraOptions jsonx.JSONMap, err error) {
 	providerKey, modelKey, ok := SplitModelRef(t.Model)
 	if !ok {
-		return nil, "", fmt.Errorf("%w: bad model ref %q", ErrBadRequest, t.Model)
+		return nil, "", nil, fmt.Errorf("%w: bad model ref %q", ErrBadRequest, t.Model)
 	}
 
-	p, err := r.registry.Connect(ctx, providerKey, t.ConnectionOptions)
+	p, err = r.registry.Connect(ctx, providerKey, t.ConnectionOptions)
 	if err != nil {
-		return nil, "", err
+		return nil, "", nil, err
 	}
 
 	has, err := r.registry.HasModel(ctx, providerKey, modelKey, t.ConnectionOptions)
 	if err != nil {
-		return nil, "", err
+		return nil, "", nil, err
 	}
 	if !has {
-		return nil, "", fmt.Errorf("%w: %q", ErrModelNotFound, t.Model)
+		return nil, "", nil, fmt.Errorf("%w: %q", ErrModelNotFound, t.Model)
 	}
 
 	var schema jsonx.JSONMap
@@ -169,16 +171,14 @@ func (r *Runner) resolve(ctx context.Context, t Target, kind callKind) (Provider
 	case kindStream:
 		schema = p.Info().Schemas.StreamExtraOptions
 	}
+	extraOptions = t.ExtraOptions
 	if schema != nil {
-		opts := t.ExtraOptions
-		if opts == nil {
-			opts = jsonx.JSONMap{}
-		}
-		if err := jsonschema.Validate(schema, opts); err != nil {
-			return nil, "", fmt.Errorf("%w: extra_options: %v", ErrBadRequest, err)
+		extraOptions, err = jsonschema.Validate(schema, t.ExtraOptions)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf("%w: extra_options: %v", ErrBadRequest, err)
 		}
 	}
-	return p, modelKey, nil
+	return p, modelKey, extraOptions, nil
 }
 
 // SplitModelRef splits a "provider-key/model" reference on its first "/", so a
