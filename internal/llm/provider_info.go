@@ -3,7 +3,7 @@ package llm
 import "github.com/usesnipet/snipet/pkg/jsonx"
 
 // Info is a provider's static description: its identity, the auth methods it
-// accepts, and the JSON Schemas that validate call options.
+// accepts, and the JSON Schemas that validate connection and call options.
 type Info struct {
 	Key         string   `json:"key"`
 	Name        string   `json:"name"`
@@ -33,9 +33,15 @@ type Auth struct {
 	Data jsonx.JSONMap `json:"data,omitempty"`
 }
 
-// Schemas holds the optional JSON Schemas that validate a call's
-// extra_options. A nil schema means the options are unconstrained.
+// Schemas holds the optional JSON Schemas a provider declares. A nil schema
+// means that input is unconstrained.
 type Schemas struct {
+	// Config validates the "config" section of the connection options — the
+	// always-required provider config (endpoint, region, org id, ...).
+	Config jsonx.JSONMap `json:"config,omitempty"`
+
+	// GenerateExtraOptions and StreamExtraOptions validate the per-call
+	// extra_options of Generate and Stream respectively.
 	GenerateExtraOptions jsonx.JSONMap `json:"generate_extra_options,omitempty"`
 	StreamExtraOptions   jsonx.JSONMap `json:"stream_extra_options,omitempty"`
 }

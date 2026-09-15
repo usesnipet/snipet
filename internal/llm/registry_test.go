@@ -97,6 +97,28 @@ func staticAuthSchema() jsonx.JSONMap {
 	}
 }
 
+func requireBaseURLSchema() jsonx.JSONMap {
+	return jsonx.JSONMap{
+		"type":     "object",
+		"required": []any{"base_url"},
+		"properties": jsonx.JSONMap{
+			"base_url": jsonx.JSONMap{"type": "string"},
+		},
+	}
+}
+
+// connOpts builds a nested {auth, config} connection options map.
+func connOpts(auth, config jsonx.JSONMap) jsonx.JSONMap {
+	m := jsonx.JSONMap{}
+	if auth != nil {
+		m["auth"] = auth
+	}
+	if config != nil {
+		m["config"] = config
+	}
+	return m
+}
+
 // --- Register -----------------------------------------------------------
 
 func TestRegister_OK(t *testing.T) {
@@ -227,7 +249,7 @@ func TestModels_ConcurrentMissesCollapse(t *testing.T) {
 	assert.Equal(t, int32(1), calls.Load())
 }
 
-func TestModels_AuthOptionsKeyTheCacheSeparately(t *testing.T) {
+func TestModels_ConnectionOptionsKeyTheCacheSeparately(t *testing.T) {
 	t.Parallel()
 	r := newRegistry()
 	var calls atomic.Int32
@@ -238,12 +260,12 @@ func TestModels_AuthOptionsKeyTheCacheSeparately(t *testing.T) {
 	}
 	require.NoError(t, r.Register(p))
 
-	authA := jsonx.JSONMap{"api_key": "aaa"}
-	authB := jsonx.JSONMap{"api_key": "bbb"}
+	optsA := connOpts(jsonx.JSONMap{"api_key": "aaa"}, nil)
+	optsB := connOpts(jsonx.JSONMap{"api_key": "bbb"}, nil)
 
-	_, _ = r.Models(context.Background(), "openai", authA)
-	_, _ = r.Models(context.Background(), "openai", authA) // cache hit
-	_, _ = r.Models(context.Background(), "openai", authB) // miss: different auth
+	_, _ = r.Models(context.Background(), "openai", optsA)
+	_, _ = r.Models(context.Background(), "openai", optsA) // cache hit
+	_, _ = r.Models(context.Background(), "openai", optsB) // miss: different options
 
 	assert.Equal(t, int32(2), calls.Load())
 }
@@ -379,7 +401,7 @@ func TestConnect_StaticAuth_Valid(t *testing.T) {
 	p.info.Auth = []llm.Auth{{Type: llm.AuthTypeStatic, Data: staticAuthSchema()}}
 	require.NoError(t, r.Register(p))
 
-	_, err := r.Connect(context.Background(), "openai", jsonx.JSONMap{"api_key": "sk-123"})
+	_, err := r.Connect(context.Background(), "openai", connOpts(jsonx.JSONMap{"api_key": "sk-123"}, nil))
 
 	assert.NoError(t, err)
 }
@@ -391,7 +413,7 @@ func TestConnect_StaticAuth_Invalid(t *testing.T) {
 	p.info.Auth = []llm.Auth{{Type: llm.AuthTypeStatic, Data: staticAuthSchema()}}
 	require.NoError(t, r.Register(p))
 
-	_, err := r.Connect(context.Background(), "openai", jsonx.JSONMap{"wrong": "field"})
+	_, err := r.Connect(context.Background(), "openai", connOpts(jsonx.JSONMap{"wrong": "field"}, nil))
 
 	assert.ErrorIs(t, err, llm.ErrAuth)
 }
@@ -406,9 +428,35 @@ func TestConnect_StaticAuth_FallsBackToNoAuthMethod(t *testing.T) {
 	}
 	require.NoError(t, r.Register(p))
 
-	_, err := r.Connect(context.Background(), "openai", jsonx.JSONMap{"wrong": "field"})
+	_, err := r.Connect(context.Background(), "openai", connOpts(jsonx.JSONMap{"wrong": "field"}, nil))
 
 	assert.NoError(t, err)
+}
+
+func TestConnect_ConfigSchema_Valid(t *testing.T) {
+	t.Parallel()
+	r := newRegistry()
+	p := provider("ollama")
+	p.info.Schemas.Config = requireBaseURLSchema()
+	require.NoError(t, r.Register(p))
+
+	_, err := r.Connect(context.Background(), "ollama", connOpts(nil, jsonx.JSONMap{"base_url": "http://x:11434"}))
+
+	assert.NoError(t, err)
+}
+
+func TestConnect_ConfigSchema_InvalidIsFatal(t *testing.T) {
+	t.Parallel()
+	r := newRegistry()
+	p := provider("ollama")
+	p.info.Schemas.Config = requireBaseURLSchema()
+	require.NoError(t, r.Register(p))
+
+	_, err := r.Connect(context.Background(), "ollama", connOpts(nil, jsonx.JSONMap{}))
+
+	// A broken config is a fatal ErrBadRequest, not a failover ErrAuth.
+	assert.ErrorIs(t, err, llm.ErrBadRequest)
+	assert.NotErrorIs(t, err, llm.ErrAuth)
 }
 
 func TestConnect_RunsHealthCheck(t *testing.T) {

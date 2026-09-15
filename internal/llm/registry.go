@@ -98,19 +98,28 @@ func (r *Registry) List() []Info {
 	return out
 }
 
-// Connect resolves the provider for key, checks the auth options against the
-// provider's declared Auth methods, and — when the provider is a
-// HealthChecker — runs its health check. It returns the ready provider.
-func (r *Registry) Connect(ctx context.Context, key string, authOptions jsonx.JSONMap) (Provider, error) {
+// Connect resolves the provider for key, validates the connection options
+// (auth section against the declared Auth methods, config section against
+// Schemas.Config), and — when the provider is a HealthChecker — runs its
+// health check. It returns the ready provider.
+func (r *Registry) Connect(ctx context.Context, key string, connectionOptions jsonx.JSONMap) (Provider, error) {
 	p, ok := r.get(key)
 	if !ok {
 		return nil, fmt.Errorf("%w: %q", ErrProviderNotFound, key)
 	}
-	if err := validateAuthOptions(p.Info().Auth, authOptions); err != nil {
+
+	info := p.Info()
+	if err := validateAuthSection(info.Auth, AuthSection(connectionOptions)); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrAuth, err)
 	}
+	if info.Schemas.Config != nil {
+		if err := jsonschema.Validate(info.Schemas.Config, orEmpty(ConfigSection(connectionOptions))); err != nil {
+			return nil, fmt.Errorf("%w: config: %v", ErrBadRequest, err)
+		}
+	}
+
 	if hc, ok := p.(HealthChecker); ok {
-		if err := hc.HealthCheck(ctx, authOptions); err != nil {
+		if err := hc.HealthCheck(ctx, connectionOptions); err != nil {
 			return nil, err
 		}
 	}
@@ -118,15 +127,15 @@ func (r *Registry) Connect(ctx context.Context, key string, authOptions jsonx.JS
 }
 
 // Models returns the provider's model list, served from the cache keyed by
-// provider key + a hash of authOptions. Concurrent misses for the same key
-// collapse into a single provider call.
-func (r *Registry) Models(ctx context.Context, key string, authOptions jsonx.JSONMap) ([]Model, error) {
+// provider key + a hash of the connection options. Concurrent misses for the
+// same key collapse into a single provider call.
+func (r *Registry) Models(ctx context.Context, key string, connectionOptions jsonx.JSONMap) ([]Model, error) {
 	p, ok := r.get(key)
 	if !ok {
 		return nil, fmt.Errorf("%w: %q", ErrProviderNotFound, key)
 	}
 
-	cacheKey := modelsCacheKey(key, authOptions)
+	cacheKey := modelsCacheKey(key, connectionOptions)
 	if models, ok := cache.GetAs[[]Model](r.modelsCache, cacheKey); ok {
 		return models, nil
 	}
@@ -135,7 +144,7 @@ func (r *Registry) Models(ctx context.Context, key string, authOptions jsonx.JSO
 		if models, ok := cache.GetAs[[]Model](r.modelsCache, cacheKey); ok {
 			return models, nil
 		}
-		models, err := p.Models(ctx, authOptions)
+		models, err := p.Models(ctx, connectionOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -150,8 +159,8 @@ func (r *Registry) Models(ctx context.Context, key string, authOptions jsonx.JSO
 
 // HasModel reports whether the provider under providerKey has a model whose
 // Key is modelKey. The model list is resolved through the same cache as Models.
-func (r *Registry) HasModel(ctx context.Context, providerKey, modelKey string, authOptions jsonx.JSONMap) (bool, error) {
-	models, err := r.Models(ctx, providerKey, authOptions)
+func (r *Registry) HasModel(ctx context.Context, providerKey, modelKey string, connectionOptions jsonx.JSONMap) (bool, error) {
+	models, err := r.Models(ctx, providerKey, connectionOptions)
 	if err != nil {
 		return false, err
 	}
@@ -164,7 +173,7 @@ func (r *Registry) HasModel(ctx context.Context, providerKey, modelKey string, a
 }
 
 // InvalidateModels drops any cached model lists for providerKey, across every
-// auth-option hash.
+// connection-options hash.
 func (r *Registry) InvalidateModels(providerKey string) {
 	prefix := modelsCachePrefix + providerKey + "\x00"
 	for _, k := range r.modelsCache.Keys() {
@@ -181,11 +190,11 @@ func (r *Registry) get(key string) (Provider, bool) {
 	return p, ok
 }
 
-// validateAuthOptions passes if any of the provider's declared auth methods
-// accepts authOptions: a no-auth method always passes; a static method passes
-// when authOptions satisfies its JSON Schema. A provider that declares no auth
+// validateAuthSection passes if any of the provider's declared auth methods
+// accepts authSection: a no-auth method always passes; a static method passes
+// when authSection satisfies its JSON Schema. A provider that declares no auth
 // method has no requirement.
-func validateAuthOptions(methods []Auth, authOptions jsonx.JSONMap) error {
+func validateAuthSection(methods []Auth, authSection jsonx.JSONMap) error {
 	if len(methods) == 0 {
 		return nil
 	}
@@ -199,7 +208,7 @@ func validateAuthOptions(methods []Auth, authOptions jsonx.JSONMap) error {
 			if m.Data == nil {
 				return nil
 			}
-			if err := jsonschema.Validate(m.Data, authOptions); err != nil {
+			if err := jsonschema.Validate(m.Data, orEmpty(authSection)); err != nil {
 				lastErr = err
 				continue
 			}
@@ -215,21 +224,21 @@ func validateAuthOptions(methods []Auth, authOptions jsonx.JSONMap) error {
 }
 
 // modelsCacheKey combines the namespace prefix, the provider key, and a hash
-// of the auth options — different credentials or tiers can expose different
-// model lists.
-func modelsCacheKey(providerKey string, authOptions jsonx.JSONMap) string {
-	return modelsCachePrefix + providerKey + "\x00" + hashAuthOptions(authOptions)
+// of the connection options — different credentials or config can expose
+// different model lists.
+func modelsCacheKey(providerKey string, connectionOptions jsonx.JSONMap) string {
+	return modelsCachePrefix + providerKey + "\x00" + hashConnectionOptions(connectionOptions)
 }
 
-// hashAuthOptions returns a stable hex SHA-256 of authOptions. encoding/json
-// sorts map keys, so the digest is deterministic for equal maps.
-func hashAuthOptions(authOptions jsonx.JSONMap) string {
-	if len(authOptions) == 0 {
+// hashConnectionOptions returns a stable hex SHA-256 of connectionOptions.
+// encoding/json sorts map keys, so the digest is deterministic for equal maps.
+func hashConnectionOptions(connectionOptions jsonx.JSONMap) string {
+	if len(connectionOptions) == 0 {
 		return "none"
 	}
-	b, err := json.Marshal(authOptions)
+	b, err := json.Marshal(connectionOptions)
 	if err != nil {
-		return fmt.Sprintf("unhashable-%d", len(authOptions))
+		return fmt.Sprintf("unhashable-%d", len(connectionOptions))
 	}
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])

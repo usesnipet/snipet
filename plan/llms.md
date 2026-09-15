@@ -93,7 +93,7 @@ When the Runner exhausts the llm list without success it returns a
 
 One entry in a provider's catalog (`Models` returns `[]Model`).
 
-- **id** — the string used in API calls (`gpt-4o`, `claude-sonnet-4`); this is
+- **key** — the string used in API calls (`gpt-4o`, `claude-sonnet-4`); this is
   what `HasModel` matches and what goes in `"provider-key/model"`
 - **name** — display name
 - **description**

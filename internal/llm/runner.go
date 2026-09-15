@@ -12,9 +12,9 @@ import (
 // Target is one llm the Runner may try: a "provider-key/model" reference plus
 // the options for that call.
 type Target struct {
-	Model        string        // "provider-key/model"
-	ExtraOptions jsonx.JSONMap // optional; validated against the provider's schema
-	AuthOptions  jsonx.JSONMap
+	Model             string        // "provider-key/model"
+	ExtraOptions      jsonx.JSONMap // optional; validated against the provider's schema
+	ConnectionOptions jsonx.JSONMap // {auth: {...}, config: {...}}
 }
 
 // Runner runs a conversation against an ordered list of Targets.
@@ -122,11 +122,11 @@ func (r *Runner) streamOne(ctx context.Context, t Target, messages []Message, to
 
 func (r *Runner) request(t Target, modelKey string, messages []Message, tools []Tool) GenerateRequest {
 	return GenerateRequest{
-		Messages:     messages,
-		Model:        modelKey,
-		Tools:        tools,
-		ExtraOptions: t.ExtraOptions,
-		AuthOptions:  t.AuthOptions,
+		Messages:          messages,
+		Model:             modelKey,
+		Tools:             tools,
+		ExtraOptions:      t.ExtraOptions,
+		ConnectionOptions: t.ConnectionOptions,
 	}
 }
 
@@ -139,9 +139,9 @@ const (
 )
 
 // resolve runs the plan's "Validate" step for one target: split the model
-// ref, Connect (which health-checks and validates the auth options), confirm
-// the model exists, and validate the extra options against the provider's
-// schema. A bad ref, missing model, or schema failure is a fatal
+// ref, Connect (which validates the connection options and health-checks),
+// confirm the model exists, and validate the extra options against the
+// provider's schema. A bad ref, missing model, or schema failure is a fatal
 // ErrBadRequest / ErrModelNotFound — never a failover.
 func (r *Runner) resolve(ctx context.Context, t Target, kind callKind) (Provider, string, error) {
 	providerKey, modelKey, ok := SplitModelRef(t.Model)
@@ -149,12 +149,12 @@ func (r *Runner) resolve(ctx context.Context, t Target, kind callKind) (Provider
 		return nil, "", fmt.Errorf("%w: bad model ref %q", ErrBadRequest, t.Model)
 	}
 
-	p, err := r.registry.Connect(ctx, providerKey, t.AuthOptions)
+	p, err := r.registry.Connect(ctx, providerKey, t.ConnectionOptions)
 	if err != nil {
 		return nil, "", err
 	}
 
-	has, err := r.registry.HasModel(ctx, providerKey, modelKey, t.AuthOptions)
+	has, err := r.registry.HasModel(ctx, providerKey, modelKey, t.ConnectionOptions)
 	if err != nil {
 		return nil, "", err
 	}
