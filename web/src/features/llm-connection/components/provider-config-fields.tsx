@@ -7,7 +7,7 @@ import { buildPasswordUiSchema } from "@/components/schema-form";
 import type { RJSFSchema, UiSchema } from "@rjsf/utils";
 
 type Props = {
-  /** JSON schema of the selected provider driver's `configuration_schema`. */
+  /** JSON schema for one connection-options section (the provider's auth or config schema). */
   schema: RJSFSchema;
   /** Initial config, read once when the field mounts (remount via `key` on change). */
   defaultData?: Record<string, unknown>;

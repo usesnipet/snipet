@@ -19,8 +19,18 @@ export function LlmFormFields() {
 
   const providerKey = form.watch("provider") as string | undefined;
   const selected = providers.find((provider) => provider.key === providerKey);
-  const schema = (selected?.configuration_schema ?? undefined) as
-    | RJSFSchema
+
+  // A provider can offer several auth methods; render the first "static" one
+  // that carries a schema (most providers only declare one). "no-auth" needs
+  // no form at all.
+  const authSchema = selected?.auth.find((method) => method.type === "static" && method.data)
+    ?.data as RJSFSchema | undefined;
+  const configSchema = (selected?.schemas.config ?? undefined) as RJSFSchema | undefined;
+
+  // The "config" form field holds the nested connection options the backend
+  // expects: { auth: {...}, config: {...} }.
+  const existingConnectionOptions = form.getValues("config") as
+    | { auth?: Record<string, unknown>; config?: Record<string, unknown> }
     | undefined;
 
   const [previousProviderKey, setPreviousProviderKey] = useState<string | undefined>(providerKey);
@@ -78,16 +88,32 @@ export function LlmFormFields() {
         </div>
       ) : null}
 
-      {selected && schema ? (
+      {selected && authSchema ? (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Authentication</p>
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <ProviderConfigFields
+              key={`${providerKey}-auth`}
+              schema={authSchema}
+              defaultData={existingConnectionOptions?.auth}
+              onChange={(data) =>
+                form.setValue("config.auth", data, { shouldDirty: true })
+              }
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {selected && configSchema ? (
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Configuration</p>
           <div className="rounded-lg border bg-muted/30 p-3">
             <ProviderConfigFields
-              key={providerKey}
-              schema={schema}
-              defaultData={form.getValues("config") as Record<string, unknown>}
+              key={`${providerKey}-config`}
+              schema={configSchema}
+              defaultData={existingConnectionOptions?.config}
               onChange={(data) =>
-                form.setValue("config", data, { shouldDirty: true })
+                form.setValue("config.config", data, { shouldDirty: true })
               }
             />
           </div>
