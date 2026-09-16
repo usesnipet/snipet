@@ -8,6 +8,7 @@ type Info struct {
 	Key         string   `json:"key"`
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
+	Icon        string   `json:"icon,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
 
 	Auth    []Auth  `json:"auth"`

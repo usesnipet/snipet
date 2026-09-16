@@ -55,6 +55,7 @@ func (p *Provider) Info() llm.Info {
 		Name:        "Ollama",
 		Description: "Local models served by an Ollama server",
 		Tags:        []string{"local", "self-hosted", "open-source"},
+		Icon:        "https://ollama.com/public/ollama.png",
 		Auth:        []llm.Auth{{Type: llm.AuthTypeNone}},
 		Schemas:     llm.Schemas{Config: ConfigSchema},
 	}

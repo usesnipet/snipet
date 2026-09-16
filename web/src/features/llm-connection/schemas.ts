@@ -1,8 +1,6 @@
-import { z } from "zod";
-
-import { paginatedSchema, paginationParamsSchema } from "@/schemas/paginated";
-
 import { llmConnectionSchema } from "@/models/llm-connection";
+import { paginatedSchema, paginationParamsSchema } from "@/schemas/paginated";
+import { z } from "zod";
 
 export { llmConnectionSchema } from "@/models/llm-connection";
 export type { LlmConnection } from "@/models/llm-connection";
@@ -60,7 +58,6 @@ export const llmProviderSchema = z
     key: z.string(),
     name: z.string(),
     description: z.string(),
-    // Not sent by the backend today; the UI falls back to a monogram when absent.
     icon: z.string().optional(),
     tags: z.array(z.string()).optional(),
     auth: z.array(llmProviderAuthSchema),
