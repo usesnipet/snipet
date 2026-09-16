@@ -1,23 +1,13 @@
 import { CatalogList } from "@/components/catalog";
 import { LoadingFallback } from "@/components/loading-fallback";
 import { InputSearch } from "@/components/ui/input-search";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 
 import { useListLlmConnections, useLlmProviders } from "../hooks";
 import {
-  buildRegistryViews,
-  filterRegistryViews,
-  REGISTRY_SORTS,
-  registryStats,
-  sortRegistryViews,
+  buildRegistryViews, filterRegistryViews, REGISTRY_SORTS, registryStats, sortRegistryViews
 } from "../lib/registry-view";
 
 import { LlmConnectionCatalogCard } from "./llm-connection-catalog-card";
@@ -113,7 +103,7 @@ export function LlmConnectionCatalog() {
         <div className="flex items-center gap-2 sm:ml-auto">
           <span className="text-muted-foreground hidden text-sm sm:inline">Sort</span>
           <Select value={sort} onValueChange={(value) => setSort(value as RegistrySort)}>
-            <SelectTrigger className="h-10 w-[190px]">
+            <SelectTrigger className="h-10 w-47.5">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
