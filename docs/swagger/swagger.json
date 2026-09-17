@@ -672,6 +672,56 @@
                 }
             }
         },
+        "/llm-connection/providers/{key}/models": {
+            "get": {
+                "description": "Sources connection options from connection_id when given, else the provider's default connection.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "List a provider's models",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Provider key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Connection ID to source connection options from",
+                        "name": "connection_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ProviderModel"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
         "/llm-connection/{id}": {
             "get": {
                 "produces": [
@@ -1113,6 +1163,33 @@
                 "AuthTypeStatic"
             ]
         },
+        "Capability": {
+            "type": "string",
+            "enum": [
+                "text",
+                "vision",
+                "tools",
+                "streaming"
+            ],
+            "x-enum-comments": {
+                "CapabilityStreaming": "supports Provider.Stream",
+                "CapabilityText": "text output",
+                "CapabilityTools": "tool / function calling",
+                "CapabilityVision": "accepts image input"
+            },
+            "x-enum-descriptions": [
+                "text output",
+                "accepts image input",
+                "tool / function calling",
+                "supports Provider.Stream"
+            ],
+            "x-enum-varnames": [
+                "CapabilityText",
+                "CapabilityVision",
+                "CapabilityTools",
+                "CapabilityStreaming"
+            ]
+        },
         "ChangeOwnPasswordDTO": {
             "type": "object",
             "required": [
@@ -1472,6 +1549,35 @@
                 },
                 "role": {
                     "$ref": "#/definitions/Role"
+                }
+            }
+        },
+        "ProviderModel": {
+            "type": "object",
+            "properties": {
+                "capabilities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Capability"
+                    }
+                },
+                "context_window": {
+                    "description": "ContextWindow is the maximum input size in tokens; 0 means unspecified.",
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "key": {
+                    "description": "Unique identifier for model (eg. gpt-4o)",
+                    "type": "string"
+                },
+                "max_output_tokens": {
+                    "description": "MaxOutputTokens caps the generated tokens; 0 means unspecified.",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },

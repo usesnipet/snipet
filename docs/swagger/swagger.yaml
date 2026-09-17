@@ -94,6 +94,28 @@ definitions:
     x-enum-varnames:
     - AuthTypeNone
     - AuthTypeStatic
+  Capability:
+    enum:
+    - text
+    - vision
+    - tools
+    - streaming
+    type: string
+    x-enum-comments:
+      CapabilityStreaming: supports Provider.Stream
+      CapabilityText: text output
+      CapabilityTools: tool / function calling
+      CapabilityVision: accepts image input
+    x-enum-descriptions:
+    - text output
+    - accepts image input
+    - tool / function calling
+    - supports Provider.Stream
+    x-enum-varnames:
+    - CapabilityText
+    - CapabilityVision
+    - CapabilityTools
+    - CapabilityStreaming
   ChangeOwnPasswordDTO:
     properties:
       current_password:
@@ -345,6 +367,26 @@ definitions:
         type: array
       role:
         $ref: '#/definitions/Role'
+    type: object
+  ProviderModel:
+    properties:
+      capabilities:
+        items:
+          $ref: '#/definitions/Capability'
+        type: array
+      context_window:
+        description: ContextWindow is the maximum input size in tokens; 0 means unspecified.
+        type: integer
+      description:
+        type: string
+      key:
+        description: Unique identifier for model (eg. gpt-4o)
+        type: string
+      max_output_tokens:
+        description: MaxOutputTokens caps the generated tokens; 0 means unspecified.
+        type: integer
+      name:
+        type: string
     type: object
   RefreshTokenDTO:
     properties:
@@ -951,6 +993,40 @@ paths:
       security:
       - BasicAuth: []
       summary: List LLM provider
+      tags:
+      - llm-connection
+  /llm-connection/providers/{key}/models:
+    get:
+      description: Sources connection options from connection_id when given, else
+        the provider's default connection.
+      parameters:
+      - description: Provider key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Connection ID to source connection options from
+        in: query
+        name: connection_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ProviderModel'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+      summary: List a provider's models
       tags:
       - llm-connection
   /system/info:

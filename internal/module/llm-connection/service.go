@@ -10,6 +10,7 @@ import (
 	"github.com/usesnipet/snipet/internal/model"
 	"github.com/usesnipet/snipet/internal/page"
 	"github.com/usesnipet/snipet/internal/repository"
+	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
 // Service owns the llm-connection business logic. It depends on the repository
@@ -104,6 +105,33 @@ func (s *Service) DeleteByID(ctx context.Context, id string) error {
 
 func (s *Service) ListProviders(ctx context.Context) []llm.Info {
 	return s.llmRegistry.List()
+}
+
+// ListProviderModels returns providerKey's model catalog, sourcing connection
+// options from connectionID's stored connection when given, else providerKey's
+// default connection (see resolveConnection). Connect validates those options
+// (schema + health check) before the catalog call, same as a Generate/Stream
+// target would.
+func (s *Service) ListProviderModels(ctx context.Context, providerKey string, connectionID *string) ([]llm.Model, error) {
+	conn, err := s.resolveConnection(ctx, providerKey, connectionID)
+	if err != nil {
+		return nil, err
+	}
+
+	var connectionOptions jsonx.JSONMap
+	if conn != nil {
+		connectionOptions = conn.Config
+	}
+
+	if _, err := s.llmRegistry.Connect(ctx, providerKey, connectionOptions); err != nil {
+		return nil, translateLlmError(err)
+	}
+
+	models, err := s.llmRegistry.Models(ctx, providerKey, connectionOptions)
+	if err != nil {
+		return nil, translateLlmError(err)
+	}
+	return models, nil
 }
 
 // Generate runs dto's targets to completion and returns the first successful

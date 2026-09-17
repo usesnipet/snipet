@@ -66,6 +66,18 @@ type FindLlmConnectionsFilterDTO struct {
 	Skip *int `form:"skip" validate:"omitempty,min=0"`
 }
 
+// ProviderModel is one entry of a provider's model catalog (llm.Model), as
+// returned by GET /llm-connection/providers/{key}/models.
+type ProviderModel = llm.Model
+
+// ListProviderModelsFilterDTO is the query string of GET
+// /llm-connection/providers/{key}/models. ConnectionID, when set, names the
+// stored connection to source connection options from; otherwise the
+// provider's default connection is used.
+type ListProviderModelsFilterDTO struct {
+	ConnectionID *string `form:"connection_id" validate:"omitempty"`
+}
+
 func (dto *FindLlmConnectionsFilterDTO) ToFilter() *filter.Options[model.LlmConnection] {
 	return filter.New[model.LlmConnection](
 		filter.PtrTake(dto.Take),

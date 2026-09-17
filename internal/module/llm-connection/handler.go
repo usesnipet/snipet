@@ -23,6 +23,7 @@ func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 		r.Use(api.Or(h.apiKeyGate, h.authGate).Handler())
 		r.Get("/", serve(h.filter))
 		r.Get("/providers", serve(h.listProviders))
+		r.Get("/providers/{key}/models", serve(h.listProviderModels))
 		r.Post("/", serve(h.create))
 		r.Get("/{id}", serve(h.findByID))
 		r.Put("/{id}", serve(h.update))
@@ -123,6 +124,28 @@ func (h *Handler) deleteByID(w http.ResponseWriter, r *http.Request) error {
 func (h *Handler) listProviders(w http.ResponseWriter, r *http.Request) error {
 	providers := h.service.ListProviders(r.Context())
 	return api.WriteJSON(w, http.StatusOK, providers)
+}
+
+// @Summary		List a provider's models
+// @Description	Sources connection options from connection_id when given, else the provider's default connection.
+// @Tags			llm-connection
+// @Produce		json
+// @Param			key				path		string	true	"Provider key"
+// @Param			connection_id	query		string	false	"Connection ID to source connection options from"
+// @Success		200				{array}		ProviderModel
+// @Failure		400				{object}	api.Error
+// @Failure		404				{object}	api.Error
+// @Router			/llm-connection/providers/{key}/models [get]
+func (h *Handler) listProviderModels(w http.ResponseWriter, r *http.Request) error {
+	var dto ListProviderModelsFilterDTO
+	if err := api.ParseQuery(r, &dto); err != nil {
+		return err
+	}
+	models, err := h.service.ListProviderModels(r.Context(), chi.URLParam(r, "key"), dto.ConnectionID)
+	if err != nil {
+		return err
+	}
+	return api.WriteJSON(w, http.StatusOK, models)
 }
 
 // @Summary		Execute an LLM
