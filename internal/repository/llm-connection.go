@@ -47,15 +47,17 @@ func (r *LlmConnectionRepository) Create(ctx context.Context, data *model.LlmCon
 
 func (r *LlmConnectionRepository) UpdateByID(ctx context.Context, id string, data *model.LlmConnection) error {
 	return WithTransaction(ctx, r.db(ctx), func(ctx context.Context) error {
-		provider := data.Provider
-		if provider == "" {
-			existing, err := r.Repository.FindByID(ctx, id)
-			if err != nil {
-				return err
-			}
-			provider = existing.Provider
+		existing, err := r.Repository.FindByID(ctx, id)
+		if err != nil {
+			return err
 		}
-		_, err := gorm.G[model.LlmConnection](r.db(ctx)).
+
+		provider := existing.Provider
+		if data.Provider != "" {
+			provider = data.Provider
+		}
+
+		_, err = gorm.G[model.LlmConnection](r.db(ctx)).
 			Where("provider = ?", provider).
 			Where("is_default = ?", true).
 			First(ctx)
@@ -68,8 +70,59 @@ func (r *LlmConnectionRepository) UpdateByID(ctx context.Context, id string, dat
 				return err
 			}
 		}
-		return r.Repository.UpdateByID(ctx, id, data)
+
+		if err := r.Repository.UpdateByID(ctx, id, data); err != nil {
+			return err
+		}
+
+		// The row just left provider's default slot for a different provider —
+		// promote another of that provider's connections, if any remain.
+		if provider != existing.Provider && existing.Default {
+			return r.promoteOldestByProvider(ctx, existing.Provider)
+		}
+		return nil
 	})
+}
+
+// DeleteByID removes the connection, then — if it was provider's default —
+// promotes another of provider's connections so the invariant (every
+// provider with a connection has exactly one default) still holds.
+func (r *LlmConnectionRepository) DeleteByID(ctx context.Context, id string) error {
+	return WithTransaction(ctx, r.db(ctx), func(ctx context.Context) error {
+		existing, err := r.Repository.FindByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if err := r.Repository.DeleteByID(ctx, id); err != nil {
+			return err
+		}
+
+		if !existing.Default {
+			return nil
+		}
+		return r.promoteOldestByProvider(ctx, existing.Provider)
+	})
+}
+
+// promoteOldestByProvider marks provider's oldest connection as default. A
+// no-op if provider has no connections left.
+func (r *LlmConnectionRepository) promoteOldestByProvider(ctx context.Context, provider string) error {
+	oldest, err := gorm.G[model.LlmConnection](r.db(ctx)).
+		Where("provider = ?", provider).
+		Order("created_at ASC").
+		First(ctx)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	_, err = gorm.G[model.LlmConnection](r.db(ctx)).
+		Where("id = ?", oldest.ID).
+		Update(ctx, "is_default", true)
+	return err
 }
 
 // clearDefaultByProvider unsets is_default on every connection for provider
