@@ -22,6 +22,11 @@ type LlmConnection struct {
 
 	Enabled bool `gorm:"type:boolean" json:"enabled"`
 
+	// Default marks the connection the runner should use for its provider
+	// when a call doesn't name a specific connection. At most one connection
+	// per provider should have this set; the service layer enforces it.
+	Default bool `gorm:"column:is_default;type:boolean;not null;default:false" json:"default"`
+
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }

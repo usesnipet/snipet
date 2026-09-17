@@ -2,6 +2,8 @@ package llmconnection
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	apperr "github.com/usesnipet/snipet/internal/app-err"
 	"github.com/usesnipet/snipet/internal/llm"
@@ -15,10 +17,11 @@ import (
 type Service struct {
 	repo        repository.ILlmConnectionRepository
 	llmRegistry *llm.Registry
+	runner      *llm.Runner
 }
 
-func NewService(repo repository.ILlmConnectionRepository, llmRegistry *llm.Registry) *Service {
-	return &Service{repo: repo, llmRegistry: llmRegistry}
+func NewService(repo repository.ILlmConnectionRepository, llmRegistry *llm.Registry, runner *llm.Runner) *Service {
+	return &Service{repo: repo, llmRegistry: llmRegistry, runner: runner}
 }
 
 func (s *Service) Filter(ctx context.Context, dto FindLlmConnectionsFilterDTO) (*page.Paginated[model.LlmConnection], error) {
@@ -40,6 +43,7 @@ func (s *Service) Create(ctx context.Context, dto CreateLlmConnectionDTO) (*mode
 		Provider: dto.Provider,
 		Config:   dto.Config,
 		Enabled:  dto.Enabled,
+		Default:  dto.Default,
 	}
 	if err := s.repo.Create(ctx, entity); err != nil {
 		return nil, err
@@ -55,8 +59,8 @@ func (s *Service) Update(ctx context.Context, id string, dto UpdateLlmConnection
 		return err
 	}
 
+	provider := existing.Provider
 	if dto.Provider != nil || dto.Config != nil {
-		provider := existing.Provider
 		config := existing.Config
 		if dto.Provider != nil {
 			provider = *dto.Provider
@@ -84,7 +88,14 @@ func (s *Service) Update(ctx context.Context, id string, dto UpdateLlmConnection
 	if dto.Enabled != nil {
 		updates.Enabled = *dto.Enabled
 	}
-	return s.repo.UpdateByID(ctx, id, updates)
+	if dto.Default != nil {
+		updates.Default = *dto.Default
+	}
+	if err := s.repo.UpdateByID(ctx, id, updates); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Service) DeleteByID(ctx context.Context, id string) error {
@@ -93,4 +104,107 @@ func (s *Service) DeleteByID(ctx context.Context, id string) error {
 
 func (s *Service) ListProviders(ctx context.Context) []llm.Info {
 	return s.llmRegistry.List()
+}
+
+// Generate runs dto's targets to completion and returns the first successful
+// response (see llm.Runner.Generate for failover semantics).
+func (s *Service) Generate(ctx context.Context, dto ExecuteLlmDTO) (llm.Response, error) {
+	targets, err := s.resolveTargets(ctx, dto.Targets)
+	if err != nil {
+		return llm.Response{}, err
+	}
+	resp, err := s.runner.Generate(ctx, targets, dto.Messages, nil)
+	return resp, translateLlmError(err)
+}
+
+// Stream runs dto's targets and returns the iterator of the first target that
+// starts streaming successfully (see llm.Runner.Stream for failover
+// semantics). The caller must Close the returned iterator.
+func (s *Service) Stream(ctx context.Context, dto ExecuteLlmDTO) (llm.StreamIterator, error) {
+	targets, err := s.resolveTargets(ctx, dto.Targets)
+	if err != nil {
+		return nil, err
+	}
+	it, err := s.runner.Stream(ctx, targets, dto.Messages, nil)
+	return it, translateLlmError(err)
+}
+
+// resolveTargets turns each ExecuteLlmTargetDTO into a llm.Target, filling in
+// ConnectionOptions from a stored LlmConnection when the caller didn't supply
+// them inline. A provider left without a matching connection is passed
+// through with no connection options — Registry.Connect rejects it downstream
+// if the provider actually requires one.
+func (s *Service) resolveTargets(ctx context.Context, dtos []ExecuteLlmTargetDTO) ([]llm.Target, error) {
+	targets := make([]llm.Target, 0, len(dtos))
+	for _, t := range dtos {
+		providerKey, _, ok := llm.SplitModelRef(t.Model)
+		if !ok {
+			return nil, apperr.BadRequest(fmt.Sprintf("bad model ref %q", t.Model))
+		}
+
+		connectionOptions := t.ConnectionOptions
+		if connectionOptions == nil {
+			conn, err := s.resolveConnection(ctx, providerKey, t.ConnectionID)
+			if err != nil {
+				return nil, err
+			}
+			if conn != nil {
+				connectionOptions = conn.Config
+			}
+		}
+
+		targets = append(targets, llm.Target{
+			Model:             t.Model,
+			ExtraOptions:      t.ExtraOptions,
+			ConnectionOptions: connectionOptions,
+		})
+	}
+	return targets, nil
+}
+
+// resolveConnection looks up the stored connection to use for providerKey:
+// connectionID when the caller named one (validated against providerKey), else
+// the provider's default connection, else its oldest connection. Returns nil
+// (not an error) if none exists.
+func (s *Service) resolveConnection(ctx context.Context, providerKey string, connectionID *string) (*model.LlmConnection, error) {
+	if connectionID != nil {
+		conn, err := s.repo.FindByID(ctx, *connectionID)
+		if err != nil {
+			return nil, err
+		}
+		if conn.Provider != providerKey {
+			return nil, apperr.BadRequest(fmt.Sprintf("connection %q is not a %q connection", *connectionID, providerKey))
+		}
+		return conn, nil
+	}
+
+	conn, err := s.repo.FindDefaultByProvider(ctx, providerKey)
+	if err != nil {
+		return nil, err
+	}
+	if conn != nil {
+		return conn, nil
+	}
+	return s.repo.FindFirstByProvider(ctx, providerKey)
+}
+
+// translateLlmError maps the internal/llm error vocabulary onto apperr status
+// codes; anything else passes through unchanged.
+func translateLlmError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var failover *llm.FailoverError
+	switch {
+	case errors.As(err, &failover):
+		return apperr.NetworkError(err.Error())
+	case errors.Is(err, llm.ErrModelNotFound), errors.Is(err, llm.ErrProviderNotFound):
+		return apperr.NotFound(err.Error())
+	case errors.Is(err, llm.ErrAuth):
+		return apperr.Unauthorized(err.Error())
+	case errors.Is(err, llm.ErrBadRequest), errors.Is(err, llm.ErrInvalidOptions), errors.Is(err, llm.ErrContextTooLong):
+		return apperr.BadRequest(err.Error())
+	default:
+		return err
+	}
 }

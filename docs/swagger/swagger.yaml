@@ -1,5 +1,78 @@
 basePath: /api
 definitions:
+  APIKey:
+    properties:
+      active:
+        type: boolean
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      key_id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  APIKeyResponse:
+    properties:
+      active:
+        type: boolean
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      key_id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  APIKeyWithSecret:
+    properties:
+      active:
+        type: boolean
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      key:
+        type: string
+      key_id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  APIKeysPage:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/APIKey'
+        type: array
+      skip:
+        type: integer
+      take:
+        type: integer
+      total:
+        type: integer
+    type: object
+  Auth:
+    properties:
+      data:
+        $ref: '#/definitions/JSONMap'
+      type:
+        $ref: '#/definitions/AuthType'
+    type: object
   AuthResponse:
     properties:
       access_token:
@@ -13,6 +86,14 @@ definitions:
       user:
         $ref: '#/definitions/User'
     type: object
+  AuthType:
+    enum:
+    - no-auth
+    - static
+    type: string
+    x-enum-varnames:
+    - AuthTypeNone
+    - AuthTypeStatic
   ChangeOwnPasswordDTO:
     properties:
       current_password:
@@ -25,10 +106,22 @@ definitions:
     - current_password
     - new_password
     type: object
+  CreateAPIKeyDTO:
+    properties:
+      expires_at:
+        type: string
+      name:
+        maxLength: 255
+        type: string
+    required:
+    - name
+    type: object
   CreateLlmConnectionDTO:
     properties:
       config:
         $ref: '#/definitions/JSONMap'
+      default:
+        type: boolean
       enabled:
         type: boolean
       name:
@@ -72,6 +165,62 @@ definitions:
       statusCode:
         type: integer
     type: object
+  ExecuteLlmDTO:
+    properties:
+      messages:
+        items:
+          $ref: '#/definitions/Message'
+        minItems: 1
+        type: array
+      targets:
+        items:
+          $ref: '#/definitions/ExecuteLlmTargetDTO'
+        minItems: 1
+        type: array
+    required:
+    - messages
+    - targets
+    type: object
+  ExecuteLlmResponse:
+    properties:
+      finish_reason:
+        $ref: '#/definitions/FinishReason'
+      message:
+        $ref: '#/definitions/Message'
+      usage:
+        $ref: '#/definitions/Usage'
+    type: object
+  ExecuteLlmTargetDTO:
+    properties:
+      connection_id:
+        type: string
+      connection_options:
+        $ref: '#/definitions/JSONMap'
+      extra_options:
+        $ref: '#/definitions/JSONMap'
+      model:
+        type: string
+    required:
+    - model
+    type: object
+  FinishReason:
+    enum:
+    - stop
+    - length
+    - tool_call
+    type: string
+    x-enum-comments:
+      FinishLength: hit the output token cap
+      FinishStop: natural end of the reply
+      FinishToolCall: stopped to call a tool
+    x-enum-descriptions:
+    - natural end of the reply
+    - hit the output token cap
+    - stopped to call a tool
+    x-enum-varnames:
+    - FinishStop
+    - FinishLength
+    - FinishToolCall
   InfoDTO:
     properties:
       version:
@@ -86,6 +235,12 @@ definitions:
         $ref: '#/definitions/JSONMap'
       created_at:
         type: string
+      default:
+        description: |-
+          Default marks the connection the runner should use for its provider
+          when a call doesn't name a specific connection. At most one connection
+          per provider should have this set; the service layer enforces it.
+        type: boolean
       enabled:
         type: boolean
       id:
@@ -112,8 +267,10 @@ definitions:
     type: object
   LLMProviderRegistry:
     properties:
-      configuration_schema:
-        $ref: '#/definitions/JSONMap'
+      auth:
+        items:
+          $ref: '#/definitions/Auth'
+        type: array
       description:
         type: string
       icon:
@@ -122,14 +279,12 @@ definitions:
         type: string
       name:
         type: string
+      schemas:
+        $ref: '#/definitions/Schemas'
       tags:
         items:
           type: string
         type: array
-    required:
-    - description
-    - key
-    - name
     type: object
   LlmConnection:
     properties:
@@ -137,6 +292,12 @@ definitions:
         $ref: '#/definitions/JSONMap'
       created_at:
         type: string
+      default:
+        description: |-
+          Default marks the connection the runner should use for its provider
+          when a call doesn't name a specific connection. At most one connection
+          per provider should have this set; the service layer enforces it.
+        type: boolean
       enabled:
         type: boolean
       id:
@@ -177,6 +338,14 @@ definitions:
         description: Username is the login handle — unique, case-sensitive.
         type: string
     type: object
+  Message:
+    properties:
+      parts:
+        items: {}
+        type: array
+      role:
+        $ref: '#/definitions/Role'
+    type: object
   RefreshTokenDTO:
     properties:
       refresh_token:
@@ -186,16 +355,44 @@ definitions:
     type: object
   Role:
     enum:
-    - admin
+    - system
     - user
+    - assistant
+    - tool
     type: string
     x-enum-varnames:
-    - RoleAdmin
+    - RoleSystem
     - RoleUser
+    - RoleAssistant
+    - RoleTool
+  Schemas:
+    properties:
+      config:
+        allOf:
+        - $ref: '#/definitions/JSONMap'
+        description: |-
+          Config validates the "config" section of the connection options — the
+          always-required provider config (endpoint, region, org id, ...).
+      generate_extra_options:
+        allOf:
+        - $ref: '#/definitions/JSONMap'
+        description: |-
+          GenerateExtraOptions and StreamExtraOptions validate the per-call
+          extra_options of Generate and Stream respectively.
+      stream_extra_options:
+        $ref: '#/definitions/JSONMap'
+    type: object
+  UpdateExpirationDTO:
+    properties:
+      expires_at:
+        type: string
+    type: object
   UpdateLlmConnectionDTO:
     properties:
       config:
         $ref: '#/definitions/JSONMap'
+      default:
+        type: boolean
       enabled:
         type: boolean
       name:
@@ -216,6 +413,13 @@ definitions:
         type: string
       role:
         type: string
+    type: object
+  Usage:
+    properties:
+      input_tokens:
+        type: integer
+      output_tokens:
+        type: integer
     type: object
   User:
     properties:
@@ -274,6 +478,223 @@ info:
   title: snipets API
   version: "1.0"
 paths:
+  /api-key/me:
+    get:
+      description: Returns the API key used to authenticate the current request.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIKeyResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current API key
+      tags:
+      - api-key
+  /api-keys:
+    get:
+      description: Lists API keys, with optional pagination.
+      parameters:
+      - description: Page size
+        in: query
+        name: take
+        type: integer
+      - description: Page offset
+        in: query
+        name: skip
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIKeysPage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      summary: List API keys
+      tags:
+      - api-key
+    post:
+      consumes:
+      - application/json
+      description: Creates a new API key. The plaintext key is only returned once,
+        on creation.
+      parameters:
+      - description: API key data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateAPIKeyDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/APIKeyWithSecret'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      summary: Create API key
+      tags:
+      - api-key
+  /api-keys/{id}:
+    delete:
+      description: Deletes an API key by ID.
+      parameters:
+      - description: API key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      summary: Delete API key
+      tags:
+      - api-key
+    get:
+      description: Returns an API key by ID.
+      parameters:
+      - description: API key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIKeyResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      summary: Get API key
+      tags:
+      - api-key
+  /api-keys/{id}/active:
+    put:
+      description: Marks an API key as active.
+      parameters:
+      - description: API key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      summary: Activate API key
+      tags:
+      - api-key
+  /api-keys/{id}/disabled:
+    put:
+      description: Marks an API key as disabled.
+      parameters:
+      - description: API key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      summary: Disable API key
+      tags:
+      - api-key
+  /api-keys/{id}/expiration:
+    put:
+      consumes:
+      - application/json
+      description: Updates the expiration date of an API key.
+      parameters:
+      - description: API key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Expiration data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateExpirationDTO'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      summary: Update API key expiration
+      tags:
+      - api-key
+  /api-keys/{id}/roll:
+    post:
+      description: Rotates an API key, invalidating the previous secret. The new plaintext
+        key is only returned once.
+      parameters:
+      - description: API key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIKeyWithSecret'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      summary: Roll API key
+      tags:
+      - api-key
   /auth/login:
     post:
       consumes:
@@ -465,6 +886,50 @@ paths:
         "204":
           description: No Content
       summary: Update a LlmConnection
+      tags:
+      - llm-connection
+  /llm-connection/execute:
+    post:
+      consumes:
+      - application/json
+      description: Runs the given targets in order (failover on the first that fails)
+        against the given messages and returns the first successful response.
+      parameters:
+      - description: payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ExecuteLlmDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ExecuteLlmResponse'
+      summary: Execute an LLM
+      tags:
+      - llm-connection
+  /llm-connection/execute/stream:
+    post:
+      consumes:
+      - application/json
+      description: Same as execute, but streams the response as Server-Sent Events
+        ("text_delta", "tool_call", "error", "done").
+      parameters:
+      - description: payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ExecuteLlmDTO'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: OK
+      summary: Execute an LLM with a streamed response
       tags:
       - llm-connection
   /llm-connection/providers:

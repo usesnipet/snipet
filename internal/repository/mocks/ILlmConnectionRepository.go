@@ -291,6 +291,142 @@ func (_c *MockILlmConnectionRepository_FindByID_Call) RunAndReturn(run func(ctx 
 	return _c
 }
 
+// FindDefaultByProvider provides a mock function for the type MockILlmConnectionRepository
+func (_mock *MockILlmConnectionRepository) FindDefaultByProvider(ctx context.Context, provider string) (*model.LlmConnection, error) {
+	ret := _mock.Called(ctx, provider)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindDefaultByProvider")
+	}
+
+	var r0 *model.LlmConnection
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*model.LlmConnection, error)); ok {
+		return returnFunc(ctx, provider)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *model.LlmConnection); ok {
+		r0 = returnFunc(ctx, provider)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.LlmConnection)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, provider)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockILlmConnectionRepository_FindDefaultByProvider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindDefaultByProvider'
+type MockILlmConnectionRepository_FindDefaultByProvider_Call struct {
+	*mock.Call
+}
+
+// FindDefaultByProvider is a helper method to define mock.On call
+//   - ctx context.Context
+//   - provider string
+func (_e *MockILlmConnectionRepository_Expecter) FindDefaultByProvider(ctx any, provider any) *MockILlmConnectionRepository_FindDefaultByProvider_Call {
+	return &MockILlmConnectionRepository_FindDefaultByProvider_Call{Call: _e.mock.On("FindDefaultByProvider", ctx, provider)}
+}
+
+func (_c *MockILlmConnectionRepository_FindDefaultByProvider_Call) Run(run func(ctx context.Context, provider string)) *MockILlmConnectionRepository_FindDefaultByProvider_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockILlmConnectionRepository_FindDefaultByProvider_Call) Return(llmConnection *model.LlmConnection, err error) *MockILlmConnectionRepository_FindDefaultByProvider_Call {
+	_c.Call.Return(llmConnection, err)
+	return _c
+}
+
+func (_c *MockILlmConnectionRepository_FindDefaultByProvider_Call) RunAndReturn(run func(ctx context.Context, provider string) (*model.LlmConnection, error)) *MockILlmConnectionRepository_FindDefaultByProvider_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindFirstByProvider provides a mock function for the type MockILlmConnectionRepository
+func (_mock *MockILlmConnectionRepository) FindFirstByProvider(ctx context.Context, provider string) (*model.LlmConnection, error) {
+	ret := _mock.Called(ctx, provider)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindFirstByProvider")
+	}
+
+	var r0 *model.LlmConnection
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*model.LlmConnection, error)); ok {
+		return returnFunc(ctx, provider)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *model.LlmConnection); ok {
+		r0 = returnFunc(ctx, provider)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.LlmConnection)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, provider)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockILlmConnectionRepository_FindFirstByProvider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindFirstByProvider'
+type MockILlmConnectionRepository_FindFirstByProvider_Call struct {
+	*mock.Call
+}
+
+// FindFirstByProvider is a helper method to define mock.On call
+//   - ctx context.Context
+//   - provider string
+func (_e *MockILlmConnectionRepository_Expecter) FindFirstByProvider(ctx any, provider any) *MockILlmConnectionRepository_FindFirstByProvider_Call {
+	return &MockILlmConnectionRepository_FindFirstByProvider_Call{Call: _e.mock.On("FindFirstByProvider", ctx, provider)}
+}
+
+func (_c *MockILlmConnectionRepository_FindFirstByProvider_Call) Run(run func(ctx context.Context, provider string)) *MockILlmConnectionRepository_FindFirstByProvider_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockILlmConnectionRepository_FindFirstByProvider_Call) Return(llmConnection *model.LlmConnection, err error) *MockILlmConnectionRepository_FindFirstByProvider_Call {
+	_c.Call.Return(llmConnection, err)
+	return _c
+}
+
+func (_c *MockILlmConnectionRepository_FindFirstByProvider_Call) RunAndReturn(run func(ctx context.Context, provider string) (*model.LlmConnection, error)) *MockILlmConnectionRepository_FindFirstByProvider_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateByID provides a mock function for the type MockILlmConnectionRepository
 func (_mock *MockILlmConnectionRepository) UpdateByID(ctx context.Context, id string, model1 *model.LlmConnection) error {
 	ret := _mock.Called(ctx, id, model1)

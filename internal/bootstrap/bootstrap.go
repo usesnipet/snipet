@@ -63,7 +63,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 
 	llmRegistry := llm.NewRegistry(cache.NewMemoryCache(2000, 0), 0)
 	llmRegistry.MustRegister(ollama.New())
-	// _ := llm.NewRunner(llmRegistry)
+	llmRunner := llm.NewRunner(llmRegistry)
 
 	// auth primitives
 	userJWTService := auth.NewJWTService(cfg.Auth)
@@ -74,7 +74,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 
 	// services
 	systemService := systemmodule.NewService()
-	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmRegistry)
+	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmRegistry, llmRunner)
 	userService := usermodule.NewService(userRepo, log.Child(logger.WithPrefix("user-service: ")))
 	userService.InitializeRootUser(context.Background(), cfg.Auth)
 
@@ -93,7 +93,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)
-	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService, requireUserAuth)
+	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService, requireUserAuth, requireApiKey)
 	userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
 	authHandler := authmodule.NewHandler(authService, requireUserAuth)
 	apiKeyHandler := apikey.NewHandler(apiKeyService, requireRole, requireUserAuth, requireApiKey)

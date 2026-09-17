@@ -8,6 +8,351 @@
     },
     "basePath": "/api",
     "paths": {
+        "/api-key/me": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns the API key used to authenticate the current request.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Get current API key",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeyResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Lists API keys, with optional pagination.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "List API keys",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "take",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page offset",
+                        "name": "skip",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeysPage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Creates a new API key. The plaintext key is only returned once, on creation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Create API key",
+                "parameters": [
+                    {
+                        "description": "API key data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateAPIKeyDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeyWithSecret"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Returns an API key by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Get API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeyResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Deletes an API key by ID.",
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Delete API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}/active": {
+            "put": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Marks an API key as active.",
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Activate API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}/disabled": {
+            "put": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Marks an API key as disabled.",
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Disable API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}/expiration": {
+            "put": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Updates the expiration date of an API key.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Update API key expiration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Expiration data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateExpirationDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}/roll": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Rotates an API key, invalidating the previous secret. The new plaintext key is only returned once.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Roll API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeyWithSecret"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "consumes": [
@@ -224,6 +569,71 @@
                         "schema": {
                             "$ref": "#/definitions/LLMConnectionResponse"
                         }
+                    }
+                }
+            }
+        },
+        "/llm-connection/execute": {
+            "post": {
+                "description": "Runs the given targets in order (failover on the first that fails) against the given messages and returns the first successful response.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "Execute an LLM",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteLlmDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteLlmResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/llm-connection/execute/stream": {
+            "post": {
+                "description": "Same as execute, but streams the response as Server-Sent Events (\"text_delta\", \"tool_call\", \"error\", \"done\").",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "Execute an LLM with a streamed response",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteLlmDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
@@ -560,6 +970,118 @@
         }
     },
     "definitions": {
+        "APIKey": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "key_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "APIKeyResponse": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "key_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "APIKeyWithSecret": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "key_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "APIKeysPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/APIKey"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "Auth": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "type": {
+                    "$ref": "#/definitions/AuthType"
+                }
+            }
+        },
         "AuthResponse": {
             "type": "object",
             "properties": {
@@ -580,6 +1102,17 @@
                 }
             }
         },
+        "AuthType": {
+            "type": "string",
+            "enum": [
+                "no-auth",
+                "static"
+            ],
+            "x-enum-varnames": [
+                "AuthTypeNone",
+                "AuthTypeStatic"
+            ]
+        },
         "ChangeOwnPasswordDTO": {
             "type": "object",
             "required": [
@@ -597,6 +1130,21 @@
                 }
             }
         },
+        "CreateAPIKeyDTO": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
         "CreateLlmConnectionDTO": {
             "type": "object",
             "required": [
@@ -607,6 +1155,9 @@
             "properties": {
                 "config": {
                     "$ref": "#/definitions/JSONMap"
+                },
+                "default": {
+                    "type": "boolean"
                 },
                 "enabled": {
                     "type": "boolean"
@@ -663,6 +1214,86 @@
                 }
             }
         },
+        "ExecuteLlmDTO": {
+            "type": "object",
+            "required": [
+                "messages",
+                "targets"
+            ],
+            "properties": {
+                "messages": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/Message"
+                    }
+                },
+                "targets": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/ExecuteLlmTargetDTO"
+                    }
+                }
+            }
+        },
+        "ExecuteLlmResponse": {
+            "type": "object",
+            "properties": {
+                "finish_reason": {
+                    "$ref": "#/definitions/FinishReason"
+                },
+                "message": {
+                    "$ref": "#/definitions/Message"
+                },
+                "usage": {
+                    "$ref": "#/definitions/Usage"
+                }
+            }
+        },
+        "ExecuteLlmTargetDTO": {
+            "type": "object",
+            "required": [
+                "model"
+            ],
+            "properties": {
+                "connection_id": {
+                    "type": "string"
+                },
+                "connection_options": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "extra_options": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "model": {
+                    "type": "string"
+                }
+            }
+        },
+        "FinishReason": {
+            "type": "string",
+            "enum": [
+                "stop",
+                "length",
+                "tool_call"
+            ],
+            "x-enum-comments": {
+                "FinishLength": "hit the output token cap",
+                "FinishStop": "natural end of the reply",
+                "FinishToolCall": "stopped to call a tool"
+            },
+            "x-enum-descriptions": [
+                "natural end of the reply",
+                "hit the output token cap",
+                "stopped to call a tool"
+            ],
+            "x-enum-varnames": [
+                "FinishStop",
+                "FinishLength",
+                "FinishToolCall"
+            ]
+        },
         "InfoDTO": {
             "type": "object",
             "properties": {
@@ -683,6 +1314,10 @@
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "default": {
+                    "description": "Default marks the connection the runner should use for its provider\nwhen a call doesn't name a specific connection. At most one connection\nper provider should have this set; the service layer enforces it.",
+                    "type": "boolean"
                 },
                 "enabled": {
                     "type": "boolean"
@@ -723,14 +1358,12 @@
         },
         "LLMProviderRegistry": {
             "type": "object",
-            "required": [
-                "description",
-                "key",
-                "name"
-            ],
             "properties": {
-                "configuration_schema": {
-                    "$ref": "#/definitions/JSONMap"
+                "auth": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Auth"
+                    }
                 },
                 "description": {
                     "type": "string"
@@ -743,6 +1376,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "schemas": {
+                    "$ref": "#/definitions/Schemas"
                 },
                 "tags": {
                     "type": "array",
@@ -760,6 +1396,10 @@
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "default": {
+                    "description": "Default marks the connection the runner should use for its provider\nwhen a call doesn't name a specific connection. At most one connection\nper provider should have this set; the service layer enforces it.",
+                    "type": "boolean"
                 },
                 "enabled": {
                     "type": "boolean"
@@ -823,6 +1463,18 @@
                 }
             }
         },
+        "Message": {
+            "type": "object",
+            "properties": {
+                "parts": {
+                    "type": "array",
+                    "items": {}
+                },
+                "role": {
+                    "$ref": "#/definitions/Role"
+                }
+            }
+        },
         "RefreshTokenDTO": {
             "type": "object",
             "required": [
@@ -837,19 +1489,58 @@
         "Role": {
             "type": "string",
             "enum": [
-                "admin",
-                "user"
+                "system",
+                "user",
+                "assistant",
+                "tool"
             ],
             "x-enum-varnames": [
-                "RoleAdmin",
-                "RoleUser"
+                "RoleSystem",
+                "RoleUser",
+                "RoleAssistant",
+                "RoleTool"
             ]
+        },
+        "Schemas": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "description": "Config validates the \"config\" section of the connection options — the\nalways-required provider config (endpoint, region, org id, ...).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/JSONMap"
+                        }
+                    ]
+                },
+                "generate_extra_options": {
+                    "description": "GenerateExtraOptions and StreamExtraOptions validate the per-call\nextra_options of Generate and Stream respectively.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/JSONMap"
+                        }
+                    ]
+                },
+                "stream_extra_options": {
+                    "$ref": "#/definitions/JSONMap"
+                }
+            }
+        },
+        "UpdateExpirationDTO": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                }
+            }
         },
         "UpdateLlmConnectionDTO": {
             "type": "object",
             "properties": {
                 "config": {
                     "$ref": "#/definitions/JSONMap"
+                },
+                "default": {
+                    "type": "boolean"
                 },
                 "enabled": {
                     "type": "boolean"
@@ -878,6 +1569,17 @@
                 },
                 "role": {
                     "type": "string"
+                }
+            }
+        },
+        "Usage": {
+            "type": "object",
+            "properties": {
+                "input_tokens": {
+                    "type": "integer"
+                },
+                "output_tokens": {
+                    "type": "integer"
                 }
             }
         },
