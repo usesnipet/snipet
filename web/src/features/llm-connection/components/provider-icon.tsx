@@ -1,3 +1,4 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SVG } from "@/components/ui/svg";
 import { cn } from "@/lib/utils";
 import stc from "string-to-color";
@@ -19,27 +20,19 @@ function initials(name: string) {
 }
 
 export function ProviderIcon({ name, providerKey, icon, className }: Props) {
-  const box = cn("size-9 shrink-0 rounded-lg", className);
   const trimmed = icon?.trim();
-
-  if (trimmed?.startsWith("<svg")) {
-    return <SVG svg={trimmed} className={box} />;
-  }
-
-  if (trimmed && /^(https?:|data:|\/)/.test(trimmed)) {
-    return <img src={trimmed} alt="" className={cn(box, "object-contain")} />;
-  }
+  const isRawSvg = trimmed?.startsWith("<svg");
+  const isUrl = !isRawSvg && trimmed && /^(https?:|data:|\/)/.test(trimmed);
 
   return (
-    <span
-      className={cn(
-        box,
-        "flex items-center justify-center text-xs font-semibold text-white",
-      )}
-      style={{ backgroundColor: stc(providerKey) }}
-      aria-hidden
-    >
-      {initials(name)}
-    </span>
+    <Avatar className={cn("size-9 rounded-full bg-primary", className)}>
+      {isUrl && <AvatarImage src={trimmed} alt="" className="object-contain" />}
+      <AvatarFallback
+        className="rounded-lg text-xs font-semibold text-white"
+        style={isRawSvg ? undefined : { backgroundColor: stc(providerKey) }}
+      >
+        {isRawSvg ? <SVG svg={trimmed!} className="size-full" /> : initials(name)}
+      </AvatarFallback>
+    </Avatar>
   );
 }
