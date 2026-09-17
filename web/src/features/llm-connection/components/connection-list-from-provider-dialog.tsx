@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDialog } from "@/lib/dialog";
+import { cn } from "@/lib/utils";
 import { Pencil, Trash } from "lucide-react";
 import { useMemo } from "react";
 
@@ -21,7 +22,7 @@ type LlmConnectionListFromProviderDialogProps = DialogInstanceProps<{
 }>;
 
 export function LlmConnectionListFromProviderDialog(
-  { provider: { key, name }, close }: LlmConnectionListFromProviderDialogProps
+  { provider: { key, name } }: LlmConnectionListFromProviderDialogProps
 ) {
   const { data: connections, isLoading, error } = useListLlmConnections();
   const { openDialog } = useDialog();
@@ -30,6 +31,13 @@ export function LlmConnectionListFromProviderDialog(
     if (isLoading || error) return [];
     return connections?.data.filter((connection) => connection.provider === key) ?? [];
   }, [connections, key, isLoading, error]);
+
+  const addNewConnection = () => {
+    openDialog({
+      component: CreateLlmConnectionDialog,
+      props: { defaultValues: { provider: key } }
+    })
+  }
 
   return (
     <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -40,41 +48,56 @@ export function LlmConnectionListFromProviderDialog(
         </DialogDescription>
       </DialogHeader>
       <ScrollArea className="max-h-[calc(100vh-250px)]">
-        {connectionsFromProvider.map((connection) => (
-          <div key={connection.id} className="flex justify-between items-center gap-3 rounded-lg border bg-muted/30 p-3">
-            <span className="text-sm font-medium leading-none">{connection.name}</span>
-            <div className="flex items-center gap-2">
-              <Badge variant={connection.enabled ? "default" : "outline"}>{connection.enabled ? "Enabled" : "Disabled"}</Badge>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                onClick={() => openDialog({
-                  component: CreateLlmConnectionDialog,
-                  props: { llm: connection }
-                })}
-              >
-                <Pencil />
-              </Button>
-              <Button
-                variant="destructive"
-                size="icon-sm"
-                onClick={() => openDialog({
-                  component: DeleteLlmConnectionDialog,
-                  props: { llm: connection }
-                })}
-              >
-                <Trash />
-              </Button>
+        <div className="flex flex-col gap-2">
+          {connectionsFromProvider.map((connection) => (
+            <div
+              key={connection.id}
+              className={
+                cn(
+                  "flex justify-between items-center gap-3 rounded-lg border bg-muted/30 p-3",
+                  connection.default && "bg-primary/20"
+                )
+              }
+            >
+              <span className="text-sm font-medium leading-none">{connection.name}</span>
+              <div className="flex items-center gap-2">
+                <Badge variant={connection.enabled ? "default" : "outline"}>
+                  {connection.enabled ? "Enabled" : "Disabled"}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  onClick={() => openDialog({
+                    component: CreateLlmConnectionDialog,
+                    props: { llm: connection }
+                  })}
+                >
+                  <Pencil />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon-sm"
+                  onClick={() => openDialog({
+                    component: DeleteLlmConnectionDialog,
+                    props: { llm: connection }
+                  })}
+                >
+                  <Trash />
+                </Button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </ScrollArea>
       <DialogFooter>
         <DialogClose asChild>
-          <Button type="button" variant="outline" onClick={close}>
+          <Button type="button" variant="outline">
             Close
           </Button>
         </DialogClose>
+        <Button type="button" onClick={addNewConnection}>
+          New connection
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
