@@ -71,6 +71,38 @@ export type LlmProvider = z.infer<
 export const listLlmProviderSchema = z.array(llmProviderSchema);
 export type ListLlmProvider = z.infer<typeof listLlmProviderSchema>;
 
+// One feature a model supports (llm.Capability).
+export const llmModelCapabilitySchema = z.enum(["text", "vision", "tools", "streaming"]);
+export type LlmModelCapability = z.infer<typeof llmModelCapabilitySchema>;
+
+// One entry of a provider's model catalog (llm.Model), as returned by
+// GET /api/llm-connection/providers/{key}/models.
+export const providerModelSchema = z
+  .object({
+    key: z.string(),
+    name: z.string(),
+    description: z.string(),
+    capabilities: z.array(llmModelCapabilitySchema),
+    context_window: z.number(),
+    max_output_tokens: z.number().optional(),
+  })
+  .strict();
+export type ProviderModel = z.infer<typeof providerModelSchema>;
+
+export const listProviderModelsSchema = z.array(providerModelSchema);
+export type ListProviderModels = z.infer<typeof listProviderModelsSchema>;
+
+// connection_id, when set, names the stored connection to source connection
+// options from; otherwise the provider's default connection is used.
+export const listProviderModelsSearchParamsSchema = z
+  .object({
+    connection_id: z.string().optional(),
+  })
+  .strict();
+export type ListProviderModelsSearchParams = z.infer<
+  typeof listProviderModelsSearchParamsSchema
+>;
+
 // --- Playground: execute / stream (llm.Message, llm.Part, llm.Response) ---
 
 export const llmRoleSchema = z.enum(["system", "user", "assistant", "tool"]);

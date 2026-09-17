@@ -6,6 +6,8 @@ import {
   executeLlmResponseSchema,
   listLlmConnectionsSearchParamsSchema,
   listLlmProviderSchema,
+  listProviderModelsSchema,
+  listProviderModelsSearchParamsSchema,
   llmStreamErrorEventSchema,
   llmStreamDoneEventSchema,
   llmTextDeltaEventSchema,
@@ -21,6 +23,8 @@ import type {
   ExecuteLlmResponse,
   ListLlmConnectionsSearchParams,
   ListLlmProvider,
+  ListProviderModels,
+  ListProviderModelsSearchParams,
   LlmStreamEvent,
   PaginatedLlmConnection,
   UpdateLlmConnection,
@@ -98,6 +102,22 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
+// listProviderModels sources connection options from searchParams.connection_id
+// when given, else providerKey's default connection (backend-resolved).
+const listProviderModels = async (
+  providerKey: string,
+  opts: ServiceGetOptions<ListProviderModels, ListProviderModelsSearchParams> = {},
+): Promise<ListProviderModels> =>
+  http.get({
+    url: `${LLM_CONNECTION_URL}/providers/{key}/models`,
+    params: { key: providerKey },
+    schemas: {
+      response: listProviderModelsSchema,
+      searchParams: listProviderModelsSearchParamsSchema,
+    },
+    ...opts,
+  });
+
 const execute = async (
   body: ExecuteLlm,
   opts: ServicePostOptions<ExecuteLlm, ExecuteLlmResponse> = {},
@@ -142,6 +162,7 @@ const executeStream = async (
 export const llmConnectionService = {
   list,
   listProviders,
+  listProviderModels,
   findById,
   create,
   update,

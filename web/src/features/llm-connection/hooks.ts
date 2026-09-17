@@ -11,6 +11,8 @@ import type {
   ExecuteLlmResponse,
   ListLlmConnectionsSearchParams,
   ListLlmProvider,
+  ListProviderModels,
+  ListProviderModelsSearchParams,
   LlmStreamEvent,
   LlmToolCallEvent,
   PaginatedLlmConnection,
@@ -44,6 +46,18 @@ export const useLlmProviders = (
   useQuery({
     queryKey: llmProvidersQueryKey(),
     queryFn: () => llmConnectionService.listProviders(opts),
+  });
+
+export const providerModelsQueryKey = (providerKey: string, searchParams?: ListProviderModelsSearchParams) =>
+  [BASE_QUERY_KEY, "providers", providerKey, "models", searchParams] as const;
+export const useProviderModels = (
+  providerKey: string,
+  opts?: ServiceGetOptions<ListProviderModels, ListProviderModelsSearchParams>,
+): UseQueryResult<ListProviderModels, Error> =>
+  useQuery({
+    queryKey: providerModelsQueryKey(providerKey, opts?.searchParams),
+    queryFn: () => llmConnectionService.listProviderModels(providerKey, opts),
+    enabled: !!providerKey,
   });
 
 export const llmConnectionQueryKey = (id: string) => [BASE_QUERY_KEY, id] as const;
