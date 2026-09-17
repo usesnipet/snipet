@@ -1,9 +1,15 @@
-import http from "@/lib/http";
+import http, { httpSse } from "@/lib/http";
 
 import {
   createLlmConnectionSchema,
+  executeLlmSchema,
+  executeLlmResponseSchema,
   listLlmConnectionsSearchParamsSchema,
   listLlmProviderSchema,
+  llmStreamErrorEventSchema,
+  llmStreamDoneEventSchema,
+  llmTextDeltaEventSchema,
+  llmToolCallEventSchema,
   paginatedLlmConnectionSchema,
   updateLlmConnectionSchema,
   llmConnectionSchema,
@@ -11,8 +17,11 @@ import {
 
 import type {
   CreateLlmConnection,
+  ExecuteLlm,
+  ExecuteLlmResponse,
   ListLlmConnectionsSearchParams,
   ListLlmProvider,
+  LlmStreamEvent,
   PaginatedLlmConnection,
   UpdateLlmConnection,
   LlmConnection,
@@ -89,6 +98,47 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
+const execute = async (
+  body: ExecuteLlm,
+  opts: ServicePostOptions<ExecuteLlm, ExecuteLlmResponse> = {},
+): Promise<ExecuteLlmResponse> =>
+  http.post({
+    url: `${LLM_CONNECTION_URL}/execute`,
+    body,
+    schemas: { body: executeLlmSchema, response: executeLlmResponseSchema },
+    ...opts,
+  });
+
+// executeStream runs the streamed variant, invoking onEvent with each typed
+// SSE event ("text_delta" | "tool_call" | "error" | "done") as it arrives.
+const executeStream = async (
+  body: ExecuteLlm,
+  onEvent: (event: LlmStreamEvent) => void,
+  opts: { signal?: AbortSignal } = {},
+): Promise<void> =>
+  httpSse({
+    url: `${LLM_CONNECTION_URL}/execute/stream`,
+    body,
+    schemas: { body: executeLlmSchema },
+    signal: opts.signal,
+    onEvent: (event, data) => {
+      switch (event) {
+        case "text_delta":
+          onEvent({ event: "text_delta", data: llmTextDeltaEventSchema.parse(data) });
+          return;
+        case "tool_call":
+          onEvent({ event: "tool_call", data: llmToolCallEventSchema.parse(data) });
+          return;
+        case "error":
+          onEvent({ event: "error", data: llmStreamErrorEventSchema.parse(data) });
+          return;
+        case "done":
+          onEvent({ event: "done", data: llmStreamDoneEventSchema.parse(data) });
+          return;
+      }
+    },
+  });
+
 export const llmConnectionService = {
   list,
   listProviders,
@@ -96,4 +146,6 @@ export const llmConnectionService = {
   create,
   update,
   delete: remove,
+  execute,
+  executeStream,
 };

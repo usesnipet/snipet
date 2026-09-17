@@ -1,13 +1,18 @@
 import { toast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/query-client";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { llmConnectionService } from "./service";
 
 import type {
   CreateLlmConnection,
+  ExecuteLlm,
+  ExecuteLlmResponse,
   ListLlmConnectionsSearchParams,
   ListLlmProvider,
+  LlmStreamEvent,
+  LlmToolCallEvent,
   PaginatedLlmConnection,
   UpdateLlmConnection,
   LlmConnection,
@@ -94,3 +99,94 @@ export const useDeleteLlmConnection = (
       toast({ title: "Failed to delete LLM connection", variant: "destructive" });
     },
   });
+
+// --- Playground: execute / stream ---
+
+export const useExecuteLlm = (
+  opts?: ServicePostOptions<ExecuteLlm, ExecuteLlmResponse>,
+): UseMutationResult<ExecuteLlmResponse, Error, { data: ExecuteLlm }> =>
+  useMutation({
+    mutationFn: ({ data }) => llmConnectionService.execute(data, opts),
+    onError: () => {
+      toast({ title: "Failed to execute LLM", variant: "destructive" });
+    },
+  });
+
+export type LlmStreamStatus = "idle" | "streaming" | "done" | "error";
+
+export type UseExecuteLlmStreamResult = {
+  status: LlmStreamStatus;
+  events: LlmStreamEvent[];
+  text: string;
+  toolCalls: LlmToolCallEvent[];
+  error: Error | null;
+  execute: (data: ExecuteLlm) => Promise<void>;
+  cancel: () => void;
+};
+
+// useExecuteLlmStream drives POST /execute/stream: `execute` opens the SSE
+// connection and accumulates text_delta/tool_call events as they arrive,
+// `cancel` aborts an in-flight run. Not react-query — there is no cached
+// value to key on, only a live event stream.
+export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
+  const [status, setStatus] = useState<LlmStreamStatus>("idle");
+  const [events, setEvents] = useState<LlmStreamEvent[]>([]);
+  const [text, setText] = useState("");
+  const [toolCalls, setToolCalls] = useState<LlmToolCallEvent[]>([]);
+  const [error, setError] = useState<Error | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const cancel = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
+  const execute = useCallback(async (data: ExecuteLlm) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setStatus("streaming");
+    setEvents([]);
+    setText("");
+    setToolCalls([]);
+    setError(null);
+
+    try {
+      await llmConnectionService.executeStream(
+        data,
+        (event) => {
+          setEvents((prev) => [...prev, event]);
+          switch (event.event) {
+            case "text_delta":
+              setText((prev) => prev + event.data.text);
+              break;
+            case "tool_call":
+              setToolCalls((prev) => [...prev, event.data]);
+              break;
+            case "error":
+              setError(new Error(event.data.message));
+              setStatus("error");
+              break;
+            case "done":
+              setStatus("done");
+              break;
+          }
+        },
+        { signal: controller.signal },
+      );
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setStatus("idle");
+        return;
+      }
+      const normalized = err instanceof Error ? err : new Error(String(err));
+      setError(normalized);
+      setStatus("error");
+      toast({ title: "Failed to execute LLM", variant: "destructive" });
+    }
+  }, []);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  return { status, events, text, toolCalls, error, execute, cancel };
+};

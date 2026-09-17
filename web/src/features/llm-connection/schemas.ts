@@ -70,3 +70,100 @@ export type LlmProvider = z.infer<
 
 export const listLlmProviderSchema = z.array(llmProviderSchema);
 export type ListLlmProvider = z.infer<typeof listLlmProviderSchema>;
+
+// --- Playground: execute / stream (llm.Message, llm.Part, llm.Response) ---
+
+export const llmRoleSchema = z.enum(["system", "user", "assistant", "tool"]);
+export type LlmRole = z.infer<typeof llmRoleSchema>;
+
+export const llmTextPartSchema = z.object({ type: z.literal("text"), text: z.string() }).strict();
+export const llmImagePartSchema = z
+  .object({ type: z.literal("image"), source: z.string(), mime_type: z.string() })
+  .strict();
+export const llmToolCallPartSchema = z
+  .object({ type: z.literal("tool_call"), id: z.string(), name: z.string(), arguments: z.unknown() })
+  .strict();
+export const llmToolResultPartSchema = z
+  .object({
+    type: z.literal("tool_result"),
+    tool_call_id: z.string(),
+    content: z.string(),
+    is_error: z.boolean(),
+  })
+  .strict();
+
+// llm.Part — a message part, discriminated by "type".
+export const llmPartSchema = z.discriminatedUnion("type", [
+  llmTextPartSchema,
+  llmImagePartSchema,
+  llmToolCallPartSchema,
+  llmToolResultPartSchema,
+]);
+export type LlmPart = z.infer<typeof llmPartSchema>;
+
+export const llmMessageSchema = z
+  .object({ role: llmRoleSchema, parts: z.array(llmPartSchema) })
+  .strict();
+export type LlmMessage = z.infer<typeof llmMessageSchema>;
+
+// One llm.Target the Runner may try, in order (failover on the first that fails).
+export const executeLlmTargetSchema = z
+  .object({
+    model: z.string().min(1),
+    connection_id: z.string().optional(),
+    connection_options: z.record(z.string(), z.unknown()).optional(),
+    extra_options: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+export type ExecuteLlmTarget = z.infer<typeof executeLlmTargetSchema>;
+
+// Body of both POST /execute and POST /execute/stream.
+export const executeLlmSchema = z
+  .object({
+    targets: z.array(executeLlmTargetSchema).min(1),
+    messages: z.array(llmMessageSchema).min(1),
+  })
+  .strict();
+export type ExecuteLlm = z.infer<typeof executeLlmSchema>;
+
+export const llmFinishReasonSchema = z.enum(["stop", "length", "tool_call"]);
+export type LlmFinishReason = z.infer<typeof llmFinishReasonSchema>;
+
+export const llmUsageSchema = z
+  .object({ input_tokens: z.number(), output_tokens: z.number() })
+  .strict();
+export type LlmUsage = z.infer<typeof llmUsageSchema>;
+
+// Response of the non-streaming POST /execute.
+export const executeLlmResponseSchema = z
+  .object({
+    message: llmMessageSchema,
+    finish_reason: llmFinishReasonSchema,
+    usage: llmUsageSchema,
+  })
+  .strict();
+export type ExecuteLlmResponse = z.infer<typeof executeLlmResponseSchema>;
+
+// --- SSE event payloads
+// Wire events are "text_delta" | "tool_call" | "error" | "done"
+export const llmTextDeltaEventSchema = z.object({ text: z.string() }).strict();
+export type LlmTextDeltaEvent = z.infer<typeof llmTextDeltaEventSchema>;
+
+export const llmToolCallEventSchema = z
+  .object({ id: z.string(), name: z.string(), arguments: z.unknown() })
+  .strict();
+export type LlmToolCallEvent = z.infer<typeof llmToolCallEventSchema>;
+
+export const llmStreamErrorEventSchema = z.object({ message: z.string() }).strict();
+export type LlmStreamErrorEvent = z.infer<typeof llmStreamErrorEventSchema>;
+
+export const llmStreamDoneEventSchema = z.object({}).strict();
+export type LlmStreamDoneEvent = z.infer<typeof llmStreamDoneEventSchema>;
+
+export const llmStreamEventSchema = z.discriminatedUnion("event", [
+  z.object({ event: z.literal("text_delta"), data: llmTextDeltaEventSchema }).strict(),
+  z.object({ event: z.literal("tool_call"), data: llmToolCallEventSchema }).strict(),
+  z.object({ event: z.literal("error"), data: llmStreamErrorEventSchema }).strict(),
+  z.object({ event: z.literal("done"), data: llmStreamDoneEventSchema }).strict(),
+]);
+export type LlmStreamEvent = z.infer<typeof llmStreamEventSchema>;
