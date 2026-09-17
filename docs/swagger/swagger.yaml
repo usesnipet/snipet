@@ -419,10 +419,8 @@ definitions:
         allOf:
         - $ref: '#/definitions/JSONMap'
         description: |-
-          GenerateExtraOptions and StreamExtraOptions validate the per-call
-          extra_options of Generate and Stream respectively.
-      stream_extra_options:
-        $ref: '#/definitions/JSONMap'
+          GenerateExtraOptions validate the per-call
+          extra_options of Generate and Stream.
     type: object
   UpdateExpirationDTO:
     properties:

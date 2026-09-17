@@ -39,13 +39,12 @@ export type LlmProviderAuth = z.infer<typeof llmProviderAuthSchema>;
 
 // The JSON Schemas a provider declares (llm.Schemas): `config` validates the
 // always-required "config" connection-options section (e.g. a base URL);
-// `generate_extra_options`/`stream_extra_options` validate per-call options
-// and aren't part of this connection form.
+// `generate_extra_options` validates the per-call options of both execute and
+// execute/stream, and isn't part of this connection form.
 export const llmProviderSchemasSchema = z
   .object({
     config: z.record(z.string(), z.unknown()).nullish(),
     generate_extra_options: z.record(z.string(), z.unknown()).nullish(),
-    stream_extra_options: z.record(z.string(), z.unknown()).nullish(),
   })
   .strict();
 export type LlmProviderSchemas = z.infer<typeof llmProviderSchemasSchema>;

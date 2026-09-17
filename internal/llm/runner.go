@@ -83,7 +83,7 @@ func (r *Runner) Stream(ctx context.Context, targets []Target, messages []Messag
 }
 
 func (r *Runner) generateOne(ctx context.Context, t Target, messages []Message, tools []Tool) (Response, error) {
-	p, modelKey, extraOptions, err := r.resolve(ctx, t, kindGenerate)
+	p, modelKey, extraOptions, err := r.resolve(ctx, t)
 	if err != nil {
 		return Response{}, err
 	}
@@ -95,7 +95,7 @@ func (r *Runner) generateOne(ctx context.Context, t Target, messages []Message, 
 }
 
 func (r *Runner) streamOne(ctx context.Context, t Target, messages []Message, tools []Tool) (StreamIterator, error) {
-	p, modelKey, extraOptions, err := r.resolve(ctx, t, kindStream)
+	p, modelKey, extraOptions, err := r.resolve(ctx, t)
 	if err != nil {
 		return nil, err
 	}
@@ -130,14 +130,6 @@ func (r *Runner) request(t Target, modelKey string, extraOptions jsonx.JSONMap, 
 	}
 }
 
-// callKind selects which extra-options schema resolve validates against.
-type callKind int
-
-const (
-	kindGenerate callKind = iota
-	kindStream
-)
-
 // resolve runs the plan's "Validate" step for one target: split the model
 // ref, Connect (which validates the connection options and health-checks),
 // confirm the model exists, and validate the extra options against the
@@ -145,7 +137,7 @@ const (
 // applied — pass it to the provider instead of t.ExtraOptions. A bad ref,
 // missing model, or schema failure is a fatal ErrBadRequest / ErrModelNotFound
 // — never a failover.
-func (r *Runner) resolve(ctx context.Context, t Target, kind callKind) (p Provider, modelKey string, extraOptions jsonx.JSONMap, err error) {
+func (r *Runner) resolve(ctx context.Context, t Target) (p Provider, modelKey string, extraOptions jsonx.JSONMap, err error) {
 	providerKey, modelKey, ok := SplitModelRef(t.Model)
 	if !ok {
 		return nil, "", nil, fmt.Errorf("%w: bad model ref %q", ErrBadRequest, t.Model)
@@ -164,13 +156,7 @@ func (r *Runner) resolve(ctx context.Context, t Target, kind callKind) (p Provid
 		return nil, "", nil, fmt.Errorf("%w: %q", ErrModelNotFound, t.Model)
 	}
 
-	var schema jsonx.JSONMap
-	switch kind {
-	case kindGenerate:
-		schema = p.Info().Schemas.GenerateExtraOptions
-	case kindStream:
-		schema = p.Info().Schemas.StreamExtraOptions
-	}
+	schema := p.Info().Schemas.GenerateExtraOptions
 	extraOptions = t.ExtraOptions
 	if schema != nil {
 		extraOptions, err = jsonschema.Validate(schema, t.ExtraOptions)

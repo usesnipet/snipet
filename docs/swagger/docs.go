@@ -1626,15 +1626,12 @@ const docTemplate = `{
                     ]
                 },
                 "generate_extra_options": {
-                    "description": "GenerateExtraOptions and StreamExtraOptions validate the per-call\nextra_options of Generate and Stream respectively.",
+                    "description": "GenerateExtraOptions validate the per-call\nextra_options of Generate and Stream.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/JSONMap"
                         }
                     ]
-                },
-                "stream_extra_options": {
-                    "$ref": "#/definitions/JSONMap"
                 }
             }
         },

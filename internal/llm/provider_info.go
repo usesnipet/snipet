@@ -41,8 +41,7 @@ type Schemas struct {
 	// always-required provider config (endpoint, region, org id, ...).
 	Config jsonx.JSONMap `json:"config,omitempty"`
 
-	// GenerateExtraOptions and StreamExtraOptions validate the per-call
-	// extra_options of Generate and Stream respectively.
+	// GenerateExtraOptions validate the per-call
+	// extra_options of Generate and Stream.
 	GenerateExtraOptions jsonx.JSONMap `json:"generate_extra_options,omitempty"`
-	StreamExtraOptions   jsonx.JSONMap `json:"stream_extra_options,omitempty"`
 }
