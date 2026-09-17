@@ -178,14 +178,7 @@ func (s *Service) resolveConnection(ctx context.Context, providerKey string, con
 		return conn, nil
 	}
 
-	conn, err := s.repo.FindDefaultByProvider(ctx, providerKey)
-	if err != nil {
-		return nil, err
-	}
-	if conn != nil {
-		return conn, nil
-	}
-	return s.repo.FindFirstByProvider(ctx, providerKey)
+	return s.repo.FindDefaultByProvider(ctx, providerKey)
 }
 
 // translateLlmError maps the internal/llm error vocabulary onto apperr status

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	apperr "github.com/usesnipet/snipet/internal/app-err"
 	"github.com/usesnipet/snipet/internal/model"
 	"gorm.io/gorm"
 )
@@ -14,9 +15,6 @@ type ILlmConnectionRepository interface {
 	// FindDefaultByProvider returns the connection marked default for
 	// provider, or nil if none is set.
 	FindDefaultByProvider(ctx context.Context, provider string) (*model.LlmConnection, error)
-	// FindFirstByProvider returns provider's oldest connection, or nil if it
-	// has none. Used as the fallback when no default is set.
-	FindFirstByProvider(ctx context.Context, provider string) (*model.LlmConnection, error)
 }
 
 type LlmConnectionRepository struct {
@@ -27,33 +25,50 @@ func NewLlmConnectionRepository(db *gorm.DB) ILlmConnectionRepository {
 	return &LlmConnectionRepository{Repository: NewRepository[model.LlmConnection](db)}
 }
 
-func (r *LlmConnectionRepository) Create(ctx context.Context, model *model.LlmConnection) error {
+func (r *LlmConnectionRepository) Create(ctx context.Context, data *model.LlmConnection) error {
 	return WithTransaction(ctx, r.db(ctx), func(ctx context.Context) error {
-		if model.Default {
-			if err := r.clearDefaultByProvider(ctx, model.Provider, ""); err != nil {
+		_, err := gorm.G[model.LlmConnection](r.db(ctx)).
+			Where("provider = ?", data.Provider).
+			Where("is_default = ?", true).
+			First(ctx)
+		if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+			data.Default = true
+		} else if err != nil {
+			return apperr.InternalServerError("error getting default provider")
+		} else if data.Default {
+			if err := r.clearDefaultByProvider(ctx, data.Provider, ""); err != nil {
 				return err
 			}
 		}
-		return r.Repository.Create(ctx, model)
+
+		return r.Repository.Create(ctx, data)
 	})
 }
 
-func (r *LlmConnectionRepository) UpdateByID(ctx context.Context, id string, model *model.LlmConnection) error {
+func (r *LlmConnectionRepository) UpdateByID(ctx context.Context, id string, data *model.LlmConnection) error {
 	return WithTransaction(ctx, r.db(ctx), func(ctx context.Context) error {
-		if model.Default {
-			provider := model.Provider
-			if provider == "" {
-				existing, err := r.Repository.FindByID(ctx, id)
-				if err != nil {
-					return err
-				}
-				provider = existing.Provider
+		provider := data.Provider
+		if provider == "" {
+			existing, err := r.Repository.FindByID(ctx, id)
+			if err != nil {
+				return err
 			}
+			provider = existing.Provider
+		}
+		_, err := gorm.G[model.LlmConnection](r.db(ctx)).
+			Where("provider = ?", provider).
+			Where("is_default = ?", true).
+			First(ctx)
+		if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+			data.Default = true
+		} else if err != nil {
+			return apperr.InternalServerError("error getting default provider")
+		} else if data.Default {
 			if err := r.clearDefaultByProvider(ctx, provider, id); err != nil {
 				return err
 			}
 		}
-		return r.Repository.UpdateByID(ctx, id, model)
+		return r.Repository.UpdateByID(ctx, id, data)
 	})
 }
 
@@ -73,20 +88,6 @@ func (r *LlmConnectionRepository) clearDefaultByProvider(ctx context.Context, pr
 func (r *LlmConnectionRepository) FindDefaultByProvider(ctx context.Context, provider string) (*model.LlmConnection, error) {
 	conn, err := gorm.G[model.LlmConnection](r.db(ctx)).
 		Where("provider = ? AND is_default = ?", provider, true).
-		First(ctx)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &conn, nil
-}
-
-func (r *LlmConnectionRepository) FindFirstByProvider(ctx context.Context, provider string) (*model.LlmConnection, error) {
-	conn, err := gorm.G[model.LlmConnection](r.db(ctx)).
-		Where("provider = ?", provider).
-		Order("created_at ASC").
 		First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
