@@ -20,7 +20,14 @@ const navItems: NavEntry[] = [
     items: [
       { title: "Home", href: ROUTES.home, icon: Home, exact: true },
       { title: "Agents", href: ROUTES.agents, icon: MessageSquare, comingSoon: true },
-      { title: "LLM Connections", href: ROUTES.llmConnections, icon: Server },
+      {
+        title: "LLMs",
+        icon: Server,
+        items: [
+          { title: "Connections", href: ROUTES.llmConnections },
+          { title: "Playground", href: ROUTES.llmPlayground },
+        ],
+      },
       { title: "Knowledge", href: ROUTES.knowledge, icon: BookText, comingSoon: true },
       { title: "Connections", href: ROUTES.connections, icon: Waypoints, comingSoon: true },
     ],

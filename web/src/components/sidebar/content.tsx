@@ -48,8 +48,8 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
             key={item.title}
             asChild
             defaultOpen={isNavGroupActive(pathname, item.items)}
-            className="group/collapsible"
-            disabled={toBoolean(item.disabled)}
+            className="group/collapsible text-sidebar-foreground/70 "
+            disabled={toBoolean(item.disabled, false)}
           >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
@@ -71,6 +71,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
                       <SidebarMenuSubButton
                         asChild
                         isActive={isNavActive(pathname, subItem.href, subItem.exact) && toBoolean(subItem.visible)}
+                        className="text-sidebar-foreground/70"
                       >
                         <Link href={subItem.href}>
                           <span>{subItem.title}</span>
@@ -90,7 +91,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
               asChild
               isActive={isNavActive(pathname, item.href, item.exact) && toBoolean(item.visible)}
               tooltip={item.title}
-              className="text-sidebar-foreground/70 relative my-0.5 h-9 gap-3 rounded-lg text-[13px] [&_svg]:size-[18px] [&_svg]:text-sidebar-foreground/55 data-[active=true]:text-sidebar-foreground data-[active=true]:[&_svg]:text-sidebar-foreground data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:-left-2 data-[active=true]:before:w-0.5 data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-sidebar-primary"
+              className="text-sidebar-foreground/70 relative my-0.5 h-9 gap-3 rounded-lg text-[13px] [&_svg]:size-4.5 [&_svg]:text-sidebar-foreground/55 data-[active=true]:text-sidebar-foreground data-[active=true]:[&_svg]:text-sidebar-foreground data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:-left-2 data-[active=true]:before:w-0.5 data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-sidebar-primary"
             >
               <Link href={item.href}>
                 <item.icon />
@@ -148,7 +149,7 @@ export function SidebarContent({ navItems }: Props) {
       {sections.map((section, index) => (
         <SidebarGroup key={section.label ?? `group-${index}`} className="gap-1">
           {section.label && (
-            <SidebarGroupLabel className="text-sidebar-foreground/50 px-2 text-[10px] font-medium tracking-[0.1em] uppercase">
+            <SidebarGroupLabel className="text-sidebar-foreground/50 px-2 text-[10px] font-medium tracking-widest uppercase">
               {section.label}
             </SidebarGroupLabel>
           )}
