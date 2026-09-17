@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	apperr "github.com/usesnipet/snipet/internal/app-err"
-	"github.com/usesnipet/snipet/internal/auth"
 )
 
 type MiddlewareFunc func(next http.Handler) http.Handler
@@ -51,16 +50,15 @@ func (g Gate) Handler() MiddlewareFunc {
 // immediately. At least one gate must succeed.
 func Or(gates ...Gate) Gate {
 	return func(r *http.Request) (context.Context, error) {
+		var lastErr error
 		for _, g := range gates {
 			ctx, err := g(r)
-			if errors.Is(err, auth.ErrNotApplicable) {
-				continue
-			}
 			if err != nil {
-				return nil, err
+				lastErr = err
+				continue
 			}
 			return ctx, nil
 		}
-		return nil, apperr.Unauthorized("unauthorized")
+		return nil, apperr.Unauthorized(lastErr.Error())
 	}
 }

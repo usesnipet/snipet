@@ -9,6 +9,7 @@ export const llmConnectionSchema = z
   .object({
     id: z.uuid(),
     name: z.string(),
+    default: z.boolean().optional(),
     provider: z.string(),
     config: z.record(z.string(), z.unknown()),
     enabled: z.boolean(),
