@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,6 @@ import { ProviderConfigFields } from "./provider-config-fields";
 
 import type { LlmProvider } from "../schemas";
 import type { RJSFSchema } from "@rjsf/utils";
-
 type Props = {
   /** Field-array path holding `ExecuteLlmTarget[]` (see schemas.ts). */
   name: string;
@@ -52,47 +52,51 @@ export function LlmModelsField({ name }: Props) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h3 className="text-sm font-semibold">Models</h3>
-          <p className="text-muted-foreground text-xs">
-            Tried top to bottom — if one errors, Snipet falls back to the next.
-          </p>
-        </div>
-        <Button type="button" size="sm" onClick={() => append({ model: "" })}>
-          <Plus />
-          Add model
-        </Button>
-      </div>
-
-      <div className="space-y-2">
-        {fields.map((field, index) => (
-          <div
-            key={field.id}
-            draggable
-            onDragStart={() => (dragIndexRef.current = index)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop(index)}
-          >
-            <LlmModelTargetRow
-              name={name}
-              index={index}
-              providers={providers}
-              total={fields.length}
-              onRemove={() => remove(index)}
-              onMoveUp={() => move(index, index - 1)}
-              onMoveDown={() => move(index, index + 1)}
-            />
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Models</CardTitle>
+            <CardDescription>
+              Tried top to bottom — if one errors, Snipet falls back to the next.
+            </CardDescription>
           </div>
-        ))}
-      </div>
-
-      <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-        <Info className="size-3.5 shrink-0" />
-        Order sets priority. Drag a model to change where it falls back to.
-      </p>
-    </div>
+          <Button type="button" size="sm" onClick={() => append({ model: "" })}>
+            <Plus />
+            Add model
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {fields.map((field, index) => (
+            <div
+              key={field.id}
+              draggable
+              onDragStart={() => (dragIndexRef.current = index)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop(index)}
+            >
+              <LlmModelTargetRow
+                name={name}
+                index={index}
+                providers={providers}
+                total={fields.length}
+                onRemove={() => remove(index)}
+                onMoveUp={() => move(index, index - 1)}
+                onMoveDown={() => move(index, index + 1)}
+              />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+      <CardFooter>
+        <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+          <Info className="size-3.5 shrink-0" />
+          Order sets priority. Drag a model to change where it falls back to.
+        </p>
+      </CardFooter>
+    </Card>
   );
 }
 
