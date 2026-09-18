@@ -67,10 +67,12 @@ func (p *Provider) Models(ctx context.Context, connectionOptions jsonx.JSONMap) 
 	if err != nil {
 		return nil, err
 	}
+
 	var out struct {
 		Models []struct {
-			Name  string `json:"name"`
-			Model string `json:"model"`
+			Name         string         `json:"name"`
+			Model        string         `json:"model"`
+			Capabilities CapabilityList `json:"capabilities"`
 		} `json:"models"`
 	}
 	if err := p.get(ctx, connOpts, "/api/tags", &out); err != nil {
@@ -82,7 +84,7 @@ func (p *Provider) Models(ctx context.Context, connectionOptions jsonx.JSONMap) 
 		models = append(models, llm.Model{
 			Key:          m.Model,
 			Name:         m.Name,
-			Capabilities: []llm.Capability{llm.CapabilityText, llm.CapabilityStreaming},
+			Capabilities: m.Capabilities.ToLLMCapabilities(),
 		})
 	}
 	return models, nil

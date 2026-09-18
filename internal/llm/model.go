@@ -11,6 +11,7 @@ const (
 	CapabilityVision    Capability = "vision"    // accepts image input
 	CapabilityTools     Capability = "tools"     // tool / function calling
 	CapabilityStreaming Capability = "streaming" // supports Provider.Stream
+	CapabilityEmbedding Capability = "embedding" // embedding text
 )
 
 // Model is one entry in a provider's catalog (see Provider.Models).
