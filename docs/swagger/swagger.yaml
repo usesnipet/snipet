@@ -100,8 +100,10 @@ definitions:
     - vision
     - tools
     - streaming
+    - embedding
     type: string
     x-enum-comments:
+      CapabilityEmbedding: embedding text
       CapabilityStreaming: supports Provider.Stream
       CapabilityText: text output
       CapabilityTools: tool / function calling
@@ -111,11 +113,13 @@ definitions:
     - accepts image input
     - tool / function calling
     - supports Provider.Stream
+    - embedding text
     x-enum-varnames:
     - CapabilityText
     - CapabilityVision
     - CapabilityTools
     - CapabilityStreaming
+    - CapabilityEmbedding
   ChangeOwnPasswordDTO:
     properties:
       current_password:
@@ -956,7 +960,8 @@ paths:
       consumes:
       - application/json
       description: Same as execute, but streams the response as Server-Sent Events
-        ("text_delta", "tool_call", "error", "done").
+        ("llm_started", "text_delta", "tool_call", "llm_skipped", "message", "error",
+        "done").
       parameters:
       - description: payload
         in: body

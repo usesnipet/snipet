@@ -616,7 +616,7 @@ const docTemplate = `{
         },
         "/llm-connection/execute/stream": {
             "post": {
-                "description": "Same as execute, but streams the response as Server-Sent Events (\"text_delta\", \"tool_call\", \"error\", \"done\").",
+                "description": "Same as execute, but streams the response as Server-Sent Events (\"llm_started\", \"text_delta\", \"tool_call\", \"llm_skipped\", \"message\", \"error\", \"done\").",
                 "consumes": [
                     "application/json"
                 ],
@@ -1176,9 +1176,11 @@ const docTemplate = `{
                 "text",
                 "vision",
                 "tools",
-                "streaming"
+                "streaming",
+                "embedding"
             ],
             "x-enum-comments": {
+                "CapabilityEmbedding": "embedding text",
                 "CapabilityStreaming": "supports Provider.Stream",
                 "CapabilityText": "text output",
                 "CapabilityTools": "tool / function calling",
@@ -1188,13 +1190,15 @@ const docTemplate = `{
                 "text output",
                 "accepts image input",
                 "tool / function calling",
-                "supports Provider.Stream"
+                "supports Provider.Stream",
+                "embedding text"
             ],
             "x-enum-varnames": [
                 "CapabilityText",
                 "CapabilityVision",
                 "CapabilityTools",
-                "CapabilityStreaming"
+                "CapabilityStreaming",
+                "CapabilityEmbedding"
             ]
         },
         "ChangeOwnPasswordDTO": {

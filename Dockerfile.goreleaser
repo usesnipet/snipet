@@ -1,0 +1,19 @@
+FROM alpine:3.21
+
+RUN apk add --no-cache ca-certificates \
+    && addgroup -S app \
+    && adduser -S -G app app
+
+WORKDIR /app
+
+COPY snipet ./api
+COPY migrations ./migrations
+COPY docs/swagger ./docs/swagger
+
+USER app
+
+EXPOSE 8080
+
+ENV ENV=production
+
+ENTRYPOINT ["./api"]

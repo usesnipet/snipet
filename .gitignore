@@ -54,3 +54,6 @@ web/.env
 graft/
 
 .pnpm-store/
+
+# goreleaser build output
+dist/
