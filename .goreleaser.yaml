@@ -62,8 +62,8 @@ dockers:
       - migrations
       - docs/swagger
     image_templates:
-      - "docker.io/usesnipet/snipet:{{ .Version }}-amd64"
-      - "docker.io/usesnipet/snipet:latest-amd64"
+      - "docker.io/snipet/snipet-go:{{ .Version }}-amd64"
+      - "docker.io/snipet/snipet-go:latest-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
   - id: linux-arm64
@@ -75,17 +75,17 @@ dockers:
       - migrations
       - docs/swagger
     image_templates:
-      - "docker.io/usesnipet/snipet:{{ .Version }}-arm64"
-      - "docker.io/usesnipet/snipet:latest-arm64"
+      - "docker.io/snipet/snipet-go:{{ .Version }}-arm64"
+      - "docker.io/snipet/snipet-go:latest-arm64"
     build_flag_templates:
       - "--platform=linux/arm64"
 
 docker_manifests:
-  - name_template: "docker.io/usesnipet/snipet:{{ .Version }}"
+  - name_template: "docker.io/snipet/snipet-go:{{ .Version }}"
     image_templates:
-      - "docker.io/usesnipet/snipet:{{ .Version }}-amd64"
-      - "docker.io/usesnipet/snipet:{{ .Version }}-arm64"
-  - name_template: "docker.io/usesnipet/snipet:latest"
+      - "docker.io/snipet/snipet-go:{{ .Version }}-amd64"
+      - "docker.io/snipet/snipet-go:{{ .Version }}-arm64"
+  - name_template: "docker.io/snipet/snipet-go:latest"
     image_templates:
-      - "docker.io/usesnipet/snipet:latest-amd64"
-      - "docker.io/usesnipet/snipet:latest-arm64"
+      - "docker.io/snipet/snipet-go:latest-amd64"
+      - "docker.io/snipet/snipet-go:latest-arm64"
