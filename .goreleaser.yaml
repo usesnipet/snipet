@@ -1,0 +1,91 @@
+version: 2
+
+project_name: snipet
+
+before:
+  hooks:
+    - go mod tidy
+    - sh -c "cd web && pnpm install --frozen-lockfile && pnpm build"
+
+builds:
+  - id: api
+    main: ./cmd/api
+    binary: snipet
+    tags:
+      - web
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/usesnipet/snipet/version.Version={{ .Version }}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    files:
+      - LICENSE
+      - migrations
+      - docs/swagger
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: Bug fixes
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: Others
+      order: 999
+
+dockers:
+  - id: linux-amd64
+    goos: linux
+    goarch: amd64
+    use: buildx
+    dockerfile: Dockerfile.goreleaser
+    extra_files:
+      - migrations
+      - docs/swagger
+    image_templates:
+      - "docker.io/usesnipet/snipet:{{ .Version }}-amd64"
+      - "docker.io/usesnipet/snipet:latest-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+  - id: linux-arm64
+    goos: linux
+    goarch: arm64
+    use: buildx
+    dockerfile: Dockerfile.goreleaser
+    extra_files:
+      - migrations
+      - docs/swagger
+    image_templates:
+      - "docker.io/usesnipet/snipet:{{ .Version }}-arm64"
+      - "docker.io/usesnipet/snipet:latest-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+
+docker_manifests:
+  - name_template: "docker.io/usesnipet/snipet:{{ .Version }}"
+    image_templates:
+      - "docker.io/usesnipet/snipet:{{ .Version }}-amd64"
+      - "docker.io/usesnipet/snipet:{{ .Version }}-arm64"
+  - name_template: "docker.io/usesnipet/snipet:latest"
+    image_templates:
+      - "docker.io/usesnipet/snipet:latest-amd64"
+      - "docker.io/usesnipet/snipet:latest-arm64"

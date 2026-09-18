@@ -1,7 +1,7 @@
 package system
 
 import (
-	"github.com/usesnipet/go-template/version"
+	"github.com/usesnipet/snipet/version"
 )
 
 type Service struct {

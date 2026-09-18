@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/usesnipet/go-template/internal/api"
+	"github.com/usesnipet/snipet/internal/api"
 )
 
 type Handler struct {

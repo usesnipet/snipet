@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	apperr "github.com/usesnipet/go-template/internal/app-err"
+	apperr "github.com/usesnipet/snipet/internal/app-err"
 	"gorm.io/gorm"
 )
 

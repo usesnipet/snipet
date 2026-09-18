@@ -48,7 +48,7 @@ codes consistent across modules.
 - **Database layer** (`internal/infra/database`): `HandleDBError` maps known
   GORM/Postgres errors (e.g. a unique constraint violation) to an
   `apperr.Error`, so a repository or service doesn't have to special-case
-  low-level driver error types itself.
+  low-level provider error types itself.
 
 ## How it reaches the client
 

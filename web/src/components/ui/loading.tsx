@@ -58,7 +58,7 @@ export function Loading({
   const renderSpinner = () => (
     <div className="flex flex-col items-center justify-center gap-2" {...props}>
       {withLogo ? (
-        <img src={logo} alt="orders" className={cn(loadingVariants({ size }), className)} />
+        <img src={logo} alt="snipet" className={cn(loadingVariants({ size }), className)} />
       ) : icon ? (
         <div className={cn(loadingVariants({ size }), className)}>{icon}</div>
       ) : (

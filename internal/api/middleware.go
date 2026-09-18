@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/usesnipet/go-template/internal/auth"
+	apperr "github.com/usesnipet/snipet/internal/app-err"
 )
 
 type MiddlewareFunc func(next http.Handler) http.Handler
@@ -19,13 +19,22 @@ type MiddlewareFunc func(next http.Handler) http.Handler
 type Gate func(r *http.Request) (context.Context, error)
 
 // Handler turns a Gate into chi-compatible middleware that requires it to
-// succeed.
+// succeed. The status written is whatever the gate's own error carries —
+// every gate in this codebase fails with an *apperr.Error (RequireBasicAuth
+// and Or's fallback both use apperr.Unauthorized, guard.RequireRole uses
+// apperr.Forbidden, ...), so Handler never hardcodes a status itself. A
+// gate that broke that convention and returned a bare error falls back to
+// Unauthorized, since that's what a Gate is for.
 func (g Gate) Handler() MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, err := g(r)
 			if err != nil {
-				WriteError(w, http.StatusUnauthorized, errors.New("unauthorized"))
+				var appErr *apperr.Error
+				if !errors.As(err, &appErr) {
+					appErr = apperr.Unauthorized("unauthorized")
+				}
+				WriteAppError(w, appErr)
 				return
 			}
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -41,16 +50,18 @@ func (g Gate) Handler() MiddlewareFunc {
 // immediately. At least one gate must succeed.
 func Or(gates ...Gate) Gate {
 	return func(r *http.Request) (context.Context, error) {
+		var lastErr error
 		for _, g := range gates {
 			ctx, err := g(r)
-			if errors.Is(err, auth.ErrNotApplicable) {
-				continue
-			}
 			if err != nil {
-				return nil, err
+				lastErr = err
+				continue
 			}
 			return ctx, nil
 		}
-		return nil, errors.New("unauthorized")
+		if lastErr == nil {
+			return nil, apperr.Unauthorized("unauthorized")
+		}
+		return nil, apperr.Unauthorized(lastErr.Error())
 	}
 }

@@ -10,37 +10,45 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/usesnipet/go-template/config"
-	_ "github.com/usesnipet/go-template/docs/swagger"
-	"github.com/usesnipet/go-template/internal/api"
-	"github.com/usesnipet/go-template/internal/guard"
-	"github.com/usesnipet/go-template/internal/infra/database"
-	"github.com/usesnipet/go-template/internal/logger"
-	systemmodule "github.com/usesnipet/go-template/internal/module/system"
-	"github.com/usesnipet/go-template/internal/repository"
-	"github.com/usesnipet/go-template/web"
+	"github.com/usesnipet/snipet/config"
+	_ "github.com/usesnipet/snipet/docs/swagger"
+	"github.com/usesnipet/snipet/internal/api"
+	"github.com/usesnipet/snipet/internal/auth"
+	"github.com/usesnipet/snipet/internal/guard"
+	"github.com/usesnipet/snipet/internal/infra/cache"
+	"github.com/usesnipet/snipet/internal/infra/database"
+	"github.com/usesnipet/snipet/internal/llm"
+	"github.com/usesnipet/snipet/internal/llm/providers/ollama"
+	"github.com/usesnipet/snipet/internal/logger"
+	apikey "github.com/usesnipet/snipet/internal/module/api-key"
+	authmodule "github.com/usesnipet/snipet/internal/module/auth"
+	llmconnection "github.com/usesnipet/snipet/internal/module/llm-connection"
+	systemmodule "github.com/usesnipet/snipet/internal/module/system"
+	usermodule "github.com/usesnipet/snipet/internal/module/user"
+	"github.com/usesnipet/snipet/internal/repository"
+	"github.com/usesnipet/snipet/web"
 )
 
 // Bootstrap wires the application: database, repositories, services,
 // handlers, HTTP server. Add a new module here after scaffolding it with
 // the create-backend-module skill — construct its repo, then its service,
 // then its handler, then call RegisterRoutes inside the /api group.
-func Bootstrap(cfg *config.Config, logger *logger.Logger) error {
+func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	// database
-	db, _, embeddedDB, err := database.NewDatabase(cfg, logger)
+	db, _, embeddedDB, err := database.NewDatabase(cfg, log)
 	if err != nil {
-		logger.Errorf("failed to create database: %v", err)
+		log.Errorf("failed to create database: %v", err)
 		return err
 	}
 
 	if embeddedDB != nil {
 		defer func() {
-			logger.Infof("stopping embedded database...")
+			log.Infof("stopping embedded database...")
 			if err := embeddedDB.Stop(); err != nil {
-				logger.Errorf("failed to stop embedded database: %v", err)
+				log.Errorf("failed to stop embedded database: %v", err)
 				return
 			}
-			logger.Infof("embedded database stopped successfully")
+			log.Infof("embedded database stopped successfully")
 		}()
 	}
 
@@ -48,22 +56,57 @@ func Bootstrap(cfg *config.Config, logger *logger.Logger) error {
 	//   txManager := repository.NewTxManager(db)
 	//   fooRepo := repository.NewFooRepository(db)
 	_ = repository.NewTxManager(db)
+	llmConnectionRepo := repository.NewLlmConnectionRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
+	apiKeyRepo := repository.NewApiKeyRepository(db)
 
-	// guards
-	requireBasicAuth := guard.RequireBasicAuth(cfg.Auth.BasicAuthUsername, cfg.Auth.BasicAuthPassword)
-	_ = requireBasicAuth
+	llmRegistry := llm.NewRegistry(cache.NewMemoryCache(2000, 0), 0)
+	llmRegistry.MustRegister(ollama.New())
+	llmRunner := llm.NewRunner(llmRegistry)
+
+	// auth primitives
+	userJWTService := auth.NewJWTService(cfg.Auth)
+	tokenService := auth.NewTokenService()
+
+	// cache
+	apiKeyCache := cache.NewMemoryCache(1000, 1*time.Hour)
 
 	// services
 	systemService := systemmodule.NewService()
+	llmConnectionService := llmconnection.NewService(llmConnectionRepo, llmRegistry, llmRunner)
+	userService := usermodule.NewService(userRepo, log.Child(logger.WithPrefix("user-service: ")))
+	userService.InitializeRootUser(context.Background(), cfg.Auth)
+
+	apiKeyService := apikey.NewService(
+		log.Child(logger.WithPrefix("api-key-service: ")),
+		apiKeyRepo,
+		auth.NewAPIKeyGenerator(),
+		auth.NewKeyHasher(),
+	)
+	authService := authmodule.NewService(userRepo, userJWTService, cfg.Auth, refreshTokenRepo, tokenService)
+
+	// guards
+	requireUserAuth := guard.RequireUserJWT(userJWTService)
+	requireRole := guard.RequireRole
+	requireApiKey := guard.RequireApiKey(apiKeyService, apiKeyCache)
 
 	// handlers
 	systemHandler := systemmodule.NewHandler(systemService)
+	llmConnectionHandler := llmconnection.NewHandler(llmConnectionService, requireUserAuth, requireApiKey)
+	userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
+	authHandler := authmodule.NewHandler(authService, requireUserAuth)
+	apiKeyHandler := apikey.NewHandler(apiKeyService, requireRole, requireUserAuth, requireApiKey)
 
 	// register routes
-	api := api.New()
+	api := api.New(log.Child(logger.WithPrefix("api: ")))
 	api.Router.Handle("/*", web.Handler())
 	api.Router.Route(config.APIPrefix, func(r chi.Router) {
 		systemHandler.RegisterRoutes(r, api.Serve)
+		llmConnectionHandler.RegisterRoutes(r, api.Serve)
+		userHandler.RegisterRoutes(r, api.Serve)
+		authHandler.RegisterRoutes(r, api.Serve)
+		apiKeyHandler.RegisterRoutes(r, api.Serve)
 	})
 
 	srv := &http.Server{
@@ -72,9 +115,9 @@ func Bootstrap(cfg *config.Config, logger *logger.Logger) error {
 	}
 
 	go func() {
-		logger.Infof("server started on port %d", cfg.Server.Port)
+		log.Infof("server started on port %d", cfg.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Errorf("failed to start server: %v", err)
+			log.Errorf("failed to start server: %v", err)
 		}
 	}()
 
@@ -82,11 +125,11 @@ func Bootstrap(cfg *config.Config, logger *logger.Logger) error {
 	defer stop()
 	<-ctx.Done()
 
-	logger.Infof("shutting down server...")
+	log.Infof("shutting down server...")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Errorf("failed to shutdown server: %v", err)
+		log.Errorf("failed to shutdown server: %v", err)
 	}
 
 	return nil

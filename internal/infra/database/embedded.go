@@ -13,8 +13,8 @@ import (
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 
-	"github.com/usesnipet/go-template/config"
-	"github.com/usesnipet/go-template/internal/logger"
+	"github.com/usesnipet/snipet/config"
+	"github.com/usesnipet/snipet/internal/logger"
 )
 
 // startEmbeddedPostgres boots an embedded Postgres server for cfg.Database.URL.
@@ -97,5 +97,5 @@ func defaultEmbeddedDataPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, "orders", "postgres"), nil
+	return filepath.Join(configDir, "snipet", "postgres"), nil
 }

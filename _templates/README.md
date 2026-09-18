@@ -30,7 +30,7 @@ templates, plus type-map helpers:
 | `h.pascal(s)` / `h.camel(s)` / `h.kebab(s)` / `h.snake(s)` / `h.constant(s)` | `h.pascal("shipping-address")` → `ShippingAddress` |
 | `h.plural(word)` | `h.plural("category")` → `categories` |
 | `h.pluralPascal(s)` / `h.tableName(s)` / `h.pluralKebab(s)` | `h.tableName("box")` → `boxes` |
-| `h.goModule()` | reads `./go.mod` → `github.com/usesnipet/go-template` |
+| `h.goModule()` | reads `./go.mod` → `github.com/usesnipet/snipet` |
 | `h.goType(t)` / `h.pgType(t)` / `h.zodExpr(t)` | `h.zodExpr("time")` → `z.coerce.date()` |
 
 `_templates/_lib/`:

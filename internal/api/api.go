@@ -8,13 +8,15 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/usesnipet/snipet/internal/logger"
 )
 
 type Api struct {
 	Router *chi.Mux
+	log    *logger.Logger
 }
 
-func New() *Api {
+func New(log *logger.Logger) *Api {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
@@ -35,7 +37,7 @@ func New() *Api {
 		htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
 			SpecURL: "./docs/swagger/swagger.json",
 			CustomOptions: scalar.CustomOptions{
-				PageTitle: "orders API",
+				PageTitle: "snipet API",
 			},
 			DarkMode: true,
 		})
@@ -49,5 +51,6 @@ func New() *Api {
 
 	return &Api{
 		Router: r,
+		log:    log,
 	}
 }

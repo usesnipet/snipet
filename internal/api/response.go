@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	apperr "github.com/usesnipet/go-template/internal/app-err"
+	apperr "github.com/usesnipet/snipet/internal/app-err"
 )
 
 // Error is an alias for apperr.Error, exposed here so handler packages can

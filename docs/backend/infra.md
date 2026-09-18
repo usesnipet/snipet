@@ -6,14 +6,14 @@ connection/migrations, an in-memory cache, and a background job pool.
 ## `internal/infra/database`
 
 `database.NewDatabase(cfg, logger)` (called once, in `bootstrap`, see
-[bootstrap.md](./bootstrap.md)) does three things in order:
+[bootstrap.md](./bootstrap.md)) does three things in snipet:
 
 1. **`ensureDatabase`** — if `DB_AUTO_CREATE` is set, connects to the
    `postgres` admin database and `CREATE DATABASE`s the target if it
    doesn't exist yet (convenience for local dev; skipped by default).
 2. Opens the real `*sql.DB`/`*gorm.DB` (via `pgx` + GORM's postgres
-   driver), with `TranslateError: true` so GORM surfaces typed errors
-   (`gorm.ErrDuplicatedKey`, etc.) instead of raw driver errors, and
+   provider), with `TranslateError: true` so GORM surfaces typed errors
+   (`gorm.ErrDuplicatedKey`, etc.) instead of raw provider errors, and
    `SkipDefaultTransaction: true` (services opt into transactions
    explicitly via `repository.ITxManager`, see
    [repository.md](./repository.md), rather than paying for one on every

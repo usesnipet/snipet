@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/usesnipet/go-template/pkg/collections/slice"
+	"github.com/usesnipet/snipet/pkg/collections/slice"
 )
 
 func TestMapTransformsEachElement(t *testing.T) {

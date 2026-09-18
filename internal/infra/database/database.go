@@ -8,8 +8,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/usesnipet/go-template/config"
-	"github.com/usesnipet/go-template/internal/logger"
+	"github.com/usesnipet/snipet/config"
+	"github.com/usesnipet/snipet/internal/logger"
 )
 
 // NewDatabase connects to Postgres and runs pending migrations. When

@@ -7,7 +7,7 @@ module.exports = {
     let mod = args.module
     if (!mod) {
       mod = (
-        await prompter.prompt({ type: 'input', name: 'mod', message: 'Existing module (e.g. order):' })
+        await prompter.prompt({ type: 'input', name: 'mod', message: 'Existing module (e.g. snipet):' })
       ).mod
     }
     if (!mod || !String(mod).trim()) throw new Error('--module is required')

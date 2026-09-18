@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 
-	apperr "github.com/usesnipet/go-template/internal/app-err"
-	"github.com/usesnipet/go-template/internal/filter"
-	"github.com/usesnipet/go-template/internal/page"
+	apperr "github.com/usesnipet/snipet/internal/app-err"
+	"github.com/usesnipet/snipet/internal/filter"
+	"github.com/usesnipet/snipet/internal/page"
 	"gorm.io/gorm"
 )
 

@@ -1,8 +1,10 @@
+import { useAuthStore } from "@/features/auth/store";
 import { z, ZodType } from "zod";
 
 import { logger } from "../logger";
 
 import { handleApiError, parseZodErrors } from "./errors";
+import { applyPathParams, applySearchParams, handleRefreshToken, handleUnauthorized } from "./utils";
 
 export type ApiMethod = "GET" | "POST" | "PUT" | "DELETE";
 export type SearchParamsRecord = Record<
@@ -19,6 +21,7 @@ export type ApiRequestOptions<
   TPathParams = PathParamsRecord,
   THeaders = Record<string, string>
 > = {
+  retry?: boolean;
   method: ApiMethod;
   url: string;
   body?: TBody;
@@ -34,40 +37,10 @@ export type ApiRequestOptions<
   }
 };
 
-export function applyPathParams(url: string, params: PathParamsRecord): string {
-  return Object.entries(params).reduce(
-    (result, [key, value]) =>
-      result.replaceAll(`{${key}}`, encodeURIComponent(String(value))),
-    url,
-  );
-}
-
-export function buildSearchParams(params: SearchParamsRecord): string {
-  const searchParams = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null) continue;
-    searchParams.append(key, String(value));
-  }
-
-  return searchParams.toString();
-}
-
-export function applySearchParams(
-  url: string,
-  params: SearchParamsRecord,
-): string {
-  const query = buildSearchParams(params);
-  if (!query) return url;
-
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}${query}`;
-}
-
 export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(
   options: ApiRequestOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>,
 ): Promise<TResponse> {
-  const { url, method, schemas } = options;
+  const { url, method, schemas, retry } = options;
   let { body, headers, params, searchParams } = options;
   const pathUrl = params ? applyPathParams(url, params as PathParamsRecord) : url;
 
@@ -86,16 +59,29 @@ export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams 
     ? applySearchParams(pathUrl, searchParams as SearchParamsRecord)
     : pathUrl;
 
+  // access_token already carries the "Bearer " prefix (see auth.AuthResponse
+  // on the backend) — send it as-is.
+  const accessToken = useAuthStore.getState().accessToken;
+
   const response = await fetch(requestUrl, {
     method,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(accessToken ? { Authorization: accessToken } : {}),
       ...headers,
     },
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      if (!retry) {
+        const refreshed = await handleRefreshToken();
+        if (refreshed) return httpx({ ...options, retry: true });
+      } else {
+        handleUnauthorized();
+      }
+    }
     await handleApiError(response);
   }
 

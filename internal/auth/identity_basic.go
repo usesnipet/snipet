@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	apperr "github.com/usesnipet/go-template/internal/app-err"
+	apperr "github.com/usesnipet/snipet/internal/app-err"
 )
 
 // BasicIdentity is the operator authenticated via HTTP Basic Auth against

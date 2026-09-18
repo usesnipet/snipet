@@ -1,4 +1,4 @@
-# orders
+# snipet
 
 A starter template for a layered Go REST API with an embedded React admin UI.
 It ships the infrastructure — routing, generic repository, migrations,
@@ -55,7 +55,7 @@ web/                the React app
 ## Quick start
 
 ```bash
-docker compose up -d postgres          # Postgres on localhost:5432, db "orders"
+docker compose up -d postgres          # Postgres on localhost:5432, db "snipet"
 cp .env.example .env                    # review it
 make dev                                # api on :8080 + web dev server (:5173)
 ```

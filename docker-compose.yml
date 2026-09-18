@@ -5,13 +5,13 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: orders
+      POSTGRES_DB: snipet
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d orders"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d snipet"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,7 +24,7 @@ services:
     environment:
       ENV: production
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      DB_URL: postgres://postgres:postgres@postgres:5432/orders?sslmode=disable
+      DB_URL: postgres://postgres:postgres@postgres:5432/snipet?sslmode=disable
       DB_AUTO_MIGRATE: "true"
     depends_on:
       postgres:

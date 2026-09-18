@@ -54,7 +54,7 @@ change. Read the relevant root doc's table first:
 
 Match the changed path against the table to find the owning doc(s). A
 change can touch more than one doc (e.g. a new auth mechanism touches
-`auth-middleware.md` and `bootstrap.md`'s wiring-order list).
+`auth-middleware.md` and `bootstrap.md`'s wiring-snipet list).
 
 If nothing in the table covers the changed path, that's itself a signal:
 either it's a new top-level concern that needs a new doc (rare — confirm

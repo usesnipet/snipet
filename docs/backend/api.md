@@ -118,11 +118,14 @@ func WriteError(w http.ResponseWriter, status int, err error) error
 ```
 
 `WriteJSON`/`WriteNoContent` are what a handler calls on the success path.
-`WriteError`/`WriteAppError` are what `Serve` (and middleware, which sits
-outside the `HandlerFunc`/`Serve` flow and has to write errors itself — see
-[auth-middleware.md](./auth-middleware.md)) call on the failure path; a
-handler itself generally never calls these directly, it just returns the
-error and lets `Serve` do it.
+`WriteError`/`WriteAppError` are what the failure path calls instead: `Serve`
+uses `WriteError` for an error it can't type-assert to `*apperr.Error`
+(a generic `500`) and `WriteAppError` once it has one. `Gate.Handler()`
+(middleware, which sits outside the `HandlerFunc`/`Serve` flow and has to
+write errors itself — see [auth-middleware.md](./auth-middleware.md)) only
+ever calls `WriteAppError`, since every gate is expected to already fail
+with an `*apperr.Error`. A handler itself generally never calls these
+directly, it just returns the error and lets `Serve` do it.
 
 ## SSE
 

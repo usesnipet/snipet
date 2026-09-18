@@ -55,7 +55,7 @@ migrations/
 ```
 
 - `<unix-ish timestamp>_<snake_case description>.{up,down}.sql` —
-  golang-migrate's convention; the timestamp prefix is what orders them.
+  golang-migrate's convention; the timestamp prefix is what snipets them.
 - Every `.up.sql` has a matching `.down.sql` that reverses it exactly:
   ```sql
   -- up

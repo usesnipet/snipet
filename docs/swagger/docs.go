@@ -15,6 +15,800 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api-key/me": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns the API key used to authenticate the current request.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Get current API key",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeyResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Lists API keys, with optional pagination.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "List API keys",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "take",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page offset",
+                        "name": "skip",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeysPage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Creates a new API key. The plaintext key is only returned once, on creation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Create API key",
+                "parameters": [
+                    {
+                        "description": "API key data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateAPIKeyDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeyWithSecret"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Returns an API key by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Get API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeyResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Deletes an API key by ID.",
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Delete API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}/active": {
+            "put": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Marks an API key as active.",
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Activate API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}/disabled": {
+            "put": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Marks an API key as disabled.",
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Disable API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}/expiration": {
+            "put": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Updates the expiration date of an API key.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Update API key expiration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Expiration data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateExpirationDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api-keys/{id}/roll": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Rotates an API key, invalidating the previous secret. The new plaintext key is only returned once.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api-key"
+                ],
+                "summary": "Roll API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIKeyWithSecret"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "description": "credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/LoginDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AuthResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "Revokes the given refresh token. Idempotent.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Logout",
+                "parameters": [
+                    {
+                        "description": "refresh token",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RefreshTokenDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Current user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MeResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/password": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change own password",
+                "parameters": [
+                    {
+                        "description": "passwords",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ChangeOwnPasswordDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh an access token",
+                "parameters": [
+                    {
+                        "description": "refresh token",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RefreshTokenDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AuthResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/llm-connection": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "List LlmConnections",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/LLMConnectionsPage"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "Create a LlmConnection",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateLlmConnectionDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/LLMConnectionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/llm-connection/execute": {
+            "post": {
+                "description": "Runs the given targets in order (failover on the first that fails) against the given messages and returns the first successful response.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "Execute an LLM",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteLlmDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteLlmResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/llm-connection/execute/stream": {
+            "post": {
+                "description": "Same as execute, but streams the response as Server-Sent Events (\"llm_started\", \"text_delta\", \"tool_call\", \"llm_skipped\", \"message\", \"error\", \"done\").",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "Execute an LLM with a streamed response",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteLlmDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/llm-connection/providers": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Lists the available LLM providers.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "List LLM provider",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/LLMProviderRegistry"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/llm-connection/providers/{key}/models": {
+            "get": {
+                "description": "Sources connection options from connection_id when given, else the provider's default connection.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "List a provider's models",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Provider key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Connection ID to source connection options from",
+                        "name": "connection_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ProviderModel"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/llm-connection/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "Get a LlmConnection by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "LlmConnection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/LLMConnectionResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "Update a LlmConnection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "LlmConnection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "partial payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateLlmConnectionDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "llm-connection"
+                ],
+                "summary": "Delete a LlmConnection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "LlmConnection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/system/info": {
             "get": {
                 "description": "Returns application system information.",
@@ -34,14 +828,952 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/users": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UsersPage"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create a user",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateUserDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get a user by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "partial payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateUserDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "APIKey": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "key_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "APIKeyResponse": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "key_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "APIKeyWithSecret": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "key_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "APIKeysPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/APIKey"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "Auth": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "type": {
+                    "$ref": "#/definitions/AuthType"
+                }
+            }
+        },
+        "AuthResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "refresh_expires_at": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/User"
+                }
+            }
+        },
+        "AuthType": {
+            "type": "string",
+            "enum": [
+                "no-auth",
+                "static"
+            ],
+            "x-enum-varnames": [
+                "AuthTypeNone",
+                "AuthTypeStatic"
+            ]
+        },
+        "Capability": {
+            "type": "string",
+            "enum": [
+                "text",
+                "vision",
+                "tools",
+                "streaming",
+                "embedding"
+            ],
+            "x-enum-comments": {
+                "CapabilityEmbedding": "embedding text",
+                "CapabilityStreaming": "supports Provider.Stream",
+                "CapabilityText": "text output",
+                "CapabilityTools": "tool / function calling",
+                "CapabilityVision": "accepts image input"
+            },
+            "x-enum-descriptions": [
+                "text output",
+                "accepts image input",
+                "tool / function calling",
+                "supports Provider.Stream",
+                "embedding text"
+            ],
+            "x-enum-varnames": [
+                "CapabilityText",
+                "CapabilityVision",
+                "CapabilityTools",
+                "CapabilityStreaming",
+                "CapabilityEmbedding"
+            ]
+        },
+        "ChangeOwnPasswordDTO": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8
+                }
+            }
+        },
+        "CreateAPIKeyDTO": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "CreateLlmConnectionDTO": {
+            "type": "object",
+            "required": [
+                "config",
+                "name",
+                "provider"
+            ],
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "default": {
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "CreateUserDTO": {
+            "type": "object",
+            "required": [
+                "name",
+                "password",
+                "role",
+                "username"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8
+                },
+                "role": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "Error": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "message": {
+                    "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ExecuteLlmDTO": {
+            "type": "object",
+            "required": [
+                "messages",
+                "targets"
+            ],
+            "properties": {
+                "messages": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/Message"
+                    }
+                },
+                "targets": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/ExecuteLlmTargetDTO"
+                    }
+                }
+            }
+        },
+        "ExecuteLlmResponse": {
+            "type": "object",
+            "properties": {
+                "finish_reason": {
+                    "$ref": "#/definitions/FinishReason"
+                },
+                "message": {
+                    "$ref": "#/definitions/Message"
+                },
+                "usage": {
+                    "$ref": "#/definitions/Usage"
+                }
+            }
+        },
+        "ExecuteLlmTargetDTO": {
+            "type": "object",
+            "required": [
+                "model"
+            ],
+            "properties": {
+                "connection_id": {
+                    "type": "string"
+                },
+                "connection_options": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "extra_options": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "model": {
+                    "type": "string"
+                }
+            }
+        },
+        "FinishReason": {
+            "type": "string",
+            "enum": [
+                "stop",
+                "length",
+                "tool_call"
+            ],
+            "x-enum-comments": {
+                "FinishLength": "hit the output token cap",
+                "FinishStop": "natural end of the reply",
+                "FinishToolCall": "stopped to call a tool"
+            },
+            "x-enum-descriptions": [
+                "natural end of the reply",
+                "hit the output token cap",
+                "stopped to call a tool"
+            ],
+            "x-enum-varnames": [
+                "FinishStop",
+                "FinishLength",
+                "FinishToolCall"
+            ]
+        },
         "InfoDTO": {
             "type": "object",
             "properties": {
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "JSONMap": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "LLMConnectionResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "default": {
+                    "description": "Default marks the connection the runner should use for its provider\nwhen a call doesn't name a specific connection. At most one connection\nper provider should have this set; the service layer enforces it.",
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "LLMConnectionsPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LlmConnection"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "LLMProviderRegistry": {
+            "type": "object",
+            "properties": {
+                "auth": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Auth"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "schemas": {
+                    "$ref": "#/definitions/Schemas"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "LlmConnection": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "default": {
+                    "description": "Default marks the connection the runner should use for its provider\nwhen a call doesn't name a specific connection. At most one connection\nper provider should have this set; the service layer enforces it.",
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "LoginDTO": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "MeResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the display name.",
+                    "type": "string"
+                },
+                "role": {
+                    "description": "Role is one of RoleAdmin | RoleUser.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Role"
+                        }
+                    ]
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Username is the login handle — unique, case-sensitive.",
+                    "type": "string"
+                }
+            }
+        },
+        "Message": {
+            "type": "object",
+            "properties": {
+                "parts": {
+                    "type": "array",
+                    "items": {}
+                },
+                "role": {
+                    "$ref": "#/definitions/Role"
+                }
+            }
+        },
+        "ProviderModel": {
+            "type": "object",
+            "properties": {
+                "capabilities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Capability"
+                    }
+                },
+                "context_window": {
+                    "description": "ContextWindow is the maximum input size in tokens; 0 means unspecified.",
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "key": {
+                    "description": "Unique identifier for model (eg. gpt-4o)",
+                    "type": "string"
+                },
+                "max_output_tokens": {
+                    "description": "MaxOutputTokens caps the generated tokens; 0 means unspecified.",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "RefreshTokenDTO": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "Role": {
+            "type": "string",
+            "enum": [
+                "system",
+                "user",
+                "assistant",
+                "tool"
+            ],
+            "x-enum-varnames": [
+                "RoleSystem",
+                "RoleUser",
+                "RoleAssistant",
+                "RoleTool"
+            ]
+        },
+        "Schemas": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "description": "Config validates the \"config\" section of the connection options — the\nalways-required provider config (endpoint, region, org id, ...).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/JSONMap"
+                        }
+                    ]
+                },
+                "generate_extra_options": {
+                    "description": "GenerateExtraOptions validate the per-call\nextra_options of Generate and Stream.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/JSONMap"
+                        }
+                    ]
+                }
+            }
+        },
+        "UpdateExpirationDTO": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpdateLlmConnectionDTO": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "default": {
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "UpdateUserDTO": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "Usage": {
+            "type": "object",
+            "properties": {
+                "input_tokens": {
+                    "type": "integer"
+                },
+                "output_tokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the display name.",
+                    "type": "string"
+                },
+                "role": {
+                    "description": "Role is one of RoleAdmin | RoleUser.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Role"
+                        }
+                    ]
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Username is the login handle — unique, case-sensitive.",
+                    "type": "string"
+                }
+            }
+        },
+        "UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the display name.",
+                    "type": "string"
+                },
+                "role": {
+                    "description": "Role is one of RoleAdmin | RoleUser.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Role"
+                        }
+                    ]
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Username is the login handle — unique, case-sensitive.",
+                    "type": "string"
+                }
+            }
+        },
+        "UsersPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/User"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         }
@@ -64,8 +1796,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "orders API",
-	Description:      "API for the orders platform.",
+	Title:            "snipets API",
+	Description:      "API for the snipets platform.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

@@ -1,7 +1,7 @@
 # `internal/module/<name>`
 
 A module is one business domain (`system`, and whatever you add — `widget`,
-`order`, ...): everything needed to expose CRUD (and any domain-specific
+`snipet`, ...): everything needed to expose CRUD (and any domain-specific
 operations) for that entity over HTTP. Scaffolding one is covered
 step-by-step by the
 [`create-backend-module` skill](../../.claude/skills/create-backend-module/SKILL.md);
@@ -132,8 +132,13 @@ func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 
 - Route group + `r.Use(...)` is where a module wires its auth requirement
   (see [auth-middleware.md](./auth-middleware.md)). A module's `handler.go`
-  is handed the raw `api.Gate`(s) it needs and calls `.Handler()` on them
-  per route group.
+  is handed the `api.Gate`(s) it needs and calls `.Handler()` on them per
+  route group. A gate with fixed config (like `basicAuthGate` above) is
+  handed down pre-built; a gate parameterized per route group (role
+  authorization — see `guard.RoleGate` in
+  [auth-middleware.md](./auth-middleware.md#role-authorization--guardrequirerole))
+  is handed down as the bare factory instead, and the handler calls it with
+  its own roles.
 - Every handler method has the shape `func(w, r) error` — parse with
   `api.ParseBody`/`api.ParseQuery`, call the service, write with
   `api.WriteJSON`/`api.WriteNoContent`, and just `return err` on failure.
@@ -162,5 +167,5 @@ status/message, not just that an error occurred.
 
 A module's `Service`/`Handler` don't construct their own dependencies —
 `internal/bootstrap` builds the repository, then the service, then the
-handler, in that order, and calls `RegisterRoutes`. See
+handler, in that snipet, and calls `RegisterRoutes`. See
 [bootstrap.md](./bootstrap.md).

@@ -18,16 +18,16 @@ this feature *and* its Go backend counterpart in one run:
 
 ```
 hygen module new Order --fields "title:string:required,qty:int,spec:jsonb:required"   # full CRUD both ends
-hygen module model Order --fields "..."     # web/src/models/order.ts   + internal/model/order.go
-hygen module handler Order                  # web/src/features/order/hooks.ts   + internal/module/order/handler.go
-hygen module dto Approve --module order --fields "..."   # append approveOrderSchema to schemas.ts + ApproveOrderDTO to dto.go
+hygen module model Order --fields "..."     # web/src/models/snipet.ts   + internal/model/snipet.go
+hygen module handler Order                  # web/src/features/snipet/hooks.ts   + internal/module/snipet/handler.go
+hygen module dto Approve --module snipet --fields "..."   # append approveOrderSchema to schemas.ts + ApproveOrderDTO to dto.go
 ```
 
 `module new` emits **full CRUD**; `module model`/`handler` emit a **lean
 skeleton** for that layer (`hooks` = `use<X>` only) — grow it by hand.
 `module dto` **injects** a named DTO/schema into the module's existing
 `dto.go` + `schemas.ts` (module must exist). Backend-only named services:
-`hygen module service <Name> --module order`.
+`hygen module service <Name> --module snipet`.
 
 Use `hygen web …` only for a **frontend-only** feature (no backend module):
 

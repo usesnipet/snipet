@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/usesnipet/go-template/internal/queue"
+	"github.com/usesnipet/snipet/internal/queue"
 )
 
 func TestPoolRunsJobs(t *testing.T) {
