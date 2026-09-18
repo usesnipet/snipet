@@ -99,7 +99,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	apiKeyHandler := apikey.NewHandler(apiKeyService, requireRole, requireUserAuth, requireApiKey)
 
 	// register routes
-	api := api.New()
+	api := api.New(log.Child(logger.WithPrefix("api: ")))
 	api.Router.Handle("/*", web.Handler())
 	api.Router.Route(config.APIPrefix, func(r chi.Router) {
 		systemHandler.RegisterRoutes(r, api.Serve)
