@@ -8,8 +8,11 @@ import {
   listLlmProviderSchema,
   listProviderModelsSchema,
   listProviderModelsSearchParamsSchema,
+  llmStartEventSchema,
   llmStreamErrorEventSchema,
   llmStreamDoneEventSchema,
+  llmSkippedEventSchema,
+  llmMessageEventSchema,
   llmTextDeltaEventSchema,
   llmToolCallEventSchema,
   paginatedLlmConnectionSchema,
@@ -143,11 +146,20 @@ const executeStream = async (
     signal: opts.signal,
     onEvent: (event, data) => {
       switch (event) {
+        case "llm_started":
+          onEvent({ event: "llm_started", data: llmStartEventSchema.parse(data) });
+          return;
         case "text_delta":
           onEvent({ event: "text_delta", data: llmTextDeltaEventSchema.parse(data) });
           return;
         case "tool_call":
           onEvent({ event: "tool_call", data: llmToolCallEventSchema.parse(data) });
+          return;
+        case "llm_skipped":
+          onEvent({ event: "llm_skipped", data: llmSkippedEventSchema.parse(data) });
+          return;
+        case "message":
+          onEvent({ event: "message", data: llmMessageEventSchema.parse(data) });
           return;
         case "error":
           onEvent({ event: "error", data: llmStreamErrorEventSchema.parse(data) });

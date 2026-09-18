@@ -13,6 +13,8 @@ import type {
   ListLlmProvider,
   ListProviderModels,
   ListProviderModelsSearchParams,
+  LlmMessage,
+  LlmSkippedEvent,
   LlmStreamEvent,
   LlmToolCallEvent,
   PaginatedLlmConnection,
@@ -131,8 +133,14 @@ export type LlmStreamStatus = "idle" | "streaming" | "done" | "error";
 export type UseExecuteLlmStreamResult = {
   status: LlmStreamStatus;
   events: LlmStreamEvent[];
+  /** The target currently streaming, e.g. "openai/gpt-4o"; null before the first llm starts. */
+  activeLlm: string | null;
+  /** Targets skipped over during failover, in the order they were tried. */
+  skipped: LlmSkippedEvent[];
   text: string;
   toolCalls: LlmToolCallEvent[];
+  /** The full assistant message, set once the stream ends cleanly. */
+  message: LlmMessage | null;
   error: Error | null;
   execute: (data: ExecuteLlm) => Promise<void>;
   cancel: () => void;
@@ -145,8 +153,11 @@ export type UseExecuteLlmStreamResult = {
 export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
   const [status, setStatus] = useState<LlmStreamStatus>("idle");
   const [events, setEvents] = useState<LlmStreamEvent[]>([]);
+  const [activeLlm, setActiveLlm] = useState<string | null>(null);
+  const [skipped, setSkipped] = useState<LlmSkippedEvent[]>([]);
   const [text, setText] = useState("");
   const [toolCalls, setToolCalls] = useState<LlmToolCallEvent[]>([]);
+  const [message, setMessage] = useState<LlmMessage | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -161,8 +172,11 @@ export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
 
     setStatus("streaming");
     setEvents([]);
+    setActiveLlm(null);
+    setSkipped([]);
     setText("");
     setToolCalls([]);
+    setMessage(null);
     setError(null);
 
     try {
@@ -171,11 +185,20 @@ export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
         (event) => {
           setEvents((prev) => [...prev, event]);
           switch (event.event) {
+            case "llm_started":
+              setActiveLlm(event.data.llm);
+              break;
             case "text_delta":
               setText((prev) => prev + event.data.text);
               break;
             case "tool_call":
               setToolCalls((prev) => [...prev, event.data]);
+              break;
+            case "llm_skipped":
+              setSkipped((prev) => [...prev, event.data]);
+              break;
+            case "message":
+              setMessage(event.data.message);
               break;
             case "error":
               setError(new Error(event.data.message));
@@ -202,5 +225,5 @@ export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  return { status, events, text, toolCalls, error, execute, cancel };
+  return { status, events, activeLlm, skipped, text, toolCalls, message, error, execute, cancel };
 };

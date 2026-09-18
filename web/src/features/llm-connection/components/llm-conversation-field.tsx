@@ -4,17 +4,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
-  Check, ChevronDown, ChevronUp, CircleAlert, CircleCheck, Clock, GripVertical, Loader2, Plus, Send, Square, X
+  Check, ChevronDown, ChevronUp, CircleAlert, CircleCheck, Clock, GripVertical, Loader2, Plus, Send,
+  SkipForward, Square, X, Zap
 } from "lucide-react";
 import { useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 import { useExecuteLlm, useExecuteLlmStream } from "../hooks";
 
-import type { ExecuteLlm, ExecuteLlmTarget, LlmMessage, LlmRole } from "../schemas";
+import type { ExecuteLlm, ExecuteLlmTarget, LlmMessage, LlmRole, LlmSkippedEvent } from "../schemas";
 type Props = {
   /** Field-array path holding `LlmMessage[]` (see schemas.ts). */
   name: string;
@@ -179,7 +181,9 @@ export function LlmConversationField({ name, targetsName }: Props) {
         </div>
       </CardContent>
       <CardFooter>
-        <ResultStatus mode={mode} stream={stream} runSync={runSync} />
+        <ScrollArea className="flex max-h-96 flex-col">
+          <ResultStatus mode={mode} stream={stream} runSync={runSync} />
+        </ScrollArea>
       </CardFooter>
     </Card>
   );
@@ -194,11 +198,26 @@ type ResultStatusProps = {
 function ResultStatus({ mode, stream, runSync }: ResultStatusProps) {
   if (mode === "stream") {
     if (stream.status === "idle") return <IdleStatus />;
-    if (stream.status === "error") return <ErrorStatus message={stream.error?.message ?? "Something went wrong."} />;
+    if (stream.status === "error") {
+      return (
+        <div className="space-y-1">
+          <SkippedList skipped={stream.skipped} />
+          <ErrorStatus message={stream.error?.message ?? "Something went wrong."} />
+        </div>
+      );
+    }
     return (
-      <StatusRow icon={stream.status === "streaming" ? <Loader2 className="animate-spin" /> : <CircleCheck />}>
-        {stream.text || (stream.status === "streaming" ? "Waiting for the first token…" : "(empty response)")}
-      </StatusRow>
+      <div className="space-y-1">
+        <SkippedList skipped={stream.skipped} />
+        {stream.activeLlm && (
+          <StatusRow icon={<Zap />} className="text-foreground/70">
+            {stream.activeLlm}
+          </StatusRow>
+        )}
+        <StatusRow icon={stream.status === "streaming" ? <Loader2 className="animate-spin" /> : <CircleCheck />}>
+          {stream.text || (stream.status === "streaming" ? "Waiting for the first token…" : "(empty response)")}
+        </StatusRow>
+      </div>
     );
   }
 
@@ -207,6 +226,19 @@ function ResultStatus({ mode, stream, runSync }: ResultStatusProps) {
   if (runSync.isError) return <ErrorStatus message={runSync.error.message} />;
   return (
     <StatusRow icon={<CircleCheck />}>{extractText(runSync.data.message) || "(empty response)"}</StatusRow>
+  );
+}
+
+function SkippedList({ skipped }: { skipped: LlmSkippedEvent[] }) {
+  if (skipped.length === 0) return null;
+  return (
+    <>
+      {skipped.map((s, i) => (
+        <StatusRow key={`${s.llm}-${i}`} icon={<SkipForward />} className="text-amber-600 dark:text-amber-400">
+          {s.llm} skipped — {s.error}
+        </StatusRow>
+      ))}
+    </>
   );
 }
 

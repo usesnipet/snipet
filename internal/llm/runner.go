@@ -53,17 +53,21 @@ func (r *Runner) Generate(ctx context.Context, targets []Target, messages []Mess
 	return Response{}, &FailoverError{Attempts: attempts}
 }
 
-// Stream tries each target in order and returns the first stream that yields
-// its first event without error. Failover happens only before that first
-// event: a failover error before it moves to the next target; once the first
-// event is buffered, any later error surfaces through the returned iterator.
-// A fatal error before the first event is returned immediately; if every
-// target fails, the result is a *FailoverError.
+// Stream tries each target in order and returns an iterator that reports the
+// whole attempt: an LLMSkippedEvent for each target skipped over, then an
+// LLMStartEvent once one is chosen, that target's own events, and finally a
+// MessageEvent assembling the full reply. Failover happens only before a
+// target's first event: a failover error before it moves to the next
+// target; once the first event is buffered, any later error surfaces
+// through the returned iterator's Err. A fatal error before any target's
+// first event is returned immediately; if every target fails, the returned
+// iterator's Err is a *FailoverError once its skip events are drained.
 func (r *Runner) Stream(ctx context.Context, targets []Target, messages []Message, tools []Tool) (StreamIterator, error) {
 	if len(targets) == 0 {
 		return nil, fmt.Errorf("%w: no targets", ErrBadRequest)
 	}
 
+	var queue []StreamEvent
 	var attempts []Attempt
 	for _, t := range targets {
 		if err := ctx.Err(); err != nil {
@@ -72,14 +76,16 @@ func (r *Runner) Stream(ctx context.Context, targets []Target, messages []Messag
 
 		it, err := r.streamOne(ctx, t, messages, tools)
 		if err == nil {
-			return it, nil
+			queue = append(queue, LLMStartEvent{LLM: t.Model})
+			return &runnerIterator{queue: queue, inner: it}, nil
 		}
 		if !IsFailover(err) {
 			return nil, err
 		}
 		attempts = append(attempts, Attempt{LLM: t.Model, Err: err})
+		queue = append(queue, LLMSkippedEvent{LLM: t.Model, Error: err.Error()})
 	}
-	return nil, &FailoverError{Attempts: attempts}
+	return &runnerIterator{queue: queue, err: &FailoverError{Attempts: attempts}}, nil
 }
 
 func (r *Runner) generateOne(ctx context.Context, t Target, messages []Message, tools []Tool) (Response, error) {
@@ -205,3 +211,72 @@ func (p *primedIterator) Next(ctx context.Context) bool {
 func (p *primedIterator) Event() StreamEvent { return p.current }
 func (p *primedIterator) Err() error         { return p.inner.Err() }
 func (p *primedIterator) Close() error       { return p.inner.Close() }
+
+// runnerIterator is what Runner.Stream hands back. It first drains queue
+// (the LLMSkippedEvent/LLMStartEvent bookkeeping already known once the
+// target loop finished), then delegates to inner if one was chosen,
+// accumulating its text and tool calls to emit a trailing MessageEvent once
+// inner ends cleanly. If no target was chosen, inner is nil and err (already
+// set) surfaces once queue drains.
+type runnerIterator struct {
+	queue   []StreamEvent
+	current StreamEvent
+
+	inner StreamIterator
+	err   error
+
+	text      strings.Builder
+	toolCalls []Part
+	assembled bool
+}
+
+func (r *runnerIterator) Next(ctx context.Context) bool {
+	if len(r.queue) > 0 {
+		r.current, r.queue = r.queue[0], r.queue[1:]
+		return true
+	}
+	if r.inner == nil {
+		return false
+	}
+
+	if r.inner.Next(ctx) {
+		event := r.inner.Event()
+		switch e := event.(type) {
+		case TextDeltaEvent:
+			r.text.WriteString(e.Text)
+		case ToolCallEvent:
+			r.toolCalls = append(r.toolCalls, ToolCallPart{ID: e.ID, Name: e.Name, Arguments: e.Arguments})
+		}
+		r.current = event
+		return true
+	}
+	if err := r.inner.Err(); err != nil {
+		r.err = err
+		return false
+	}
+	if !r.assembled {
+		r.assembled = true
+		r.current = MessageEvent{Message: r.message()}
+		return true
+	}
+	return false
+}
+
+func (r *runnerIterator) message() Message {
+	var parts []Part
+	if r.text.Len() > 0 {
+		parts = append(parts, TextPart{Text: r.text.String()})
+	}
+	parts = append(parts, r.toolCalls...)
+	return Message{Role: RoleAssistant, Parts: parts}
+}
+
+func (r *runnerIterator) Event() StreamEvent { return r.current }
+func (r *runnerIterator) Err() error         { return r.err }
+
+func (r *runnerIterator) Close() error {
+	if r.inner == nil {
+		return nil
+	}
+	return r.inner.Close()
+}

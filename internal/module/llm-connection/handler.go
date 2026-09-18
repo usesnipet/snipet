@@ -169,7 +169,7 @@ func (h *Handler) execute(w http.ResponseWriter, r *http.Request) error {
 }
 
 // @Summary		Execute an LLM with a streamed response
-// @Description	Same as execute, but streams the response as Server-Sent Events ("text_delta", "tool_call", "error", "done").
+// @Description	Same as execute, but streams the response as Server-Sent Events ("llm_started", "text_delta", "tool_call", "llm_skipped", "message", "error", "done").
 // @Tags			llm-connection
 // @Accept			json
 // @Produce		text/event-stream
@@ -196,12 +196,24 @@ func (h *Handler) executeStream(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	for it.Next(ctx) {
 		switch event := it.Event().(type) {
+		case llm.LLMStartEvent:
+			if err := sse.Write("llm_started", event); err != nil {
+				return nil
+			}
 		case llm.TextDeltaEvent:
 			if err := sse.Write("text_delta", event); err != nil {
 				return nil
 			}
 		case llm.ToolCallEvent:
 			if err := sse.Write("tool_call", event); err != nil {
+				return nil
+			}
+		case llm.LLMSkippedEvent:
+			if err := sse.Write("llm_skipped", event); err != nil {
+				return nil
+			}
+		case llm.MessageEvent:
+			if err := sse.Write("message", event); err != nil {
 				return nil
 			}
 		}

@@ -176,7 +176,10 @@ export const executeLlmResponseSchema = z
 export type ExecuteLlmResponse = z.infer<typeof executeLlmResponseSchema>;
 
 // --- SSE event payloads
-// Wire events are "text_delta" | "tool_call" | "error" | "done"
+// Wire events are "llm_started" | "text_delta" | "tool_call" | "llm_skipped" | "message" | "error" | "done"
+export const llmStartEventSchema = z.object({ llm: z.string() }).strict();
+export type LlmStartEvent = z.infer<typeof llmStartEventSchema>;
+
 export const llmTextDeltaEventSchema = z.object({ text: z.string() }).strict();
 export type LlmTextDeltaEvent = z.infer<typeof llmTextDeltaEventSchema>;
 
@@ -185,6 +188,16 @@ export const llmToolCallEventSchema = z
   .strict();
 export type LlmToolCallEvent = z.infer<typeof llmToolCallEventSchema>;
 
+// Emitted for a target skipped over during failover, e.g. a rate limit,
+// auth failure, or connection problem.
+export const llmSkippedEventSchema = z.object({ llm: z.string(), error: z.string() }).strict();
+export type LlmSkippedEvent = z.infer<typeof llmSkippedEventSchema>;
+
+// The full assistant message assembled from the stream's text and tool-call
+// events, emitted once after the stream ends cleanly.
+export const llmMessageEventSchema = z.object({ message: llmMessageSchema }).strict();
+export type LlmMessageEvent = z.infer<typeof llmMessageEventSchema>;
+
 export const llmStreamErrorEventSchema = z.object({ message: z.string() }).strict();
 export type LlmStreamErrorEvent = z.infer<typeof llmStreamErrorEventSchema>;
 
@@ -192,8 +205,11 @@ export const llmStreamDoneEventSchema = z.object({}).strict();
 export type LlmStreamDoneEvent = z.infer<typeof llmStreamDoneEventSchema>;
 
 export const llmStreamEventSchema = z.discriminatedUnion("event", [
+  z.object({ event: z.literal("llm_started"), data: llmStartEventSchema }).strict(),
   z.object({ event: z.literal("text_delta"), data: llmTextDeltaEventSchema }).strict(),
   z.object({ event: z.literal("tool_call"), data: llmToolCallEventSchema }).strict(),
+  z.object({ event: z.literal("llm_skipped"), data: llmSkippedEventSchema }).strict(),
+  z.object({ event: z.literal("message"), data: llmMessageEventSchema }).strict(),
   z.object({ event: z.literal("error"), data: llmStreamErrorEventSchema }).strict(),
   z.object({ event: z.literal("done"), data: llmStreamDoneEventSchema }).strict(),
 ]);
