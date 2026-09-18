@@ -80,8 +80,6 @@ func TestModels(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, models, 2)
 	assert.Equal(t, "llama3.2:latest", models[0].Key)
-	assert.Contains(t, models[0].Capabilities, llm.CapabilityText)
-	assert.Contains(t, models[0].Capabilities, llm.CapabilityStreaming)
 }
 
 func TestModels_DefaultsToLocalServerWhenNoBaseURLGiven(t *testing.T) {

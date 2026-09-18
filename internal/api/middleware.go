@@ -59,6 +59,9 @@ func Or(gates ...Gate) Gate {
 			}
 			return ctx, nil
 		}
+		if lastErr == nil {
+			return nil, apperr.Unauthorized("unauthorized")
+		}
 		return nil, apperr.Unauthorized(lastErr.Error())
 	}
 }
