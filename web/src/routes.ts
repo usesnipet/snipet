@@ -4,6 +4,7 @@ export const ROUTES = {
   agents: "/agents",
   llmConnections: "/llm/connections",
   llmPlayground: "/llm/playground",
+  mcpServers: "/mcp-servers",
   knowledge: "/knowledge",
   connections: "/connections",
   settings: "/settings",

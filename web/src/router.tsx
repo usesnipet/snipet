@@ -17,6 +17,8 @@ const LlmConnectionsPage = lazy(() =>
   import("./routes/llm-connections/page").then((m) => ({ default: m.LlmConnectionsPage })));
 const LlmPlaygroundPage = lazy(() =>
   import("./routes/llm-playground/page").then((m) => ({ default: m.LlmPlaygroundPage })));
+const McpServersPage = lazy(() =>
+  import("./routes/mcp-servers/page").then((m) => ({ default: m.McpServersPage })));
 const PlaceholderPage = lazy(() =>
   import("./routes/placeholder/page").then((m) => ({ default: m.PlaceholderPage })));
 const UsersPage = lazy(() =>
@@ -40,6 +42,7 @@ export const Router = () => {
               <Route path={toReactRouterPath(ROUTES.agents)} element={<PlaceholderPage title="Agents" />} />
               <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
               <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
+              <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
               <Route path={toReactRouterPath(ROUTES.knowledge)} element={<PlaceholderPage title="Knowledge" />} />
               <Route path={toReactRouterPath(ROUTES.connections)} element={<PlaceholderPage title="Connections" />} />
               <Route path={toReactRouterPath(ROUTES.settings)} element={<PlaceholderPage title="Settings" />} />
