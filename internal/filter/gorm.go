@@ -81,6 +81,8 @@ func (f *Options[T]) ToGorm(gormInterface gorm.Interface[T], optionsFuncs ...Gor
 				chain = chain.Where(field+" LIKE ?", value.Value[0])
 			case WhereOperatorNotLike:
 				chain = chain.Where(field+" NOT LIKE ?", value.Value[0])
+			case WhereOperatorILike:
+				chain = chain.Where(field+" ILIKE ?", value.Value[0])
 			case WhereOperatorIn:
 				chain = chain.Where(field+" IN ?", value.Value)
 			case WhereOperatorNotIn:
@@ -151,6 +153,8 @@ func (f *Options[T]) ToGormTx(tx *gorm.DB, optionsFuncs ...GormOptionsFunc) (*go
 				chain = chain.Where(field+" LIKE ?", value.Value[0])
 			case WhereOperatorNotLike:
 				chain = chain.Where(field+" NOT LIKE ?", value.Value[0])
+			case WhereOperatorILike:
+				chain = chain.Where(field+" ILIKE ?", value.Value[0])
 			case WhereOperatorIn:
 				chain = chain.Where(field+" IN ?", value.Value)
 			case WhereOperatorNotIn:

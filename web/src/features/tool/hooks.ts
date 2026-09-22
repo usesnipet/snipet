@@ -1,6 +1,6 @@
 import { toast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/query-client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
 import { toolService } from "./service";
 
@@ -24,6 +24,7 @@ export const useListTools = (
   useQuery({
     queryKey: [...listToolsQueryKey(), opts?.searchParams],
     queryFn: () => toolService.list(opts),
+    placeholderData: keepPreviousData,
   });
 
 export const toolQueryKey = (id: string) => [BASE_QUERY_KEY, id] as const;

@@ -69,7 +69,7 @@ shape as `admin.tsx`.
   **`error-fallback.tsx`** — layout-level plumbing used by every
   `routes/*/layout.tsx` and the top-level `Suspense` in `router.tsx`.
 - Standalone widgets not tied to one feature (`data-table.tsx`,
-  `duration-select.tsx`, `json-viewer.tsx`, `version.tsx`) — generic
+  `duration-select.tsx`, `json-viewer.tsx`, `pagination.tsx`, `version.tsx`) — generic
   building blocks a feature composes rather than depends on.
 
 ## Rule of thumb

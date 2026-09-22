@@ -1,4 +1,9 @@
+import { mcpServerSchema } from "@/models/mcp-server";
 import { z } from "zod";
+
+// Where a tool comes from (tool.Source).
+export const toolSourceSchema = z.enum(["mcp", "native"]);
+export type ToolSource = z.infer<typeof toolSourceSchema>;
 
 // The Tool entity — the read model as it comes off the API.
 // Relations to other entities go here (import them from "@/models/<other>"),
@@ -9,8 +14,9 @@ export const toolSchema = z
     name: z.string(),
     description: z.string(),
     input_schema: z.record(z.string(), z.unknown()),
-    source: z.string(),
-    mcp_server_id: z.uuid().optional(),
+    source: toolSourceSchema,
+    mcp_server_id: z.uuid().nullish(),
+    mcp_server: mcpServerSchema.nullish(),
     created_at: z.coerce.date(),
     updated_at: z.coerce.date(),
   })

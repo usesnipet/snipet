@@ -9,7 +9,7 @@ import { ToggleTheme } from "@/components/ui/toggle-theme";
 import { useCurrentUser, useLogout } from "@/features/auth/hooks";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
-import { BookText, Blocks, Home, Key, LogOut, MessageSquare, Server, Settings, Users, Waypoints } from "lucide-react";
+import { BookText, Blocks, Home, Key, LogOut, MessageSquare, Server, Settings, Users, Waypoints, Wrench } from "lucide-react";
 
 import { Version } from "./version";
 
@@ -29,6 +29,7 @@ const navItems: NavEntry[] = [
         ],
       },
       { title: "MCP Servers", href: ROUTES.mcpServers, icon: Blocks },
+      { title: "Tools", href: ROUTES.tools, icon: Wrench },
       { title: "Knowledge", href: ROUTES.knowledge, icon: BookText, comingSoon: true },
       { title: "Connections", href: ROUTES.connections, icon: Waypoints, comingSoon: true },
     ],
