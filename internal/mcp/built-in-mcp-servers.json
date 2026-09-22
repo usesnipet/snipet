@@ -1,0 +1,54 @@
+[
+  {
+    "key": "filesystem",
+    "name": "Filesystem",
+    "description": "Read, write and search files inside the allowed directories",
+    "icon": "https://github.com/modelcontextprotocol.png",
+    "tags": ["files", "local", "official"],
+    "transport": "stdio",
+    "config": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/dir"],
+      "timeout": 30
+    }
+  },
+  {
+    "key": "memory",
+    "name": "Memory",
+    "description": "Knowledge-graph based persistent memory",
+    "icon": "https://github.com/modelcontextprotocol.png",
+    "tags": ["memory", "local", "official"],
+    "transport": "stdio",
+    "config": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "timeout": 30
+    }
+  },
+  {
+    "key": "fetch",
+    "name": "Fetch",
+    "description": "Fetch web pages and convert them to markdown",
+    "icon": "https://github.com/modelcontextprotocol.png",
+    "tags": ["web", "local", "official"],
+    "transport": "stdio",
+    "config": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "timeout": 30
+    }
+  },
+  {
+    "key": "github",
+    "name": "GitHub",
+    "description": "Manage repositories, issues and pull requests through GitHub's hosted MCP server",
+    "icon": "https://github.com/github.png",
+    "tags": ["git", "remote", "official"],
+    "transport": "http",
+    "config": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": { "Authorization": "Bearer <GITHUB_TOKEN>" },
+      "timeout": 30
+    }
+  }
+]
