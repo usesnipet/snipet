@@ -1,10 +1,10 @@
 import { CatalogCard } from "@/components/catalog";
+import { Icon } from "@/components/icon";
 import { useDialog } from "@/lib/dialog";
 import { ArrowRight, Plus } from "lucide-react";
 
 import { LlmConnectionListFromProviderDialog } from "./connection-list-from-provider-dialog";
 import { CreateLlmConnectionDialog } from "./create-llm-connection-dialog";
-import { ProviderIcon } from "./provider-icon";
 
 import type { RegistryView } from "../lib/registry-view";
 export type LlmConnectionCatalogCardProps = {
@@ -37,7 +37,7 @@ export function LlmConnectionCatalogCard({ view }: LlmConnectionCatalogCardProps
 
   return (
     <CatalogCard
-      icon={<ProviderIcon name={name} providerKey={key} icon={icon} />}
+      icon={<Icon name={name} icon={icon} />}
       title={name}
       description={description}
       tags={tags}

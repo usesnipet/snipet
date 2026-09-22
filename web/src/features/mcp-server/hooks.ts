@@ -74,11 +74,11 @@ export const useCreateMcpServer = (
   useMutation({
     mutationFn: (data: CreateMcpServer) => mcpServerService.create(data, opts),
     onSuccess: () => {
-      toast({ title: "McpServer created" });
+      toast({ title: "MCP server added" });
       queryClient.invalidateQueries({ queryKey: listMcpServersQueryKey() });
     },
     onError: () => {
-      toast({ title: "Failed to create McpServer", variant: "destructive" });
+      toast({ title: "Failed to add MCP server", variant: "destructive" });
     },
   });
 
@@ -89,12 +89,12 @@ export const useUpdateMcpServer = (
   useMutation({
     mutationFn: (data: UpdateMcpServer) => mcpServerService.update(id, data, opts),
     onSuccess: () => {
-      toast({ title: "McpServer updated" });
+      toast({ title: "MCP server updated" });
       queryClient.invalidateQueries({ queryKey: listMcpServersQueryKey() });
       queryClient.invalidateQueries({ queryKey: mcpServerQueryKey(id) });
     },
     onError: () => {
-      toast({ title: "Failed to update McpServer", variant: "destructive" });
+      toast({ title: "Failed to update MCP server", variant: "destructive" });
     },
   });
 
@@ -104,10 +104,10 @@ export const useDeleteMcpServer = (
   useMutation({
     mutationFn: (id: string) => mcpServerService.delete(id, opts),
     onSuccess: () => {
-      toast({ title: "McpServer deleted" });
+      toast({ title: "MCP server removed" });
       queryClient.invalidateQueries({ queryKey: listMcpServersQueryKey() });
     },
     onError: () => {
-      toast({ title: "Failed to delete McpServer", variant: "destructive" });
+      toast({ title: "Failed to remove MCP server", variant: "destructive" });
     },
   });

@@ -6,8 +6,6 @@ import stc from "string-to-color";
 type Props = {
   /** Display name, used for the monogram fallback. */
   name: string;
-  /** Registry key, used to derive a stable color. */
-  providerKey: string;
   /** Raw SVG markup, an image URL/data URI, or undefined. */
   icon?: string;
   className?: string;
@@ -19,7 +17,7 @@ function initials(name: string) {
   return name.trim().slice(0, 2).toUpperCase();
 }
 
-export function ProviderIcon({ name, providerKey, icon, className }: Props) {
+export function Icon({ name, icon, className }: Props) {
   const trimmed = icon?.trim();
   const isRawSvg = trimmed?.startsWith("<svg");
   const isUrl = !isRawSvg && trimmed && /^(https?:|data:|\/)/.test(trimmed);
@@ -29,7 +27,7 @@ export function ProviderIcon({ name, providerKey, icon, className }: Props) {
       {isUrl && <AvatarImage src={trimmed} alt="" className="object-contain" />}
       <AvatarFallback
         className="rounded-lg text-xs font-semibold text-white"
-        style={isRawSvg ? undefined : { backgroundColor: stc(providerKey) }}
+        style={isRawSvg ? undefined : { backgroundColor: stc(name) }}
       >
         {isRawSvg ? <SVG svg={trimmed!} className="size-full" /> : initials(name)}
       </AvatarFallback>

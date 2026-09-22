@@ -1,18 +1,17 @@
 import { FormInput } from "@/components/form/input";
 import { FormSwitch } from "@/components/form/switch";
+import { Icon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
 import { FieldGroup } from "@/components/ui/field";
+import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 
 import { useLlmProviders } from "../hooks";
 
 import { ProviderConfigFields } from "./provider-config-fields";
-import { ProviderIcon } from "./provider-icon";
 import { ProviderSelect } from "./provider-select";
 
 import type { RJSFSchema } from "@rjsf/utils";
-import { useState } from "react";
-
 export function LlmFormFields() {
   const form = useFormContext();
   const { data: providers = [] } = useLlmProviders();
@@ -63,11 +62,7 @@ export function LlmFormFields() {
 
       {selected ? (
         <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
-          <ProviderIcon
-            name={selected.name}
-            providerKey={selected.key}
-            icon={selected.icon}
-          />
+          <Icon name={selected.name} icon={selected.icon} />
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-sm font-medium leading-none">{selected.name}</span>
