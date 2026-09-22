@@ -27,7 +27,7 @@ function scan(value: string, location: string, found: Map<string, Placeholder>) 
     found.set(value, { token: value, label: humanize(path[1]), secret: false, location });
     return;
   }
-  for (const match of value.matchAll(ANGLE_TOKEN)) {
+  for (const match of Array.from(value.matchAll(ANGLE_TOKEN))) {
     if (found.has(match[0])) continue;
     found.set(match[0], {
       token: match[0],
@@ -49,7 +49,7 @@ export function findPlaceholders(config: Record<string, unknown>): Placeholder[]
       }
     }
   }
-  return [...found.values()];
+  return Array.from(found.values());
 }
 
 export function containsToken(config: unknown, token: string): boolean {

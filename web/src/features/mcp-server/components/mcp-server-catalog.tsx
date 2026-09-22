@@ -62,7 +62,7 @@ export function McpServerCatalog() {
     return map;
   }, [installed]);
 
-  const tags = useMemo(() => [...new Set(registry.flatMap((item) => item.tags))].sort(), [registry]);
+  const tags = useMemo(() => Array.from(new Set(registry.flatMap((item) => item.tags))).sort(), [registry]);
 
   const query = search.trim().toLowerCase();
   const visibleInstalled = installed.filter(({ server }) =>

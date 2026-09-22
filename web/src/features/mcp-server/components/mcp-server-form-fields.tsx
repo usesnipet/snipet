@@ -1,8 +1,8 @@
 import { FormInput } from "@/components/form/input";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Globe, Plus, Terminal, X } from "lucide-react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
@@ -100,7 +100,7 @@ function HeadersField() {
             <Input
               {...form.register(`headers.${index}.key`)}
               placeholder="Authorization"
-              className="w-2/5 font-mono text-xs"
+              className="font-mono text-xs"
             />
             <Input
               {...form.register(`headers.${index}.value`)}

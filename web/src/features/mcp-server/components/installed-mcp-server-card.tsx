@@ -1,3 +1,4 @@
+import { Icon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,12 +15,10 @@ import { describeConfig, syncState } from "../lib/config";
 
 import { DeleteMcpServerDialog } from "./delete-mcp-server-dialog";
 import { McpServerFormDialog } from "./mcp-server-form-dialog";
-import { McpServerIcon } from "./mcp-server-icon";
 import { McpServerToolsDialog } from "./mcp-server-tools-dialog";
 
 import type { McpServer, McpServerRegistryItem } from "../schemas";
 import type { Tool } from "@/models/tool";
-
 type Props = {
   server: McpServer;
   tools: Tool[];
@@ -36,7 +35,7 @@ export function InstalledMcpServerCard({ server, tools, registryItem }: Props) {
   return (
     <Card className="flex h-full flex-col gap-3 p-4">
       <div className="flex items-start gap-3">
-        <McpServerIcon name={server.name} icon={registryItem?.icon} />
+        <Icon name={server.name} icon={registryItem?.icon} />
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <h2 className="truncate text-sm font-semibold leading-tight">{server.name}</h2>

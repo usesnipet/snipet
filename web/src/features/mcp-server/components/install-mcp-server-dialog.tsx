@@ -1,3 +1,4 @@
+import { Icon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleCheck, ChevronRight } from "lucide-react";
+import { ChevronRight, CircleCheck } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -20,11 +21,9 @@ import { containsToken, fillPlaceholders, findPlaceholders } from "../lib/placeh
 import { mcpServerFormSchema } from "../schemas";
 
 import { McpServerFormFields } from "./mcp-server-form-fields";
-import { McpServerIcon } from "./mcp-server-icon";
 
 import type { McpServerForm, McpServerRegistryItem } from "../schemas";
 import type { DialogInstanceProps } from "@/lib/dialog";
-
 type InstallMcpServerDialogProps = DialogInstanceProps<{
   item: McpServerRegistryItem;
   /** How many servers already use this entry — used to suggest a distinct name. */
@@ -71,7 +70,7 @@ export function InstallMcpServerDialog({ item, installedCount = 0, close }: Inst
     <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <div className="flex items-start gap-3">
-          <McpServerIcon name={item.name} icon={item.icon} className="size-10" />
+          <Icon name={item.name} icon={item.icon} className="size-10" />
           <div className="min-w-0 space-y-1.5">
             <DialogTitle>Install {item.name}</DialogTitle>
             <DialogDescription>{item.description}</DialogDescription>
