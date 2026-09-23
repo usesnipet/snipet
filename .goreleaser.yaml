@@ -18,6 +18,7 @@ builds:
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
       - arm64
@@ -27,10 +28,16 @@ builds:
 archives:
   - id: default
     formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
     files:
       - LICENSE
       - migrations
       - docs/swagger
+
+snapshot:
+  version_template: "{{ .ShortCommit }}"
 
 checksum:
   name_template: checksums.txt
@@ -52,40 +59,18 @@ changelog:
     - title: Others
       order: 999
 
-dockers:
-  - id: linux-amd64
-    goos: linux
-    goarch: amd64
-    use: buildx
+dockers_v2:
+  - id: api
+    ids: [api]
     dockerfile: Dockerfile.goreleaser
+    images:
+      - docker.io/snipet/snipet-go
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
     extra_files:
       - migrations
       - docs/swagger
-    image_templates:
-      - "docker.io/snipet/snipet-go:{{ .Version }}-amd64"
-      - "docker.io/snipet/snipet-go:latest-amd64"
-    build_flag_templates:
-      - "--platform=linux/amd64"
-  - id: linux-arm64
-    goos: linux
-    goarch: arm64
-    use: buildx
-    dockerfile: Dockerfile.goreleaser
-    extra_files:
-      - migrations
-      - docs/swagger
-    image_templates:
-      - "docker.io/snipet/snipet-go:{{ .Version }}-arm64"
-      - "docker.io/snipet/snipet-go:latest-arm64"
-    build_flag_templates:
-      - "--platform=linux/arm64"
-
-docker_manifests:
-  - name_template: "docker.io/snipet/snipet-go:{{ .Version }}"
-    image_templates:
-      - "docker.io/snipet/snipet-go:{{ .Version }}-amd64"
-      - "docker.io/snipet/snipet-go:{{ .Version }}-arm64"
-  - name_template: "docker.io/snipet/snipet-go:latest"
-    image_templates:
-      - "docker.io/snipet/snipet-go:latest-amd64"
-      - "docker.io/snipet/snipet-go:latest-arm64"
