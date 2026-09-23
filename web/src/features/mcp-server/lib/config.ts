@@ -6,7 +6,7 @@ import type {
   McpTransport,
 } from "../schemas";
 
-type ServerLike = Pick<McpServer, "transport" | "config">;
+type ServerLike = { transport: McpTransport; config: Record<string, unknown> };
 
 const SAFE_ARG = /^[\w@%+=:,./-]+$/;
 

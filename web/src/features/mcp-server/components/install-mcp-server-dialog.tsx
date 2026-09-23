@@ -1,4 +1,5 @@
 import { Icon } from "@/components/icon";
+import { SchemaFormFields } from "@/components/schema-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -24,21 +25,40 @@ import { McpServerFormFields } from "./mcp-server-form-fields";
 
 import type { McpServerForm, McpServerRegistryItem } from "../schemas";
 import type { DialogInstanceProps } from "@/lib/dialog";
+import type { ErrorSchema, RJSFSchema } from "@rjsf/utils";
+
 type InstallMcpServerDialogProps = DialogInstanceProps<{
   item: McpServerRegistryItem;
   /** How many servers already use this entry — used to suggest a distinct name. */
   installedCount?: number;
 }>;
 
+/** Fills a headers JSON Schema with the header values typed so far, empty ones dropped. */
+function filledHeaders(values: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(values)
+      .filter((entry): entry is [string, string] => typeof entry[1] === "string" && !!entry[1].trim())
+      .map(([key, value]) => [key, value.trim()]),
+  );
+}
+
 /**
- * Installs a registry entry: asks only for the values its default config
- * leaves as placeholders, with the full config behind "Advanced".
+ * Installs a registry entry: renders the form its headers schema describes
+ * and asks for the values its default config leaves as placeholders, with
+ * the full config behind "Advanced".
  */
 export function InstallMcpServerDialog({ item, installedCount = 0, close }: InstallMcpServerDialogProps) {
   const formId = `install-mcp-server-${useId()}`;
-  const placeholders = useMemo(() => findPlaceholders(item.config), [item.config]);
+  const headersSchema = item.transport === "http" ? (item.config.headers_schema as RJSFSchema | undefined) : undefined;
+  const baseConfig = useMemo(
+    () => (item.transport === "http" ? { ...item.config, headers_schema: undefined } : item.config),
+    [item],
+  );
+  const placeholders = useMemo(() => findPlaceholders(baseConfig), [baseConfig]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [missing, setMissing] = useState<string[]>([]);
+  const [headerValues, setHeaderValues] = useState<Record<string, unknown>>({});
+  const [headerErrors, setHeaderErrors] = useState<ErrorSchema>();
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const form = useForm<McpServerForm>({
@@ -46,7 +66,7 @@ export function InstallMcpServerDialog({ item, installedCount = 0, close }: Inst
     defaultValues: toForm(
       installedCount ? `${item.name} ${installedCount + 1}` : item.name,
       item.transport,
-      item.config,
+      baseConfig,
     ),
   });
 
@@ -59,10 +79,20 @@ export function InstallMcpServerDialog({ item, installedCount = 0, close }: Inst
       .filter((p) => containsToken(data.config, p.token) && !values[p.token]?.trim())
       .map((p) => p.token);
     setMissing(empty);
-    if (empty.length) return;
+
+    const headers = filledHeaders(headerValues);
+    const missingHeaders = (headersSchema?.required ?? []).filter((key) => !headers[key]);
+    setHeaderErrors(missingHeaders.length
+      ? Object.fromEntries(missingHeaders.map((key) => [key, { __errors: ["Required to install this server."] }])) as ErrorSchema
+      : undefined);
+    if (empty.length || missingHeaders.length) return;
 
     const filled = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()]));
-    await create({ ...data, config: fillPlaceholders(data.config, filled) });
+    const config = fillPlaceholders(data.config, filled);
+    if ("url" in config && Object.keys(headers).length) {
+      config.headers = { ...config.headers, ...headers };
+    }
+    await create({ ...data, config });
     close();
   }, () => setAdvancedOpen(true));
 
@@ -83,7 +113,15 @@ export function InstallMcpServerDialog({ item, installedCount = 0, close }: Inst
         </div>
       </DialogHeader>
 
-      {placeholders.length ? (
+      {headersSchema && (
+        <SchemaFormFields
+          schema={headersSchema}
+          onChange={setHeaderValues}
+          extraErrors={headerErrors}
+        />
+      )}
+
+      {placeholders.length > 0 && (
         <div className="space-y-3">
           {placeholders.map((placeholder) => {
             const inputId = `${formId}-${placeholder.token}`;
@@ -108,7 +146,9 @@ export function InstallMcpServerDialog({ item, installedCount = 0, close }: Inst
             );
           })}
         </div>
-      ) : (
+      )}
+
+      {!headersSchema && placeholders.length === 0 && (
         <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3 text-sm">
           <CircleCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           Nothing to configure — ready to install.

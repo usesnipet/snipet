@@ -1,6 +1,7 @@
 import { FormInput } from "@/components/form/input";
 import { FormSwitch } from "@/components/form/switch";
 import { Icon } from "@/components/icon";
+import { SchemaFormFields } from "@/components/schema-form";
 import { Badge } from "@/components/ui/badge";
 import { FieldGroup } from "@/components/ui/field";
 import { useState } from "react";
@@ -8,7 +9,6 @@ import { useFormContext } from "react-hook-form";
 
 import { useLlmProviders } from "../hooks";
 
-import { ProviderConfigFields } from "./provider-config-fields";
 import { ProviderSelect } from "./provider-select";
 
 import type { RJSFSchema } from "@rjsf/utils";
@@ -87,7 +87,7 @@ export function LlmFormFields() {
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Authentication</p>
           <div className="rounded-lg border bg-muted/30 p-3">
-            <ProviderConfigFields
+            <SchemaFormFields
               key={`${providerKey}-auth`}
               schema={authSchema}
               defaultData={existingConnectionOptions?.auth}
@@ -103,7 +103,7 @@ export function LlmFormFields() {
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Configuration</p>
           <div className="rounded-lg border bg-muted/30 p-3">
-            <ProviderConfigFields
+            <SchemaFormFields
               key={`${providerKey}-config`}
               schema={configSchema}
               defaultData={existingConnectionOptions?.config}

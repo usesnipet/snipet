@@ -9,7 +9,7 @@ export const mcpHttpConfigSchema = z.object({
   url: z.url(),
   headers: z.record(z.string(), z.string()).optional(),
   timeout: z.number().int().positive().optional(),
-});
+}).strict();
 export type McpHttpConfig = z.infer<typeof mcpHttpConfigSchema>;
 
 // Config for the "stdio" transport.
@@ -17,8 +17,12 @@ export const mcpStdioConfigSchema = z.object({
   command: z.string().min(1),
   args: z.array(z.string()).optional(),
   timeout: z.number().int().positive().optional(),
-});
+}).strict();
 export type McpStdioConfig = z.infer<typeof mcpStdioConfigSchema>;
+
+// Config of an installed server, shaped by its transport (mcp.HTTPConfig / mcp.StdioConfig).
+export const mcpServerConfigSchema = z.union([mcpHttpConfigSchema, mcpStdioConfigSchema]);
+export type McpServerConfig = z.infer<typeof mcpServerConfigSchema>;
 
 // The McpServer entity — the read model as it comes off the API.
 // Relations to other entities go here (import them from "@/models/<other>"),
@@ -28,7 +32,7 @@ export const mcpServerSchema = z
     id: z.uuid(),
     name: z.string(),
     transport: mcpTransportSchema,
-    config: z.record(z.string(), z.unknown()),
+    config: mcpServerConfigSchema,
     last_synced_at: z.coerce.date().optional(),
     last_synced_error: z.string().optional(),
     created_at: z.coerce.date(),

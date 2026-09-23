@@ -1,11 +1,12 @@
-import { z } from "zod";
-
+import {
+  mcpHttpConfigSchema, mcpServerSchema, mcpStdioConfigSchema, mcpTransportSchema
+} from "@/models/mcp-server";
 import { paginatedSchema, paginationParamsSchema } from "@/schemas/paginated";
-
-import { mcpServerSchema, mcpTransportSchema } from "@/models/mcp-server";
+import { z } from "zod";
 
 export {
   mcpHttpConfigSchema,
+  mcpServerConfigSchema,
   mcpServerSchema,
   mcpStdioConfigSchema,
   mcpTransportSchema,
@@ -13,6 +14,7 @@ export {
 export type {
   McpHttpConfig,
   McpServer,
+  McpServerConfig,
   McpStdioConfig,
   McpTransport,
 } from "@/models/mcp-server";
@@ -37,20 +39,36 @@ export type ListMcpServersSearchParams = z.infer<
   typeof listMcpServersSearchParamsSchema
 >;
 
-// Registry entry — a known MCP server with its default config
-// (mcp.MCPServersRegistryItem), as returned by GET /api/mcp-server/registry.
-// No id and no relations, so it stays here rather than in @/models.
-export const mcpServerRegistryItemSchema = z
+// Default http config of a registry entry (mcp.HTTPRegistryConfig):
+// headers_schema is a JSON Schema of the headers the user fills in at install time.
+export const mcpHttpRegistryConfigSchema = mcpHttpConfigSchema
+  .extend({ headers_schema: z.record(z.string(), z.unknown()).optional() })
+  .strict();
+export type McpHttpRegistryConfig = z.infer<typeof mcpHttpRegistryConfigSchema>;
+
+const mcpServerRegistryItemBaseSchema = z
   .object({
     key: z.string(),
     name: z.string(),
     description: z.string(),
     icon: z.string(),
     tags: z.array(z.string()),
-    transport: mcpTransportSchema,
-    config: z.record(z.string(), z.unknown()),
   })
   .strict();
+
+// Registry entry — a known MCP server with its default config
+// (mcp.MCPServersRegistryItem), as returned by GET /api/mcp-server/registry.
+// No id and no relations, so it stays here rather than in @/models.
+export const mcpServerRegistryItemSchema = z.discriminatedUnion("transport", [
+  mcpServerRegistryItemBaseSchema.extend({
+    transport: z.literal("http"),
+    config: mcpHttpRegistryConfigSchema,
+  }),
+  mcpServerRegistryItemBaseSchema.extend({
+    transport: z.literal("stdio"),
+    config: mcpStdioConfigSchema,
+  }),
+]);
 export type McpServerRegistryItem = z.infer<typeof mcpServerRegistryItemSchema>;
 
 export const listMcpServerRegistrySchema = z.array(mcpServerRegistryItemSchema);

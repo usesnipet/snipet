@@ -29,7 +29,7 @@ type StdioConfig struct {
 }
 
 // HTTPRegistryConfig is the default HTTPConfig a registry item ships with.
-// Headers is a JSON Schema (an object of string properties) describing the
+// HeadersSchema is a JSON Schema (an object of string properties) describing the
 // headers the user fills in when installing the server.
 type HTTPRegistryConfig struct {
 	URL           string        `json:"url" validate:"required,http_url"`
@@ -63,7 +63,7 @@ func ValidateConfig(transport Transport, config jsonx.JSONMap) error {
 }
 
 // validateRegistryConfig is ValidateConfig for a registry item's default
-// config, where http headers schema are a JSON Schema instead of values.
+// config, which for http may carry a HeadersSchema.
 func validateRegistryConfig(transport Transport, config jsonx.JSONMap) error {
 	if transport != TransportHTTP {
 		return ValidateConfig(transport, config)
@@ -82,16 +82,16 @@ func validateRegistryConfig(transport Transport, config jsonx.JSONMap) error {
 // properties are all strings, since each property becomes one header value.
 func validateHeadersSchema(schema jsonx.JSONMap) error {
 	if err := jsonschema.Check(schema); err != nil {
-		return fmt.Errorf("headers: %w", err)
+		return fmt.Errorf("headers_schema: %w", err)
 	}
 	if schema["type"] != "object" {
-		return fmt.Errorf(`headers: schema type must be "object"`)
+		return fmt.Errorf(`headers_schema: type must be "object"`)
 	}
 	properties, _ := schema["properties"].(map[string]any)
 	for name, raw := range properties {
 		property, _ := raw.(map[string]any)
 		if property["type"] != "string" {
-			return fmt.Errorf(`headers: property %q must be of type "string"`, name)
+			return fmt.Errorf(`headers_schema: property %q must be of type "string"`, name)
 		}
 	}
 	return nil

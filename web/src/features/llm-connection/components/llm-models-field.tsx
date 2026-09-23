@@ -1,3 +1,4 @@
+import { SchemaFormFields } from "@/components/schema-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -8,8 +9,6 @@ import { useEffect, useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 import { useLlmProviders, useProviderModels } from "../hooks";
-
-import { ProviderConfigFields } from "./provider-config-fields";
 
 import type { LlmProvider } from "../schemas";
 import type { RJSFSchema } from "@rjsf/utils";
@@ -190,7 +189,7 @@ function LlmModelTargetRow({ name, index, providers, total, onRemove, onMoveUp, 
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-2">
             <div className="bg-background rounded-lg border p-3">
-              <ProviderConfigFields
+              <SchemaFormFields
                 key={`${fieldPath}-${providerKey}-extra`}
                 schema={extraOptionsSchema}
                 defaultData={form.getValues(`${fieldPath}.extra_options`)}
