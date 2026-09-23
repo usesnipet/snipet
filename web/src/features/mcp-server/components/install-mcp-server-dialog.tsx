@@ -131,7 +131,6 @@ export function InstallMcpServerDialog({ item, installedCount = 0, close }: Inst
                 <Label htmlFor={inputId}>{placeholder.label}</Label>
                 <Input
                   id={inputId}
-                  type={placeholder.secret ? "password" : "text"}
                   autoComplete="off"
                   value={values[placeholder.token] ?? ""}
                   onChange={(event) => setValues((prev) => ({ ...prev, [placeholder.token]: event.target.value }))}

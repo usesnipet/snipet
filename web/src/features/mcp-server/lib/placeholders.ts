@@ -1,20 +1,13 @@
-/**
- * A value a registry entry's default config leaves for the user to fill in,
- * e.g. `<GITHUB_TOKEN>` inside `"Bearer <GITHUB_TOKEN>"`, or a whole
- * `/path/to/allowed/dir` argument.
- */
+/** A `/path/to/...` value a registry entry's default config leaves for the user to fill in. */
 export type Placeholder = {
   /** Exact substring replaced by the user's value. */
   token: string;
   label: string;
-  secret: boolean;
-  /** Where it sits in the config, shown as a hint (e.g. `Authorization header`). */
+  /** Where it sits in the config, shown as a hint (e.g. `argument`). */
   location: string;
 };
 
-const ANGLE_TOKEN = /<([A-Za-z][\w-]*)>/g;
 const PATH_TOKEN = /^\/path\/to\/(.+)$/;
-const SECRET_NAME = /token|key|secret|password|pat\b/i;
 
 function humanize(raw: string): string {
   const words = raw.replace(/[_\-/]+/g, " ").trim().toLowerCase();
@@ -24,17 +17,7 @@ function humanize(raw: string): string {
 function scan(value: string, location: string, found: Map<string, Placeholder>) {
   const path = PATH_TOKEN.exec(value);
   if (path && !found.has(value)) {
-    found.set(value, { token: value, label: humanize(path[1]), secret: false, location });
-    return;
-  }
-  for (const match of Array.from(value.matchAll(ANGLE_TOKEN))) {
-    if (found.has(match[0])) continue;
-    found.set(match[0], {
-      token: match[0],
-      label: humanize(match[1]),
-      secret: SECRET_NAME.test(match[1]),
-      location,
-    });
+    found.set(value, { token: value, label: humanize(path[1]), location });
   }
 }
 
