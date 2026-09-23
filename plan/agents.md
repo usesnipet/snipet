@@ -148,7 +148,7 @@ Table `agent_runs`. One execution of an agent for one input.
 **Status**
 
 ```
-queued → running → completed | failed | cancelled | max_turns
+running → completed | failed | cancelled | max_turns
 ```
 
 - **completed** — the LLM answered with no tool calls
@@ -248,23 +248,60 @@ emit run_finished
 
 ## Execution & delivery
 
-Runs happen in the background; the client follows them over SSE.
+Starting a run and watching it are two separate endpoints. Every run is its
+own goroutine, the same way `net/http` serves each request in its own
+goroutine. There is no worker pool and no concurrency cap.
 
-- **Start** — `POST` creates the run as `queued`, submits a job to a
-  dedicated agent pool (`queue.IPool`, `internal/queue/pool.go`, sized by a
-  new `cfg.Agent.Workers`) and returns the run. Separate from the sync pool so
-  long runs don't block MCP syncs.
+A run spends almost all of its time waiting on I/O (the LLM stream, MCP
+calls). A waiting goroutine costs a few KB, so thousands of parallel runs
+are fine. The real limits are outside the process, see **Limits** below.
+
+- **Start** — `POST /agent/{id}/run` creates the run as `running`, starts
+  `go loop.Run(runCtx, run)` and returns the run right away (`202`).
+  - `runCtx` comes from the app's root context (`signal.NotifyContext` in
+    `internal/bootstrap/bootstrap.go`), not from the request. The run keeps
+    going after the POST returns or the client disconnects.
+  - The run is registered in the in-memory hub:
+    `runID → {cancel, subscribers}`.
 - **Emit** — each event is written to `agent_run_events` (except
-  `text_delta`), then published to an in-memory hub (`runID → subscribers`).
-  *ponytail: single instance only; use Postgres `LISTEN/NOTIFY` when running
-  more than one.*
-- **Subscribe** — the SSE handler (`api.NewSSEWriter`, `internal/api/sse.go`)
-  first sends stored events with `id > Last-Event-ID`, then live events from
-  the hub, and closes after `run_finished`. Reconnects resume without gaps.
-- **Cancel** — in-memory `runID → cancelFunc`; cancelling a finished run is a
-  no-op.
-- **Boot** — runs still `queued` or `running` are marked `failed` with error
-  `"interrupted"`.
+  `text_delta`), then published to that run's subscribers in the hub.
+  A slow subscriber never blocks the run: it has a buffered channel, and if
+  the buffer is full the event is dropped for that subscriber only. That
+  subscriber catches up from the DB on its next reconnect.
+- **Subscribe** — `GET /agent-run/{id}/events` (SSE, `api.NewSSEWriter`,
+  `internal/api/sse.go`):
+  1. Subscribe to the hub first, so no event is missed.
+  2. Send stored events with `id > Last-Event-ID`.
+  3. Stream live events, skipping ids already sent, and close after
+     `run_finished`.
+
+  Any number of clients can watch the same run. Reconnects resume without
+  gaps. A finished run replays from the DB and closes.
+- **Cancel** — `POST /agent-run/{id}/cancel` calls the hub's `cancel`.
+  Cancelling a finished run is a no-op.
+- **Shutdown** — the root context is cancelled, so every run stops as
+  `cancelled` (error `"server shutdown"`). Bootstrap waits on a
+  `sync.WaitGroup` of live runs, with a timeout, so the final events get
+  written.
+- **Boot** — runs still `running` in the DB (crash, `kill -9`) are marked
+  `failed` with error `"interrupted"`.
+
+**Limits**
+
+Goroutines are not the bottleneck. These are:
+
+- **LLM provider rate limits** — already handled: `ErrRateLimit` fails over
+  to the next LLM in `order`.
+- **stdio MCP servers** — every tool call starts a process
+  (`internal/mcp/client.go` opens a session per call). Many parallel runs
+  means many processes.
+- **DB connections** — one short insert per event, so the GORM pool is
+  shared fine.
+- **Memory** — each run keeps its message list in memory until it ends.
+
+If one of these starts to hurt, add an optional semaphore
+(`cfg.Agent.MaxConcurrent`, `0` = unlimited) around `go loop.Run`. Don't
+add it before then.
 
 ---
 
@@ -281,7 +318,7 @@ Runs happen in the background; the client follows them over SSE.
 
 **Runners** — `api.Or(apiKeyGate, authGate)`, same as `/llm-connection/execute`.
 
-- `POST /agent/{id}/run` `{input}` → run. Disabled agent → 400.
+- `POST /agent/{id}/run` `{input}` → `202` + run, returns immediately. Disabled agent → 400.
 - `GET /agent-run?agent_id=` — list runs.
 - `GET /agent-run/{id}` — run.
 - `GET /agent-run/{id}/events` — SSE, honors `Last-Event-ID`.
@@ -305,7 +342,7 @@ Follows the existing layering (see `create-backend-module` / `create-web-feature
 - **Repositories** — `internal/repository/agent.go`, `agent-run.go`.
 - **Modules**
   - `internal/module/agent/` — dto, service (CRUD, `ResolveTools`), handler.
-  - `internal/module/agent-run/` — dto, service, handler, `loop.go`, `hub.go`.
+  - `internal/module/agent-run/` — dto, service, handler, `loop.go`, `hub.go` (live runs: cancel, subscribers).
 - **Migrations** — `make db-generate add_agents`, then `make db-hash`.
 - **Wiring** — `internal/bootstrap/bootstrap.go`.
 - **Shared** — extract `resolveTargets` from the llm-connection service.
