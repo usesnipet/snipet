@@ -27,8 +27,8 @@ type MCPServersRegistryItem struct {
 	Tags        []string  `json:"tags" validate:"required"`
 	Transport   Transport `json:"transport" validate:"required,oneof=http stdio"`
 
-	// Config is the default config for the server: a StdioConfig or, for
-	// http, an HTTPRegistryConfig.
+	// Config is the default config for the server: a StdioRegistryConfig or
+	// an HTTPRegistryConfig, per Transport.
 	Config jsonx.JSONMap `json:"config" validate:"required"`
 }
 

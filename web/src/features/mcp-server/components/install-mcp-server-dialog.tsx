@@ -7,18 +7,16 @@ import {
   DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
+import validator from "@rjsf/validator-ajv8";
 import { ChevronRight, CircleCheck } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCreateMcpServer } from "../hooks";
 import { fromForm, toForm } from "../lib/config";
-import { containsToken, fillPlaceholders, findPlaceholders } from "../lib/placeholders";
 import { mcpServerFormSchema } from "../schemas";
 
 import { McpServerFormFields } from "./mcp-server-form-fields";
@@ -33,32 +31,28 @@ type InstallMcpServerDialogProps = DialogInstanceProps<{
   installedCount?: number;
 }>;
 
-/** Fills a headers JSON Schema with the header values typed so far, empty ones dropped. */
-function filledHeaders(values: Record<string, unknown>): Record<string, string> {
+/** Trims the values typed into the schema form, dropping empty ones so `required`/`minItems` catch them. */
+function cleanValues(values: unknown): Record<string, string> | string[] {
+  const filled = (value: unknown): value is string => typeof value === "string" && !!value.trim();
+  if (Array.isArray(values)) return values.filter(filled).map((value) => value.trim());
   return Object.fromEntries(
-    Object.entries(values)
-      .filter((entry): entry is [string, string] => typeof entry[1] === "string" && !!entry[1].trim())
+    Object.entries(values ?? {})
+      .filter((entry): entry is [string, string] => filled(entry[1]))
       .map(([key, value]) => [key, value.trim()]),
   );
 }
 
 /**
- * Installs a registry entry: renders the form its headers schema describes
- * and asks for the values its default config leaves as placeholders, with
- * the full config behind "Advanced".
+ * Installs a registry entry: renders the form its headers schema (http) or
+ * args schema (stdio) describes, with the full config behind "Advanced".
  */
 export function InstallMcpServerDialog({ item, installedCount = 0, close }: InstallMcpServerDialogProps) {
   const formId = `install-mcp-server-${useId()}`;
-  const headersSchema = item.transport === "http" ? (item.config.headers_schema as RJSFSchema | undefined) : undefined;
-  const baseConfig = useMemo(
-    () => (item.transport === "http" ? { ...item.config, headers_schema: undefined } : item.config),
-    [item],
-  );
-  const placeholders = useMemo(() => findPlaceholders(baseConfig), [baseConfig]);
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [missing, setMissing] = useState<string[]>([]);
-  const [headerValues, setHeaderValues] = useState<Record<string, unknown>>({});
-  const [headerErrors, setHeaderErrors] = useState<ErrorSchema>();
+  const schema = (item.transport === "http" ? item.config.headers_schema : item.config.args_schema) as
+    | RJSFSchema
+    | undefined;
+  const [schemaValues, setSchemaValues] = useState<unknown>();
+  const [schemaErrors, setSchemaErrors] = useState<ErrorSchema>();
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const form = useForm<McpServerForm>({
@@ -66,7 +60,7 @@ export function InstallMcpServerDialog({ item, installedCount = 0, close }: Inst
     defaultValues: toForm(
       installedCount ? `${item.name} ${installedCount + 1}` : item.name,
       item.transport,
-      baseConfig,
+      item.config,
     ),
   });
 
@@ -74,25 +68,19 @@ export function InstallMcpServerDialog({ item, installedCount = 0, close }: Inst
 
   const onSubmit = form.handleSubmit(async (formValues) => {
     const data = fromForm(formValues);
-    // Only placeholders still present after any Advanced edits are required.
-    const empty = placeholders
-      .filter((p) => containsToken(data.config, p.token) && !values[p.token]?.trim())
-      .map((p) => p.token);
-    setMissing(empty);
+    if (schema) {
+      const values = cleanValues(schemaValues);
+      const { errors, errorSchema } = validator.validateFormData(values, schema);
+      setSchemaErrors(errors.length ? errorSchema : undefined);
+      if (errors.length) return;
 
-    const headers = filledHeaders(headerValues);
-    const missingHeaders = (headersSchema?.required ?? []).filter((key) => !headers[key]);
-    setHeaderErrors(missingHeaders.length
-      ? Object.fromEntries(missingHeaders.map((key) => [key, { __errors: ["Required to install this server."] }])) as ErrorSchema
-      : undefined);
-    if (empty.length || missingHeaders.length) return;
-
-    const filled = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()]));
-    const config = fillPlaceholders(data.config, filled);
-    if ("url" in config && Object.keys(headers).length) {
-      config.headers = { ...config.headers, ...headers };
+      if (Array.isArray(values)) {
+        if ("command" in data.config) data.config.args = [...(data.config.args ?? []), ...values];
+      } else if ("url" in data.config) {
+        data.config.headers = { ...data.config.headers, ...values };
+      }
     }
-    await create({ ...data, config });
+    await create(data);
     close();
   }, () => setAdvancedOpen(true));
 
@@ -113,41 +101,15 @@ export function InstallMcpServerDialog({ item, installedCount = 0, close }: Inst
         </div>
       </DialogHeader>
 
-      {headersSchema && (
+      {schema && (
         <SchemaFormFields
-          schema={headersSchema}
-          onChange={setHeaderValues}
-          extraErrors={headerErrors}
+          schema={schema}
+          onChange={setSchemaValues}
+          extraErrors={schemaErrors}
         />
       )}
 
-      {placeholders.length > 0 && (
-        <div className="space-y-3">
-          {placeholders.map((placeholder) => {
-            const inputId = `${formId}-${placeholder.token}`;
-            const isMissing = missing.includes(placeholder.token);
-            return (
-              <div key={placeholder.token} className="space-y-1.5">
-                <Label htmlFor={inputId}>{placeholder.label}</Label>
-                <Input
-                  id={inputId}
-                  autoComplete="off"
-                  value={values[placeholder.token] ?? ""}
-                  onChange={(event) => setValues((prev) => ({ ...prev, [placeholder.token]: event.target.value }))}
-                  placeholder={placeholder.token}
-                  aria-invalid={isMissing}
-                  className="font-mono text-xs"
-                />
-                <p className={cn("text-xs", isMissing ? "text-destructive" : "text-muted-foreground")}>
-                  {isMissing ? "Required to install this server." : `Used in the ${placeholder.location}.`}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {!headersSchema && placeholders.length === 0 && (
+      {!schema && (
         <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3 text-sm">
           <CircleCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           Nothing to configure — ready to install.

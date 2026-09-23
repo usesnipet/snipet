@@ -44,7 +44,12 @@ export type ListMcpServersSearchParams = z.infer<
 export const mcpHttpRegistryConfigSchema = mcpHttpConfigSchema
   .extend({ headers_schema: z.record(z.string(), z.unknown()).optional() })
   .strict();
-export type McpHttpRegistryConfig = z.infer<typeof mcpHttpRegistryConfigSchema>;
+
+// Default stdio config of a registry entry (mcp.StdioRegistryConfig):
+// args_schema is a JSON Schema of the arguments appended at install time.
+export const mcpStdioRegistryConfigSchema = mcpStdioConfigSchema
+  .extend({ args_schema: z.record(z.string(), z.unknown()).optional() })
+  .strict();
 
 const mcpServerRegistryItemBaseSchema = z
   .object({
@@ -66,7 +71,7 @@ export const mcpServerRegistryItemSchema = z.discriminatedUnion("transport", [
   }),
   mcpServerRegistryItemBaseSchema.extend({
     transport: z.literal("stdio"),
-    config: mcpStdioConfigSchema,
+    config: mcpStdioRegistryConfigSchema,
   }),
 ]);
 export type McpServerRegistryItem = z.infer<typeof mcpServerRegistryItemSchema>;
