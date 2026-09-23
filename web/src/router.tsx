@@ -21,6 +21,8 @@ const McpServersPage = lazy(() =>
   import("./routes/mcp-servers/page").then((m) => ({ default: m.McpServersPage })));
 const ToolsPage = lazy(() =>
   import("./routes/tools/page").then((m) => ({ default: m.ToolsPage })));
+const ToolPlaygroundPage = lazy(() =>
+  import("./routes/tool-playground/page").then((m) => ({ default: m.ToolPlaygroundPage })));
 const PlaceholderPage = lazy(() =>
   import("./routes/placeholder/page").then((m) => ({ default: m.PlaceholderPage })));
 const UsersPage = lazy(() =>
@@ -46,6 +48,7 @@ export const Router = () => {
               <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
               <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
               <Route path={toReactRouterPath(ROUTES.tools)} element={<ToolsPage />} />
+              <Route path={toReactRouterPath(ROUTES.toolPlayground)} element={<ToolPlaygroundPage />} />
               <Route path={toReactRouterPath(ROUTES.knowledge)} element={<PlaceholderPage title="Knowledge" />} />
               <Route path={toReactRouterPath(ROUTES.connections)} element={<PlaceholderPage title="Connections" />} />
               <Route path={toReactRouterPath(ROUTES.settings)} element={<PlaceholderPage title="Settings" />} />

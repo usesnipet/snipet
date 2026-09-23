@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useClipboard } from "@/hooks/use-clipboard";
-import { Copy } from "lucide-react";
+import { ROUTES } from "@/routes";
+import { Copy, Play } from "lucide-react";
 import moment from "moment";
 
 import { toolParameters } from "../lib/input-schema";
@@ -59,6 +61,11 @@ function ToolDetails({ tool, serverIcon }: { tool: Tool; serverIcon?: string }) 
         <SheetDescription className="whitespace-pre-wrap">
           {tool.description || "No description."}
         </SheetDescription>
+        <Button asChild size="sm" variant="outline" className="w-fit">
+          <Link href={`${ROUTES.toolPlayground}?tool=${tool.id}`}>
+            <Play /> Open in playground
+          </Link>
+        </Button>
       </SheetHeader>
 
       <ScrollArea className="min-h-0 flex-1">

@@ -1,8 +1,16 @@
 import http from "@/lib/http";
 
-import { listToolsSearchParamsSchema, paginatedToolSchema, toolSchema } from "./schemas";
+import {
+  executeToolResponseSchema,
+  executeToolSchema,
+  listToolsSearchParamsSchema,
+  paginatedToolSchema,
+  toolSchema,
+} from "./schemas";
 
 import type {
+  ExecuteTool,
+  ExecuteToolResponse,
   ListToolsSearchParams,
   PaginatedTool,
   Tool,
@@ -10,6 +18,7 @@ import type {
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
+  ServicePostOptions,
 } from "@/lib/services";
 
 const TOOL_URL = "/api/tool";
@@ -44,4 +53,17 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
-export const toolService = { list, findById, delete: remove };
+const execute = async (
+  id: string,
+  body: ExecuteTool,
+  opts: ServicePostOptions<ExecuteTool, ExecuteToolResponse> = {},
+): Promise<ExecuteToolResponse> =>
+  http.post({
+    url: `${TOOL_URL}/{id}/execute`,
+    params: { id },
+    body,
+    schemas: { body: executeToolSchema, response: executeToolResponseSchema },
+    ...opts,
+  });
+
+export const toolService = { list, findById, delete: remove, execute };

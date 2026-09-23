@@ -29,7 +29,14 @@ const navItems: NavEntry[] = [
         ],
       },
       { title: "MCP Servers", href: ROUTES.mcpServers, icon: Blocks },
-      { title: "Tools", href: ROUTES.tools, icon: Wrench },
+      {
+        title: "Tools",
+        icon: Wrench,
+        items: [
+          { title: "Browse", href: ROUTES.tools, exact: true },
+          { title: "Playground", href: ROUTES.toolPlayground },
+        ],
+      },
       { title: "Knowledge", href: ROUTES.knowledge, icon: BookText, comingSoon: true },
       { title: "Connections", href: ROUTES.connections, icon: Waypoints, comingSoon: true },
     ],

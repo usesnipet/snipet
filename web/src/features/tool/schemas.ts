@@ -18,3 +18,16 @@ export const listToolsSearchParamsSchema = paginationParamsSchema
 export type ListToolsSearchParams = z.infer<
   typeof listToolsSearchParamsSchema
 >;
+
+export const executeToolSchema = z.object({
+  arguments: z.record(z.string(), z.unknown()),
+});
+export type ExecuteTool = z.infer<typeof executeToolSchema>;
+
+// is_error marks a failure the tool reported (bad arguments, server error),
+// as opposed to a failed request.
+export const executeToolResponseSchema = z.object({
+  content: z.string(),
+  is_error: z.boolean(),
+});
+export type ExecuteToolResponse = z.infer<typeof executeToolResponseSchema>;

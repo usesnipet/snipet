@@ -5,6 +5,8 @@ import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toolService } from "./service";
 
 import type {
+  ExecuteTool,
+  ExecuteToolResponse,
   ListToolsSearchParams,
   PaginatedTool,
   Tool,
@@ -12,6 +14,7 @@ import type {
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
+  ServicePostOptions,
 } from "@/lib/services";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
@@ -49,5 +52,15 @@ export const useDeleteTool = (
     },
     onError: () => {
       toast({ title: "Failed to delete Tool", variant: "destructive" });
+    },
+  });
+
+export const useExecuteTool = (
+  opts?: ServicePostOptions<ExecuteTool, ExecuteToolResponse>,
+): UseMutationResult<ExecuteToolResponse, Error, { id: string; data: ExecuteTool }> =>
+  useMutation({
+    mutationFn: ({ id, data }) => toolService.execute(id, data, opts),
+    onError: () => {
+      toast({ title: "Failed to execute Tool", variant: "destructive" });
     },
   });
