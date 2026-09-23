@@ -33,7 +33,7 @@ type CallResult struct {
 // closes it before returning.
 type IConnector interface {
 	ListTools(ctx context.Context, transport Transport, config jsonx.JSONMap) ([]RemoteTool, error)
-	CallTool(ctx context.Context, transport Transport, config jsonx.JSONMap, name string, args json.RawMessage) (*CallResult, error)
+	CallTool(ctx context.Context, transport Transport, config jsonx.JSONMap, name string, args jsonx.JSONMap) (*CallResult, error)
 }
 
 type Connector struct {
@@ -64,7 +64,7 @@ func (c *Connector) ListTools(ctx context.Context, transport Transport, config j
 	return tools, err
 }
 
-func (c *Connector) CallTool(ctx context.Context, transport Transport, config jsonx.JSONMap, name string, args json.RawMessage) (*CallResult, error) {
+func (c *Connector) CallTool(ctx context.Context, transport Transport, config jsonx.JSONMap, name string, args jsonx.JSONMap) (*CallResult, error) {
 	var result *CallResult
 	err := c.withSession(ctx, transport, config, func(ctx context.Context, session *mcpsdk.ClientSession) error {
 		params := &mcpsdk.CallToolParams{Name: name}

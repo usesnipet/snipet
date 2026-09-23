@@ -17,8 +17,12 @@ import (
 	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
+type fakeSyncer struct{ ids []string }
+
+func (f *fakeSyncer) Enqueue(id string) { f.ids = append(f.ids, id) }
+
 func newTestService(repo repository.IMcpServerRepository, registry *mcp.Registry) *mcpserver.Service {
-	return mcpserver.NewService(repo, registry)
+	return mcpserver.NewService(repo, registry, &fakeSyncer{})
 }
 
 func TestCreatePersistsEntity(t *testing.T) {
@@ -45,6 +49,47 @@ func TestCreatePersistsEntity(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, stored, result)
 	assert.Equal(t, mcp.TransportStdIO, result.Transport)
+}
+
+func TestCreateEnqueuesSync(t *testing.T) {
+	t.Parallel()
+
+	repo := mocks.NewMockIMcpServerRepository(t)
+	repo.EXPECT().
+		Create(mock.Anything, mock.Anything).
+		Run(func(ctx context.Context, server *model.McpServer) { server.ID = "id-1" }).
+		Return(nil)
+
+	syncer := &fakeSyncer{}
+	svc := mcpserver.NewService(repo, mcp.NewRegistry(), syncer)
+	_, err := svc.Create(context.Background(), mcpserver.CreateMcpServerDTO{
+		Name:      "Local stdio server",
+		Transport: mcp.TransportStdIO,
+		Config:    jsonx.JSONMap{"command": "npx"},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"id-1"}, syncer.ids)
+}
+
+func TestUpdateEnqueuesSyncOnlyWhenConnectionChanges(t *testing.T) {
+	t.Parallel()
+
+	repo := mocks.NewMockIMcpServerRepository(t)
+	repo.EXPECT().
+		FindByID(mock.Anything, "id-1").
+		Return(&model.McpServer{ID: "id-1", Transport: mcp.TransportStdIO, Config: jsonx.JSONMap{"command": "npx"}}, nil)
+	repo.EXPECT().UpdateByID(mock.Anything, "id-1", mock.Anything).Return(nil)
+
+	syncer := &fakeSyncer{}
+	svc := mcpserver.NewService(repo, mcp.NewRegistry(), syncer)
+
+	name := "renamed"
+	require.NoError(t, svc.Update(context.Background(), "id-1", mcpserver.UpdateMcpServerDTO{Name: &name}))
+	assert.Empty(t, syncer.ids)
+
+	require.NoError(t, svc.Update(context.Background(), "id-1", mcpserver.UpdateMcpServerDTO{Config: jsonx.JSONMap{"command": "uvx"}}))
+	assert.Equal(t, []string{"id-1"}, syncer.ids)
 }
 
 func TestCreateRejectsConfigNotMatchingTransport(t *testing.T) {

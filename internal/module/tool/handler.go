@@ -23,6 +23,7 @@ func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 		r.Get("/", serve(h.filter))
 		r.Get("/{id}", serve(h.findByID))
 		r.Delete("/{id}", serve(h.deleteByID))
+		r.Post("/{id}/execute", serve(h.execute))
 	})
 }
 
@@ -67,4 +68,24 @@ func (h *Handler) deleteByID(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return api.WriteNoContent(w)
+}
+
+// @Summary		Execute a Tool
+// @Tags			tool
+// @Accept			json
+// @Produce		json
+// @Param			id		path		string			true	"Tool ID"
+// @Param			body	body		ExecuteToolDTO	true	"Tool arguments"
+// @Success		200		{object}	ExecuteToolResponse
+// @Router			/tool/{id}/execute [post]
+func (h *Handler) execute(w http.ResponseWriter, r *http.Request) error {
+	var dto ExecuteToolDTO
+	if err := api.ParseBody(r, &dto); err != nil {
+		return err
+	}
+	result, err := h.service.Execute(r.Context(), chi.URLParam(r, "id"), dto.Arguments)
+	if err != nil {
+		return err
+	}
+	return api.WriteJSON(w, http.StatusOK, result)
 }

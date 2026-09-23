@@ -6,6 +6,8 @@ import (
 	"github.com/usesnipet/snipet/internal/filter"
 	"github.com/usesnipet/snipet/internal/model"
 	"github.com/usesnipet/snipet/internal/page"
+	"github.com/usesnipet/snipet/internal/tool"
+	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
 // ToolResponse and ToolsPage exist so swagger annotations in this package
@@ -14,6 +16,14 @@ import (
 type ToolResponse = model.Tool
 
 type ToolsPage = page.Paginated[model.Tool]
+
+type ExecuteToolResponse = tool.Result
+
+// ExecuteToolDTO is the POST /tool/{id}/execute body; Arguments must match
+// the tool's input schema.
+type ExecuteToolDTO struct {
+	Arguments jsonx.JSONMap `json:"arguments" swaggertype:"object"`
+}
 
 // FindToolsFilterDTO is the list query string; ToFilter turns it
 // into the repository's filter options.

@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"context"
+	"time"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -350,6 +351,75 @@ func (_c *MockIMcpServerRepository_UpdateByID_Call) Return(err error) *MockIMcpS
 }
 
 func (_c *MockIMcpServerRepository_UpdateByID_Call) RunAndReturn(run func(ctx context.Context, id string, model1 *model.McpServer) error) *MockIMcpServerRepository_UpdateByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateSyncStatus provides a mock function for the type MockIMcpServerRepository
+func (_mock *MockIMcpServerRepository) UpdateSyncStatus(ctx context.Context, id string, at time.Time, errMsg string) error {
+	ret := _mock.Called(ctx, id, at, errMsg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateSyncStatus")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, time.Time, string) error); ok {
+		r0 = returnFunc(ctx, id, at, errMsg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIMcpServerRepository_UpdateSyncStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateSyncStatus'
+type MockIMcpServerRepository_UpdateSyncStatus_Call struct {
+	*mock.Call
+}
+
+// UpdateSyncStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+//   - at time.Time
+//   - errMsg string
+func (_e *MockIMcpServerRepository_Expecter) UpdateSyncStatus(ctx any, id any, at any, errMsg any) *MockIMcpServerRepository_UpdateSyncStatus_Call {
+	return &MockIMcpServerRepository_UpdateSyncStatus_Call{Call: _e.mock.On("UpdateSyncStatus", ctx, id, at, errMsg)}
+}
+
+func (_c *MockIMcpServerRepository_UpdateSyncStatus_Call) Run(run func(ctx context.Context, id string, at time.Time, errMsg string)) *MockIMcpServerRepository_UpdateSyncStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 time.Time
+		if args[2] != nil {
+			arg2 = args[2].(time.Time)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIMcpServerRepository_UpdateSyncStatus_Call) Return(err error) *MockIMcpServerRepository_UpdateSyncStatus_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIMcpServerRepository_UpdateSyncStatus_Call) RunAndReturn(run func(ctx context.Context, id string, at time.Time, errMsg string) error) *MockIMcpServerRepository_UpdateSyncStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

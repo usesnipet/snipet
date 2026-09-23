@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -74,7 +73,7 @@ func TestConnectorOverHTTP(t *testing.T) {
 	assert.Equal(t, "Say hi", tools[0].Description)
 	assert.Contains(t, tools[0].InputSchema["properties"], "name")
 
-	result, err := connector.CallTool(context.Background(), TransportHTTP, config, "greet", json.RawMessage(`{"name":"ana"}`))
+	result, err := connector.CallTool(context.Background(), TransportHTTP, config, "greet", jsonx.JSONMap{"name": "ana"})
 	require.NoError(t, err)
 	assert.Equal(t, &CallResult{Content: "hi ana"}, result)
 }
@@ -90,7 +89,7 @@ func TestConnectorOverStdio(t *testing.T) {
 	require.Len(t, tools, 1)
 	assert.Equal(t, "greet", tools[0].Name)
 
-	result, err := connector.CallTool(context.Background(), TransportStdIO, config, "greet", json.RawMessage(`{"name":"bia"}`))
+	result, err := connector.CallTool(context.Background(), TransportStdIO, config, "greet", jsonx.JSONMap{"name": "bia"})
 	require.NoError(t, err)
 	assert.Equal(t, &CallResult{Content: "hi bia"}, result)
 }

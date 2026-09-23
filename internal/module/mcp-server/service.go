@@ -11,15 +11,21 @@ import (
 	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
+// ISyncEnqueuer schedules a background tool sync of one server (SyncWorker).
+type ISyncEnqueuer interface {
+	Enqueue(id string)
+}
+
 // Service owns the mcp-server business logic. It depends on the repository
 // interface (never the concrete type) so it is mockable in tests.
 type Service struct {
 	repo     repository.IMcpServerRepository
 	registry *mcp.Registry
+	syncer   ISyncEnqueuer
 }
 
-func NewService(repo repository.IMcpServerRepository, registry *mcp.Registry) *Service {
-	return &Service{repo: repo, registry: registry}
+func NewService(repo repository.IMcpServerRepository, registry *mcp.Registry, syncer ISyncEnqueuer) *Service {
+	return &Service{repo: repo, registry: registry, syncer: syncer}
 }
 
 func (s *Service) Filter(ctx context.Context, dto FindMcpServersFilterDTO) (*page.Paginated[model.McpServer], error) {
@@ -42,6 +48,7 @@ func (s *Service) Create(ctx context.Context, dto CreateMcpServerDTO) (*model.Mc
 	if err := s.repo.Create(ctx, entity); err != nil {
 		return nil, err
 	}
+	s.syncer.Enqueue(entity.ID)
 	return entity, nil
 }
 
@@ -75,7 +82,13 @@ func (s *Service) Update(ctx context.Context, id string, dto UpdateMcpServerDTO)
 	if dto.Config != nil {
 		updates.Config = dto.Config
 	}
-	return s.repo.UpdateByID(ctx, id, updates)
+	if err := s.repo.UpdateByID(ctx, id, updates); err != nil {
+		return err
+	}
+	if dto.Transport != nil || dto.Config != nil {
+		s.syncer.Enqueue(id)
+	}
+	return nil
 }
 
 // validateConfig rejects a config that doesn't match its transport's shape.

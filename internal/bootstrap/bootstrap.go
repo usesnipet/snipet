@@ -28,6 +28,7 @@ import (
 	systemmodule "github.com/usesnipet/snipet/internal/module/system"
 	toolmodule "github.com/usesnipet/snipet/internal/module/tool"
 	usermodule "github.com/usesnipet/snipet/internal/module/user"
+	"github.com/usesnipet/snipet/internal/queue"
 	"github.com/usesnipet/snipet/internal/repository"
 	"github.com/usesnipet/snipet/web"
 )
@@ -37,6 +38,9 @@ import (
 // the create-backend-module skill — construct its repo, then its service,
 // then its handler, then call RegisterRoutes inside the /api group.
 func Bootstrap(cfg *config.Config, log *logger.Logger) error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	// database
 	db, _, embeddedDB, err := database.NewDatabase(cfg, log)
 	if err != nil {
@@ -72,6 +76,20 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 
 	// mcp
 	mcpRegistry := mcp.NewRegistry()
+	mcpConnector := mcp.NewConnector()
+
+	// background jobs
+	pool := queue.NewPool(cfg.Sync.Workers, log.Child(logger.WithPrefix("queue: ")))
+	pool.Start(ctx)
+	defer pool.Stop()
+	mcpSyncWorker := mcpservermodule.NewSyncWorker(
+		mcpservermodule.NewSyncService(mcpServerRepo, toolRepo, mcpConnector),
+		mcpServerRepo,
+		pool,
+		cfg.Sync.Interval,
+		log.Child(logger.WithPrefix("mcp-sync: ")),
+	)
+	mcpSyncWorker.Start(ctx)
 
 	// auth primitives
 	userJWTService := auth.NewJWTService(cfg.Auth)
@@ -93,8 +111,8 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 		auth.NewKeyHasher(),
 	)
 	authService := authmodule.NewService(userRepo, userJWTService, cfg.Auth, refreshTokenRepo, tokenService)
-	mcpServerService := mcpservermodule.NewService(mcpServerRepo, mcpRegistry)
-	toolService := toolmodule.NewService(toolRepo)
+	mcpServerService := mcpservermodule.NewService(mcpServerRepo, mcpRegistry, mcpSyncWorker)
+	toolService := toolmodule.NewService(toolRepo, toolmodule.NewExecutor(toolRepo, mcpServerRepo, mcpConnector))
 
 	// guards
 	requireUserAuth := guard.RequireUserJWT(userJWTService)
@@ -135,8 +153,6 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 		}
 	}()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 	<-ctx.Done()
 
 	log.Infof("shutting down server...")

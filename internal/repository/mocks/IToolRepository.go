@@ -291,6 +291,69 @@ func (_c *MockIToolRepository_FindByID_Call) RunAndReturn(run func(ctx context.C
 	return _c
 }
 
+// ReplaceServerTools provides a mock function for the type MockIToolRepository
+func (_mock *MockIToolRepository) ReplaceServerTools(ctx context.Context, serverID string, tools []model.Tool) error {
+	ret := _mock.Called(ctx, serverID, tools)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReplaceServerTools")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []model.Tool) error); ok {
+		r0 = returnFunc(ctx, serverID, tools)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIToolRepository_ReplaceServerTools_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReplaceServerTools'
+type MockIToolRepository_ReplaceServerTools_Call struct {
+	*mock.Call
+}
+
+// ReplaceServerTools is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serverID string
+//   - tools []model.Tool
+func (_e *MockIToolRepository_Expecter) ReplaceServerTools(ctx any, serverID any, tools any) *MockIToolRepository_ReplaceServerTools_Call {
+	return &MockIToolRepository_ReplaceServerTools_Call{Call: _e.mock.On("ReplaceServerTools", ctx, serverID, tools)}
+}
+
+func (_c *MockIToolRepository_ReplaceServerTools_Call) Run(run func(ctx context.Context, serverID string, tools []model.Tool)) *MockIToolRepository_ReplaceServerTools_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 []model.Tool
+		if args[2] != nil {
+			arg2 = args[2].([]model.Tool)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIToolRepository_ReplaceServerTools_Call) Return(err error) *MockIToolRepository_ReplaceServerTools_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIToolRepository_ReplaceServerTools_Call) RunAndReturn(run func(ctx context.Context, serverID string, tools []model.Tool) error) *MockIToolRepository_ReplaceServerTools_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateByID provides a mock function for the type MockIToolRepository
 func (_mock *MockIToolRepository) UpdateByID(ctx context.Context, id string, model1 *model.Tool) error {
 	ret := _mock.Called(ctx, id, model1)

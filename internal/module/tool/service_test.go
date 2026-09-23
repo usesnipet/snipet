@@ -11,8 +11,8 @@ import (
 	"github.com/usesnipet/snipet/internal/repository/mocks"
 )
 
-func newTestService(repo repository.IToolRepository) *tool.Service {
-	return tool.NewService(repo)
+func newTestService(repo repository.IToolRepository, executor *tool.Executor) *tool.Service {
+	return tool.NewService(repo, executor)
 }
 
 func TestDeleteByIDDelegatesToRepository(t *testing.T) {
@@ -21,6 +21,6 @@ func TestDeleteByIDDelegatesToRepository(t *testing.T) {
 	repo := mocks.NewMockIToolRepository(t)
 	repo.EXPECT().DeleteByID(mock.Anything, "id-1").Return(nil)
 
-	svc := newTestService(repo)
+	svc := newTestService(repo, nil)
 	require.NoError(t, svc.DeleteByID(context.Background(), "id-1"))
 }

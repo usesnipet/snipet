@@ -6,7 +6,6 @@ package mocks
 
 import (
 	"context"
-	"encoding/json"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -42,7 +41,7 @@ func (_m *MockIConnector) EXPECT() *MockIConnector_Expecter {
 }
 
 // CallTool provides a mock function for the type MockIConnector
-func (_mock *MockIConnector) CallTool(ctx context.Context, transport mcp.Transport, config jsonx.JSONMap, name string, args json.RawMessage) (*mcp.CallResult, error) {
+func (_mock *MockIConnector) CallTool(ctx context.Context, transport mcp.Transport, config jsonx.JSONMap, name string, args jsonx.JSONMap) (*mcp.CallResult, error) {
 	ret := _mock.Called(ctx, transport, config, name, args)
 
 	if len(ret) == 0 {
@@ -51,17 +50,17 @@ func (_mock *MockIConnector) CallTool(ctx context.Context, transport mcp.Transpo
 
 	var r0 *mcp.CallResult
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, mcp.Transport, jsonx.JSONMap, string, json.RawMessage) (*mcp.CallResult, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, mcp.Transport, jsonx.JSONMap, string, jsonx.JSONMap) (*mcp.CallResult, error)); ok {
 		return returnFunc(ctx, transport, config, name, args)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, mcp.Transport, jsonx.JSONMap, string, json.RawMessage) *mcp.CallResult); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, mcp.Transport, jsonx.JSONMap, string, jsonx.JSONMap) *mcp.CallResult); ok {
 		r0 = returnFunc(ctx, transport, config, name, args)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*mcp.CallResult)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, mcp.Transport, jsonx.JSONMap, string, json.RawMessage) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, mcp.Transport, jsonx.JSONMap, string, jsonx.JSONMap) error); ok {
 		r1 = returnFunc(ctx, transport, config, name, args)
 	} else {
 		r1 = ret.Error(1)
@@ -79,12 +78,12 @@ type MockIConnector_CallTool_Call struct {
 //   - transport mcp.Transport
 //   - config jsonx.JSONMap
 //   - name string
-//   - args json.RawMessage
+//   - args jsonx.JSONMap
 func (_e *MockIConnector_Expecter) CallTool(ctx any, transport any, config any, name any, args any) *MockIConnector_CallTool_Call {
 	return &MockIConnector_CallTool_Call{Call: _e.mock.On("CallTool", ctx, transport, config, name, args)}
 }
 
-func (_c *MockIConnector_CallTool_Call) Run(run func(ctx context.Context, transport mcp.Transport, config jsonx.JSONMap, name string, args json.RawMessage)) *MockIConnector_CallTool_Call {
+func (_c *MockIConnector_CallTool_Call) Run(run func(ctx context.Context, transport mcp.Transport, config jsonx.JSONMap, name string, args jsonx.JSONMap)) *MockIConnector_CallTool_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -102,9 +101,9 @@ func (_c *MockIConnector_CallTool_Call) Run(run func(ctx context.Context, transp
 		if args[3] != nil {
 			arg3 = args[3].(string)
 		}
-		var arg4 json.RawMessage
+		var arg4 jsonx.JSONMap
 		if args[4] != nil {
-			arg4 = args[4].(json.RawMessage)
+			arg4 = args[4].(jsonx.JSONMap)
 		}
 		run(
 			arg0,
@@ -122,7 +121,7 @@ func (_c *MockIConnector_CallTool_Call) Return(callResult *mcp.CallResult, err e
 	return _c
 }
 
-func (_c *MockIConnector_CallTool_Call) RunAndReturn(run func(ctx context.Context, transport mcp.Transport, config jsonx.JSONMap, name string, args json.RawMessage) (*mcp.CallResult, error)) *MockIConnector_CallTool_Call {
+func (_c *MockIConnector_CallTool_Call) RunAndReturn(run func(ctx context.Context, transport mcp.Transport, config jsonx.JSONMap, name string, args jsonx.JSONMap) (*mcp.CallResult, error)) *MockIConnector_CallTool_Call {
 	_c.Call.Return(run)
 	return _c
 }
