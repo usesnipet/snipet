@@ -1,5 +1,4 @@
 import { toast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/query-client";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
 import { toolService } from "./service";
@@ -12,7 +11,6 @@ import type {
   Tool,
 } from "./schemas";
 import type {
-  ServiceDeleteOptions,
   ServiceGetOptions,
   ServicePostOptions,
 } from "@/lib/services";
@@ -39,20 +37,6 @@ export const useTool = (
     queryKey: toolQueryKey(id),
     queryFn: () => toolService.findById(id, opts),
     enabled: !!id,
-  });
-
-export const useDeleteTool = (
-  opts?: ServiceDeleteOptions<void>,
-): UseMutationResult<void, Error, string> =>
-  useMutation({
-    mutationFn: (id: string) => toolService.delete(id, opts),
-    onSuccess: () => {
-      toast({ title: "Tool deleted" });
-      queryClient.invalidateQueries({ queryKey: listToolsQueryKey() });
-    },
-    onError: () => {
-      toast({ title: "Failed to delete Tool", variant: "destructive" });
-    },
   });
 
 export const useExecuteTool = (

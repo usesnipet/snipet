@@ -1054,12 +1054,20 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "delete": {
+            }
+        },
+        "/tool/{id}/execute": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "tool"
                 ],
-                "summary": "Delete a Tool",
+                "summary": "Execute a Tool",
                 "parameters": [
                     {
                         "type": "string",
@@ -1067,11 +1075,23 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Tool arguments",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteToolDTO"
+                        }
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteToolResponse"
+                        }
                     }
                 }
             }
@@ -1634,6 +1654,25 @@ const docTemplate = `{
                 }
             }
         },
+        "ExecuteToolDTO": {
+            "type": "object",
+            "properties": {
+                "arguments": {
+                    "type": "object"
+                }
+            }
+        },
+        "ExecuteToolResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "is_error": {
+                    "type": "boolean"
+                }
+            }
+        },
         "FinishReason": {
             "type": "string",
             "enum": [
@@ -1838,7 +1877,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "config": {
-                    "description": "Config is the default config for the server: a StdioConfig or, for\nhttp, an HTTPRegistryConfig.",
+                    "description": "Config is the default config for the server: a StdioRegistryConfig or\nan HTTPRegistryConfig, per Transport.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/JSONMap"

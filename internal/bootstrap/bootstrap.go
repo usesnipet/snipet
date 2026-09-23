@@ -125,8 +125,8 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
 	authHandler := authmodule.NewHandler(authService, requireUserAuth)
 	apiKeyHandler := apikey.NewHandler(apiKeyService, requireRole, requireUserAuth, requireApiKey)
-	mcpServerHandler := mcpservermodule.NewHandler(mcpServerService, requireUserAuth, requireApiKey)
-	toolHandler := toolmodule.NewHandler(toolService, requireUserAuth, requireApiKey)
+	mcpServerHandler := mcpservermodule.NewHandler(mcpServerService, requireUserAuth, requireRole)
+	toolHandler := toolmodule.NewHandler(toolService, requireUserAuth, requireRole)
 
 	// register routes
 	api := api.New(log.Child(logger.WithPrefix("api: ")))

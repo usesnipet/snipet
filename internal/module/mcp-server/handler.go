@@ -5,21 +5,25 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/usesnipet/snipet/internal/api"
+	"github.com/usesnipet/snipet/internal/model"
 )
 
 type Handler struct {
-	service    *Service
-	authGate   api.Gate
-	apiKeyGate api.Gate
+	service     *Service
+	authGate    api.Gate
+	requireRole api.RoleGate
 }
 
-func NewHandler(service *Service, authGate api.Gate, apiKeyGate api.Gate) api.Handler {
-	return &Handler{service: service, authGate: authGate, apiKeyGate: apiKeyGate}
+// NewHandler builds the /mcp-server HTTP layer, admin-only: MCP servers run
+// arbitrary commands and URLs on the host and their config holds credentials.
+func NewHandler(service *Service, authGate api.Gate, requireRole api.RoleGate) api.Handler {
+	return &Handler{service: service, authGate: authGate, requireRole: requireRole}
 }
 
 func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 	r.Route("/mcp-server", func(r chi.Router) {
-		r.Use(api.Or(h.apiKeyGate, h.authGate).Handler())
+		r.Use(h.authGate.Handler())
+		r.Use(h.requireRole(model.RoleAdmin).Handler())
 		r.Get("/", serve(h.filter))
 		r.Get("/registry", serve(h.listRegistry))
 		r.Get("/registry/{key}", serve(h.getRegistryItem))

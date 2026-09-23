@@ -46,13 +46,13 @@ export const Router = () => {
               <Route path={toReactRouterPath(ROUTES.agents)} element={<PlaceholderPage title="Agents" />} />
               <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
               <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
-              <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
-              <Route path={toReactRouterPath(ROUTES.tools)} element={<ToolsPage />} />
-              <Route path={toReactRouterPath(ROUTES.toolPlayground)} element={<ToolPlaygroundPage />} />
               <Route path={toReactRouterPath(ROUTES.knowledge)} element={<PlaceholderPage title="Knowledge" />} />
               <Route path={toReactRouterPath(ROUTES.connections)} element={<PlaceholderPage title="Connections" />} />
               <Route path={toReactRouterPath(ROUTES.settings)} element={<PlaceholderPage title="Settings" />} />
               <Route element={<RequireRole role="admin" />}>
+                <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
+                <Route path={toReactRouterPath(ROUTES.tools)} element={<ToolsPage />} />
+                <Route path={toReactRouterPath(ROUTES.toolPlayground)} element={<ToolPlaygroundPage />} />
                 <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
                 <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
               </Route>

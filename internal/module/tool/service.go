@@ -29,10 +29,6 @@ func (s *Service) FindByID(ctx context.Context, id string) (*model.Tool, error) 
 	return s.repo.FindByID(ctx, id)
 }
 
-func (s *Service) DeleteByID(ctx context.Context, id string) error {
-	return s.repo.DeleteByID(ctx, id)
-}
-
 func (s *Service) Execute(ctx context.Context, id string, args jsonx.JSONMap) (*tool.Result, error) {
 	return s.executor.Execute(ctx, id, args)
 }

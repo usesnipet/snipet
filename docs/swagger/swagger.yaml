@@ -247,6 +247,18 @@ definitions:
     required:
     - model
     type: object
+  ExecuteToolDTO:
+    properties:
+      arguments:
+        type: object
+    type: object
+  ExecuteToolResponse:
+    properties:
+      content:
+        type: string
+      is_error:
+        type: boolean
+    type: object
   FinishReason:
     enum:
     - stop
@@ -388,8 +400,8 @@ definitions:
         allOf:
         - $ref: '#/definitions/JSONMap'
         description: |-
-          Config is the default config for the server: a StdioConfig or, for
-          http, an HTTPRegistryConfig.
+          Config is the default config for the server: a StdioRegistryConfig or
+          an HTTPRegistryConfig, per Transport.
       description:
         type: string
       icon:
@@ -1363,19 +1375,6 @@ paths:
       tags:
       - tool
   /tool/{id}:
-    delete:
-      parameters:
-      - description: Tool ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-      summary: Delete a Tool
-      tags:
-      - tool
     get:
       parameters:
       - description: Tool ID
@@ -1391,6 +1390,32 @@ paths:
           schema:
             $ref: '#/definitions/ToolResponse'
       summary: Get a Tool by ID
+      tags:
+      - tool
+  /tool/{id}/execute:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Tool ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tool arguments
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ExecuteToolDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ExecuteToolResponse'
+      summary: Execute a Tool
       tags:
       - tool
   /users:

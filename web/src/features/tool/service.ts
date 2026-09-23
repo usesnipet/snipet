@@ -16,7 +16,6 @@ import type {
   Tool,
 } from "./schemas";
 import type {
-  ServiceDeleteOptions,
   ServiceGetOptions,
   ServicePostOptions,
 } from "@/lib/services";
@@ -46,13 +45,6 @@ const findById = async (
     ...opts,
   });
 
-const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promise<void> =>
-  http.delete({
-    url: `${TOOL_URL}/{id}`,
-    params: { id },
-    ...opts,
-  });
-
 const execute = async (
   id: string,
   body: ExecuteTool,
@@ -66,4 +58,4 @@ const execute = async (
     ...opts,
   });
 
-export const toolService = { list, findById, delete: remove, execute };
+export const toolService = { list, findById, execute };

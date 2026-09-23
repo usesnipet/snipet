@@ -1,4 +1,4 @@
-h1:w4a9CJgGm9g+fpKy52MeByRLSZX6MqamLpax8/C1WyM=
+h1:DeiwfxeUJ+btpFNlhvUO+4hTlG/yK4x4J/FuryXvn6U=
 20260903192755_add_llm_providers.up.sql h1:boZANN1VQ1JRQycqulWjA2jtjm5m+5PPmKt+aEifYj0=
 20260904062536_rename_llm_providers_to_llm_connections.up.sql h1:0OSgiOVc83aCn8KkmEd5lXOzdhMA+6Dcpmngt+J+2h8=
 20260904130234_users.up.sql h1:BkWhCwfh6dvYIZDbv2qUcFbw7Ek0JK2mhOmSXqH2u0o=
@@ -7,3 +7,4 @@ h1:w4a9CJgGm9g+fpKy52MeByRLSZX6MqamLpax8/C1WyM=
 20260904200652_add_api_key.up.sql h1:IM/PGClIj35cq+oo5MZaFp6ka5+ITEOBAw4kYWbDu1k=
 20260916171306_add_llm_connection_default.up.sql h1:gJ3O1xEk2i0tTdQ5vJwZpZ1KOVDwkd+zhsMxYf4pRvM=
 20260922164454_add_mcp_servers_and_tools.up.sql h1:pAge+zAlUCX9DXpoj/pH0omo+ibG+B+W0Xck4y3Dctw=
+20260923125449_add_tools_mcp_server_fk.up.sql h1:5Iey0XVpfnuze1KODfsgJ3dzAuaDcRT9jZ1uCrRFr+Q=
