@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Link } from "@/components/ui/link";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { ROUTES } from "@/routes";
-import { Copy, Play } from "lucide-react";
+import { ChevronRight, Copy, Play } from "lucide-react";
 import moment from "moment";
 
 import { toolParameters } from "../lib/input-schema";
@@ -68,7 +69,8 @@ function ToolDetails({ tool, serverIcon }: { tool: Tool; serverIcon?: string }) 
         </Button>
       </SheetHeader>
 
-      <ScrollArea className="min-h-0 flex-1">
+      {/* Radix wraps content in a display:table div that grows to fit wide children; block keeps it at sheet width so the schema scrolls on its own. */}
+      <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:block!">
         <div className="space-y-6 p-6">
           <section className="space-y-3">
             <h3 className="flex items-baseline gap-2 text-sm font-semibold">
@@ -86,21 +88,28 @@ function ToolDetails({ tool, serverIcon }: { tool: Tool; serverIcon?: string }) 
             )}
           </section>
 
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Input schema</h3>
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => copy(schemaJson, { successTitle: "Schema copied" })}
-              >
-                <Copy /> Copy
-              </Button>
-            </div>
-            <pre className="bg-muted/40 overflow-x-auto rounded-lg border p-4 font-mono text-xs leading-5">
-              {schemaJson}
-            </pre>
-          </section>
+          <Collapsible asChild>
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <CollapsibleTrigger className="group flex items-center gap-1 text-sm font-semibold">
+                  <ChevronRight className="text-muted-foreground size-4 transition-transform group-data-[state=open]:rotate-90" />
+                  Input schema
+                </CollapsibleTrigger>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => copy(schemaJson, { successTitle: "Schema copied" })}
+                >
+                  <Copy /> Copy
+                </Button>
+              </div>
+              <CollapsibleContent>
+                <pre className="bg-muted/40 overflow-x-auto rounded-lg border p-4 font-mono text-xs leading-5">
+                  {schemaJson}
+                </pre>
+              </CollapsibleContent>
+            </section>
+          </Collapsible>
         </div>
       </ScrollArea>
     </>
