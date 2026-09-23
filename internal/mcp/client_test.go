@@ -94,6 +94,31 @@ func TestConnectorOverStdio(t *testing.T) {
 	assert.Equal(t, &CallResult{Content: "hi bia"}, result)
 }
 
+func TestConnectorSendsParamHeaders(t *testing.T) {
+	t.Parallel()
+
+	server := mcpsdk.NewServer(&mcpsdk.Implementation{Name: "test", Version: "v0"}, nil)
+	server.AddTool(&mcpsdk.Tool{
+		Name: "list_branches",
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{"repo": map[string]any{"type": "string", "x-mcp-header": "repo"}},
+			"required":   []any{"repo"},
+		},
+	}, func(context.Context, *mcpsdk.CallToolRequest) (*mcpsdk.CallToolResult, error) {
+		return &mcpsdk.CallToolResult{Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: "main"}}}, nil
+	})
+	// Stateless servers speak the protocol version that validates Mcp-Param-* headers.
+	handler := mcpsdk.NewStreamableHTTPHandler(func(*http.Request) *mcpsdk.Server { return server }, &mcpsdk.StreamableHTTPOptions{Stateless: true})
+	httpServer := httptest.NewServer(handler)
+	t.Cleanup(httpServer.Close)
+
+	config := jsonx.JSONMap{"url": httpServer.URL, "timeout": 5}
+	result, err := NewConnector().CallTool(context.Background(), TransportHTTP, config, "list_branches", jsonx.JSONMap{"repo": "snipet"})
+	require.NoError(t, err)
+	assert.Equal(t, &CallResult{Content: "main"}, result)
+}
+
 func TestConnectorSendsConfiguredHeaders(t *testing.T) {
 	t.Parallel()
 

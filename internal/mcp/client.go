@@ -67,6 +67,18 @@ func (c *Connector) ListTools(ctx context.Context, transport Transport, config j
 func (c *Connector) CallTool(ctx context.Context, transport Transport, config jsonx.JSONMap, name string, args jsonx.JSONMap) (*CallResult, error) {
 	var result *CallResult
 	err := c.withSession(ctx, transport, config, func(ctx context.Context, session *mcpsdk.ClientSession) error {
+		// The SDK only sends a tool's Mcp-Param-* headers (x-mcp-header) for
+		// tools it has seen listed in this session, and servers reject the call
+		// without them.
+		for tool, err := range session.Tools(ctx, nil) {
+			if err != nil {
+				return fmt.Errorf("list tools: %w", err)
+			}
+			if tool.Name == name {
+				break
+			}
+		}
+
 		params := &mcpsdk.CallToolParams{Name: name}
 		if len(args) > 0 {
 			params.Arguments = args
