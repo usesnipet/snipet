@@ -54,6 +54,12 @@ func compile(schema jsonx.JSONMap) (*kjs.Schema, error) {
 	return compiled, nil
 }
 
+// Check reports whether schema compiles as a JSON Schema.
+func Check(schema jsonx.JSONMap) error {
+	_, err := compile(schema)
+	return err
+}
+
 // Validate normalizes data against schema — filling in any field missing
 // from data with the schema's declared default, see the package doc —
 // validates the result, and returns it. A nil schema is a no-op: data is

@@ -802,6 +802,186 @@
                 }
             }
         },
+        "/mcp-server": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mcp-server"
+                ],
+                "summary": "List McpServers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/McpServersPage"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mcp-server"
+                ],
+                "summary": "Create a McpServer",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateMcpServerDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/McpServerResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/mcp-server/registry": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mcp-server"
+                ],
+                "summary": "List MCP Servers Registry",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/McpServerRegistryItem"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mcp-server/registry/{key}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mcp-server"
+                ],
+                "summary": "Get a MCP Servers Registry item by key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registry item key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/McpServerRegistryItem"
+                        }
+                    }
+                }
+            }
+        },
+        "/mcp-server/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mcp-server"
+                ],
+                "summary": "Get a McpServer by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "McpServer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/McpServerResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mcp-server"
+                ],
+                "summary": "Update a McpServer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "McpServer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "partial payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateMcpServerDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "mcp-server"
+                ],
+                "summary": "Delete a McpServer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "McpServer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/system/info": {
             "get": {
                 "description": "Returns application system information.",
@@ -818,6 +998,73 @@
                         "schema": {
                             "$ref": "#/definitions/InfoDTO"
                         }
+                    }
+                }
+            }
+        },
+        "/tool": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tool"
+                ],
+                "summary": "List Tools",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ToolsPage"
+                        }
+                    }
+                }
+            }
+        },
+        "/tool/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tool"
+                ],
+                "summary": "Get a Tool by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tool ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ToolResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "tool"
+                ],
+                "summary": "Delete a Tool",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tool ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -1253,6 +1500,34 @@
                 }
             }
         },
+        "CreateMcpServerDTO": {
+            "type": "object",
+            "required": [
+                "config",
+                "name",
+                "transport"
+            ],
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "transport": {
+                    "enum": [
+                        "http",
+                        "stdio"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Transport"
+                        }
+                    ]
+                }
+            }
+        },
         "CreateUserDTO": {
             "type": "object",
             "required": [
@@ -1514,6 +1789,135 @@
                 }
             }
         },
+        "McpServer": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_synced_at": {
+                    "type": "string"
+                },
+                "last_synced_error": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "transport": {
+                    "$ref": "#/definitions/Transport"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "McpServerRegistryItem": {
+            "type": "object",
+            "required": [
+                "config",
+                "description",
+                "icon",
+                "key",
+                "name",
+                "tags",
+                "transport"
+            ],
+            "properties": {
+                "config": {
+                    "description": "Config is the default config for the server: a StdioConfig or, for\nhttp, an HTTPRegistryConfig.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/JSONMap"
+                        }
+                    ]
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "transport": {
+                    "enum": [
+                        "http",
+                        "stdio"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Transport"
+                        }
+                    ]
+                }
+            }
+        },
+        "McpServerResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_synced_at": {
+                    "type": "string"
+                },
+                "last_synced_error": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "transport": {
+                    "$ref": "#/definitions/Transport"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "McpServersPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/McpServer"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "MeResponse": {
             "type": "object",
             "properties": {
@@ -1632,6 +2036,112 @@
                 }
             }
         },
+        "Source": {
+            "type": "string",
+            "enum": [
+                "mcp",
+                "native"
+            ],
+            "x-enum-varnames": [
+                "SourceMcp",
+                "SourceNative"
+            ]
+        },
+        "Tool": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "input_schema": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "mcp_server": {
+                    "$ref": "#/definitions/McpServer"
+                },
+                "mcp_server_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "$ref": "#/definitions/Source"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "ToolResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "input_schema": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "mcp_server": {
+                    "$ref": "#/definitions/McpServer"
+                },
+                "mcp_server_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "$ref": "#/definitions/Source"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "ToolsPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Tool"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "Transport": {
+            "type": "string",
+            "enum": [
+                "http",
+                "stdio"
+            ],
+            "x-enum-varnames": [
+                "TransportHTTP",
+                "TransportStdIO"
+            ]
+        },
         "UpdateExpirationDTO": {
             "type": "object",
             "properties": {
@@ -1659,6 +2169,29 @@
                 "provider": {
                     "type": "string",
                     "maxLength": 255
+                }
+            }
+        },
+        "UpdateMcpServerDTO": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "transport": {
+                    "enum": [
+                        "http",
+                        "stdio"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Transport"
+                        }
+                    ]
                 }
             }
         },

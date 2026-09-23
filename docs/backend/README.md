@@ -36,7 +36,7 @@ internal/
   auth/                           JWT + API-key + password primitives (HTTP-agnostic)
   guard/                           chi middleware (Gates) built on auth/ — admin basic auth
   infra/                             database bootstrap, in-memory cache
-  queue/                              in-process background worker pool (present, unwired)
+  queue/                              in-process background worker pool
 migrations/               timestamped .up.sql/.down.sql pairs (Atlas-managed)
 pkg/                      framework-agnostic helpers (json_schema, jsonx, collections)
 ```
@@ -78,5 +78,6 @@ the response (`api.WriteJSON`/`api.WriteNoContent`).
 | [auth-middleware.md](./auth-middleware.md) | `internal/auth` + `internal/guard` — admin basic auth + JWT primitives |
 | [bootstrap.md](./bootstrap.md) | `cmd/api` + `internal/bootstrap` + `config/` — wiring |
 | [infra.md](./infra.md) | `internal/infra` + `internal/queue` — database, cache, background jobs |
+| [mcp.md](./mcp.md) | `internal/mcp` + mcp-server/tool modules — connector, tool sync, execution |
 
 `pkg/` is documented inline via Go doc comments — run `go doc ./pkg/...`.

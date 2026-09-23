@@ -20,11 +20,15 @@ import (
 	"github.com/usesnipet/snipet/internal/llm"
 	"github.com/usesnipet/snipet/internal/llm/providers/ollama"
 	"github.com/usesnipet/snipet/internal/logger"
+	"github.com/usesnipet/snipet/internal/mcp"
 	apikey "github.com/usesnipet/snipet/internal/module/api-key"
 	authmodule "github.com/usesnipet/snipet/internal/module/auth"
 	llmconnection "github.com/usesnipet/snipet/internal/module/llm-connection"
+	mcpservermodule "github.com/usesnipet/snipet/internal/module/mcp-server"
 	systemmodule "github.com/usesnipet/snipet/internal/module/system"
+	toolmodule "github.com/usesnipet/snipet/internal/module/tool"
 	usermodule "github.com/usesnipet/snipet/internal/module/user"
+	"github.com/usesnipet/snipet/internal/queue"
 	"github.com/usesnipet/snipet/internal/repository"
 	"github.com/usesnipet/snipet/web"
 )
@@ -34,6 +38,9 @@ import (
 // the create-backend-module skill — construct its repo, then its service,
 // then its handler, then call RegisterRoutes inside the /api group.
 func Bootstrap(cfg *config.Config, log *logger.Logger) error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	// database
 	db, _, embeddedDB, err := database.NewDatabase(cfg, log)
 	if err != nil {
@@ -60,10 +67,29 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	apiKeyRepo := repository.NewApiKeyRepository(db)
+	mcpServerRepo := repository.NewMcpServerRepository(db)
+	toolRepo := repository.NewToolRepository(db)
 
 	llmRegistry := llm.NewRegistry(cache.NewMemoryCache(2000, 0), 0)
 	llmRegistry.MustRegister(ollama.New())
 	llmRunner := llm.NewRunner(llmRegistry)
+
+	// mcp
+	mcpRegistry := mcp.NewRegistry()
+	mcpConnector := mcp.NewConnector()
+
+	// background jobs
+	pool := queue.NewPool(cfg.Sync.Workers, log.Child(logger.WithPrefix("queue: ")))
+	pool.Start(ctx)
+	defer pool.Stop()
+	mcpSyncWorker := mcpservermodule.NewSyncWorker(
+		mcpservermodule.NewSyncService(mcpServerRepo, toolRepo, mcpConnector),
+		mcpServerRepo,
+		pool,
+		cfg.Sync.Interval,
+		log.Child(logger.WithPrefix("mcp-sync: ")),
+	)
+	mcpSyncWorker.Start(ctx)
 
 	// auth primitives
 	userJWTService := auth.NewJWTService(cfg.Auth)
@@ -85,6 +111,8 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 		auth.NewKeyHasher(),
 	)
 	authService := authmodule.NewService(userRepo, userJWTService, cfg.Auth, refreshTokenRepo, tokenService)
+	mcpServerService := mcpservermodule.NewService(mcpServerRepo, mcpRegistry, mcpSyncWorker)
+	toolService := toolmodule.NewService(toolRepo, toolmodule.NewExecutor(toolRepo, mcpServerRepo, mcpConnector))
 
 	// guards
 	requireUserAuth := guard.RequireUserJWT(userJWTService)
@@ -97,6 +125,8 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
 	authHandler := authmodule.NewHandler(authService, requireUserAuth)
 	apiKeyHandler := apikey.NewHandler(apiKeyService, requireRole, requireUserAuth, requireApiKey)
+	mcpServerHandler := mcpservermodule.NewHandler(mcpServerService, requireUserAuth, requireApiKey)
+	toolHandler := toolmodule.NewHandler(toolService, requireUserAuth, requireApiKey)
 
 	// register routes
 	api := api.New(log.Child(logger.WithPrefix("api: ")))
@@ -107,6 +137,8 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 		userHandler.RegisterRoutes(r, api.Serve)
 		authHandler.RegisterRoutes(r, api.Serve)
 		apiKeyHandler.RegisterRoutes(r, api.Serve)
+		mcpServerHandler.RegisterRoutes(r, api.Serve)
+		toolHandler.RegisterRoutes(r, api.Serve)
 	})
 
 	srv := &http.Server{
@@ -121,8 +153,6 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 		}
 	}()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 	<-ctx.Done()
 
 	log.Infof("shutting down server...")

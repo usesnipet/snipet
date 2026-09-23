@@ -157,6 +157,10 @@ func WhereLike(field string, value any) Option {
 	return Where(field, WhereOperatorLike, value)
 }
 
+func WhereILike(field string, value any) Option {
+	return Where(field, WhereOperatorILike, value)
+}
+
 func WhereIn(field string, values ...any) Option {
 	return Where(field, WhereOperatorIn, values...)
 }

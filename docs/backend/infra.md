@@ -75,10 +75,9 @@ func (s *Service) Reindex(ctx context.Context, id string) error {
 }
 ```
 
-The skeleton does not wire the pool (`bootstrap` no longer builds it), but
-the package is here for when you need it:
 `queue.NewPool(cfg.Sync.Workers, logger).Start(ctx)` is built once in
-`bootstrap` (see [bootstrap.md](./bootstrap.md)); a service depends on the
+`bootstrap` (see [bootstrap.md](./bootstrap.md)) and stopped on shutdown;
+today it runs the MCP tool syncs (see [mcp.md](./mcp.md)). A service depends on the
 `queue.IPool` interface so it's mockable in tests. A job's error is logged
 by the pool's worker loop, not surfaced to whoever called `Submit` — by the
 time a job runs, the HTTP request that enqueued it has usually already

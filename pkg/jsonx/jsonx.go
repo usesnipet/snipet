@@ -29,8 +29,7 @@ func ToJSONMap[T any](v T) (JSONMap, error) {
 		return nil, err
 	}
 	var jsonMap JSONMap
-	err = json.Unmarshal(jsonBytes, &jsonMap)
-	if err != nil {
+	if err = json.Unmarshal(jsonBytes, &jsonMap); err != nil {
 		return nil, err
 	}
 	return jsonMap, nil

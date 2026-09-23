@@ -33,7 +33,7 @@ filter.Default[model.Widget]()  // Take(2000), Skip(0) — the fallback when a r
 Common options: `Take`/`Skip`/`PtrTake`/`PtrSkip` (the `Ptr*` variants are
 what a filter DTO's `ToFilter()` uses — see [modules.md](./modules.md)
 — since query params are optional), `OrderAsc`/`OrderDesc`, `Where<Op>`
-(`WhereEq`, `WhereNeq`, `WhereGt`/`Gte`, `WhereLt`/`Lte`, `WhereLike`,
+(`WhereEq`, `WhereNeq`, `WhereGt`/`Gte`, `WhereLt`/`Lte`, `WhereLike`, `WhereILike` (case-insensitive),
 `WhereIn`/`NotIn`, `WhereBetween`, `WhereIsNull`/`IsNotNull`), and
 `Include(paths...)` for GORM preloads.
 

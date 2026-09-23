@@ -2,24 +2,25 @@ import RjsfForm from "@rjsf/shadcn";
 import validator from "@rjsf/validator-ajv8";
 import { useMemo } from "react";
 
-import { buildPasswordUiSchema } from "@/components/schema-form";
+import { buildPasswordUiSchema } from "./password-ui-schema";
 
-import type { RJSFSchema, UiSchema } from "@rjsf/utils";
+import type { ErrorSchema, RJSFSchema, UiSchema } from "@rjsf/utils";
 
 type Props = {
-  /** JSON schema for one connection-options section (the provider's auth or config schema). */
   schema: RJSFSchema;
-  /** Initial config, read once when the field mounts (remount via `key` on change). */
+  /** Initial data, read once when the fields mount (remount via `key` on change). */
   defaultData?: Record<string, unknown>;
   onChange: (data: Record<string, unknown>) => void;
+  /** Per-field errors computed by the caller, e.g. `{ token: { __errors: ["Required"] } }`. */
+  extraErrors?: ErrorSchema;
 };
 
 /**
- * Renders the selected provider's configuration form inline, instead of behind a
- * nested dialog. `tagName="div"` keeps it out of the surrounding `<form>` (nested
- * forms are invalid) and the submit button is suppressed — the dialog owns submit.
+ * Renders a JSON-schema form inline, inside a surrounding form or dialog.
+ * `tagName="div"` keeps it out of the surrounding `<form>` (nested forms are
+ * invalid) and the submit button is suppressed — the caller owns submit.
  */
-export function ProviderConfigFields({ schema, defaultData, onChange }: Props) {
+export function SchemaFormFields({ schema, defaultData, onChange, extraErrors }: Props) {
   const uiSchema = useMemo<UiSchema>(
     () => ({
       ...buildPasswordUiSchema(schema),
@@ -36,6 +37,7 @@ export function ProviderConfigFields({ schema, defaultData, onChange }: Props) {
       validator={validator}
       uiSchema={uiSchema}
       onChange={(e) => onChange(e.formData ?? {})}
+      extraErrors={extraErrors}
       liveValidate={false}
       showErrorList={false}
     />

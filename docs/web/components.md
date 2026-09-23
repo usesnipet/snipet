@@ -42,7 +42,8 @@ piece needed on top of it.
 Schema** at runtime (via `@rjsf/*`), for cases where the form shape isn't
 known at compile time — e.g. a `configuration_schema` fetched from
 the backend at runtime (see
-[schemas.md](./schemas.md)). `buildPasswordUiSchema` auto-masks fields
+[schemas.md](./schemas.md)). `SchemaFormFields` renders the same form
+inline, inside another dialog/form that owns submit. `buildPasswordUiSchema` auto-masks fields
 whose name/format looks like a secret. Use this instead of `components/form`
 when the fields to render are only known at runtime; use `components/form`
 + a fixed `schemas.ts` shape when they're known at compile time.
@@ -69,7 +70,7 @@ shape as `admin.tsx`.
   **`error-fallback.tsx`** — layout-level plumbing used by every
   `routes/*/layout.tsx` and the top-level `Suspense` in `router.tsx`.
 - Standalone widgets not tied to one feature (`data-table.tsx`,
-  `duration-select.tsx`, `json-viewer.tsx`, `version.tsx`) — generic
+  `duration-select.tsx`, `json-viewer.tsx`, `pagination.tsx`, `version.tsx`) — generic
   building blocks a feature composes rather than depends on.
 
 ## Rule of thumb

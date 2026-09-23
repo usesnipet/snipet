@@ -32,6 +32,7 @@ const (
 	WhereOperatorLessThanOrEqual    WhereOperator = "lte"
 	WhereOperatorLike               WhereOperator = "like"
 	WhereOperatorNotLike            WhereOperator = "not like"
+	WhereOperatorILike              WhereOperator = "ilike"
 	WhereOperatorIn                 WhereOperator = "in"
 	WhereOperatorNotIn              WhereOperator = "not in"
 	WhereOperatorBetween            WhereOperator = "between"
@@ -58,6 +59,8 @@ func ParseWhereOperator(value string) WhereOperator {
 		return WhereOperatorLike
 	case "not like":
 		return WhereOperatorNotLike
+	case "ilike":
+		return WhereOperatorILike
 	case "in":
 		return WhereOperatorIn
 	case "not in":
