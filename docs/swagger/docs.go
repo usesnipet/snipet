@@ -1838,7 +1838,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "config": {
-                    "description": "Config is the default config for the server, shaped per Transport\n(see model.McpServer.Config).",
+                    "description": "Config is the default config for the server: a StdioConfig or, for\nhttp, an HTTPRegistryConfig.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/JSONMap"

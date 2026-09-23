@@ -388,8 +388,8 @@ definitions:
         allOf:
         - $ref: '#/definitions/JSONMap'
         description: |-
-          Config is the default config for the server, shaped per Transport
-          (see model.McpServer.Config).
+          Config is the default config for the server: a StdioConfig or, for
+          http, an HTTPRegistryConfig.
       description:
         type: string
       icon:

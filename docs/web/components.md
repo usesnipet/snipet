@@ -42,7 +42,8 @@ piece needed on top of it.
 Schema** at runtime (via `@rjsf/*`), for cases where the form shape isn't
 known at compile time — e.g. a `configuration_schema` fetched from
 the backend at runtime (see
-[schemas.md](./schemas.md)). `buildPasswordUiSchema` auto-masks fields
+[schemas.md](./schemas.md)). `SchemaFormFields` renders the same form
+inline, inside another dialog/form that owns submit. `buildPasswordUiSchema` auto-masks fields
 whose name/format looks like a secret. Use this instead of `components/form`
 when the fields to render are only known at runtime; use `components/form`
 + a fixed `schemas.ts` shape when they're known at compile time.

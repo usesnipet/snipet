@@ -47,7 +47,18 @@
     "transport": "http",
     "config": {
       "url": "https://api.githubcopilot.com/mcp/",
-      "headers": { "Authorization": "Bearer <GITHUB_TOKEN>" },
+      "headers_schema": {
+        "type": "object",
+        "required": ["Authorization"],
+        "properties": {
+          "Authorization": {
+            "type": "string",
+            "title": "Authorization",
+            "description": "A GitHub personal access token, prefixed with \"Bearer \" (e.g. Bearer ghp_…).",
+            "format": "password"
+          }
+        }
+      },
       "timeout": 30
     }
   }

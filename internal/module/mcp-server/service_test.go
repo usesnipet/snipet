@@ -47,6 +47,39 @@ func TestCreatePersistsEntity(t *testing.T) {
 	assert.Equal(t, mcp.TransportStdIO, result.Transport)
 }
 
+func TestCreateRejectsConfigNotMatchingTransport(t *testing.T) {
+	t.Parallel()
+
+	svc := newTestService(mocks.NewMockIMcpServerRepository(t), mcp.NewRegistry())
+	_, err := svc.Create(context.Background(), mcpserver.CreateMcpServerDTO{
+		Name:      "Remote server",
+		Transport: mcp.TransportHTTP,
+		Config:    jsonx.JSONMap{"command": "npx"},
+	})
+
+	var appErr *apperr.Error
+	require.ErrorAs(t, err, &appErr)
+	assert.Equal(t, 400, appErr.StatusCode)
+}
+
+func TestUpdateValidatesConfigAgainstStoredTransport(t *testing.T) {
+	t.Parallel()
+
+	repo := mocks.NewMockIMcpServerRepository(t)
+	repo.EXPECT().
+		FindByID(mock.Anything, "id-1").
+		Return(&model.McpServer{ID: "id-1", Transport: mcp.TransportHTTP, Config: jsonx.JSONMap{"url": "https://example.com"}}, nil)
+
+	svc := newTestService(repo, mcp.NewRegistry())
+	err := svc.Update(context.Background(), "id-1", mcpserver.UpdateMcpServerDTO{
+		Config: jsonx.JSONMap{"command": "npx"},
+	})
+
+	var appErr *apperr.Error
+	require.ErrorAs(t, err, &appErr)
+	assert.Equal(t, 400, appErr.StatusCode)
+}
+
 func TestUpdateNotFoundReturnsAppError(t *testing.T) {
 	t.Parallel()
 

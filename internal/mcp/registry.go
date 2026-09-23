@@ -11,7 +11,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
+	"github.com/usesnipet/snipet/pkg/collections/set"
 	"github.com/usesnipet/snipet/pkg/jsonx"
 )
 
@@ -27,8 +27,8 @@ type MCPServersRegistryItem struct {
 	Tags        []string  `json:"tags" validate:"required"`
 	Transport   Transport `json:"transport" validate:"required,oneof=http stdio"`
 
-	// Config is the default config for the server, shaped per Transport
-	// (see model.McpServer.Config).
+	// Config is the default config for the server: a StdioConfig or, for
+	// http, an HTTPRegistryConfig.
 	Config jsonx.JSONMap `json:"config" validate:"required"`
 }
 
@@ -59,16 +59,18 @@ func parseRegistryItems(data []byte) ([]MCPServersRegistryItem, error) {
 	if err := json.Unmarshal(data, &items); err != nil {
 		return nil, fmt.Errorf("decode: %w", err)
 	}
-	validate := validator.New()
-	seen := make(map[string]struct{}, len(items))
+	seen := set.New[string]()
 	for _, item := range items {
 		if err := validate.Struct(item); err != nil {
 			return nil, fmt.Errorf("item %q: %w", item.Key, err)
 		}
-		if _, dup := seen[item.Key]; dup {
+		if err := validateRegistryConfig(item.Transport, item.Config); err != nil {
+			return nil, fmt.Errorf("item %q: config: %w", item.Key, err)
+		}
+		if seen.Contains(item.Key) {
 			return nil, fmt.Errorf("duplicate key %q", item.Key)
 		}
-		seen[item.Key] = struct{}{}
+		seen.Add(item.Key)
 	}
 	return items, nil
 }
