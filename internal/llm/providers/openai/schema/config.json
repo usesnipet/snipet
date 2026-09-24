@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenAI provider config",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "base_url": {
+      "type": "string",
+      "description": "Base URL of the API. Defaults to the provider's own endpoint."
+    },
+    "organization": {
+      "type": "string",
+      "description": "Value sent as the OpenAI-Organization header"
+    },
+    "headers": {
+      "type": "object",
+      "description": "Extra HTTP headers to send with every request",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

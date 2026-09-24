@@ -18,7 +18,7 @@ import (
 // the next `data:` line. Tool-call fragments are accumulated per index and
 // emitted as one llm.ToolCallEvent when the call finishes.
 func Stream(ctx context.Context, req llm.GenerateRequest) (llm.StreamIterator, error) {
-	cfg, err := configFromRequest(req)
+	cfg, err := configFromOptions(req.ConnectionOptions)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", llm.ErrBadRequest, err)
 	}

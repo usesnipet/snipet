@@ -19,6 +19,7 @@ import (
 	"github.com/usesnipet/snipet/internal/infra/database"
 	"github.com/usesnipet/snipet/internal/llm"
 	"github.com/usesnipet/snipet/internal/llm/providers/ollama"
+	"github.com/usesnipet/snipet/internal/llm/providers/openai"
 	"github.com/usesnipet/snipet/internal/logger"
 	"github.com/usesnipet/snipet/internal/mcp"
 	agentmodule "github.com/usesnipet/snipet/internal/module/agent"
@@ -78,6 +79,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 
 	llmRegistry := llm.NewRegistry(cache.NewMemoryCache(2000, 0), 0)
 	llmRegistry.MustRegister(ollama.New())
+	llmRegistry.MustRegister(openai.New())
 	llmRunner := llm.NewRunner(llmRegistry)
 
 	// mcp

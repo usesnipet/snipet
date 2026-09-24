@@ -37,11 +37,11 @@ type Config struct {
 	APIKey string `json:"-"`
 }
 
-// configFromRequest reads the typed Config from a request's connection
-// options: the config section for BaseURL/Organization/Headers, the auth
-// section for the API key.
-func configFromRequest(req llm.GenerateRequest) (Config, error) {
-	cfg, err := jsonx.ParseJSONMap[Config](llm.ConfigSection(req.ConnectionOptions))
+// configFromOptions reads the typed Config from connection options: the
+// config section for BaseURL/Organization/Headers, the auth section for the
+// API key.
+func configFromOptions(connectionOptions jsonx.JSONMap) (Config, error) {
+	cfg, err := jsonx.ParseJSONMap[Config](llm.ConfigSection(connectionOptions))
 	if err != nil {
 		return Config{}, fmt.Errorf("config section: %w", err)
 	}
@@ -50,7 +50,7 @@ func configFromRequest(req llm.GenerateRequest) (Config, error) {
 		return Config{}, fmt.Errorf("config section: base_url is required")
 	}
 
-	if auth := llm.AuthSection(req.ConnectionOptions); auth != nil {
+	if auth := llm.AuthSection(connectionOptions); auth != nil {
 		if key, ok := auth["api_key"].(string); ok {
 			cfg.APIKey = key
 		}

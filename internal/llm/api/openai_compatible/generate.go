@@ -19,7 +19,7 @@ var errNoChoices = errors.New("openai-compatible: response had no choices")
 
 // Generate runs one chat completion (no streaming) and maps it to llm.Response.
 func Generate(ctx context.Context, req llm.GenerateRequest) (llm.Response, error) {
-	cfg, err := configFromRequest(req)
+	cfg, err := configFromOptions(req.ConnectionOptions)
 	if err != nil {
 		return llm.Response{}, fmt.Errorf("%w: %v", llm.ErrBadRequest, err)
 	}
