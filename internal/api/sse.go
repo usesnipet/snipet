@@ -40,3 +40,17 @@ func (s *SSEWriter) Write(event string, data any) error {
 	s.flusher.Flush()
 	return nil
 }
+
+// WriteID writes an event with an SSE id, which the client echoes back as
+// Last-Event-ID when it reconnects.
+func (s *SSEWriter) WriteID(id int64, event string, data any) error {
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(s.w, "id: %d\nevent: %s\ndata: %s\n\n", id, event, payload); err != nil {
+		return err
+	}
+	s.flusher.Flush()
+	return nil
+}

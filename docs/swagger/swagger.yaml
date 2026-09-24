@@ -66,6 +66,308 @@ definitions:
       total:
         type: integer
     type: object
+  Agent:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: string
+      llms:
+        items:
+          $ref: '#/definitions/AgentLLM'
+        type: array
+      max_turns:
+        type: integer
+      mcp_servers:
+        items:
+          $ref: '#/definitions/AgentMcpServer'
+        type: array
+      name:
+        type: string
+      system_prompt:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  AgentLLM:
+    properties:
+      agent_id:
+        type: string
+      extra_options:
+        $ref: '#/definitions/JSONMap'
+      id:
+        type: string
+      llm_connection_id:
+        description: LlmConnectionID nil means the provider's default connection.
+        type: string
+      model:
+        description: Model is a "provider-key/model" reference.
+        type: string
+      order:
+        type: integer
+    type: object
+  AgentLLMDTO:
+    properties:
+      extra_options:
+        type: object
+      llm_connection_id:
+        type: string
+      model:
+        maxLength: 255
+        type: string
+    required:
+    - model
+    type: object
+  AgentMcpServer:
+    properties:
+      agent_id:
+        type: string
+      allow:
+        items:
+          type: string
+        type: array
+      deny:
+        items:
+          type: string
+        type: array
+      mcp_server:
+        $ref: '#/definitions/McpServer'
+      mcp_server_id:
+        type: string
+    type: object
+  AgentMcpServerDTO:
+    properties:
+      allow:
+        items:
+          type: string
+        type: array
+      deny:
+        items:
+          type: string
+        type: array
+      mcp_server_id:
+        type: string
+    required:
+    - allow
+    - deny
+    - mcp_server_id
+    type: object
+  AgentMessage:
+    properties:
+      created_at:
+        type: string
+      duration_ms:
+        type: integer
+      id:
+        type: integer
+      input_tokens:
+        type: integer
+      model:
+        description: Model, InputTokens and OutputTokens are set on assistant messages.
+        type: string
+      output_tokens:
+        type: integer
+      parts:
+        items: {}
+        type: array
+      role:
+        $ref: '#/definitions/Role'
+      run_id:
+        type: string
+      session_id:
+        type: string
+      tool_id:
+        description: ToolID and DurationMs are set on tool messages.
+        type: string
+    type: object
+  AgentMessagesPage:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/AgentMessage'
+        type: array
+      skip:
+        type: integer
+      take:
+        type: integer
+      total:
+        type: integer
+    type: object
+  AgentResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: string
+      llms:
+        items:
+          $ref: '#/definitions/AgentLLM'
+        type: array
+      max_turns:
+        type: integer
+      mcp_servers:
+        items:
+          $ref: '#/definitions/AgentMcpServer'
+        type: array
+      name:
+        type: string
+      system_prompt:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  AgentRun:
+    properties:
+      created_at:
+        type: string
+      error:
+        type: string
+      finished_at:
+        type: string
+      id:
+        type: string
+      input_tokens:
+        type: integer
+      output_tokens:
+        type: integer
+      session_id:
+        type: string
+      started_at:
+        type: string
+      status:
+        $ref: '#/definitions/AgentRunStatus'
+      turns:
+        type: integer
+    type: object
+  AgentRunResponse:
+    properties:
+      created_at:
+        type: string
+      error:
+        type: string
+      finished_at:
+        type: string
+      id:
+        type: string
+      input_tokens:
+        type: integer
+      output_tokens:
+        type: integer
+      session_id:
+        type: string
+      started_at:
+        type: string
+      status:
+        $ref: '#/definitions/AgentRunStatus'
+      turns:
+        type: integer
+    type: object
+  AgentRunStatus:
+    enum:
+    - running
+    - completed
+    - failed
+    - cancelled
+    - max_turns
+    type: string
+    x-enum-varnames:
+    - AgentRunRunning
+    - AgentRunCompleted
+    - AgentRunFailed
+    - AgentRunCancelled
+    - AgentRunMaxTurns
+  AgentRunsPage:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/AgentRun'
+        type: array
+      skip:
+        type: integer
+      take:
+        type: integer
+      total:
+        type: integer
+    type: object
+  AgentSession:
+    properties:
+      agent_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      subject:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  AgentSessionResponse:
+    properties:
+      agent_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      subject:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  AgentSessionsPage:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/AgentSession'
+        type: array
+      skip:
+        type: integer
+      take:
+        type: integer
+      total:
+        type: integer
+    type: object
+  AgentToolResponse:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      parameters:
+        allOf:
+        - $ref: '#/definitions/JSONMap'
+        description: JSON Schema for the arguments
+    type: object
+  AgentsPage:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Agent'
+        type: array
+      skip:
+        type: integer
+      take:
+        type: integer
+      total:
+        type: integer
+    type: object
   Auth:
     properties:
       data:
@@ -140,6 +442,34 @@ definitions:
         maxLength: 255
         type: string
     required:
+    - name
+    type: object
+  CreateAgentDTO:
+    properties:
+      description:
+        type: string
+      enabled:
+        type: boolean
+      llms:
+        items:
+          $ref: '#/definitions/AgentLLMDTO'
+        minItems: 1
+        type: array
+      max_turns:
+        maximum: 500
+        minimum: 1
+        type: integer
+      mcp_servers:
+        items:
+          $ref: '#/definitions/AgentMcpServerDTO'
+        type: array
+      name:
+        maxLength: 255
+        type: string
+      system_prompt:
+        type: string
+    required:
+    - llms
     - name
     type: object
   CreateLlmConnectionDTO:
@@ -517,16 +847,12 @@ definitions:
     type: object
   Role:
     enum:
-    - system
+    - admin
     - user
-    - assistant
-    - tool
     type: string
     x-enum-varnames:
-    - RoleSystem
+    - RoleAdmin
     - RoleUser
-    - RoleAssistant
-    - RoleTool
   Schemas:
     properties:
       config:
@@ -550,6 +876,22 @@ definitions:
     x-enum-varnames:
     - SourceMcp
     - SourceNative
+  StartRunDTO:
+    properties:
+      agent_id:
+        type: string
+      input:
+        type: string
+      session_id:
+        type: string
+      subject:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - agent_id
+    - input
+    type: object
   Tool:
     properties:
       created_at:
@@ -613,6 +955,31 @@ definitions:
     x-enum-varnames:
     - TransportHTTP
     - TransportStdIO
+  UpdateAgentDTO:
+    properties:
+      description:
+        type: string
+      enabled:
+        type: boolean
+      llms:
+        items:
+          $ref: '#/definitions/AgentLLMDTO'
+        minItems: 1
+        type: array
+      max_turns:
+        maximum: 500
+        minimum: 1
+        type: integer
+      mcp_servers:
+        items:
+          $ref: '#/definitions/AgentMcpServerDTO'
+        type: array
+      name:
+        maxLength: 255
+        type: string
+      system_prompt:
+        type: string
+    type: object
   UpdateExpirationDTO:
     properties:
       expires_at:
@@ -723,6 +1090,287 @@ info:
   title: snipets API
   version: "1.0"
 paths:
+  /agent:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AgentsPage'
+      summary: List Agents
+      tags:
+      - agent
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateAgentDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/AgentResponse'
+      summary: Create an Agent
+      tags:
+      - agent
+  /agent-run:
+    get:
+      parameters:
+      - description: Session ID
+        in: query
+        name: session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AgentRunsPage'
+      summary: List the runs of a session
+      tags:
+      - agent-run
+    post:
+      consumes:
+      - application/json
+      description: Saves the input as a user message and runs the agent in the background.
+        No session_id starts a new session.
+      parameters:
+      - description: payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/StartRunDTO'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/AgentRunResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Start an agent run
+      tags:
+      - agent-run
+  /agent-run/{id}:
+    get:
+      parameters:
+      - description: Run ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AgentRunResponse'
+      summary: Get an agent run by ID
+      tags:
+      - agent-run
+  /agent-run/{id}/cancel:
+    post:
+      parameters:
+      - description: Run ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Cancel an agent run
+      tags:
+      - agent-run
+  /agent-run/{id}/events:
+    get:
+      description: 'Server-Sent Events: stored messages after Last-Event-ID, then
+        live events ("run_started", "turn_started", "llm_started", "llm_skipped",
+        "text_delta", "tool_call_started", "message", "run_finished"). Only "message"
+        events carry an id.'
+      parameters:
+      - description: Run ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Last message id received
+        in: header
+        name: Last-Event-ID
+        type: integer
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: OK
+      summary: Stream an agent run's events
+      tags:
+      - agent-run
+  /agent-session:
+    get:
+      description: Users see their own sessions; admins and API keys see all, optionally
+        filtered by subject.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AgentSessionsPage'
+      summary: List agent sessions
+      tags:
+      - agent-session
+  /agent-session/{id}:
+    delete:
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Delete an agent session
+      tags:
+      - agent-session
+    get:
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AgentSessionResponse'
+      summary: Get an agent session by ID
+      tags:
+      - agent-session
+  /agent-session/{id}/messages:
+    get:
+      description: Newest first; page back with before=<oldest id received>.
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Page size (default 50)
+        in: query
+        name: take
+        type: integer
+      - description: Only messages with a smaller id
+        in: query
+        name: before
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AgentMessagesPage'
+      summary: List a session's messages
+      tags:
+      - agent-session
+  /agent/{id}:
+    delete:
+      parameters:
+      - description: Agent ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete an Agent
+      tags:
+      - agent
+    get:
+      parameters:
+      - description: Agent ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AgentResponse'
+      summary: Get an Agent by ID
+      tags:
+      - agent
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Agent ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: partial payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateAgentDTO'
+      responses:
+        "204":
+          description: No Content
+      summary: Update an Agent
+      tags:
+      - agent
+  /agent/{id}/tools:
+    get:
+      description: Tools as sent to the LLM, named "<server>__<tool>".
+      parameters:
+      - description: Agent ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/AgentToolResponse'
+            type: array
+      summary: List the tools an Agent can call
+      tags:
+      - agent
   /api-key/me:
     get:
       description: Returns the API key used to authenticate the current request.

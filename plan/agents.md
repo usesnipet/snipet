@@ -5,8 +5,8 @@ Plan for **agents**: an agent receives a task from a user and runs a loop
 Progress (LLM picked, text deltas, tool calls, tool results) is streamed while
 it runs and kept for later.
 
-Covers **Agent**, **Agent LLMs**, **Tool access**, **Run**, **Run events**,
-**Loop**, **Execution & delivery**, **API**.
+Covers **Agent**, **Agent LLMs**, **Tool access**, **Session**, **Run**,
+**Messages**, **Live events**, **Loop**, **Execution & delivery**, **API**.
 
 Notation: methods are written as `Name(params) → Return`. `ctx` is always the
 first param and is omitted from prose.
@@ -130,20 +130,62 @@ Returns the tools sent to the LLM and a map from LLM tool name to tool ID.
 
 ---
 
-## Run
+## Session
 
-Table `agent_runs`. One execution of an agent for one input.
+Table `agent_sessions`. A conversation with one agent. Every run belongs to a
+session. A one-off task is just a session with a single run, so there is
+only one code path.
 
 - **id** — uuid
 - **agent_id** — FK `agents`, on delete cascade
-- **user_id** — nullable FK `users`; null = started with an API key
+- **user_id** — nullable FK `users`; set when a snipet user started it
+- **subject** — nullable string; set when an API key started it. Opaque id
+  from the caller's system saying on whose behalf the session runs (a user,
+  customer, tenant, device…), like the JWT `sub` claim
+- **title** — nullable; first input, cut to 80 chars
+- **created_at / updated_at**
+
+Index `(agent_id, subject)`.
+
+**Rules**
+
+- Exactly one of `user_id` / `subject` is set, fixed when the
+  session is created.
+- **History** — the session's rows in `agent_messages`, ordered by `id`.
+- **One run at a time** — starting a run while another run in the session is
+  `running` returns `409`. Two loops writing to the same history would
+  interleave.
+- **Failed / cancelled runs** stay in the history up to their last `message`.
+  An assistant message whose tool calls never got results is dropped when the
+  history is loaded, because providers reject unanswered tool calls.
+- *ponytail: the whole history is sent every run. Long sessions will hit the
+  context limit; compaction is in **Later**.*
+
+**Subject**
+
+- API keys have no owner (`internal/model/api-key.go`), so the key identifies
+  a trusted backend, not a person. That backend passes `subject` and
+  snipet only uses it to scope sessions. Snipet never verifies it.
+- The API key must stay server-side. A key shipped to a browser lets anyone
+  read any subject's sessions.
+
+---
+
+## Run
+
+Table `agent_runs`. One user message and the loop that answers it. It only
+holds the loop's state; the content lives in `agent_messages`.
+
+- **id** — uuid
+- **session_id** — FK `agent_sessions`, on delete cascade
 - **status** — see below
-- **input** — the task text
-- **output** — final assistant text
 - **error** — set when `failed`
 - **turns** — turns used
-- **input_tokens / output_tokens** — summed over turns
+- **input_tokens / output_tokens** — summed from the run's assistant messages
 - **started_at / finished_at / created_at**
+
+The run's input is its `user` message; its output is its last `assistant`
+message.
 
 **Status**
 
@@ -159,38 +201,72 @@ running → completed | failed | cancelled | max_turns
 
 ---
 
-## Run events
+## Messages
 
-Table `agent_run_events`. Everything that happened in a run, in order.
+Table `agent_messages`. The conversation of a session, one row per
+`llm.Message` (see **Message** in `plan/llms.md`). This is the source of
+truth for history, the chat UI and SSE replay.
 
-- **id** — bigserial; also the SSE event id
+- **id** — bigserial; gives the order and is the SSE event id
+- **session_id** — FK `agent_sessions`, on delete cascade
 - **run_id** — FK `agent_runs`, on delete cascade
-- **type**
-- **data** — jsonb
+- **role** — `user` | `assistant` | `tool`
+- **parts** — jsonb, the message's parts as in `llm.Message` (`text`,
+  `image`, `tool_call`, `tool_result`)
+- **model** — assistant only: the `"provider/model"` that answered
+- **input_tokens / output_tokens** — assistant only
+- **tool_id** — tool only: nullable FK `tools`, on delete set null
+- **duration_ms** — tool only: how long the call took
 - **created_at**
 
-Index `(run_id, id)`.
+Index `(session_id, id)`, index `tool_id`.
 
-| type               | data                                        | persisted |
-|--------------------|---------------------------------------------|-----------|
-| run_started        | agent_id, input                             | yes       |
-| turn_started       | turn                                        | yes       |
-| llm_started        | llm                                         | yes       |
-| llm_skipped        | llm, error                                  | yes       |
-| text_delta         | text                                        | **no**    |
-| message            | full `llm.Message` (assistant or tool)      | yes       |
-| tool_call_started  | call_id, name, tool_id, arguments           | yes       |
-| tool_call_finished | call_id, content, is_error, duration_ms     | yes       |
-| turn_finished      | turn, usage                                 | yes       |
-| run_finished       | status, output, error, turns, usage         | yes       |
+**Rules**
+
+- A `user` message is saved by the `POST` before the loop starts.
+- An `assistant` message is saved once the stream ends (`MessageEvent`). Its
+  `tool_call` parts are the tool calls the LLM asked for.
+- Each tool call gets its own `tool` message with one `tool_result` part.
+  `tool_id` and `duration_ms` sit in columns so "which tools were called,
+  how often, how slow" is a plain SQL query. The call's arguments are in the
+  matching `tool_call` part.
+- A `tool_call` with no matching `tool` message yet means the tool is still
+  running. On reconnect the client can show it as pending without any extra
+  state.
+- The system prompt is not stored. It comes from the agent on every run, so
+  editing the agent affects later runs of existing sessions.
+- `id` only has to increase within a session, not globally. Only one run is
+  active per session and a single goroutine writes its messages in sequence,
+  so ids commit in order there. Gaps from rolled-back inserts don't matter.
+- *ponytail: parts are jsonb, not a `parts` table. Add a table only if you
+  need to query inside parts beyond `tool_id`.*
+
+---
+
+## Live events
+
+Sent over SSE only, never stored. Everything that matters for history is
+already in `agent_messages` and `agent_runs`.
+
+| event             | data                                  | SSE id     |
+|-------------------|---------------------------------------|------------|
+| run_started       | run                                   | —          |
+| turn_started      | turn                                  | —          |
+| llm_started       | llm                                   | —          |
+| llm_skipped       | llm, error                            | —          |
+| text_delta        | text                                  | —          |
+| tool_call_started | call_id, name, tool_id                | —          |
+| message           | the saved `agent_messages` row        | message id |
+| run_finished      | run (status, error, turns, usage)     | —          |
 
 **Notes**
 
-- `text_delta` is live only. It would be one row per token; the complete text
-  arrives in the next `message` event anyway.
-- `message` events are the source of truth for the conversation: history,
-  replay and future follow-ups rebuild the message list from them.
-- Event types mirror the stream events in `internal/llm/stream.go`
+- Only `message` events carry an SSE `id:`. The others are sent with no `id:`
+  line, and per the SSE spec the client keeps the last id it saw. So
+  `Last-Event-ID` is always the latest message id, and it only goes up
+  within a session.
+- `llm_skipped` is not stored. Failover reasons also go to the log.
+- Event names mirror the stream events in `internal/llm/stream.go`
   (`LLMStartEvent`, `LLMSkippedEvent`, `TextDeltaEvent`, `MessageEvent`).
 
 ---
@@ -202,31 +278,30 @@ Index `(run_id, id)`.
 ```
 targets    = agent llms sorted by order → []llm.Target
 tools, idx = ResolveTools(agent)
-msgs       = [system(system_prompt), user(input)]
+msgs       = [system(system_prompt)] + session messages   // user message already saved
 
-emit run_started
+publish run_started
 for turn in 1..max_turns:
-  emit turn_started
+  publish turn_started
   it = runner.Stream(targets, msgs, tools)        // failover inside
   forward llm_started / llm_skipped / text_delta
-  assistant = MessageEvent.Message
-  append assistant to msgs; emit message
+  assistant = save(MessageEvent.Message, model, usage)
+  append assistant to msgs; publish message
 
   calls = tool_call parts of assistant
   if no calls:
-    status = completed; output = text of assistant
+    status = completed
     break
 
   for call in calls:                              // sequential
-    emit tool_call_started
+    publish tool_call_started
     res = executor.Execute(idx[call.name], call.arguments)
-    emit tool_call_finished
-    append tool message(ToolResultPart{call.id, res.content, res.is_error})
-    emit message
-  emit turn_finished
+    tool = save(tool message(ToolResultPart{call.id, res.content, res.is_error}),
+                tool_id, duration_ms)
+    append tool to msgs; publish message
 
 if no break: status = max_turns
-emit run_finished
+save run (status, turns, token totals); publish run_finished
 ```
 
 **Rules**
@@ -242,7 +317,7 @@ emit run_finished
 **Prerequisite**
 
 - `MessageEvent` has no usage today (only `Response` does). Add `Usage` to
-  `MessageEvent` so the loop can fill `turn_finished` and the run totals.
+  `MessageEvent` so the loop can fill the assistant message's token columns.
 
 ---
 
@@ -256,33 +331,36 @@ A run spends almost all of its time waiting on I/O (the LLM stream, MCP
 calls). A waiting goroutine costs a few KB, so thousands of parallel runs
 are fine. The real limits are outside the process, see **Limits** below.
 
-- **Start** — `POST /agent/{id}/run` creates the run as `running`, starts
-  `go loop.Run(runCtx, run)` and returns the run right away (`202`).
+- **Start** — `POST /agent-run` creates the run as `running`, starts
+  `go execute(runCtx, run)` and returns the run right away (`202`).
   - `runCtx` comes from the app's root context (`signal.NotifyContext` in
     `internal/bootstrap/bootstrap.go`), not from the request. The run keeps
     going after the POST returns or the client disconnects.
   - The run is registered in the in-memory hub:
     `runID → {cancel, subscribers}`.
-- **Emit** — each event is written to `agent_run_events` (except
-  `text_delta`), then published to that run's subscribers in the hub.
+- **Publish** — messages are saved to `agent_messages` first, then published
+  to that run's subscribers in the hub. Other live events are only
+  published.
   A slow subscriber never blocks the run: it has a buffered channel, and if
   the buffer is full the event is dropped for that subscriber only. That
   subscriber catches up from the DB on its next reconnect.
 - **Subscribe** — `GET /agent-run/{id}/events` (SSE, `api.NewSSEWriter`,
   `internal/api/sse.go`):
   1. Subscribe to the hub first, so no event is missed.
-  2. Send stored events with `id > Last-Event-ID`.
-  3. Stream live events, skipping ids already sent, and close after
-     `run_finished`.
+  2. Send the run's messages with `id > Last-Event-ID`.
+  3. Stream live events, skipping messages already sent, and close after
+     `run_finished`. A finished run gets `run_finished` built from the run
+     row.
 
   Any number of clients can watch the same run. Reconnects resume without
-  gaps. A finished run replays from the DB and closes.
+  gaps in messages; live-only events missed while disconnected are gone,
+  which is fine because nothing in them is needed to rebuild the state.
 - **Cancel** — `POST /agent-run/{id}/cancel` calls the hub's `cancel`.
   Cancelling a finished run is a no-op.
 - **Shutdown** — the root context is cancelled, so every run stops as
   `cancelled` (error `"server shutdown"`). Bootstrap waits on a
-  `sync.WaitGroup` of live runs, with a timeout, so the final events get
-  written.
+  `sync.WaitGroup` of live runs, with a timeout, so the final run state
+  gets written.
 - **Boot** — runs still `running` in the DB (crash, `kill -9`) are marked
   `failed` with error `"interrupted"`.
 
@@ -295,12 +373,12 @@ Goroutines are not the bottleneck. These are:
 - **stdio MCP servers** — every tool call starts a process
   (`internal/mcp/client.go` opens a session per call). Many parallel runs
   means many processes.
-- **DB connections** — one short insert per event, so the GORM pool is
+- **DB connections** — one short insert per message, so the GORM pool is
   shared fine.
 - **Memory** — each run keeps its message list in memory until it ends.
 
 If one of these starts to hurt, add an optional semaphore
-(`cfg.Agent.MaxConcurrent`, `0` = unlimited) around `go loop.Run`. Don't
+(`cfg.Agent.MaxConcurrent`, `0` = unlimited) around `go execute`. Don't
 add it before then.
 
 ---
@@ -318,16 +396,30 @@ add it before then.
 
 **Runners** — `api.Or(apiKeyGate, authGate)`, same as `/llm-connection/execute`.
 
-- `POST /agent/{id}/run` `{input}` → `202` + run, returns immediately. Disabled agent → 400.
-- `GET /agent-run?agent_id=` — list runs.
+- `POST /agent-run` `{agent_id, input, session_id?, subject?}` → `202` +
+  run, returns immediately. (Not under `/agent`, which is admin-only.)
+  - No `session_id` creates a new session.
+  - With a `session_id`, the session must belong to the caller and to this
+    agent.
+  - Disabled agent → `400`. A run already `running` in the session → `409`.
+- `GET /agent-session?agent_id=&subject=` — list sessions.
+- `GET /agent-session/{id}` — session.
+- `GET /agent-session/{id}/messages?before=` — rows of `agent_messages`,
+  newest first, paginated by id.
+- `DELETE /agent-session/{id}` — `409` while a run is running.
+- `GET /agent-run?session_id=` — runs of a session.
 - `GET /agent-run/{id}` — run.
 - `GET /agent-run/{id}/events` — SSE, honors `Last-Event-ID`.
 - `POST /agent-run/{id}/cancel`
 
-**Visibility**
+**Visibility** — decided on the session; a run inherits it from its session.
 
-- A user sees only runs with their `user_id`.
-- Admins and API keys see all runs.
+- A snipet user sees only sessions with their `user_id`. `subject`
+  is ignored for them.
+- An API key must send `subject` when it creates a session, and sees
+  the sessions matching the `subject` it sends. It can list them
+  all by leaving the filter empty.
+- Admins see everything.
 - Regular users run agents without direct tool access: the agent's grants are
   the permission boundary, set by an admin.
 
@@ -338,19 +430,21 @@ add it before then.
 Follows the existing layering (see `create-backend-module` / `create-web-feature`).
 
 - **Models** — `internal/model/agent.go`, `agent-run.go` (Agent, AgentLLM,
-  AgentMcpServer, AgentRun, AgentRunEvent).
+  AgentMcpServer, AgentSession, AgentRun, AgentMessage).
 - **Repositories** — `internal/repository/agent.go`, `agent-run.go`.
 - **Modules**
   - `internal/module/agent/` — dto, service (CRUD, `ResolveTools`), handler.
-  - `internal/module/agent-run/` — dto, service, handler, `loop.go`, `hub.go` (live runs: cancel, subscribers).
+  - `internal/module/agent-run/` — dto, service, handler (sessions and runs),
+    `loop.go`, `hub.go` (live runs: cancel, subscribers).
 - **Migrations** — `make db-generate add_agents`, then `make db-hash`.
 - **Wiring** — `internal/bootstrap/bootstrap.go`.
 - **Shared** — extract `resolveTargets` from the llm-connection service.
 - **Frontend** — `web/src/features/agent/`
   - Agent form: ordered LLM list, server grants with allow/deny patterns,
     tools preview.
-  - Run view: event timeline (turns, tool calls with args/result, streamed
-    text) via `httpSse` (`web/src/lib/http/sse.ts`).
+  - Chat view: session list, and a thread rendered from `agent_messages`
+    (text, tool calls paired with their results by `call_id`), live updates
+    via `httpSse` (`web/src/lib/http/sse.ts`).
 
 ---
 
@@ -363,6 +457,6 @@ Out of scope for the first version:
 - Parallel tool calls in one turn
 - Context compaction when the conversation grows
 - Human approval before a tool runs (`ask` permission)
-- Follow-up messages / multi-turn sessions (`parent_run_id`)
+- Messages sent while a run is running (inbox)
 - Subagents (an agent exposed as a tool of another)
 - Per-run cost
