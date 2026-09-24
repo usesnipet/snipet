@@ -22,7 +22,7 @@ const navItems: NavEntry[] = [
     label: "Workspace",
     items: [
       { title: "Home", href: ROUTES.home, icon: Home, exact: true },
-      { title: "Agents", href: ROUTES.agents, icon: MessageSquare, comingSoon: true },
+      { title: "Agents", href: ROUTES.agents, icon: MessageSquare, visible: isAdmin },
       {
         title: "LLMs",
         icon: Server,

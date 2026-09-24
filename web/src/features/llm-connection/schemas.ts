@@ -71,7 +71,7 @@ export const listLlmProviderSchema = z.array(llmProviderSchema);
 export type ListLlmProvider = z.infer<typeof listLlmProviderSchema>;
 
 // One feature a model supports (llm.Capability).
-export const llmModelCapabilitySchema = z.enum(["text", "vision", "tools", "streaming"]);
+export const llmModelCapabilitySchema = z.enum(["text", "vision", "tools", "streaming", "embedding"]);
 export type LlmModelCapability = z.infer<typeof llmModelCapabilitySchema>;
 
 // One entry of a provider's model catalog (llm.Model), as returned by

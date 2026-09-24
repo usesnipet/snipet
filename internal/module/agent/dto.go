@@ -75,6 +75,7 @@ func (dto *FindAgentsFilterDTO) ToFilter() *filter.Options[model.Agent] {
 		filter.PtrTake(dto.Take),
 		filter.PtrSkip(dto.Skip),
 		filter.OrderAsc("name"),
+		filter.Include("LLMs", "McpServers"),
 	}
 	if dto.Search != nil && strings.TrimSpace(*dto.Search) != "" {
 		opts = append(opts, filter.WhereILike("name", "%"+likeEscaper.Replace(strings.TrimSpace(*dto.Search))+"%"))
