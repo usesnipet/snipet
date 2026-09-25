@@ -46,6 +46,22 @@ react-router via `toReactRouterPath`. Structure:
 - **Layouts** wrap a group of pages with shared chrome (sidebar, etc.) and
   render `<AnimatedOutlet />` where the matched page goes. The skeleton has
   one, `Layout` (`routes/layout.tsx`), rendering `AdminSidebar` + outlet.
+- **Full-screen pages** that bring their own chrome (e.g. a chat with its
+  own session sidebar) are registered *outside* `<Layout>`, still inside the
+  guards, and render their own `SidebarProvider` + `SidebarInset`:
+  ```tsx
+  <Route element={<RequireAuth />}>
+    <Route element={<RequireRole role="admin" />}>
+      <Route path={`${toReactRouterPath(ROUTES.agentPlaygroundSession)}?`} element={<AgentPlaygroundPage />} />
+    </Route>
+    <Route element={<Layout />}>…</Route>
+  </Route>
+  ```
+- **Optional segments** (`:param?`, built by appending `?` to the
+  translated path): use one route instead of two when the page must keep its
+  state while the param appears, e.g. navigating from `/agents/playground`
+  to `/agents/playground/{sessionId}` after the first message. Two separate
+  `<Route>`s would remount the page and drop in-flight state.
 - **Route guards** (when you add auth) wrap the routes they protect: a
   guard is a component that renders `<Outlet />` when access is allowed or
   `<Navigate />` otherwise, and belongs to the feature that owns the auth

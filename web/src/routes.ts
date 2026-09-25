@@ -2,6 +2,8 @@ export const ROUTES = {
   login: "/login",
   home: "/",
   agents: "/agents",
+  agentPlayground: "/agents/playground",
+  agentPlaygroundSession: "/agents/playground/{sessionId}",
   llmConnections: "/llm/connections",
   llmPlayground: "/llm/playground",
   mcpServers: "/mcp-servers",

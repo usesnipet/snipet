@@ -40,7 +40,7 @@ func NewAgentRunRepository(db *gorm.DB) IAgentRunRepository {
 func (r *AgentRunRepository) HasRunning(ctx context.Context, sessionID string) (bool, error) {
 	count, err := gorm.G[model.AgentRun](r.db(ctx)).
 		Where("session_id = ? AND status = ?", sessionID, model.AgentRunRunning).
-		Count(ctx, "1")
+		Count(ctx, "*")
 	return count > 0, err
 }
 

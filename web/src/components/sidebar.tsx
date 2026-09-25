@@ -22,7 +22,15 @@ const navItems: NavEntry[] = [
     label: "Workspace",
     items: [
       { title: "Home", href: ROUTES.home, icon: Home, exact: true },
-      { title: "Agents", href: ROUTES.agents, icon: MessageSquare, visible: isAdmin },
+      {
+        title: "Agents",
+        icon: MessageSquare,
+        visible: isAdmin,
+        items: [
+          { title: "Browse", href: ROUTES.agents, exact: true },
+          { title: "Playground", href: ROUTES.agentPlayground },
+        ],
+      },
       {
         title: "LLMs",
         icon: Server,
