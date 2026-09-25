@@ -1,3 +1,4 @@
+import { DeleteDialog } from "@/components/confirm-dialog";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,9 @@ import { DateFormat } from "@/components/ui/date";
 import { useDialog } from "@/lib/dialog";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 
-import { useListAgents } from "../hooks";
+import { useDeleteAgent, useListAgents } from "../hooks";
 
 import { AgentFormDialog } from "./agent-form-dialog";
-import { DeleteAgentDialog } from "./delete-agent-dialog";
 
 import type { Agent } from "../schemas";
 import type { DataTableColumn, DataTablePagination } from "@/components/data-table";
@@ -19,6 +19,21 @@ function useAgentsListQuery(pagination: DataTablePagination) {
 
 function RowActions({ agent }: { agent: Agent }) {
   const { openDialog } = useDialog();
+  const { mutateAsync: deleteAgent } = useDeleteAgent();
+
+  const openDelete = () => openDialog({
+    component: DeleteDialog,
+    props: {
+      title: "Delete agent?",
+      description: (
+        <>
+          <span className="font-medium text-foreground">{agent.name}</span> and all of its sessions will be
+          deleted. This action cannot be undone.
+        </>
+      ),
+      onConfirm: () => deleteAgent(agent.id),
+    },
+  });
 
   return (
     <div className="flex items-center justify-end gap-1">
@@ -36,7 +51,7 @@ function RowActions({ agent }: { agent: Agent }) {
         variant="ghost"
         size="icon-sm"
         aria-label="Delete agent"
-        onClick={() => openDialog({ component: DeleteAgentDialog, props: { agent } })}
+        onClick={openDelete}
       >
         <Trash2Icon />
       </Button>

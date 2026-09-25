@@ -1,3 +1,4 @@
+import { DeleteDialog } from "@/components/confirm-dialog";
 import { Link } from "@/components/ui/link";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -13,10 +14,8 @@ import { ArrowLeft, MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
 import moment from "moment";
 import { useNavigate } from "react-router";
 
-import { useListSessions } from "../hooks";
+import { useDeleteSession, useListSessions } from "../hooks";
 import { sessionPath } from "../lib/session-path";
-
-import { DeleteSessionDialog } from "./delete-session-dialog";
 
 import type { AgentSession } from "../schemas";
 
@@ -51,13 +50,22 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
   const { data, isLoading, isError } = useListSessions();
   const { openDialog } = useDialog();
   const navigate = useNavigate();
+  const { mutateAsync: deleteSession } = useDeleteSession();
 
   const openDelete = (session: AgentSession) => {
     openDialog({
-      component: DeleteSessionDialog,
+      component: DeleteDialog,
       props: {
-        session,
-        onDeleted: () => {
+        title: "Delete chat?",
+        description: (
+          <>
+            This will permanently delete{" "}
+            <span className="font-medium text-foreground">{session.title || "this chat"}</span>{" "}
+            and all its messages. This action cannot be undone.
+          </>
+        ),
+        onConfirm: async () => {
+          await deleteSession(session.id);
           if (session.id === activeSessionId) navigate(ROUTES.agentPlayground);
         },
       },

@@ -10,15 +10,31 @@ to `src/components/` instead (see [../components.md](../components.md)).
 Looking at existing features (`foo`, `api-key`, `chat`), the recurring
 shapes are:
 
-- **CRUD dialogs**, one file per action:
-  `create-<feature>-dialog.tsx`, `update-<feature>-dialog.tsx`,
-  `delete-<feature>-dialog.tsx`. Each is a `DialogInstanceProps`-shaped
-  component (see [../lib.md](../lib.md#dialog)) that calls the matching
-  `hooks.ts` mutation and closes itself via the injected `close()` prop on
-  success.
+- **Form dialogs**, one file per action:
+  `create-<feature>-dialog.tsx`, `update-<feature>-dialog.tsx`. Each is a
+  `DialogInstanceProps`-shaped component (see [../lib.md](../lib.md#dialog))
+  that calls the matching `hooks.ts` mutation and closes itself via the
+  injected `close()` prop on success.
+- **No per-feature delete/confirm dialogs.** Actions that only need a
+  yes/no (delete, roll a key, ...) open the generic `DeleteDialog`,
+  `ConfirmDialog` or `ConfirmPromptDialog` from `@/components/confirm-dialog`
+  (see [../components.md](../components.md#top-level-files)). The opener
+  calls the mutation hook and passes it as `onConfirm`:
+
+  ```tsx
+  const { mutateAsync: deleteUser } = useDeleteUser();
+
+  const openDelete = () => openDialog({
+    component: DeleteDialog,
+    props: {
+      title: "Delete user?",
+      description: <>This will permanently delete <span className="font-medium text-foreground">{user.name}</span>.</>,
+      onConfirm: () => deleteUser(user.id),
+    },
+  });
+  ```
 - **A table/list**, `<feature>-table.tsx`, driving `useList<Feature>` from
-  `hooks.ts` and rendering rows with per-row actions that open the CRUD
-  dialogs above.
+  `hooks.ts` and rendering rows with per-row actions that open the dialogs above.
 - **Form fields**, `<feature>-form-fields.tsx`, shared between the create
   and update dialogs when they use the same react-hook-form fields (see
   `components/form` in [../components.md](../components.md)).

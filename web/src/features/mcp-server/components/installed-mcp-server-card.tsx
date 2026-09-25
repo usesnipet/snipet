@@ -1,3 +1,4 @@
+import { DeleteDialog } from "@/components/confirm-dialog";
 import { Icon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,9 @@ import { cn } from "@/lib/utils";
 import { EllipsisVertical, Pencil, Trash, Wrench } from "lucide-react";
 import moment from "moment";
 
+import { useDeleteMcpServer } from "../hooks";
 import { describeConfig, syncState } from "../lib/config";
 
-import { DeleteMcpServerDialog } from "./delete-mcp-server-dialog";
 import { McpServerFormDialog } from "./mcp-server-form-dialog";
 import { McpServerToolsDialog } from "./mcp-server-tools-dialog";
 
@@ -28,9 +29,24 @@ type Props = {
 
 export function InstalledMcpServerCard({ server, tools, registryItem }: Props) {
   const { openDialog } = useDialog();
+  const { mutateAsync: deleteServer } = useDeleteMcpServer();
   const sync = syncState(server);
 
   const openTools = () => openDialog({ component: McpServerToolsDialog, props: { server, tools } });
+  const openDelete = () => openDialog({
+    component: DeleteDialog,
+    props: {
+      title: "Remove MCP server?",
+      description: (
+        <>
+          <span className="font-medium text-foreground">{server.name}</span> and the tools it
+          provides will no longer be available to your agents. This action cannot be undone.
+        </>
+      ),
+      confirmLabel: "Remove",
+      onConfirm: () => deleteServer(server.id),
+    },
+  });
 
   return (
     <Card className="flex h-full flex-col gap-3 p-4">
@@ -66,7 +82,7 @@ export function InstalledMcpServerCard({ server, tools, registryItem }: Props) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onSelect={() => openDialog({ component: DeleteMcpServerDialog, props: { server } })}
+              onSelect={openDelete}
             >
               <Trash /> Remove
             </DropdownMenuItem>
