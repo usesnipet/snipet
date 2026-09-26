@@ -25,25 +25,44 @@ must not depend on Atlas being available in production.
 
 ## Workflow for a schema change
 
+Declarative in development, versioned at release: no migration file is
+created while a version is being built — the local DB is synced straight
+from the models, and one migration per version is generated when it ships.
+
+### During development
+
 1. Change the model in `internal/model/<entity>.go` (add a field, a table,
    an index, ...).
-2. `make db-generate <name>` — runs `atlas migrate diff <name> --env local`,
-   which loads the new GORM schema, diffs it against `migrations/`, and
-   writes `<timestamp>_<name>.up.sql` + `.down.sql`.
-3. Review the generated SQL — Atlas is usually right, but a rename Atlas
-   sees as "drop + add" (data loss) needs to be corrected by hand into an
-   actual `ALTER ... RENAME`. Atlas is also schema-only, not data-aware: a
-   new `not null` column on a table that already has rows generates a bare
-   `ADD COLUMN ... NOT NULL` with no `DEFAULT` and no backfill — that fails
-   against a populated table. Add the default/backfill by hand (an `UPDATE`
-   between the `ADD COLUMN` and a follow-up `ALTER COLUMN ... SET NOT NULL`,
-   or a `DEFAULT` if one value fits every existing row) whenever the target
-   table isn't empty.
-4. `make db-hash` — updates `migrations/atlas.sum`, the checksum file Atlas
-   uses to detect manual edits to already-applied migrations.
-5. Migrations apply automatically the next time the app boots with
-   `DB_AUTO_MIGRATE` enabled (see [bootstrap.md](./bootstrap.md) /
-   `config/database.go`).
+2. `make db-sync` — runs `atlas schema apply --env local`, which diffs the
+   GORM schema against the DB at `DB_URL` and applies the delta after
+   showing the plan. Data is kept. Decline the plan if it drops something
+   you meant to rename (Atlas sees a rename as "drop + add").
+   `schema_migrations` (golang-migrate's table) is excluded in `atlas.hcl`.
+
+### Releasing a version
+
+1. `make db-release <version> <name>` (e.g. `make db-release 0.0.3 agents`):
+   runs `db-sync`, then `atlas migrate diff v<version>_<name>` to write the
+   version's single `<timestamp>_v0_0_3_agents.{up,down}.sql` (and update
+   `atlas.sum`), then `migrate force <timestamp>` to mark it applied on the
+   local DB, whose schema already matches it.
+2. Review the generated SQL. Atlas is schema-only, not data-aware: a
+   rename comes out as "drop + add" (data loss) and needs to be rewritten
+   into an `ALTER ... RENAME`; a new `not null` column on a table that
+   already has rows generates a bare `ADD COLUMN ... NOT NULL` with no
+   `DEFAULT` and no backfill, which fails against a populated table. Add the
+   default/backfill by hand (an `UPDATE` between the `ADD COLUMN` and a
+   follow-up `ALTER COLUMN ... SET NOT NULL`, or a `DEFAULT` if one value
+   fits every existing row), then `make db-hash`.
+3. Commit and tag. Anyone else whose DB was kept in step with `db-sync`
+   runs `migrate -path migrations -database "$DB_URL" force <timestamp>`
+   after pulling the release.
+
+Migrations apply automatically the next time the app boots with
+`DB_AUTO_MIGRATE` enabled (see [bootstrap.md](./bootstrap.md) /
+`config/database.go`) — in production that is the only way schema changes.
+`make db-generate <name>` is still there for an out-of-band migration
+(e.g. a hotfix on a released version).
 
 ## File naming and shape
 
@@ -71,7 +90,7 @@ migrations/
   -- down
   DROP TABLE "llms";
   ```
-- Migrations are never edited after being committed/applied — a later
+- Migrations are never edited once they are in a release tag — a later
   change is a new migration, even to fix a mistake in an earlier one.
 
 ## Keeping models and migrations in sync

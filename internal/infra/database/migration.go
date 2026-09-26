@@ -135,6 +135,14 @@ func runMigrations(cfg *config.Config, logger *logger.Logger) error {
 	}
 	dir := filepath.Join(root, cfg.Database.MigrationDir)
 	logger.Infof("running migrations from %s", dir)
+	if _, err := os.Stat(dir); err != nil {
+		if os.IsNotExist(err) {
+			logger.Warnf("migration directory does not exist, skipping migrations")
+			return nil
+		}
+		return fmt.Errorf("stat migration directory: %w", err)
+	}
+
 	m, err := migrate.New(fmt.Sprintf("file://%s", filepath.ToSlash(dir)), dsn)
 	if err != nil {
 		logger.Errorf("create migrate instance: %v", err)

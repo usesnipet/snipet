@@ -158,12 +158,10 @@ func (s *Service) Start(ctx context.Context, dto StartRunDTO) (*model.AgentRun, 
 
 	runCtx, cancel := context.WithCancel(s.rootCtx)
 	s.hub.register(run.ID, cancel)
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
+	s.wg.Go(func() {
 		defer cancel()
 		s.execute(runCtx, run, agent, targets, tools, index)
-	}()
+	})
 	return run, nil
 }
 
