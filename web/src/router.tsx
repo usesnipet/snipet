@@ -13,6 +13,10 @@ const LoginPage = lazy(() =>
   import("./routes/login/page").then((m) => ({ default: m.LoginPage })));
 const HomePage = lazy(() =>
   import("./routes/page").then((m) => ({ default: m.HomePage })));
+const AgentsPage = lazy(() =>
+  import("./routes/agents/page").then((m) => ({ default: m.AgentsPage })));
+const AgentPlaygroundPage = lazy(() =>
+  import("./routes/agent-playground/page").then((m) => ({ default: m.AgentPlaygroundPage })));
 const LlmConnectionsPage = lazy(() =>
   import("./routes/llm-connections/page").then((m) => ({ default: m.LlmConnectionsPage })));
 const LlmPlaygroundPage = lazy(() =>
@@ -41,18 +45,22 @@ export const Router = () => {
         <Routes>
           <Route path={toReactRouterPath(ROUTES.login)} element={<LoginPage />} />
           <Route element={<RequireAuth />}>
+            <Route element={<RequireRole role="admin" />}>
+              {/* One optional-param route, so starting a chat doesn't remount the page. */}
+              <Route path={`${toReactRouterPath(ROUTES.agentPlaygroundSession)}?`} element={<AgentPlaygroundPage />} />
+            </Route>
             <Route element={<Layout />}>
               <Route path={toReactRouterPath(ROUTES.home)} element={<HomePage />} />
-              <Route path={toReactRouterPath(ROUTES.agents)} element={<PlaceholderPage title="Agents" />} />
               <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
               <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
-              <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
-              <Route path={toReactRouterPath(ROUTES.tools)} element={<ToolsPage />} />
-              <Route path={toReactRouterPath(ROUTES.toolPlayground)} element={<ToolPlaygroundPage />} />
               <Route path={toReactRouterPath(ROUTES.knowledge)} element={<PlaceholderPage title="Knowledge" />} />
               <Route path={toReactRouterPath(ROUTES.connections)} element={<PlaceholderPage title="Connections" />} />
               <Route path={toReactRouterPath(ROUTES.settings)} element={<PlaceholderPage title="Settings" />} />
               <Route element={<RequireRole role="admin" />}>
+                <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
+                <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
+                <Route path={toReactRouterPath(ROUTES.tools)} element={<ToolsPage />} />
+                <Route path={toReactRouterPath(ROUTES.toolPlayground)} element={<ToolPlaygroundPage />} />
                 <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
                 <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
               </Route>

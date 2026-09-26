@@ -19,7 +19,7 @@ type McpServer struct {
 
 	Config jsonx.JSONMap `gorm:"type:jsonb;not null" json:"config"`
 
-	LastSyncedAt time.Time `gorm:"type:timestamptz" json:"last_synced_at"`
+	LastSyncedAt *time.Time `gorm:"type:timestamptz" json:"last_synced_at"`
 
 	LastSyncedError string `gorm:"type:varchar(255)" json:"last_synced_error"`
 

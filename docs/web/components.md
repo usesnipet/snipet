@@ -66,6 +66,15 @@ shape as `admin.tsx`.
   `ErrorBoundary` around the body). `PageActions`/`PageLeftActions` let a
   child component (e.g. `CatalogPageContent`) inject header actions from
   deeper in the tree without prop-drilling.
+- **`confirm-dialog.tsx`** — generic yes/no dialogs opened through
+  `openDialog` (see [lib.md](./lib.md#dialog)): `ConfirmDialog`,
+  `DeleteDialog` (destructive, "Delete" label by default) and
+  `ConfirmPromptDialog` (the confirm button stays disabled until the user
+  types `confirmationText`, for irreversible actions). All take `title`,
+  `description`, optional labels, and an `onConfirm` callback; the dialog
+  shows a spinner while it runs, closes when it resolves, and stays open if
+  it throws. Use these instead of writing a feature-specific confirmation
+  dialog.
 - **`animated-outlet.tsx`**, **`loading-fallback.tsx`**,
   **`error-fallback.tsx`** — layout-level plumbing used by every
   `routes/*/layout.tsx` and the top-level `Suspense` in `router.tsx`.

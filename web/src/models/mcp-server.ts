@@ -33,7 +33,7 @@ export const mcpServerSchema = z
     name: z.string(),
     transport: mcpTransportSchema,
     config: mcpServerConfigSchema,
-    last_synced_at: z.coerce.date().optional(),
+    last_synced_at: z.coerce.date().nullish(),
     last_synced_error: z.string().optional(),
     created_at: z.coerce.date(),
     updated_at: z.coerce.date(),

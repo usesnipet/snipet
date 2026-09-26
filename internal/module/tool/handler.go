@@ -5,24 +5,27 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/usesnipet/snipet/internal/api"
+	"github.com/usesnipet/snipet/internal/model"
 )
 
 type Handler struct {
-	service    *Service
-	authGate   api.Gate
-	apiKeyGate api.Gate
+	service     *Service
+	authGate    api.Gate
+	requireRole api.RoleGate
 }
 
-func NewHandler(service *Service, authGate api.Gate, apiKeyGate api.Gate) api.Handler {
-	return &Handler{service: service, authGate: authGate, apiKeyGate: apiKeyGate}
+// NewHandler builds the /tool HTTP layer, admin-only: executing a tool acts
+// on the host through its MCP server, and tools embed that server's config.
+func NewHandler(service *Service, authGate api.Gate, requireRole api.RoleGate) api.Handler {
+	return &Handler{service: service, authGate: authGate, requireRole: requireRole}
 }
 
 func (h *Handler) RegisterRoutes(r chi.Router, serve api.ServeFunc) {
 	r.Route("/tool", func(r chi.Router) {
-		r.Use(api.Or(h.apiKeyGate, h.authGate).Handler())
+		r.Use(h.authGate.Handler())
+		r.Use(h.requireRole(model.RoleAdmin).Handler())
 		r.Get("/", serve(h.filter))
 		r.Get("/{id}", serve(h.findByID))
-		r.Delete("/{id}", serve(h.deleteByID))
 		r.Post("/{id}/execute", serve(h.execute))
 	})
 }
@@ -56,18 +59,6 @@ func (h *Handler) findByID(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return api.WriteJSON(w, http.StatusOK, found)
-}
-
-// @Summary		Delete a Tool
-// @Tags			tool
-// @Param			id	path	string	true	"Tool ID"
-// @Success		204
-// @Router			/tool/{id} [delete]
-func (h *Handler) deleteByID(w http.ResponseWriter, r *http.Request) error {
-	if err := h.service.DeleteByID(r.Context(), chi.URLParam(r, "id")); err != nil {
-		return err
-	}
-	return api.WriteNoContent(w)
 }
 
 // @Summary		Execute a Tool

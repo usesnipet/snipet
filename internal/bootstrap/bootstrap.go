@@ -19,8 +19,11 @@ import (
 	"github.com/usesnipet/snipet/internal/infra/database"
 	"github.com/usesnipet/snipet/internal/llm"
 	"github.com/usesnipet/snipet/internal/llm/providers/ollama"
+	"github.com/usesnipet/snipet/internal/llm/providers/openai"
 	"github.com/usesnipet/snipet/internal/logger"
 	"github.com/usesnipet/snipet/internal/mcp"
+	agentmodule "github.com/usesnipet/snipet/internal/module/agent"
+	agentrun "github.com/usesnipet/snipet/internal/module/agent-run"
 	apikey "github.com/usesnipet/snipet/internal/module/api-key"
 	authmodule "github.com/usesnipet/snipet/internal/module/auth"
 	llmconnection "github.com/usesnipet/snipet/internal/module/llm-connection"
@@ -62,16 +65,21 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	// repositories
 	//   txManager := repository.NewTxManager(db)
 	//   fooRepo := repository.NewFooRepository(db)
-	_ = repository.NewTxManager(db)
+	txManager := repository.NewTxManager(db)
 	llmConnectionRepo := repository.NewLlmConnectionRepository(db)
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	apiKeyRepo := repository.NewApiKeyRepository(db)
 	mcpServerRepo := repository.NewMcpServerRepository(db)
 	toolRepo := repository.NewToolRepository(db)
+	agentRepo := repository.NewAgentRepository(db)
+	agentSessionRepo := repository.NewAgentSessionRepository(db)
+	agentRunRepo := repository.NewAgentRunRepository(db)
+	agentMessageRepo := repository.NewAgentMessageRepository(db)
 
 	llmRegistry := llm.NewRegistry(cache.NewMemoryCache(2000, 0), 0)
 	llmRegistry.MustRegister(ollama.New())
+	llmRegistry.MustRegister(openai.New())
 	llmRunner := llm.NewRunner(llmRegistry)
 
 	// mcp
@@ -112,7 +120,21 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	)
 	authService := authmodule.NewService(userRepo, userJWTService, cfg.Auth, refreshTokenRepo, tokenService)
 	mcpServerService := mcpservermodule.NewService(mcpServerRepo, mcpRegistry, mcpSyncWorker)
-	toolService := toolmodule.NewService(toolRepo, toolmodule.NewExecutor(toolRepo, mcpServerRepo, mcpConnector))
+	toolExecutor := toolmodule.NewExecutor(toolRepo, mcpServerRepo, mcpConnector)
+	toolService := toolmodule.NewService(toolRepo, toolExecutor)
+	agentService := agentmodule.NewService(txManager, agentRepo, mcpServerRepo, toolRepo, llmConnectionService)
+	agentRunService := agentrun.NewService(
+		ctx,
+		txManager,
+		agentService,
+		agentSessionRepo,
+		agentRunRepo,
+		agentMessageRepo,
+		llmRunner,
+		toolExecutor,
+		log.Child(logger.WithPrefix("agent-run: ")),
+	)
+	agentRunService.FailInterrupted(ctx)
 
 	// guards
 	requireUserAuth := guard.RequireUserJWT(userJWTService)
@@ -125,8 +147,10 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	userHandler := usermodule.NewHandler(userService, requireUserAuth, requireRole)
 	authHandler := authmodule.NewHandler(authService, requireUserAuth)
 	apiKeyHandler := apikey.NewHandler(apiKeyService, requireRole, requireUserAuth, requireApiKey)
-	mcpServerHandler := mcpservermodule.NewHandler(mcpServerService, requireUserAuth, requireApiKey)
-	toolHandler := toolmodule.NewHandler(toolService, requireUserAuth, requireApiKey)
+	mcpServerHandler := mcpservermodule.NewHandler(mcpServerService, requireUserAuth, requireRole)
+	toolHandler := toolmodule.NewHandler(toolService, requireUserAuth, requireRole)
+	agentHandler := agentmodule.NewHandler(agentService, requireUserAuth, requireRole)
+	agentRunHandler := agentrun.NewHandler(agentRunService, requireUserAuth, requireApiKey)
 
 	// register routes
 	api := api.New(log.Child(logger.WithPrefix("api: ")))
@@ -139,6 +163,8 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 		apiKeyHandler.RegisterRoutes(r, api.Serve)
 		mcpServerHandler.RegisterRoutes(r, api.Serve)
 		toolHandler.RegisterRoutes(r, api.Serve)
+		agentHandler.RegisterRoutes(r, api.Serve)
+		agentRunHandler.RegisterRoutes(r, api.Serve)
 	})
 
 	srv := &http.Server{
@@ -161,6 +187,7 @@ func Bootstrap(cfg *config.Config, log *logger.Logger) error {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Errorf("failed to shutdown server: %v", err)
 	}
+	agentRunService.Wait(10 * time.Second)
 
 	return nil
 }

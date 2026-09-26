@@ -143,10 +143,7 @@ export type SyncState =
   | { kind: "synced"; at: Date };
 
 export function syncState(server: McpServer): SyncState {
-  // The API sends Go's zero time until the first sync has run.
-  const at = server.last_synced_at && server.last_synced_at.getUTCFullYear() > 1
-    ? server.last_synced_at
-    : undefined;
+  const at = server.last_synced_at ?? undefined;
   if (server.last_synced_error) return { kind: "error", message: server.last_synced_error, at };
   return at ? { kind: "synced", at } : { kind: "pending" };
 }

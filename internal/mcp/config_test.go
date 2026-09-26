@@ -61,6 +61,26 @@ func TestValidateRegistryConfigHeadersSchema(t *testing.T) {
 	})))
 }
 
+func TestValidateRegistryConfigArgsSchema(t *testing.T) {
+	t.Parallel()
+
+	base := func(args any) jsonx.JSONMap {
+		return jsonx.JSONMap{"command": "npx", "args": []any{"-y", "pkg"}, "args_schema": args}
+	}
+
+	require.NoError(t, validateRegistryConfig(TransportStdIO, base(map[string]any{
+		"type":     "array",
+		"items":    map[string]any{"type": "string"},
+		"minItems": 1,
+	})))
+
+	assert.Error(t, validateRegistryConfig(TransportStdIO, base(map[string]any{"type": "object"})))
+	assert.Error(t, validateRegistryConfig(TransportStdIO, base(map[string]any{
+		"type":  "array",
+		"items": map[string]any{"type": "integer"},
+	})))
+}
+
 func TestBuiltInRegistryIsValid(t *testing.T) {
 	t.Parallel()
 

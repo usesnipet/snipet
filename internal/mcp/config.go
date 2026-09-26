@@ -38,6 +38,17 @@ type HTTPRegistryConfig struct {
 	Timeout int `json:"timeout,omitempty" validate:"omitempty,min=1"`
 }
 
+// StdioRegistryConfig is the default StdioConfig a registry item ships with.
+// ArgsSchema is a JSON Schema (an array of strings) describing the arguments
+// the user fills in when installing the server; they are appended to Args.
+type StdioRegistryConfig struct {
+	Command    string        `json:"command" validate:"required"`
+	Args       []string      `json:"args,omitempty"`
+	ArgsSchema jsonx.JSONMap `json:"args_schema,omitempty"`
+	// Timeout is in seconds.
+	Timeout int `json:"timeout,omitempty" validate:"omitempty,min=1"`
+}
+
 // ParseHTTPConfig decodes and validates the config of an http server.
 func ParseHTTPConfig(config jsonx.JSONMap) (HTTPConfig, error) {
 	return decodeConfig[HTTPConfig](config)
@@ -63,19 +74,39 @@ func ValidateConfig(transport Transport, config jsonx.JSONMap) error {
 }
 
 // validateRegistryConfig is ValidateConfig for a registry item's default
-// config, which for http may carry a HeadersSchema.
+// config, which may carry a HeadersSchema (http) or an ArgsSchema (stdio).
 func validateRegistryConfig(transport Transport, config jsonx.JSONMap) error {
-	if transport != TransportHTTP {
-		return ValidateConfig(transport, config)
+	switch transport {
+	case TransportHTTP:
+		cfg, err := decodeConfig[HTTPRegistryConfig](config)
+		if err != nil || cfg.HeadersSchema == nil {
+			return err
+		}
+		return validateHeadersSchema(cfg.HeadersSchema)
+	case TransportStdIO:
+		cfg, err := decodeConfig[StdioRegistryConfig](config)
+		if err != nil || cfg.ArgsSchema == nil {
+			return err
+		}
+		return validateArgsSchema(cfg.ArgsSchema)
 	}
-	cfg, err := decodeConfig[HTTPRegistryConfig](config)
-	if err != nil {
-		return err
+	return fmt.Errorf("unknown transport %q", transport)
+}
+
+// validateArgsSchema requires a compilable JSON Schema of an array of
+// strings, since each item becomes one argument.
+func validateArgsSchema(schema jsonx.JSONMap) error {
+	if err := jsonschema.Check(schema); err != nil {
+		return fmt.Errorf("args_schema: %w", err)
 	}
-	if cfg.HeadersSchema == nil {
-		return nil
+	if schema["type"] != "array" {
+		return fmt.Errorf(`args_schema: type must be "array"`)
 	}
-	return validateHeadersSchema(cfg.HeadersSchema)
+	items, _ := schema["items"].(map[string]any)
+	if items["type"] != "string" {
+		return fmt.Errorf(`args_schema: items must be of type "string"`)
+	}
+	return nil
 }
 
 // validateHeadersSchema requires a compilable JSON Schema of an object whose

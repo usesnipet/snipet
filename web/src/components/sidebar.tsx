@@ -14,12 +14,23 @@ import { BookText, Blocks, Home, Key, LogOut, MessageSquare, Server, Settings, U
 import { Version } from "./version";
 
 import type { NavEntry } from "@/components/sidebar/types";
+
+const isAdmin = () => useAuthStore.getState().user?.role === "admin";
+
 const navItems: NavEntry[] = [
   {
     label: "Workspace",
     items: [
       { title: "Home", href: ROUTES.home, icon: Home, exact: true },
-      { title: "Agents", href: ROUTES.agents, icon: MessageSquare, comingSoon: true },
+      {
+        title: "Agents",
+        icon: MessageSquare,
+        visible: isAdmin,
+        items: [
+          { title: "Browse", href: ROUTES.agents, exact: true },
+          { title: "Playground", href: ROUTES.agentPlayground },
+        ],
+      },
       {
         title: "LLMs",
         icon: Server,
@@ -28,10 +39,11 @@ const navItems: NavEntry[] = [
           { title: "Playground", href: ROUTES.llmPlayground },
         ],
       },
-      { title: "MCP Servers", href: ROUTES.mcpServers, icon: Blocks },
+      { title: "MCP Servers", href: ROUTES.mcpServers, icon: Blocks, visible: isAdmin },
       {
         title: "Tools",
         icon: Wrench,
+        visible: isAdmin,
         items: [
           { title: "Browse", href: ROUTES.tools, exact: true },
           { title: "Playground", href: ROUTES.toolPlayground },
@@ -49,13 +61,13 @@ const navItems: NavEntry[] = [
         title: "Users",
         href: ROUTES.users,
         icon: Users,
-        visible: () => useAuthStore.getState().user?.role === "admin",
+        visible: isAdmin,
       },
       {
         title: "Api Key",
         href: ROUTES.apiKey,
         icon: Key,
-        visible: () => useAuthStore.getState().user?.role === "admin",
+        visible: isAdmin,
       },
     ],
   },

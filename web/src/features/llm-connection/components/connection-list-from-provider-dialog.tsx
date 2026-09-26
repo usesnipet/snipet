@@ -1,3 +1,4 @@
+import { DeleteDialog } from "@/components/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,10 +10,9 @@ import { cn } from "@/lib/utils";
 import { Pencil, Trash } from "lucide-react";
 import { useMemo } from "react";
 
-import { useListLlmConnections } from "../hooks";
+import { useDeleteLlmConnection, useListLlmConnections } from "../hooks";
 
 import { CreateLlmConnectionDialog } from "./create-llm-connection-dialog";
-import { DeleteLlmConnectionDialog } from "./delete-llm-connection-dialog";
 
 import type { LlmConnection } from "../schemas";
 
@@ -26,6 +26,7 @@ export function LlmConnectionListFromProviderDialog(
 ) {
   const { data: connections, isLoading, error } = useListLlmConnections();
   const { openDialog } = useDialog();
+  const { mutateAsync: deleteConnection } = useDeleteLlmConnection();
 
   const connectionsFromProvider = useMemo<LlmConnection[]>(() => {
     if (isLoading || error) return [];
@@ -78,8 +79,18 @@ export function LlmConnectionListFromProviderDialog(
                   variant="destructive"
                   size="icon-sm"
                   onClick={() => openDialog({
-                    component: DeleteLlmConnectionDialog,
-                    props: { llm: connection }
+                    component: DeleteDialog,
+                    props: {
+                      title: "Delete LLM connection?",
+                      description: (
+                        <>
+                          This will permanently delete{" "}
+                          <span className="font-medium text-foreground">{connection.name}</span>.
+                          This action cannot be undone.
+                        </>
+                      ),
+                      onConfirm: () => deleteConnection(connection.id),
+                    },
                   })}
                 >
                   <Trash />

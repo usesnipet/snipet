@@ -137,7 +137,7 @@ func (s *Service) ListProviderModels(ctx context.Context, providerKey string, co
 // Generate runs dto's targets to completion and returns the first successful
 // response (see llm.Runner.Generate for failover semantics).
 func (s *Service) Generate(ctx context.Context, dto ExecuteLlmDTO) (llm.Response, error) {
-	targets, err := s.resolveTargets(ctx, dto.Targets)
+	targets, err := s.ResolveTargets(ctx, dto.Targets)
 	if err != nil {
 		return llm.Response{}, err
 	}
@@ -149,7 +149,7 @@ func (s *Service) Generate(ctx context.Context, dto ExecuteLlmDTO) (llm.Response
 // starts streaming successfully (see llm.Runner.Stream for failover
 // semantics). The caller must Close the returned iterator.
 func (s *Service) Stream(ctx context.Context, dto ExecuteLlmDTO) (llm.StreamIterator, error) {
-	targets, err := s.resolveTargets(ctx, dto.Targets)
+	targets, err := s.ResolveTargets(ctx, dto.Targets)
 	if err != nil {
 		return nil, err
 	}
@@ -157,12 +157,12 @@ func (s *Service) Stream(ctx context.Context, dto ExecuteLlmDTO) (llm.StreamIter
 	return it, translateLlmError(err)
 }
 
-// resolveTargets turns each ExecuteLlmTargetDTO into a llm.Target, filling in
+// ResolveTargets turns each ExecuteLlmTargetDTO into a llm.Target, filling in
 // ConnectionOptions from a stored LlmConnection when the caller didn't supply
 // them inline. A provider left without a matching connection is passed
 // through with no connection options — Registry.Connect rejects it downstream
 // if the provider actually requires one.
-func (s *Service) resolveTargets(ctx context.Context, dtos []ExecuteLlmTargetDTO) ([]llm.Target, error) {
+func (s *Service) ResolveTargets(ctx context.Context, dtos []ExecuteLlmTargetDTO) ([]llm.Target, error) {
 	targets := make([]llm.Target, 0, len(dtos))
 	for _, t := range dtos {
 		providerKey, _, ok := llm.SplitModelRef(t.Model)

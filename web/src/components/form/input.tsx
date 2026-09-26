@@ -47,7 +47,7 @@ export const FormInput = ({ split, ...props }: Props = { split: false } as Props
                   const arr = val
                     .split(splitOptions.separator)
                     .map((v) => v.trim())
-                    .map((v) => splitOptions.type === "number" ? Number(v) : v);
+                    .map((v) => splitOptions!.type === "number" ? Number(v) : v);
 
                   field.onChange(arr);
                 } else {

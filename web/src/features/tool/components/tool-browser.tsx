@@ -1,7 +1,8 @@
-import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { InputSearch } from "@/components/ui/input-search";
 import { Link } from "@/components/ui/link";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,36 +11,34 @@ import { matchRegistryItem } from "@/features/mcp-server/lib/config";
 import { useDebouncedState } from "@/hooks/use-debounced-state";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/routes";
-import { SearchX, Wrench } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ChevronRight, SearchX, Wrench } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { useListTools } from "../hooks";
 
 import { ToolCard } from "./tool-card";
 import { ToolDetailsSheet } from "./tool-details-sheet";
+import { ToolIcon } from "./tool-icon";
 
 import type { Tool, ToolSource } from "../schemas";
-
-const PAGE_SIZES = [12, 24, 48];
-const DEFAULT_PAGE_SIZE = 24;
 const ALL = "all";
+// ponytail: loads every tool in one request to group them; paginate per group if this is ever outgrown.
+const MAX_TOOLS = 1000;
+
+type ToolGroup = { key: string; name: string; icon?: string; tools: Tool[] };
 
 export function ToolBrowser() {
   const [params, setParams] = useSearchParams();
-  const page = Math.max(1, Number(params.get("page")) || 1);
-  const pageSize = PAGE_SIZES.includes(Number(params.get("size"))) ? Number(params.get("size")) : DEFAULT_PAGE_SIZE;
   const source = (params.get("source") as ToolSource | null) ?? undefined;
   const serverId = params.get("server") ?? undefined;
   const query = params.get("q") ?? "";
 
   const [selected, setSelected] = useState<Tool | null>(null);
 
-  // Patches the URL state; any filter change sends the user back to page 1.
-  const update = (patch: Record<string, string | number | undefined>, resetPage = true) =>
+  const update = (patch: Record<string, string | undefined>) =>
     setParams((prev) => {
       const next = new URLSearchParams(prev);
-      if (resetPage) next.delete("page");
       for (const [key, value] of Object.entries(patch)) {
         if (value === undefined || value === "") next.delete(key);
         else next.set(key, String(value));
@@ -51,8 +50,7 @@ export function ToolBrowser() {
 
   const toolsQuery = useListTools({
     searchParams: {
-      take: pageSize,
-      skip: (page - 1) * pageSize,
+      take: MAX_TOOLS,
       search: query || undefined,
       source,
       mcp_server_id: serverId,
@@ -64,15 +62,7 @@ export function ToolBrowser() {
 
   const servers = serversQuery.data?.data ?? [];
   const tools = toolsQuery.data?.data ?? [];
-  const total = toolsQuery.data?.total ?? 0;
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const hasFilters = !!(query || source || serverId);
-
-  // Keep the page in range when the result set shrinks under it.
-  useEffect(() => {
-    if (toolsQuery.data && page > pageCount) update({ page: pageCount }, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toolsQuery.data, page, pageCount]);
 
   const iconByServer = useMemo(() => {
     const map = new Map<string, string | undefined>();
@@ -82,6 +72,24 @@ export function ToolBrowser() {
     return map;
   }, [serversQuery.data, registryQuery.data]);
   const iconFor = (tool: Tool | null) => (tool?.mcp_server_id ? iconByServer.get(tool.mcp_server_id) : undefined);
+
+  // Built-in tools first, then one group per MCP server by name.
+  const groups = useMemo(() => {
+    const byKey = new Map<string, ToolGroup>();
+    for (const tool of toolsQuery.data?.data ?? []) {
+      const key = tool.mcp_server_id ?? "native";
+      const group = byKey.get(key) ?? {
+        key,
+        name: tool.mcp_server?.name ?? "Built-in",
+        icon: tool.mcp_server_id ? iconByServer.get(tool.mcp_server_id) : undefined,
+        tools: [],
+      };
+      group.tools.push(tool);
+      byKey.set(key, group);
+    }
+    return Array.from(byKey.values()).sort((a, b) =>
+      Number(b.key === "native") - Number(a.key === "native") || a.name.localeCompare(b.name));
+  }, [toolsQuery.data, iconByServer]);
 
   const clearFilters = () => {
     setSearch("");
@@ -122,36 +130,35 @@ export function ToolBrowser() {
       </div>
 
       {toolsQuery.isLoading ? (
-        <ToolGridSkeleton count={Math.min(pageSize, 9)} />
+        <ToolGridSkeleton count={9} />
       ) : toolsQuery.isError ? (
         <p className="text-destructive text-sm">Failed to load tools.</p>
       ) : tools.length === 0 ? (
         hasFilters ? <EmptyFiltered onClear={clearFilters} /> : <EmptyTools />
       ) : (
-        <>
-          <ul
-            className={cn(
-              "grid gap-3 transition-opacity sm:grid-cols-2 xl:grid-cols-3",
-              toolsQuery.isPlaceholderData && "opacity-60",
-            )}
-          >
-            {tools.map((tool) => (
-              <li key={tool.id}>
-                <ToolCard tool={tool} serverIcon={iconFor(tool)} onSelect={setSelected} />
-              </li>
-            ))}
-          </ul>
-          <Pagination
-            page={page}
-            pageSize={pageSize}
-            total={total}
-            itemLabel={total === 1 ? "tool" : "tools"}
-            onPageChange={(next) => update({ page: next }, false)}
-            pageSizeOptions={PAGE_SIZES}
-            onPageSizeChange={(size) => update({ size })}
-            className="border-t pt-4"
-          />
-        </>
+        <div className={cn("space-y-3 transition-opacity", toolsQuery.isPlaceholderData && "opacity-60")}>
+          {groups.map((group) => (
+            <Collapsible key={group.key} defaultOpen className="rounded-xl border">
+              <CollapsibleTrigger className="group hover:bg-muted/40 flex w-full items-center gap-3 rounded-xl p-3 text-left">
+                <ChevronRight className="text-muted-foreground size-4 shrink-0 transition-transform group-data-[state=open]:rotate-90" />
+                <ToolIcon tool={group.tools[0]} serverIcon={group.icon} className="size-7" />
+                <span className="truncate text-sm font-semibold">{group.name}</span>
+                <span className="text-muted-foreground text-xs tabular-nums">{group.tools.length}</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <ScrollArea className="*:data-radix-scroll-area-viewport:max-h-96">
+                  <ul className="grid gap-3 border-t p-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {group.tools.map((tool) => (
+                      <li key={tool.id}>
+                        <ToolCard tool={tool} serverIcon={iconFor(tool)} onSelect={setSelected} />
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollArea>
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
+        </div>
       )}
 
       <ToolDetailsSheet

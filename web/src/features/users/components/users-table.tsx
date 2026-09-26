@@ -1,3 +1,4 @@
+import { DeleteDialog } from "@/components/confirm-dialog";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,8 @@ import { DateFormat } from "@/components/ui/date";
 import { useDialog } from "@/lib/dialog";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 
-import { useListUsers } from "../hooks";
+import { useDeleteUser, useListUsers } from "../hooks";
 
-import { DeleteUserDialog } from "./delete-user-dialog";
 import { UpdateUserDialog } from "./update-user-dialog";
 
 import type { DataTableColumn, DataTablePagination } from "@/components/data-table";
@@ -19,6 +19,21 @@ function useUsersListQuery(pagination: DataTablePagination) {
 
 function RowActions({ user }: { user: User }) {
   const { openDialog } = useDialog();
+  const { mutateAsync: deleteUser } = useDeleteUser();
+
+  const openDelete = () => openDialog({
+    component: DeleteDialog,
+    props: {
+      title: "Delete user?",
+      description: (
+        <>
+          This will permanently delete <span className="font-medium text-foreground">{user.name}</span>.
+          This action cannot be undone.
+        </>
+      ),
+      onConfirm: () => deleteUser(user.id),
+    },
+  });
 
   return (
     <div className="flex items-center justify-end gap-1">
@@ -36,7 +51,7 @@ function RowActions({ user }: { user: User }) {
         variant="ghost"
         size="icon-sm"
         aria-label="Delete user"
-        onClick={() => openDialog({ component: DeleteUserDialog, props: { user } })}
+        onClick={openDelete}
       >
         <Trash2Icon />
       </Button>

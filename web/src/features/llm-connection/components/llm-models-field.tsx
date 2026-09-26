@@ -10,11 +10,13 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 import { useLlmProviders, useProviderModels } from "../hooks";
 
-import type { LlmProvider } from "../schemas";
+import type { LlmModelCapability, LlmProvider } from "../schemas";
 import type { RJSFSchema } from "@rjsf/utils";
 type Props = {
   /** Field-array path holding `ExecuteLlmTarget[]` (see schemas.ts). */
   name: string;
+  /** If set, only models with these capabilities will be shown. */
+  allowedModelCapabilities?: LlmModelCapability[];
 };
 
 // splitModelRef mirrors the backend's llm.SplitModelRef: "provider-key/model"
@@ -31,7 +33,7 @@ function splitModelRef(ref: string): [providerKey: string, modelKey: string] {
  * `generate_extra_options` schema — a collapsible advanced-settings form for
  * it. Backed by `useFieldArray` at `name`, so the parent form owns the data.
  */
-export function LlmModelsField({ name }: Props) {
+export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
   const form = useFormContext();
   const { fields, append, remove, move } = useFieldArray({ control: form.control, name });
   const { data: providers = [] } = useLlmProviders();
@@ -84,6 +86,7 @@ export function LlmModelsField({ name }: Props) {
                 onRemove={() => remove(index)}
                 onMoveUp={() => move(index, index - 1)}
                 onMoveDown={() => move(index, index + 1)}
+                allowedModelCapabilities={allowedModelCapabilities}
               />
             </div>
           ))}
@@ -103,19 +106,21 @@ type RowProps = {
   name: string;
   index: number;
   providers: LlmProvider[];
+  allowedModelCapabilities?: LlmModelCapability[];
   total: number;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
 };
 
-function LlmModelTargetRow({ name, index, providers, total, onRemove, onMoveUp, onMoveDown }: RowProps) {
+function LlmModelTargetRow({ name, index, providers, total, onRemove, onMoveUp, onMoveDown, allowedModelCapabilities }: RowProps) {
   const form = useFormContext();
   const fieldPath = `${name}.${index}`;
   const modelRef = (useWatch({ control: form.control, name: `${fieldPath}.model` }) as string | undefined) ?? "";
   const [providerKey, modelKey] = splitModelRef(modelRef);
   const selectedProvider = providers.find((provider) => provider.key === providerKey);
   const { data: models = [], isLoading: isLoadingModels } = useProviderModels(providerKey);
+  const filteredModels = models.filter((model) => allowedModelCapabilities?.some((capability) => model.capabilities.includes(capability)));
   const extraOptionsSchema = selectedProvider?.schemas.generate_extra_options as RJSFSchema | undefined;
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -167,7 +172,7 @@ function LlmModelTargetRow({ name, index, providers, total, onRemove, onMoveUp, 
             <SelectValue placeholder={isLoadingModels ? "Loading…" : "Select a model"} />
           </SelectTrigger>
           <SelectContent>
-            {models.map((model) => (
+            {filteredModels.map((model) => (
               <SelectItem key={model.key} value={model.key}>
                 {model.name}
               </SelectItem>

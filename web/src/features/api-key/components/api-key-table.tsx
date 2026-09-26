@@ -1,3 +1,4 @@
+import { ConfirmDialog, DeleteDialog } from "@/components/confirm-dialog";
 import { DataTable } from "@/components/data-table";
 import { SecretKeyDialog } from "@/components/secret-key-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +10,8 @@ import {
 import { useDialog } from "@/lib/dialog";
 import { CalendarClock, MoreHorizontal, RefreshCw, Trash2 } from "lucide-react";
 
-import { useListApiKey } from "../hooks";
+import { useDeleteApiKey, useListApiKey, useRollApiKey } from "../hooks";
 
-import { DeleteApiKeyDialog } from "./delete-api-key-dialog";
-import { RollApiKeyDialog } from "./roll-api-key-dialog";
 import { UpdateApiKeyExpirationDialog } from "./update-api-key-expiration-dialog";
 
 import type { DataTableColumn, DataTablePagination } from "@/components/data-table";
@@ -25,6 +24,8 @@ function useApiKeyTableQuery(pagination: DataTablePagination) {
 
 export function ApiKeyTable() {
   const { openDialog } = useDialog();
+  const { mutateAsync: rollApiKey } = useRollApiKey();
+  const { mutateAsync: deleteApiKey } = useDeleteApiKey();
 
   const showSecret = (apiKey: ApiKeyWithSecret) => {
     openDialog({
@@ -46,15 +47,37 @@ export function ApiKeyTable() {
 
   const openRoll = (apiKey: ApiKey) => {
     openDialog({
-      component: RollApiKeyDialog,
-      props: { apiKey, onRolled: (rolled) => showSecret(rolled) },
+      component: ConfirmDialog,
+      props: {
+        title: "Roll API key?",
+        description: (
+          <>
+            This will generate a new secret for{" "}
+            <span className="font-medium text-foreground">{apiKey.name}</span>.
+            The previous secret will stop working immediately.
+          </>
+        ),
+        confirmLabel: "Roll key",
+        destructive: true,
+        onConfirm: async () => showSecret(await rollApiKey({ id: apiKey.id })),
+      },
     });
   };
 
   const openDelete = (apiKey: ApiKey) => {
     openDialog({
-      component: DeleteApiKeyDialog,
-      props: { apiKey },
+      component: DeleteDialog,
+      props: {
+        title: "Delete API key?",
+        description: (
+          <>
+            This will permanently delete{" "}
+            <span className="font-medium text-foreground">{apiKey.name}</span>.
+            This action cannot be undone.
+          </>
+        ),
+        onConfirm: () => deleteApiKey({ id: apiKey.id }),
+      },
     });
   };
 

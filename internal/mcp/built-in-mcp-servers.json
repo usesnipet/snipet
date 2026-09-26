@@ -8,7 +8,14 @@
     "transport": "stdio",
     "config": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/dir"],
+      "args": ["-y", "@modelcontextprotocol/server-filesystem"],
+      "args_schema": {
+        "type": "array",
+        "title": "Allowed directories",
+        "description": "Absolute paths the server may read and write.",
+        "items": { "type": "string", "title": "Directory" },
+        "minItems": 1
+      },
       "timeout": 30
     }
   },

@@ -15,6 +15,431 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/agent": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent"
+                ],
+                "summary": "List Agents",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AgentsPage"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent"
+                ],
+                "summary": "Create an Agent",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateAgentDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/AgentResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent-run": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent-run"
+                ],
+                "summary": "List the runs of a session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AgentRunsPage"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Saves the input as a user message and runs the agent in the background. No session_id starts a new session.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent-run"
+                ],
+                "summary": "Start an agent run",
+                "parameters": [
+                    {
+                        "description": "payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/StartRunDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/AgentRunResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent-run/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent-run"
+                ],
+                "summary": "Get an agent run by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Run ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AgentRunResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent-run/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "agent-run"
+                ],
+                "summary": "Cancel an agent run",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Run ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/agent-run/{id}/events": {
+            "get": {
+                "description": "Server-Sent Events: stored messages after Last-Event-ID, then live events (\"run_started\", \"turn_started\", \"llm_started\", \"llm_skipped\", \"text_delta\", \"tool_call_started\", \"message\", \"run_finished\"). Only \"message\" events carry an id.",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "agent-run"
+                ],
+                "summary": "Stream an agent run's events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Run ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Last message id received",
+                        "name": "Last-Event-ID",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/agent-session": {
+            "get": {
+                "description": "Users see their own sessions; admins and API keys see all, optionally filtered by subject.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent-session"
+                ],
+                "summary": "List agent sessions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AgentSessionsPage"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent-session/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent-session"
+                ],
+                "summary": "Get an agent session by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AgentSessionResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "agent-session"
+                ],
+                "summary": "Delete an agent session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent-session/{id}/messages": {
+            "get": {
+                "description": "Newest first; page back with before=\u003coldest id received\u003e.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent-session"
+                ],
+                "summary": "List a session's messages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 50)",
+                        "name": "take",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Only messages with a smaller id",
+                        "name": "before",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AgentMessagesPage"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent"
+                ],
+                "summary": "Get an Agent by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AgentResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent"
+                ],
+                "summary": "Update an Agent",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "partial payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateAgentDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "agent"
+                ],
+                "summary": "Delete an Agent",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/agent/{id}/tools": {
+            "get": {
+                "description": "Tools as sent to the LLM, named \"\u003cserver\u003e__\u003ctool\u003e\".",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent"
+                ],
+                "summary": "List the tools an Agent can call",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/AgentToolResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api-key/me": {
             "get": {
                 "security": [
@@ -1054,12 +1479,20 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "delete": {
+            }
+        },
+        "/tool/{id}/execute": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "tool"
                 ],
-                "summary": "Delete a Tool",
+                "summary": "Execute a Tool",
                 "parameters": [
                     {
                         "type": "string",
@@ -1067,11 +1500,23 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Tool arguments",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteToolDTO"
+                        }
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteToolResponse"
+                        }
                     }
                 }
             }
@@ -1375,6 +1820,461 @@ const docTemplate = `{
                 }
             }
         },
+        "Agent": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "llms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AgentLLM"
+                    }
+                },
+                "max_turns": {
+                    "type": "integer"
+                },
+                "mcp_servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AgentMcpServer"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "system_prompt": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "AgentLLM": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string"
+                },
+                "extra_options": {
+                    "$ref": "#/definitions/JSONMap"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "llm_connection_id": {
+                    "description": "LlmConnectionID nil means the provider's default connection.",
+                    "type": "string"
+                },
+                "model": {
+                    "description": "Model is a \"provider-key/model\" reference.",
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "AgentLLMDTO": {
+            "type": "object",
+            "required": [
+                "model"
+            ],
+            "properties": {
+                "extra_options": {
+                    "type": "object"
+                },
+                "llm_connection_id": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "AgentMcpServer": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string"
+                },
+                "allow": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "deny": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "mcp_server": {
+                    "$ref": "#/definitions/McpServer"
+                },
+                "mcp_server_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "AgentMcpServerDTO": {
+            "type": "object",
+            "required": [
+                "allow",
+                "deny",
+                "mcp_server_id"
+            ],
+            "properties": {
+                "allow": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "deny": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "mcp_server_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "AgentMessage": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "duration_ms": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "input_tokens": {
+                    "type": "integer"
+                },
+                "model": {
+                    "description": "Model, InputTokens and OutputTokens are set on assistant messages.",
+                    "type": "string"
+                },
+                "output_tokens": {
+                    "type": "integer"
+                },
+                "parts": {
+                    "type": "array",
+                    "items": {}
+                },
+                "role": {
+                    "$ref": "#/definitions/Role"
+                },
+                "run_id": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "tool_id": {
+                    "description": "ToolID and DurationMs are set on tool messages.",
+                    "type": "string"
+                }
+            }
+        },
+        "AgentMessagesPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AgentMessage"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "AgentResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "llms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AgentLLM"
+                    }
+                },
+                "max_turns": {
+                    "type": "integer"
+                },
+                "mcp_servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AgentMcpServer"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "system_prompt": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "AgentRun": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "input_tokens": {
+                    "type": "integer"
+                },
+                "output_tokens": {
+                    "type": "integer"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/AgentRunStatus"
+                },
+                "turns": {
+                    "type": "integer"
+                }
+            }
+        },
+        "AgentRunResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "input_tokens": {
+                    "type": "integer"
+                },
+                "output_tokens": {
+                    "type": "integer"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/AgentRunStatus"
+                },
+                "turns": {
+                    "type": "integer"
+                }
+            }
+        },
+        "AgentRunStatus": {
+            "type": "string",
+            "enum": [
+                "running",
+                "completed",
+                "failed",
+                "cancelled",
+                "max_turns"
+            ],
+            "x-enum-varnames": [
+                "AgentRunRunning",
+                "AgentRunCompleted",
+                "AgentRunFailed",
+                "AgentRunCancelled",
+                "AgentRunMaxTurns"
+            ]
+        },
+        "AgentRunsPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AgentRun"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "AgentSession": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "AgentSessionResponse": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "AgentSessionsPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AgentSession"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "AgentToolResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parameters": {
+                    "description": "JSON Schema for the arguments",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/JSONMap"
+                        }
+                    ]
+                }
+            }
+        },
+        "AgentsPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Agent"
+                    }
+                },
+                "skip": {
+                    "type": "integer"
+                },
+                "take": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "Auth": {
             "type": "object",
             "properties": {
@@ -1477,6 +2377,46 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 255
+                }
+            }
+        },
+        "CreateAgentDTO": {
+            "type": "object",
+            "required": [
+                "llms",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "llms": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/AgentLLMDTO"
+                    }
+                },
+                "max_turns": {
+                    "type": "integer",
+                    "maximum": 500,
+                    "minimum": 1
+                },
+                "mcp_servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AgentMcpServerDTO"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "system_prompt": {
+                    "type": "string"
                 }
             }
         },
@@ -1631,6 +2571,25 @@ const docTemplate = `{
                 },
                 "model": {
                     "type": "string"
+                }
+            }
+        },
+        "ExecuteToolDTO": {
+            "type": "object",
+            "properties": {
+                "arguments": {
+                    "type": "object"
+                }
+            }
+        },
+        "ExecuteToolResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "is_error": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1838,7 +2797,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "config": {
-                    "description": "Config is the default config for the server: a StdioConfig or, for\nhttp, an HTTPRegistryConfig.",
+                    "description": "Config is the default config for the server: a StdioRegistryConfig or\nan HTTPRegistryConfig, per Transport.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/JSONMap"
@@ -2010,16 +2969,12 @@ const docTemplate = `{
         "Role": {
             "type": "string",
             "enum": [
-                "system",
-                "user",
-                "assistant",
-                "tool"
+                "admin",
+                "user"
             ],
             "x-enum-varnames": [
-                "RoleSystem",
-                "RoleUser",
-                "RoleAssistant",
-                "RoleTool"
+                "RoleAdmin",
+                "RoleUser"
             ]
         },
         "Schemas": {
@@ -2053,6 +3008,29 @@ const docTemplate = `{
                 "SourceMcp",
                 "SourceNative"
             ]
+        },
+        "StartRunDTO": {
+            "type": "object",
+            "required": [
+                "agent_id",
+                "input"
+            ],
+            "properties": {
+                "agent_id": {
+                    "type": "string"
+                },
+                "input": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
         },
         "Tool": {
             "type": "object",
@@ -2148,6 +3126,42 @@ const docTemplate = `{
                 "TransportHTTP",
                 "TransportStdIO"
             ]
+        },
+        "UpdateAgentDTO": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "llms": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/AgentLLMDTO"
+                    }
+                },
+                "max_turns": {
+                    "type": "integer",
+                    "maximum": 500,
+                    "minimum": 1
+                },
+                "mcp_servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AgentMcpServerDTO"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "system_prompt": {
+                    "type": "string"
+                }
+            }
         },
         "UpdateExpirationDTO": {
             "type": "object",
