@@ -119,7 +119,6 @@ func (s *Service) Start(ctx context.Context, dto StartRunDTO) (*model.AgentRun, 
 		if session.AgentID != agent.ID {
 			return nil, apperr.BadRequest("session belongs to another agent")
 		}
-		// ponytail: check-then-insert, two simultaneous starts can both pass; add a partial unique index on running runs if that shows up
 		running, err := s.runs.HasRunning(ctx, session.ID)
 		if err != nil {
 			return nil, err

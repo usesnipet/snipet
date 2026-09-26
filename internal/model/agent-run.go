@@ -50,7 +50,8 @@ const (
 type AgentRun struct {
 	ID string `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 
-	SessionID string        `gorm:"type:uuid;not null;index" json:"session_id"`
+	// A session has at most one running run.
+	SessionID string        `gorm:"type:uuid;not null;index;uniqueIndex:idx_agent_runs_session_running,where:status = 'running'" json:"session_id"`
 	Session   *AgentSession `gorm:"foreignKey:SessionID;references:ID;constraint:OnDelete:CASCADE" json:"-"`
 
 	Status AgentRunStatus `gorm:"type:varchar(32);not null;index" json:"status"`
