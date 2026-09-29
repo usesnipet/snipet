@@ -2,7 +2,9 @@ import { NotFoundException } from "@nestjs/common";
 import { DeepPartial, FindOptionsWhere, Repository } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 
-import { FilterQuery, Paginated } from "../pagination/filter";
+import type { Paginated } from "@snipet/contracts";
+
+import { FilterQuery } from "../pagination/filter";
 
 import { BaseEntity } from "./base.entity";
 

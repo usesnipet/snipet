@@ -1,21 +1,25 @@
 ---
 name: create-module
-description: Scaffold a new NestJS CRUD module (entity, dto, service, controller, module) on top of the generic abstractions in src/common (crud, pagination, pipes, filter). Use when creating or adding a new module, entity, resource, or CRUD API.
+description: Scaffold a new NestJS CRUD module (entity, dto, service, controller, module) on top of the generic abstractions in apps/api/src/common, with shared zod schemas in packages/contracts. Use when creating or adding a new module, entity, resource, or CRUD API.
 ---
 
 # Create a module
-Every module is:
+
+Monorepo (pnpm + turbo). Schemas shared with the frontend live in
+`packages/contracts` (zod only, no TypeORM); the API adds the TypeORM bits.
 
 ```
-src/modules/<name>/
-  <name>.entity.ts      # extends BaseEntity (uuid id, createdAt, updatedAt)
-  <name>.dto.ts         # zod schemas: create, update, find (filter)
+packages/contracts/src/<name>.ts   # zod: response, create, update, find params
+                                   # + export it from src/index.ts
+apps/api/src/modules/<name>/
+  <name>.entity.ts      # extends BaseEntity, implements the contract type
+  <name>.dto.ts         # re-exports create/update, find params -> where/order
   <name>.service.ts     # extends CrudService<Entity>, injects the TypeORM repo
   <name>.controller.ts  # extends CrudController<Entity>(schemas)
   <name>.module.ts      # TypeOrmModule.forFeature([Entity]) + controller + service
 ```
 
-Then add the module to `imports` in `src/app.module.ts`.
+Then add the module to `imports` in `apps/api/src/app.module.ts`.
 
 ## What you get for free
 
@@ -33,6 +37,8 @@ Then add the module to `imports` in `src/app.module.ts`.
 ## DTO rules
 
 ### Update = `create.partial()`, no `.default()` on create fields
+
+In `packages/contracts/src/widget.ts`:
 
 ```ts
 export const createWidgetSchema = z.object({
@@ -58,21 +64,31 @@ spec: Record<string, unknown>;
 If a zod default is really needed, write the update schema by hand instead of
 using `.partial()`.
 
-### Find = `filterSchema.extend(...).transform(...)` returning `where` and `order`
+### Find = shared params in contracts, `.transform()` in the API
 
-`filterSchema` already handles `take` and `skip`. Add the module's own query
-params with `.extend()` and turn them into a TypeORM `FindOptionsWhere` with
-`.transform()`. The ordering is fixed by the DTO (like `ToFilter()` in the Go
-project), not chosen by the client:
+The query params the client sends are shared. `paginationParamsSchema` already
+handles `take` and `skip`; add the module's own params with `.extend()`:
 
 ```ts
-export const findWidgetsSchema = filterSchema
-  .extend({ name: z.string().optional() }) // accepts ?name=...
-  .transform(({ name, ...page }) => ({
-    ...page, // take, skip
-    where: name ? { name: ILike(`%${name}%`) } : undefined,
-    order: { createdAt: "DESC" as const },
-  }));
+// packages/contracts/src/widget.ts
+export const findWidgetsParamsSchema = paginationParamsSchema.extend({
+  name: z.string().optional(), // accepts ?name=...
+});
+```
+
+The API turns them into TypeORM `where`/`order` in `<name>.dto.ts`. TypeORM
+never goes into contracts. The ordering is fixed here (like `ToFilter()` in the
+Go project), not chosen by the client:
+
+```ts
+// apps/api/src/modules/widget/widget.dto.ts
+export { createWidgetSchema, updateWidgetSchema } from "@snipet/contracts";
+
+export const findWidgetsSchema = findWidgetsParamsSchema.transform(({ name, ...page }) => ({
+  ...page, // take, skip
+  where: name ? { name: ILike(`%${name}%`) } : undefined,
+  order: { createdAt: "DESC" as const },
+}));
 ```
 
 `GET /widget?name=alp&take=5` reaches the service as
@@ -88,6 +104,15 @@ where: {
 }
 ```
 
+### Response schema
+
+`widgetSchema` (dates as `z.coerce.date()`) is the response shape. The entity
+declares `class Widget extends BaseEntity implements WidgetContract`, so tsc
+fails if the entity and the contract drift apart.
+
+After changing contracts, rebuild it (`pnpm build`, or `pnpm dev` keeps it in
+watch mode); the API imports its `dist`.
+
 ## Beyond CRUD
 
 - Extra logic: override a method in the service or add new ones; `this.repo` is
@@ -98,5 +123,5 @@ where: {
 - Transactions: inject `DataSource` and use `dataSource.transaction(...)`.
 - Cache: use Nest's `@nestjs/cache-manager` (not installed yet).
 - Dynamic JSON validated against a stored JSON Schema:
-  `validateJson(schema, data)` from `src/utils/json-schema/json-schema.ts` (fills defaults,
+  `validateJson(schema, data)` from `apps/api/src/utils/json-schema/json-schema.ts` (fills defaults,
   throws 400); `checkJsonSchema(schema)` to validate the schema itself.

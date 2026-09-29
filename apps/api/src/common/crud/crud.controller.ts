@@ -1,13 +1,14 @@
+import { paginationParamsSchema } from "@snipet/contracts";
 import { Body, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Put, Query } from "@nestjs/common";
 import z from "zod";
 
 import { BaseEntity } from "./base.entity";
 import { CrudService } from "./crud.service";
-import { filterSchema } from "../pagination/filter";
 import { ZodPipe } from "../pipes/zod.pipe";
 
 import type { DeepPartial } from "typeorm";
 import type { FilterQuery } from "../pagination/filter";
+
 interface CrudSchemas {
   create: z.ZodType;
   update: z.ZodType;
@@ -24,7 +25,7 @@ export function CrudController<T extends BaseEntity>(schemas: CrudSchemas) {
     constructor(readonly service: CrudService<T>) {}
 
     @Get()
-    filter(@Query(new ZodPipe(schemas.filter ?? filterSchema)) query: FilterQuery<T>) {
+    filter(@Query(new ZodPipe(schemas.filter ?? paginationParamsSchema)) query: FilterQuery<T>) {
       return this.service.filter(query);
     }
 
