@@ -1,11 +1,11 @@
 import { NotFoundException } from "@nestjs/common";
-import { DeepPartial, FindOptionsWhere, Repository, type QueryDeepPartialEntity } from "typeorm";
-
-import type { Paginated } from "@snipet/contracts";
+import { DeepPartial, FindOptionsWhere, QueryDeepPartialEntity, Repository } from "typeorm";
 
 import { FilterQuery } from "../pagination/filter.js";
 
 import { BaseEntity } from "./base.entity.js";
+
+import type { Paginated } from "@snipet/contracts";
 
 // Generic CRUD over a TypeORM repository. Extend it and inject the repo:
 //   constructor(@InjectRepository(Widget) repo: Repository<Widget>) { super(repo); }
@@ -35,6 +35,7 @@ export abstract class CrudService<T extends BaseEntity> {
   // Partial update: only keys present in dto are written.
   async updateById(id: string, dto: QueryDeepPartialEntity<T>): Promise<void> {
     if (Object.keys(dto).length === 0) {
+      await this.findById(id);
       return;
     }
 
