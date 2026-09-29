@@ -1,9 +1,9 @@
 import { Controller } from "@nestjs/common";
 
-import { CrudController } from "../../common/crud/crud.controller";
-import { createWidgetSchema, findWidgetsSchema, updateWidgetSchema } from "./widget.dto";
-import { Widget } from "./widget.entity";
-import { WidgetService } from "./widget.service";
+import { CrudController } from "../../common/crud/crud.controller.js";
+import { createWidgetSchema, findWidgetsSchema, updateWidgetSchema } from "./widget.dto.js";
+import { Widget } from "./widget.entity.js";
+import { WidgetService } from "./widget.service.js";
 
 @Controller("widget")
 export class WidgetController extends CrudController<Widget>({

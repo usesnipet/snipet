@@ -6,7 +6,12 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "migration:generate": "pnpm --filter @snipet/api migration:generate",
+    "migration:create": "pnpm --filter @snipet/api migration:create",
+    "migration:run": "pnpm --filter @snipet/api migration:run",
+    "migration:revert": "pnpm --filter @snipet/api migration:revert",
+    "migration:show": "pnpm --filter @snipet/api migration:show"
   },
   "devDependencies": {
     "prettier": "^3.4.2",

@@ -2,6 +2,7 @@
   "name": "@snipet/api",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
@@ -11,12 +12,17 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "dev": "nest start --watch"
+    "test:e2e": "NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json",
+    "dev": "nest start --watch",
+    "migration:generate": "nest build && typeorm -d dist/infra/database/cli-data-source.js migration:generate",
+    "migration:create": "typeorm migration:create",
+    "migration:run": "nest build && typeorm -d dist/infra/database/cli-data-source.js migration:run",
+    "migration:revert": "nest build && typeorm -d dist/infra/database/cli-data-source.js migration:revert",
+    "migration:show": "nest build && typeorm -d dist/infra/database/cli-data-source.js migration:show"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -63,8 +69,16 @@
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

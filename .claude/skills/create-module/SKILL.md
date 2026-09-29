@@ -19,7 +19,21 @@ apps/api/src/modules/<name>/
   <name>.module.ts      # TypeOrmModule.forFeature([Entity]) + controller + service
 ```
 
-Then add the module to `imports` in `apps/api/src/app.module.ts`.
+Then add the module to `imports` in `apps/api/src/app.module.ts` and
+generate a migration for the new table.
+
+## Migrations (TypeORM CLI)
+
+Paths are relative to `apps/api`. Every script builds first; the CLI reads
+`dist/infra/database/cli-data-source.js`, which also creates the DB if missing.
+
+- `pnpm migration:generate src/migrations/<Name>`: diff entities vs the DB into a new migration.
+- `pnpm migration:create src/migrations/<Name>`: empty migration for hand-written SQL.
+- `pnpm migration:run` / `pnpm migration:revert` / `pnpm migration:show`.
+- On boot the API runs pending migrations (`DB_AUTO_MIGRATE`, default `true`).
+
+Review generated SQL: a rename comes out as drop + add, and a new `NOT NULL`
+column on a populated table needs a default or backfill.
 
 ## What you get for free
 

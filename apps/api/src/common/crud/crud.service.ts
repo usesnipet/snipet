@@ -1,12 +1,11 @@
 import { NotFoundException } from "@nestjs/common";
-import { DeepPartial, FindOptionsWhere, Repository } from "typeorm";
-import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
+import { DeepPartial, FindOptionsWhere, Repository, type QueryDeepPartialEntity } from "typeorm";
 
 import type { Paginated } from "@snipet/contracts";
 
-import { FilterQuery } from "../pagination/filter";
+import { FilterQuery } from "../pagination/filter.js";
 
-import { BaseEntity } from "./base.entity";
+import { BaseEntity } from "./base.entity.js";
 
 // Generic CRUD over a TypeORM repository. Extend it and inject the repo:
 //   constructor(@InjectRepository(Widget) repo: Repository<Widget>) { super(repo); }

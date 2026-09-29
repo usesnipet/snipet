@@ -1,18 +1,19 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
-import { WidgetModule } from "./modules/widget/widget.module";
-import { env } from "./env";
-import { ensureDatabase } from "./infra/database/ensure-database";
+import { AppController } from "./app.controller.js";
+import { AppService } from "./app.service.js";
+import { WidgetModule } from "./modules/widget/widget.module.js";
+import { env } from "./env.js";
+import { dataSourceOptions } from "./infra/database/data-source.js";
+import { ensureDatabase } from "./infra/database/ensure-database.js";
 
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
       useFactory: async () => {
         await ensureDatabase(env.DATABASE_URL);
-        return { type: "postgres", url: env.DATABASE_URL, autoLoadEntities: true };
+        return { ...dataSourceOptions(env.DATABASE_URL), migrationsRun: env.DB_AUTO_MIGRATE };
       },
     }),
     WidgetModule,

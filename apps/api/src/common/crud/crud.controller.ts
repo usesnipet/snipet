@@ -2,12 +2,12 @@ import { paginationParamsSchema } from "@snipet/contracts";
 import { Body, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Put, Query } from "@nestjs/common";
 import z from "zod";
 
-import { BaseEntity } from "./base.entity";
-import { CrudService } from "./crud.service";
-import { ZodPipe } from "../pipes/zod.pipe";
+import { BaseEntity } from "./base.entity.js";
+import { CrudService } from "./crud.service.js";
+import { ZodPipe } from "../pipes/zod.pipe.js";
 
 import type { DeepPartial } from "typeorm";
-import type { FilterQuery } from "../pagination/filter";
+import type { FilterQuery } from "../pagination/filter.js";
 
 interface CrudSchemas {
   create: z.ZodType;

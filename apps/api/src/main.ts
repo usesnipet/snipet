@@ -1,7 +1,7 @@
 import { HttpAdapterHost, NestFactory } from "@nestjs/core";
 
-import { AppModule } from "./app.module";
-import { DbErrorFilter } from "./common/filter/db-error.filter";
+import { AppModule } from "./app.module.js";
+import { DbErrorFilter } from "./common/filter/db-error.filter.js";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

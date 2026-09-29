@@ -1,4 +1,4 @@
-import { validateJson } from "./json-schema";
+import { validateJson } from "./json-schema.js";
 
 describe("validateJson", () => {
   const schema = {
