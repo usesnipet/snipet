@@ -10,7 +10,15 @@ export async function ensureDatabase(url: string): Promise<void> {
   const adminUrl = new URL(url);
   adminUrl.pathname = "/postgres";
 
-  const admin = await new DataSource({ type: "postgres", url: adminUrl.toString() }).initialize();
+  let admin: DataSource;
+  try {
+    admin = await new DataSource({ type: "postgres", url: adminUrl.toString() }).initialize();
+  } catch (error) {
+    // Managed DBs often deny access to `postgres`; let the real connection
+    // report a missing database instead of failing here.
+    logger.warn(`skipping database check: ${(error as Error).message}`);
+    return;
+  }
   try {
     const rows: unknown[] = await admin.query("SELECT 1 FROM pg_database WHERE datname = $1", [name]);
     if (rows.length > 0) return;

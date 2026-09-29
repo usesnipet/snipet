@@ -8,8 +8,9 @@ const rootEnvFile = resolve(import.meta.dirname, "../../../.env");
 if (existsSync(rootEnvFile)) process.loadEnvFile(rootEnvFile);
 
 const envSchema = z.object({
+  PORT: z.coerce.number().int().default(3000),
   DATABASE_URL: z.string(),
-  // Run pending migrations on boot. Local dev uses `pnpm db:sync` instead.
+  // Run pending migrations on boot.
   DB_AUTO_MIGRATE: z.stringbool().default(true),
 });
 
