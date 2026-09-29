@@ -1,4 +1,4 @@
-import { paginationParamsSchema } from "@snipet/contracts";
+import { paginationParamsSchema } from "@snipet/shared";
 import { Body, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Put, Query } from "@nestjs/common";
 import z from "zod";
 

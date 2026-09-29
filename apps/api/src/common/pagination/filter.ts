@@ -1,4 +1,4 @@
-import type { PaginationParams } from "@snipet/contracts";
+import type { PaginationParams } from "@snipet/shared";
 import { FindOptionsOrder, FindOptionsWhere } from "typeorm";
 
 // What a module's find schema `.transform()`s the query params into.

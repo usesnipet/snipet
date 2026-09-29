@@ -1,16 +1,17 @@
 ---
 name: create-module
-description: Scaffold a new NestJS CRUD module (entity, dto, service, controller, module) on top of the generic abstractions in apps/api/src/common, with shared zod schemas in packages/contracts. Use when creating or adding a new module, entity, resource, or CRUD API.
+description: Scaffold a new NestJS CRUD module (entity, dto, service, controller, module) on top of the generic abstractions in apps/api/src/common, with shared zod schemas in packages/shared. Use when creating or adding a new module, entity, resource, or CRUD API.
 ---
 
 # Create a module
 
 Monorepo (pnpm + turbo). Schemas shared with the frontend live in
-`packages/contracts` (zod only, no TypeORM); the API adds the TypeORM bits.
+`packages/shared/src/api` (zod only, no TypeORM); the API adds the TypeORM bits.
+Helpers used by both sides (e.g. `hasRole`) live in `packages/shared/src/utils`.
 
 ```
-packages/contracts/src/<name>.ts   # zod: response, create, update, find params
-                                   # + export it from src/index.ts
+packages/shared/src/api/<name>.ts   # zod: response, create, update, find params
+                                   # + export it from src/api/index.ts
 apps/api/src/modules/<name>/
   <name>.entity.ts      # extends BaseEntity, implements the contract type
   <name>.dto.ts         # re-exports create/update, find params -> where/order
@@ -45,6 +46,10 @@ column on a populated table needs a default or backfill.
 | `PUT /<name>/:id` | `updateById(id, dto)` partial | 204 / 404 |
 | `DELETE /<name>/:id` | `deleteById(id)` | 204 / 404 |
 
+- Every route needs `Authorization: Bearer <access token>` (global `AuthGuard`,
+  401 without it). Mark a route/controller `@Public()` to open it, or
+  `@Roles(Role.Admin)` to restrict it (403). `@CurrentUser()` gives `{ id, role }`.
+  All in `common/decorators/auth.decorators.ts`.
 - Body/query are validated by `ZodPipe`, invalid input is a 400 with zod issues.
 - Unique violations become 409 (`common/filter/db-error.filter.ts`, extend `PG_ERRORS` for more).
 
@@ -52,7 +57,7 @@ column on a populated table needs a default or backfill.
 
 ### Update = `create.partial()`, no `.default()` on create fields
 
-In `packages/contracts/src/widget.ts`:
+In `packages/shared/src/api/widget.ts`:
 
 ```ts
 export const createWidgetSchema = z.object({
@@ -78,25 +83,25 @@ spec: Record<string, unknown>;
 If a zod default is really needed, write the update schema by hand instead of
 using `.partial()`.
 
-### Find = shared params in contracts, `.transform()` in the API
+### Find = shared params in `@snipet/shared`, `.transform()` in the API
 
 The query params the client sends are shared. `paginationParamsSchema` already
 handles `take` and `skip`; add the module's own params with `.extend()`:
 
 ```ts
-// packages/contracts/src/widget.ts
+// packages/shared/src/api/widget.ts
 export const findWidgetsParamsSchema = paginationParamsSchema.extend({
   name: z.string().optional(), // accepts ?name=...
 });
 ```
 
 The API turns them into TypeORM `where`/`order` in `<name>.dto.ts`. TypeORM
-never goes into contracts. The ordering is fixed here (like `ToFilter()` in the
+never goes into `@snipet/shared`. The ordering is fixed here (like `ToFilter()` in the
 Go project), not chosen by the client:
 
 ```ts
 // apps/api/src/modules/widget/widget.dto.ts
-export { createWidgetSchema, updateWidgetSchema } from "@snipet/contracts";
+export { createWidgetSchema, updateWidgetSchema } from "@snipet/shared";
 
 export const findWidgetsSchema = findWidgetsParamsSchema.transform(({ name, ...page }) => ({
   ...page, // take, skip
@@ -124,7 +129,7 @@ where: {
 declares `class Widget extends BaseEntity implements WidgetContract`, so tsc
 fails if the entity and the contract drift apart.
 
-After changing contracts, rebuild it (`pnpm build`, or `pnpm dev` keeps it in
+After changing `packages/shared`, rebuild it (`pnpm build`, or `pnpm dev` keeps it in
 watch mode); the API imports its `dist`.
 
 ## Beyond CRUD

@@ -26,9 +26,11 @@
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^12.0.2",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^12.0.2",
-    "@snipet/contracts": "workspace:*",
+    "@snipet/shared": "workspace:*",
+    "bcryptjs": "^3.0.3",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
@@ -81,7 +83,7 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@snipet/contracts$": "<rootDir>/../../../packages/contracts/src/index.ts",
+      "^@snipet/shared$": "<rootDir>/../../../packages/shared/src/index.ts",
       "^(\\.{1,2}/.*)\\.js$": "$1"
     }
   }

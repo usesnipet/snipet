@@ -5,7 +5,7 @@ import { FilterQuery } from "../pagination/filter.js";
 
 import { BaseEntity } from "./base.entity.js";
 
-import type { Paginated } from "@snipet/contracts";
+import type { Paginated } from "@snipet/shared";
 
 // Generic CRUD over a TypeORM repository. Extend it and inject the repo:
 //   constructor(@InjectRepository(Widget) repo: Repository<Widget>) { super(repo); }
