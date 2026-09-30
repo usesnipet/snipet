@@ -17,7 +17,7 @@ import { useNavigate } from "react-router";
 import { useDeleteSession, useListSessions } from "../hooks";
 import { sessionPath } from "../lib/session-path";
 
-import type { AgentSession } from "../schemas";
+import type { AgentSession } from "@snipet/shared";
 
 type Props = {
   activeSessionId?: string;
@@ -39,7 +39,7 @@ function groupByDate(sessions: AgentSession[]): SessionGroup[] {
     { label: "Older", sessions: [] },
   ];
   for (const session of sessions) {
-    const at = moment(session.updated_at);
+    const at = moment(session.updatedAt);
     const index = at.isSameOrAfter(today) ? 0 : at.isSameOrAfter(yesterday) ? 1 : at.isSameOrAfter(lastWeek) ? 2 : 3;
     groups[index].sessions.push(session);
   }

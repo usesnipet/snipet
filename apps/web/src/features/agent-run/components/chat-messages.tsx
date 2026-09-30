@@ -12,8 +12,7 @@ import { cn } from "@/lib/utils";
 import { Check, ChevronRight, CircleAlert, Copy, Wrench, X } from "lucide-react";
 import { useState } from "react";
 
-import type { AgentMessage, AgentRun } from "../schemas";
-import type { LlmPart } from "@/models/llm-message";
+import type { AgentMessage, AgentRun, LlmPart } from "@snipet/shared";
 
 type ToolCallPart = Extract<LlmPart, { type: "tool_call" }>;
 type ToolResultPart = Extract<LlmPart, { type: "tool_result" }>;
@@ -52,11 +51,11 @@ const textOf = (message: AgentMessage) =>
     .join("\n");
 
 export function ChatMessages({ messages, pendingInput, draft, streaming, run, error }: Props) {
-  // Tool results are rendered inside their call, keyed by tool_call_id.
+  // Tool results are rendered inside their call, keyed by toolCallId.
   const results = new Map<string, ToolResultPart>();
   for (const message of messages) {
     for (const part of message.parts) {
-      if (part.type === "tool_result") results.set(part.tool_call_id, part);
+      if (part.type === "tool_result") results.set(part.toolCallId, part);
     }
   }
 
@@ -165,7 +164,7 @@ function ToolCall({ call, result, running }: ToolCallProps) {
   const pending = !result && running;
 
   let icon = <Loader variant="circular" size="sm" />;
-  if (result?.is_error) icon = <X className="text-destructive" />;
+  if (result?.isError) icon = <X className="text-destructive" />;
   else if (result) icon = <Check className="text-emerald-600 dark:text-emerald-400" />;
   else if (!running) icon = <CircleAlert className="text-muted-foreground" />;
 
@@ -181,7 +180,7 @@ function ToolCall({ call, result, running }: ToolCallProps) {
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-2 space-y-2 border-l pl-4">
         <JsonViewer title="Arguments" value={call.arguments} />
-        {result && <JsonViewer title={result.is_error ? "Error" : "Result"} value={parseContent(result.content)} />}
+        {result && <JsonViewer title={result.isError ? "Error" : "Result"} value={parseContent(result.content)} />}
       </CollapsibleContent>
     </Collapsible>
   );

@@ -1,25 +1,25 @@
 import http, { httpSse } from "@/lib/http";
 
 import {
-  agentMessageSchema, agentRunSchema, agentSessionSchema, listMessagesSearchParamsSchema, listRunsSearchParamsSchema,
-  listSessionsSearchParamsSchema, paginatedAgentMessageSchema, paginatedAgentRunSchema,
-  paginatedAgentSessionSchema, startRunSchema,
-} from "./schemas";
+  agentMessageSchema, agentRunSchema, agentSessionSchema, findAgentMessagesParamsSchema, findAgentRunsParamsSchema,
+  findAgentSessionsParamsSchema, paginatedAgentMessageSchema, paginatedAgentRunSchema, paginatedAgentSessionSchema,
+  startAgentRunSchema,
+} from "@snipet/shared";
 
 import type {
-  AgentRun, AgentRunEvent, AgentSession, ListMessagesSearchParams, ListRunsSearchParams, ListSessionsSearchParams,
-  PaginatedAgentMessage, PaginatedAgentRun, PaginatedAgentSession, StartRun,
-} from "./schemas";
+  AgentMessage, AgentRun, AgentRunEvent, AgentSession, FindAgentMessagesParams, FindAgentRunsParams,
+  FindAgentSessionsParams, Paginated, StartAgentRun,
+} from "@snipet/shared";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions } from "@/lib/services";
 
-const RUN_URL = "/api/agent-run";
-const SESSION_URL = "/api/agent-session";
+const RUN_URL = "/api/agent-runs";
+const SESSION_URL = "/api/agent-sessions";
 
-const start = async (body: StartRun, opts: ServicePostOptions<StartRun, AgentRun> = {}): Promise<AgentRun> =>
+const start = async (body: StartAgentRun, opts: ServicePostOptions<StartAgentRun, AgentRun> = {}): Promise<AgentRun> =>
   http.post({
     url: RUN_URL,
     body,
-    schemas: { body: startRunSchema, response: agentRunSchema },
+    schemas: { body: startAgentRunSchema, response: agentRunSchema },
     ...opts,
   });
 
@@ -27,11 +27,11 @@ const cancel = async (id: string, opts: ServicePostOptions<undefined, void> = {}
   http.post({ url: `${RUN_URL}/{id}/cancel`, params: { id }, ...opts });
 
 const listRuns = async (
-  opts: ServiceGetOptions<PaginatedAgentRun, ListRunsSearchParams> = {},
-): Promise<PaginatedAgentRun> =>
+  opts: ServiceGetOptions<Paginated<AgentRun>, Partial<FindAgentRunsParams>> = {},
+): Promise<Paginated<AgentRun>> =>
   http.get({
     url: RUN_URL,
-    schemas: { response: paginatedAgentRunSchema, searchParams: listRunsSearchParamsSchema },
+    schemas: { response: paginatedAgentRunSchema, searchParams: findAgentRunsParamsSchema },
     ...opts,
   });
 
@@ -51,17 +51,17 @@ const events = async (
     signal: opts.signal,
     onEvent: (event, data) => {
       if (event === "message") data = agentMessageSchema.parse(data);
-      else if (event === "run_started" || event === "run_finished") data = agentRunSchema.parse(data);
+      else if (event === "run_finished") data = agentRunSchema.parse(data);
       onEvent({ event, data } as AgentRunEvent);
     },
   });
 
 const listSessions = async (
-  opts: ServiceGetOptions<PaginatedAgentSession, ListSessionsSearchParams> = {},
-): Promise<PaginatedAgentSession> =>
+  opts: ServiceGetOptions<Paginated<AgentSession>, Partial<FindAgentSessionsParams>> = {},
+): Promise<Paginated<AgentSession>> =>
   http.get({
     url: SESSION_URL,
-    schemas: { response: paginatedAgentSessionSchema, searchParams: listSessionsSearchParamsSchema },
+    schemas: { response: paginatedAgentSessionSchema, searchParams: findAgentSessionsParamsSchema },
     ...opts,
   });
 
@@ -74,12 +74,12 @@ const deleteSession = async (id: string, opts: ServiceDeleteOptions<void> = {}):
 // listMessages returns a session's messages newest first.
 const listMessages = async (
   id: string,
-  opts: ServiceGetOptions<PaginatedAgentMessage, ListMessagesSearchParams> = {},
-): Promise<PaginatedAgentMessage> =>
+  opts: ServiceGetOptions<Paginated<AgentMessage>, Partial<FindAgentMessagesParams>> = {},
+): Promise<Paginated<AgentMessage>> =>
   http.get({
     url: `${SESSION_URL}/{id}/messages`,
     params: { id },
-    schemas: { response: paginatedAgentMessageSchema, searchParams: listMessagesSearchParamsSchema },
+    schemas: { response: paginatedAgentMessageSchema, searchParams: findAgentMessagesParamsSchema },
     ...opts,
   });
 

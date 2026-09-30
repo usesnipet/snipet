@@ -1,6 +1,5 @@
 import { LoadingFallback } from "@/components/loading-fallback";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { useListAgents } from "@/features/agent/hooks";
 import { ChatInput } from "@/features/agent-run/components/chat-input";
 import { ChatMessages } from "@/features/agent-run/components/chat-messages";
 import { SessionSidebar } from "@/features/agent-run/components/session-sidebar";
@@ -8,11 +7,12 @@ import {
   useCancelRun, useLatestRun, useRunStream, useSession, useSessionMessages, useStartRun
 } from "@/features/agent-run/hooks";
 import { sessionPath } from "@/features/agent-run/lib/session-path";
+import { useListAgents } from "@/features/agent/hooks";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import type { AgentMessage } from "@/features/agent-run/schemas";
+import type { AgentMessage } from "@snipet/shared";
 
 // The input shown as a user bubble until the stream echoes it back.
 type PendingInput = { sessionId: string | undefined; text: string; runId?: string };
@@ -50,28 +50,28 @@ export const AgentPlaygroundPage = () => {
     const byId = new Map<number, AgentMessage>();
     for (const message of history.data ?? []) byId.set(message.id, message);
     for (const message of stream.messages) {
-      if (message.session_id === sessionId) byId.set(message.id, message);
+      if (message.sessionId === sessionId) byId.set(message.id, message);
     }
-    return [...byId.values()].sort((a, b) => a.id - b.id);
+    return Array.from(byId.values()).sort((a, b) => a.id - b.id);
   }, [history.data, stream.messages, sessionId]);
 
   const showPending =
     pending !== null &&
     pending.sessionId === sessionId &&
-    !messages.some((m) => m.role === "user" && m.run_id === pending.runId);
+    !messages.some((m) => m.role === "user" && m.runId === pending.runId);
 
-  const agentId = session.data?.agent_id ?? pickedAgentId ?? agents[0]?.id;
+  const agentId = session.data?.agentId ?? pickedAgentId ?? agents[0]?.id;
   const running = stream.status === "streaming" && stream.runId === run?.id;
 
   const send = (input: string) => {
     if (!agentId) return;
     setPending({ sessionId, text: input });
     start.mutate(
-      { agent_id: agentId, session_id: sessionId, input },
+      { agentId, sessionId, input },
       {
         onSuccess: (started) => {
-          setPending({ sessionId: started.session_id, text: input, runId: started.id });
-          if (!sessionId) navigate(sessionPath(started.session_id));
+          setPending({ sessionId: started.sessionId, text: input, runId: started.id });
+          if (!sessionId) navigate(sessionPath(started.sessionId));
         },
         onError: () => setPending(null),
       },

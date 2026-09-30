@@ -6,7 +6,7 @@ import { queryClient } from "@/lib/query-client";
 
 import { agentRunService } from "./service";
 
-import type { AgentMessage, AgentRun, AgentSession, PaginatedAgentSession, StartRun } from "./schemas";
+import type { AgentMessage, AgentRun, AgentSession, Paginated, StartAgentRun } from "@snipet/shared";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
 const BASE_QUERY_KEY = "agent-session";
@@ -16,7 +16,7 @@ const SESSIONS_TAKE = 100;
 const MESSAGES_TAKE = 100;
 
 export const listSessionsQueryKey = () => [BASE_QUERY_KEY, "list"] as const;
-export const useListSessions = (): UseQueryResult<PaginatedAgentSession, Error> =>
+export const useListSessions = (): UseQueryResult<Paginated<AgentSession>, Error> =>
   useQuery({
     queryKey: listSessionsQueryKey(),
     queryFn: () => agentRunService.listSessions({ searchParams: { take: SESSIONS_TAKE } }),
@@ -48,7 +48,7 @@ export const useLatestRun = (sessionId: string | undefined): UseQueryResult<Agen
   useQuery({
     queryKey: latestRunQueryKey(sessionId ?? ""),
     queryFn: async () => {
-      const page = await agentRunService.listRuns({ searchParams: { session_id: sessionId!, take: 1 } });
+      const page = await agentRunService.listRuns({ searchParams: { sessionId: sessionId!, take: 1 } });
       return page.data[0] ?? null;
     },
     enabled: !!sessionId,
@@ -56,11 +56,11 @@ export const useLatestRun = (sessionId: string | undefined): UseQueryResult<Agen
 
 // useStartRun starts a run and seeds the session's latest run with it, which
 // is what useRunStream's caller follows.
-export const useStartRun = (): UseMutationResult<AgentRun, Error, StartRun> =>
+export const useStartRun = (): UseMutationResult<AgentRun, Error, StartAgentRun> =>
   useMutation({
-    mutationFn: (data: StartRun) => agentRunService.start(data),
+    mutationFn: (data: StartAgentRun) => agentRunService.start(data),
     onSuccess: (run) => {
-      queryClient.setQueryData(latestRunQueryKey(run.session_id), run);
+      queryClient.setQueryData(latestRunQueryKey(run.sessionId), run);
       queryClient.invalidateQueries({ queryKey: listSessionsQueryKey() });
     },
     onError: (error) => {
@@ -134,8 +134,8 @@ export const useRunStream = (): UseRunStreamResult => {
     setError(null);
 
     const finish = (finished: AgentRun) => {
-      queryClient.setQueryData(latestRunQueryKey(finished.session_id), finished);
-      queryClient.invalidateQueries({ queryKey: sessionMessagesQueryKey(finished.session_id) });
+      queryClient.setQueryData(latestRunQueryKey(finished.sessionId), finished);
+      queryClient.invalidateQueries({ queryKey: sessionMessagesQueryKey(finished.sessionId) });
       queryClient.invalidateQueries({ queryKey: listSessionsQueryKey() });
     };
 
@@ -156,9 +156,6 @@ export const useRunStream = (): UseRunStreamResult => {
             }
             case "run_finished":
               finish(event.data);
-              break;
-            case "error":
-              setError(new Error(event.data.message));
               break;
           }
         },
