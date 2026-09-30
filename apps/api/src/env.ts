@@ -24,12 +24,17 @@ const envSchema = z.object({
     .number()
     .int()
     .positive()
-    .default(15 * 60),
+    .default(15 * 60), // 15 minutes
   REFRESH_TOKEN_EXPIRES_IN_SECONDS: z.coerce
     .number()
     .int()
     .positive()
-    .default(30 * 24 * 60 * 60),
+    .default(30 * 24 * 60 * 60), // 30 days
+
+  ENCRYPTION_KEY: z
+    .string()
+    .transform((v) => Buffer.from(v, "base64"))
+    .refine((b) => b.length === 32, "ENCRYPTION_KEY must be 32 bytes, base64-encoded"),
 
   // First admin, created when the users table is empty. Without a password a
   // random one is generated and logged once.

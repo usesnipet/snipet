@@ -74,7 +74,6 @@ export class LlmConnectionService extends CrudService<LlmConnection> {
 
   // Sources options from connectionId, else the provider's default connection.
   async listProviderModels(providerKey: string, connectionId?: string): Promise<LlmModel[]> {
-    console.log("listProviderModels", providerKey, connectionId);
     const options = await this.connectionOptions(providerKey, connectionId);
     await this.registry.connect(providerKey, options);
     return this.registry.models(providerKey, options);
