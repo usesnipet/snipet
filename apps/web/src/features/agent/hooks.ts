@@ -5,7 +5,7 @@ import { queryClient } from "@/lib/query-client";
 
 import { agentService } from "./service";
 
-import type { Agent, CreateAgent, ListAgentsSearchParams, PaginatedAgent, UpdateAgent } from "./schemas";
+import type { Agent, CreateAgent, FindAgentsParams, Paginated, UpdateAgent } from "@snipet/shared";
 import type { ServiceGetOptions } from "@/lib/services";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
@@ -13,8 +13,8 @@ const BASE_QUERY_KEY = "agent";
 
 export const listAgentsQueryKey = () => [BASE_QUERY_KEY] as const;
 export const useListAgents = (
-  opts?: ServiceGetOptions<PaginatedAgent, ListAgentsSearchParams>,
-): UseQueryResult<PaginatedAgent, Error> =>
+  opts?: ServiceGetOptions<Paginated<Agent>, Partial<FindAgentsParams>>,
+): UseQueryResult<Paginated<Agent>, Error> =>
   useQuery({
     queryKey: [...listAgentsQueryKey(), opts?.searchParams],
     queryFn: () => agentService.list(opts),

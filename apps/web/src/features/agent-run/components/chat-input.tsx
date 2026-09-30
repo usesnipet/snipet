@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowUp, Bot, Square } from "lucide-react";
 import { useState } from "react";
 
-import type { Agent } from "@/models/agent";
+import type { Agent } from "@snipet/shared";
 
 type Props = {
   agents: Agent[];

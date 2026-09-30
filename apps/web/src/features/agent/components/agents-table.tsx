@@ -10,7 +10,7 @@ import { useDeleteAgent, useListAgents } from "../hooks";
 
 import { AgentFormDialog } from "./agent-form-dialog";
 
-import type { Agent } from "../schemas";
+import type { Agent } from "@snipet/shared";
 import type { DataTableColumn, DataTablePagination } from "@/components/data-table";
 
 function useAgentsListQuery(pagination: DataTablePagination) {
@@ -70,8 +70,8 @@ const columns: DataTableColumn<Agent>[] = [
       </div>
     ),
   },
-  { id: "models", header: "Models", cell: (agent) => agent.llms?.length ?? 0 },
-  { id: "servers", header: "MCP servers", cell: (agent) => agent.mcp_servers?.length ?? 0 },
+  { id: "models", header: "Models", cell: (agent) => agent.llms.length },
+  { id: "servers", header: "MCP servers", cell: (agent) => agent.mcpServers.length },
   {
     id: "status",
     header: "Status",
@@ -79,7 +79,7 @@ const columns: DataTableColumn<Agent>[] = [
       <Badge variant={agent.enabled ? "default" : "secondary"}>{agent.enabled ? "Enabled" : "Disabled"}</Badge>
     ),
   },
-  { id: "updated", header: "Updated", cell: (agent) => <DateFormat date={agent.updated_at} /> },
+  { id: "updated", header: "Updated", cell: (agent) => <DateFormat date={agent.updatedAt} /> },
   {
     id: "actions",
     header: "",

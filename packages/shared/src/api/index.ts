@@ -1,3 +1,4 @@
+export * from "./agent.js";
 export * from "./api-key.js";
 export * from "./auth.js";
 export * from "./llm-connection.js";

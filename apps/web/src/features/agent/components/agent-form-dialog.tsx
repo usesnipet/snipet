@@ -14,11 +14,12 @@ import { useId } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCreateAgent, useUpdateAgent } from "../hooks";
-import { createAgentSchema } from "../schemas";
+import { agentFormSchema } from "../schemas";
 
 import { AgentMcpServersField } from "./agent-mcp-servers-field";
 
-import type { Agent, CreateAgent, CreateAgentInput } from "../schemas";
+import type { AgentForm, AgentFormInput } from "../schemas";
+import type { Agent } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
 type AgentFormDialogProps = DialogInstanceProps<{
@@ -26,25 +27,25 @@ type AgentFormDialogProps = DialogInstanceProps<{
   agent?: Agent;
 }>;
 
-const toForm = (agent?: Agent): CreateAgentInput => ({
+// The API returns llms already ordered.
+const toForm = (agent?: Agent): AgentFormInput => ({
   name: agent?.name ?? "",
   description: agent?.description ?? "",
-  system_prompt: agent?.system_prompt ?? "",
-  max_turns: agent?.max_turns ?? 20,
+  systemPrompt: agent?.systemPrompt ?? "",
+  maxTurns: agent?.maxTurns ?? 20,
   enabled: agent?.enabled ?? true,
-  llms: agent?.llms?.sort((a, b) => a.order - b.order)
-    .map((llm) => ({
-      model: llm.model,
-      llm_connection_id: llm.llm_connection_id ?? undefined,
-      extra_options: llm.extra_options ?? undefined,
-    })) ?? [{ model: "" }],
-  mcp_servers: (agent?.mcp_servers ?? []).map(({ mcp_server_id, allow, deny }) => ({ mcp_server_id, allow, deny })),
+  llms: agent?.llms.map((llm) => ({
+    model: llm.model,
+    connectionId: llm.connectionId ?? undefined,
+    extraOptions: llm.extraOptions ?? undefined,
+  })) ?? [{ model: "" }],
+  mcpServers: (agent?.mcpServers ?? []).map(({ mcpServerId, allow, deny }) => ({ mcpServerId, allow, deny })),
 });
 
 export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
   const formId = `agent-form-${useId()}`;
-  const form = useForm<CreateAgentInput, unknown, CreateAgent>({
-    resolver: zodResolver(createAgentSchema),
+  const form = useForm<AgentFormInput, unknown, AgentForm>({
+    resolver: zodResolver(agentFormSchema),
     defaultValues: toForm(agent),
   });
 
@@ -72,9 +73,9 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
           <FieldGroup>
             <FormInput name="name" label="Name" placeholder="e.g. Support triage" required />
             <FormInput name="description" label="Description" placeholder="What this agent is for" />
-            <FormTextarea name="system_prompt" label="System prompt" rows={5} placeholder="You are…" />
+            <FormTextarea name="systemPrompt" label="System prompt" rows={5} placeholder="You are…" />
             <div className="flex items-end gap-4">
-              <FormInput name="max_turns" label="Max turns" inputMode="numeric" fieldclassname="max-w-32" />
+              <FormInput name="maxTurns" label="Max turns" inputMode="numeric" fieldclassname="max-w-32" />
               <FormSwitch name="enabled" label="Enabled" fieldclassname="pb-2" />
             </div>
             <LlmModelsField name="llms" allowedModelCapabilities={["text", "streaming"]} />
