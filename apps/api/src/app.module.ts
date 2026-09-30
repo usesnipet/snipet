@@ -11,6 +11,7 @@ import { AuthModule } from "./modules/auth/auth.module.js";
 import { LlmConnectionModule } from "./modules/llm-connection/llm-connection.module.js";
 import { McpServerModule } from "./modules/mcp-server/mcp-server.module.js";
 import { SystemModule } from "./modules/system/system.module.js";
+import { ToolModule } from "./modules/tool/tool.module.js";
 import { UserModule } from "./modules/user/user.module.js";
 
 @Module({
@@ -26,6 +27,7 @@ import { UserModule } from "./modules/user/user.module.js";
     LlmConnectionModule,
     McpServerModule,
     SystemModule,
+    ToolModule,
     UserModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],

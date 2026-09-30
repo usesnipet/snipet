@@ -1,8 +1,8 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-
 import { toast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/query-client";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
+import { syncState } from "./lib/config";
 import { mcpServerService } from "./service";
 
 import type {
@@ -30,6 +30,11 @@ export const useListMcpServers = (
   useQuery({
     queryKey: [...listMcpServersQueryKey(), opts?.searchParams],
     queryFn: () => mcpServerService.list(opts),
+    // Tool sync runs in the background after create/update; poll until it settles.
+    refetchInterval: (query) =>
+      query.state.data?.data.some((server) => syncState(server).kind === "pending")
+        ? 5000
+        : false,
   });
 
 export const mcpServerRegistryQueryKey = () =>

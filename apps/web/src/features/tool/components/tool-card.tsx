@@ -4,7 +4,7 @@ import { toolParameters } from "../lib/input-schema";
 
 import { ToolIcon } from "./tool-icon";
 
-import type { Tool } from "../schemas";
+import type { Tool } from "@snipet/shared";
 
 const MAX_VISIBLE_PARAMS = 4;
 
@@ -15,7 +15,7 @@ type Props = {
 };
 
 export function ToolCard({ tool, serverIcon, onSelect }: Props) {
-  const params = toolParameters(tool.input_schema);
+  const params = toolParameters(tool.inputSchema);
   const visible = params.slice(0, MAX_VISIBLE_PARAMS);
   const hidden = params.length - visible.length;
 
@@ -34,7 +34,7 @@ export function ToolCard({ tool, serverIcon, onSelect }: Props) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-mono text-sm font-semibold" title={tool.name}>{tool.name}</p>
           <p className="text-muted-foreground truncate text-xs">
-            {tool.mcp_server ? tool.mcp_server.name : "Built-in"}
+            {tool.mcpServer ? tool.mcpServer.name : "Built-in"}
           </p>
         </div>
         <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">

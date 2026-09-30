@@ -13,7 +13,7 @@ import { toolParameters } from "../lib/input-schema";
 import { ToolIcon } from "./tool-icon";
 
 import type { ToolParameter } from "../lib/input-schema";
-import type { Tool } from "../schemas";
+import type { Tool } from "@snipet/shared";
 
 type Props = {
   tool: Tool | null;
@@ -33,8 +33,8 @@ export function ToolDetailsSheet({ tool, serverIcon, onOpenChange }: Props) {
 
 function ToolDetails({ tool, serverIcon }: { tool: Tool; serverIcon?: string }) {
   const { copy } = useClipboard();
-  const params = toolParameters(tool.input_schema);
-  const schemaJson = JSON.stringify(tool.input_schema, null, 2);
+  const params = toolParameters(tool.inputSchema);
+  const schemaJson = JSON.stringify(tool.inputSchema, null, 2);
 
   return (
     <>
@@ -54,8 +54,8 @@ function ToolDetails({ tool, serverIcon }: { tool: Tool; serverIcon?: string }) 
               </Button>
             </SheetTitle>
             <p className="text-muted-foreground text-xs">
-              {tool.mcp_server ? <>via <span className="text-foreground">{tool.mcp_server.name}</span></> : "Built-in tool"}
-              {" · "}updated {moment(tool.updated_at).fromNow()}
+              {tool.mcpServer ? <>via <span className="text-foreground">{tool.mcpServer.name}</span></> : "Built-in tool"}
+              {" · "}updated {moment(tool.updatedAt).fromNow()}
             </p>
           </div>
         </div>

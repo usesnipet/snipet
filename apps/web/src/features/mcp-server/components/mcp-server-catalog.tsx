@@ -16,7 +16,7 @@ import { InstalledMcpServerCard } from "./installed-mcp-server-card";
 import { McpServerFormDialog } from "./mcp-server-form-dialog";
 import { RegistryMcpServerCard } from "./registry-mcp-server-card";
 
-import type { Tool } from "@/models/tool";
+import type { Tool } from "@snipet/shared";
 
 type Tab = "installed" | "discover";
 
@@ -48,8 +48,8 @@ export function McpServerCatalog() {
   const toolsByServer = useMemo(() => {
     const map = new Map<string, Tool[]>();
     for (const tool of toolsQuery.data?.data ?? []) {
-      if (!tool.mcp_server_id) continue;
-      map.set(tool.mcp_server_id, [...(map.get(tool.mcp_server_id) ?? []), tool]);
+      if (!tool.mcpServerId) continue;
+      map.set(tool.mcpServerId, [...(map.get(tool.mcpServerId) ?? []), tool]);
     }
     return map;
   }, [toolsQuery.data]);

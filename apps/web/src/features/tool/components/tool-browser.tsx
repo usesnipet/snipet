@@ -14,6 +14,7 @@ import { ROUTES } from "@/routes";
 import { ChevronRight, SearchX, Wrench } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
+import { ToolSource } from "@snipet/shared";
 
 import { useListTools } from "../hooks";
 
@@ -21,7 +22,7 @@ import { ToolCard } from "./tool-card";
 import { ToolDetailsSheet } from "./tool-details-sheet";
 import { ToolIcon } from "./tool-icon";
 
-import type { Tool, ToolSource } from "../schemas";
+import type { Tool } from "@snipet/shared";
 const ALL = "all";
 // ponytail: loads every tool in one request to group them; paginate per group if this is ever outgrown.
 const MAX_TOOLS = 1000;
@@ -53,7 +54,7 @@ export function ToolBrowser() {
       take: MAX_TOOLS,
       search: query || undefined,
       source,
-      mcp_server_id: serverId,
+      mcpServerId: serverId,
     },
   });
 
@@ -71,17 +72,17 @@ export function ToolBrowser() {
     }
     return map;
   }, [serversQuery.data, registryQuery.data]);
-  const iconFor = (tool: Tool | null) => (tool?.mcp_server_id ? iconByServer.get(tool.mcp_server_id) : undefined);
+  const iconFor = (tool: Tool | null) => (tool?.mcpServerId ? iconByServer.get(tool.mcpServerId) : undefined);
 
   // Built-in tools first, then one group per MCP server by name.
   const groups = useMemo(() => {
     const byKey = new Map<string, ToolGroup>();
     for (const tool of toolsQuery.data?.data ?? []) {
-      const key = tool.mcp_server_id ?? "native";
+      const key = tool.mcpServerId ?? "native";
       const group = byKey.get(key) ?? {
         key,
-        name: tool.mcp_server?.name ?? "Built-in",
-        icon: tool.mcp_server_id ? iconByServer.get(tool.mcp_server_id) : undefined,
+        name: tool.mcpServer?.name ?? "Built-in",
+        icon: tool.mcpServerId ? iconByServer.get(tool.mcpServerId) : undefined,
         tools: [],
       };
       group.tools.push(tool);
@@ -102,11 +103,11 @@ export function ToolBrowser() {
         <Tabs value={source ?? ALL} onValueChange={(value) => update({ source: value === ALL ? undefined : value })}>
           <TabsList>
             <TabsTrigger value={ALL}>All</TabsTrigger>
-            <TabsTrigger value="mcp">MCP</TabsTrigger>
-            <TabsTrigger value="native">Built-in</TabsTrigger>
+            <TabsTrigger value={ToolSource.MCP}>MCP</TabsTrigger>
+            <TabsTrigger value={ToolSource.NATIVE}>Built-in</TabsTrigger>
           </TabsList>
         </Tabs>
-        {servers.length > 0 && source !== "native" && (
+        {servers.length > 0 && source !== ToolSource.NATIVE && (
           <Select value={serverId ?? ALL} onValueChange={(value) => update({ server: value === ALL ? undefined : value })}>
             <SelectTrigger className="sm:w-52">
               <SelectValue />

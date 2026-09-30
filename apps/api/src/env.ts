@@ -41,6 +41,9 @@ const envSchema = z.object({
   ROOT_USERNAME: z.string().default("admin"),
   ROOT_PASSWORD: z.union([z.literal(""), z.string()]).optional(),
 
+  // Seconds between MCP server tool syncs; 0 disables periodic syncs.
+  MCP_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300),
+
   // Set on release builds; otherwise the short commit hash (see system.service).
   APP_VERSION: z.string().default("dev"),
 });

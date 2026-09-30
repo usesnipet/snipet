@@ -12,7 +12,7 @@ import { useSearchParams } from "react-router";
 
 import { useExecuteTool, useListTools } from "../hooks";
 
-import type { Tool } from "../schemas";
+import type { Tool } from "@snipet/shared";
 import type { RJSFSchema } from "@rjsf/utils";
 
 const BUILT_IN = "Built-in";
@@ -31,7 +31,7 @@ export function ToolPlayground() {
   const groups = useMemo(() => {
     const byServer = new Map<string, Tool[]>();
     for (const t of toolsQuery.data?.data ?? []) {
-      const key = t.mcp_server?.name ?? BUILT_IN;
+      const key = t.mcpServer?.name ?? BUILT_IN;
       byServer.set(key, [...(byServer.get(key) ?? []), t]);
     }
     return Array.from(byServer.entries());
@@ -83,7 +83,7 @@ export function ToolPlayground() {
               )}
               <SchemaFormFields
                 key={tool.id}
-                schema={tool.input_schema as RJSFSchema}
+                schema={tool.inputSchema as RJSFSchema}
                 onChange={setArgs}
               />
               <Button type="button" className="w-full" onClick={run} disabled={execute.isPending}>
@@ -102,8 +102,8 @@ export function ToolPlayground() {
               {elapsedMs !== undefined && (
                 <span className="text-muted-foreground text-xs tabular-nums">{elapsedMs} ms</span>
               )}
-              <Badge variant={execute.data.is_error ? "destructive" : "secondary"}>
-                {execute.data.is_error ? "Error" : "Success"}
+              <Badge variant={execute.data.isError ? "destructive" : "secondary"}>
+                {execute.data.isError ? "Error" : "Success"}
               </Badge>
             </div>
           )}

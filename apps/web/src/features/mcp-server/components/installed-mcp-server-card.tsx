@@ -20,7 +20,7 @@ import { McpServerFormDialog } from "./mcp-server-form-dialog";
 import { McpServerToolsDialog } from "./mcp-server-tools-dialog";
 
 import type { McpServer, McpServerRegistryItem } from "@snipet/shared";
-import type { Tool } from "@/models/tool";
+import type { Tool } from "@snipet/shared";
 type Props = {
   server: McpServer;
   tools: Tool[];

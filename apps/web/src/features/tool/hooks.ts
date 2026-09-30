@@ -3,13 +3,7 @@ import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
 import { toolService } from "./service";
 
-import type {
-  ExecuteTool,
-  ExecuteToolResponse,
-  ListToolsSearchParams,
-  PaginatedTool,
-  Tool,
-} from "./schemas";
+import type { ExecuteTool, FindToolsParams, Paginated, Tool, ToolResult } from "@snipet/shared";
 import type {
   ServiceGetOptions,
   ServicePostOptions,
@@ -20,8 +14,8 @@ const BASE_QUERY_KEY = "tool";
 
 export const listToolsQueryKey = () => [BASE_QUERY_KEY] as const;
 export const useListTools = (
-  opts?: ServiceGetOptions<PaginatedTool, ListToolsSearchParams>,
-): UseQueryResult<PaginatedTool, Error> =>
+  opts?: ServiceGetOptions<Paginated<Tool>, Partial<FindToolsParams>>,
+): UseQueryResult<Paginated<Tool>, Error> =>
   useQuery({
     queryKey: [...listToolsQueryKey(), opts?.searchParams],
     queryFn: () => toolService.list(opts),
@@ -40,8 +34,8 @@ export const useTool = (
   });
 
 export const useExecuteTool = (
-  opts?: ServicePostOptions<ExecuteTool, ExecuteToolResponse>,
-): UseMutationResult<ExecuteToolResponse, Error, { id: string; data: ExecuteTool }> =>
+  opts?: ServicePostOptions<ExecuteTool, ToolResult>,
+): UseMutationResult<ToolResult, Error, { id: string; data: ExecuteTool }> =>
   useMutation({
     mutationFn: ({ id, data }) => toolService.execute(id, data, opts),
     onError: () => {
