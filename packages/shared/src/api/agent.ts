@@ -50,7 +50,12 @@ export const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(255),
   description: z.string().optional(),
   systemPrompt: z.string().optional(),
-  maxTurns: z.number().int().min(1, "Max turns must be at least 1").max(500, "Max turns must be at most 500").optional(),
+  maxTurns: z
+    .number()
+    .int()
+    .min(1, "Max turns must be at least 1")
+    .max(500, "Max turns must be at most 500")
+    .optional(),
   enabled: z.boolean().optional(),
   llms: z
     .array(

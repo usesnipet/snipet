@@ -9,7 +9,6 @@ export enum McpTransport {
 // How an MCP server is reached.
 export const mcpTransportSchema = z.enum(McpTransport);
 
-
 export const mcpHttpConfigSchema = z.strictObject({
   url: z.url({ protocol: /^https?$/ }),
   headers: z.record(z.string(), z.string()).optional(),

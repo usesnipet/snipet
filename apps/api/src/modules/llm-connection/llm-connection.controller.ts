@@ -6,7 +6,9 @@ import { AllowApiKey, Public } from "../../common/decorators/auth.decorators.js"
 import { ZodPipe } from "../../common/pipes/zod.pipe.js";
 
 import {
-  createLlmConnectionSchema, findLlmConnectionsSchema, updateLlmConnectionSchema
+  createLlmConnectionSchema,
+  findLlmConnectionsSchema,
+  updateLlmConnectionSchema,
 } from "./llm-connection.dto.js";
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionService } from "./llm-connection.service.js";

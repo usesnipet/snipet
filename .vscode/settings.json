@@ -1,0 +1,6 @@
+{
+  // Match prettier (.prettierrc printWidth 120, trailingComma all) so the import sorter's output passes lint.
+  "importSorter.importStringConfiguration.maximumNumberOfImportExpressionsPerLine.type": "newLineEachExpressionAfterCountLimitExceptIfOnlyOne",
+  "importSorter.importStringConfiguration.maximumNumberOfImportExpressionsPerLine.count": 120,
+  "importSorter.importStringConfiguration.trailingComma": "multiLine"
+}
