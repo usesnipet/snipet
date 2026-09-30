@@ -2,6 +2,7 @@ export * from "./agent.js";
 export * from "./agent-run.js";
 export * from "./api-key.js";
 export * from "./auth.js";
+export * from "./knowledge.js";
 export * from "./llm-connection.js";
 export * from "./llm.js";
 export * from "./mcp-server.js";

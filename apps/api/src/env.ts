@@ -44,8 +44,44 @@ const envSchema = z.object({
   // Seconds between MCP server tool syncs; 0 disables periodic syncs.
   MCP_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300),
 
+  // Knowledge source: an S3 or S3-compatible bucket (MinIO, R2, ...). Without
+  // a bucket or PGVECTOR_URL the knowledge pipeline stays off.
+  KNOWLEDGE_S3_ENDPOINT: z.string().optional(), // empty means AWS S3
+  KNOWLEDGE_S3_REGION: z.string().default("us-east-1"),
+  KNOWLEDGE_S3_BUCKET: z.string().optional(),
+  KNOWLEDGE_S3_PREFIX: z.string().default(""),
+  // Empty credentials fall back to the AWS default chain (env, profile, IAM role).
+  KNOWLEDGE_S3_ACCESS_KEY_ID: z.string().optional(),
+  KNOWLEDGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
+  // Addresses buckets as endpoint/bucket; most S3-compatible services need it.
+  KNOWLEDGE_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
+  // Seconds between source syncs; 0 disables periodic syncs.
+  KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300),
+  KNOWLEDGE_INDEX_CONCURRENCY: z.coerce.number().int().min(1).default(2),
+  CHUNK_MAX_CHARACTERS: z.coerce.number().int().positive().default(1000),
+  CHUNK_OVERLAP: z.coerce.number().int().min(0).default(200),
+
+  // Separate Postgres (with pgvector) holding the chunks and their embeddings.
+  PGVECTOR_URL: z.string().optional(),
+  // Postgres text search config for keyword search. Part of the chunks schema,
+  // like EMBEDDING_DIMENSIONS: changing either needs knowledge_chunks dropped
+  // and everything reindexed.
+  FTS_LANGUAGE: z
+    .string()
+    .regex(/^[a-z_]+$/)
+    .default("simple"),
+
+  // Any OpenAI-compatible embeddings API.
+  EMBEDDING_BASE_URL: z.string().default("https://api.openai.com/v1"),
+  EMBEDDING_API_KEY: z.string().optional(),
+  EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
+  EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().max(2000).default(1536), // HNSW limit
+  EMBEDDING_BATCH_SIZE: z.coerce.number().int().positive().default(100),
+
   // Set on release builds; otherwise the short commit hash (see system.service).
   APP_VERSION: z.string().default("dev"),
 });
 
 export const env = envSchema.parse(process.env);
+
+export const knowledgeEnabled = Boolean(env.KNOWLEDGE_S3_BUCKET && env.PGVECTOR_URL);

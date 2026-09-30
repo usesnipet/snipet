@@ -8,8 +8,11 @@ services:
     environment:
       PORT: 8080
       DATABASE_URL: postgresql://postgres:postgres@db:5432/snipet
+      PGVECTOR_URL: postgresql://postgres:postgres@rag-db:5432/snipet_rag
     depends_on:
       db:
+        condition: service_healthy
+      rag-db:
         condition: service_healthy
     restart: unless-stopped
 
@@ -27,5 +30,38 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # Knowledge chunks and embeddings, apart from the app database.
+  rag-db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: snipet_rag
+    ports:
+      - "5434:5432"
+    volumes:
+      - rag-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Local S3-compatible knowledge source, for development.
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # web console
+    volumes:
+      - minio:/data
+    profiles: [dev]
+
 volumes:
   db:
+  rag-db:
+  minio:
