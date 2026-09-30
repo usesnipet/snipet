@@ -124,7 +124,7 @@ export async function httpSse<TBody = unknown>(
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
       Accept: "text/event-stream",
-      ...(accessToken ? { Authorization: accessToken } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },
   });

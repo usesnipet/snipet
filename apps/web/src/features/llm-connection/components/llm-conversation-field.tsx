@@ -16,9 +16,10 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 import { useExecuteLlm, useExecuteLlmStream } from "../hooks";
 
-import type { ExecuteLlm, ExecuteLlmTarget, LlmMessage, LlmRole, LlmSkippedEvent } from "../schemas";
+import type { LlmSkippedEvent } from "../hooks";
+import type { ExecuteLlm, ExecuteLlmTarget, LlmMessage, LlmRole } from "@snipet/shared";
 type Props = {
-  /** Field-array path holding `LlmMessage[]` (see schemas.ts). */
+  /** Field-array path holding `LlmMessage[]` (@snipet/shared). */
   name: string;
   /** Field path holding `ExecuteLlmTarget[]` — read (not watched) when sending. */
   targetsName: string;
@@ -103,7 +104,7 @@ export function LlmConversationField({ name, targetsName }: Props) {
             <CardTitle>Conversation</CardTitle>
             <CardDescription>Add messages, set their role, and drag to reorder.</CardDescription>
           </div>
-          <Button type="button" size="sm" onClick={() => append({ model: "" })}>
+          <Button type="button" size="sm" onClick={() => append(newMessage())}>
             <Plus />
             Add message
           </Button>

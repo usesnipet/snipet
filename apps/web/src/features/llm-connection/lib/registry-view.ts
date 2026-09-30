@@ -1,5 +1,4 @@
-import type { LlmProvider } from "../schemas";
-import type { LlmConnection } from "@snipet/shared";
+import type { LlmConnection, LlmProviderInfo } from "@snipet/shared";
 
 /**
  * A registry entry (the provider driver available on the backend) joined with
@@ -36,7 +35,7 @@ export const REGISTRY_SORTS: { value: RegistrySort; label: string }[] = [
 ];
 
 export function buildRegistryViews(
-  registry: LlmProvider[],
+  registry: LlmProviderInfo[],
   connections: LlmConnection[],
 ): RegistryView[] {
   const byKey = new Map<string, LlmConnection[]>();

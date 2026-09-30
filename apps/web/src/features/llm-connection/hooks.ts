@@ -6,20 +6,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { llmConnectionService } from "./service";
 
 import type {
-  ExecuteLlm,
-  ExecuteLlmResponse,
-  ListLlmProvider,
-  ListProviderModels,
-  ListProviderModelsSearchParams,
-  LlmMessage,
-  LlmSkippedEvent,
-  LlmStreamEvent,
-  LlmToolCallEvent,
-} from "./schemas";
-import type {
   CreateLlmConnection,
+  ExecuteLlm,
   FindLlmConnectionsParams,
+  ListProviderModelsParams,
   LlmConnection,
+  LlmMessage,
+  LlmModel,
+  LlmProviderInfo,
+  LlmResponse,
+  LlmStreamEvent,
   Paginated,
   UpdateLlmConnection,
 } from "@snipet/shared";
@@ -45,19 +41,19 @@ export const useListLlmConnections = (
 export const llmProvidersQueryKey = () =>
   [BASE_QUERY_KEY, "providers"] as const;
 export const useLlmProviders = (
-  opts?: ServiceGetOptions<ListLlmProvider>,
-): UseQueryResult<ListLlmProvider, Error> =>
+  opts?: ServiceGetOptions<LlmProviderInfo[]>,
+): UseQueryResult<LlmProviderInfo[], Error> =>
   useQuery({
     queryKey: llmProvidersQueryKey(),
     queryFn: () => llmConnectionService.listProviders(opts),
   });
 
-export const providerModelsQueryKey = (providerKey: string, searchParams?: ListProviderModelsSearchParams) =>
+export const providerModelsQueryKey = (providerKey: string, searchParams?: ListProviderModelsParams) =>
   [BASE_QUERY_KEY, "providers", providerKey, "models", searchParams] as const;
 export const useProviderModels = (
   providerKey: string,
-  opts?: ServiceGetOptions<ListProviderModels, ListProviderModelsSearchParams>,
-): UseQueryResult<ListProviderModels, Error> =>
+  opts?: ServiceGetOptions<LlmModel[], ListProviderModelsParams>,
+): UseQueryResult<LlmModel[], Error> =>
   useQuery({
     queryKey: providerModelsQueryKey(providerKey, opts?.searchParams),
     queryFn: () => llmConnectionService.listProviderModels(providerKey, opts),
@@ -121,14 +117,17 @@ export const useDeleteLlmConnection = (
 // --- Playground: execute / stream ---
 
 export const useExecuteLlm = (
-  opts?: ServicePostOptions<ExecuteLlm, ExecuteLlmResponse>,
-): UseMutationResult<ExecuteLlmResponse, Error, { data: ExecuteLlm }> =>
+  opts?: ServicePostOptions<ExecuteLlm, LlmResponse>,
+): UseMutationResult<LlmResponse, Error, { data: ExecuteLlm }> =>
   useMutation({
     mutationFn: ({ data }) => llmConnectionService.execute(data, opts),
     onError: () => {
       toast({ title: "Failed to execute LLM", variant: "destructive" });
     },
   });
+
+export type LlmSkippedEvent = Extract<LlmStreamEvent, { event: "llm_skipped" }>["data"];
+export type LlmToolCallEvent = Extract<LlmStreamEvent, { event: "tool_call" }>["data"];
 
 export type LlmStreamStatus = "idle" | "streaming" | "done" | "error";
 

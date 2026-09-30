@@ -3,7 +3,8 @@ import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { hasRole, Role } from "@snipet/shared";
 
-import { AuthUser, IS_PUBLIC, ROLES } from "../decorators/auth.decorators.js";
+import { ApiKeyService } from "../../modules/api-key/api-key.service.js";
+import { ALLOW_API_KEY, AuthUser, IS_PUBLIC, ROLES } from "../decorators/auth.decorators.js";
 
 import type { Request } from "express";
 
@@ -13,19 +14,28 @@ export interface AccessTokenPayload {
 }
 
 // Global: every route needs `Authorization: Bearer <access token>` unless
-// marked @Public(); @Roles(...) further restricts by role.
+// marked @Public(); @Roles(...) further restricts by role. @AllowApiKey()
+// routes also accept `X-API-Key` (request.apiKey is set, request.user isn't).
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly reflector: Reflector,
+    private readonly apiKeys: ApiKeyService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const targets = [context.getHandler(), context.getClass()];
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, targets);
 
-    const request = context.switchToHttp().getRequest<Request & { user?: AuthUser }>();
+    const request = context.switchToHttp().getRequest<Request & { user?: AuthUser; apiKey?: unknown }>();
+
+    const apiKey = request.headers["x-api-key"];
+    if (typeof apiKey === "string" && apiKey && this.reflector.getAllAndOverride<boolean>(ALLOW_API_KEY, targets)) {
+      request.apiKey = await this.apiKeys.verify(apiKey);
+      return true;
+    }
+
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
     if (scheme !== "Bearer" || !token) {
       // Public routes still get request.user when a valid token is sent.

@@ -31,6 +31,8 @@
     "@nestjs/typeorm": "^12.0.2",
     "@snipet/shared": "workspace:*",
     "bcryptjs": "^3.0.3",
+    "ollama": "^0.6.4",
+    "openai": "^7.25.0",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

@@ -1,39 +1,30 @@
 import http, { httpSse } from "@/lib/http";
 
 import {
-  executeLlmSchema,
-  executeLlmResponseSchema,
-  listLlmProviderSchema,
-  listProviderModelsSchema,
-  listProviderModelsSearchParamsSchema,
-  llmStartEventSchema,
-  llmStreamErrorEventSchema,
-  llmStreamDoneEventSchema,
-  llmSkippedEventSchema,
-  llmMessageEventSchema,
-  llmTextDeltaEventSchema,
-  llmToolCallEventSchema,
-} from "./schemas";
-import {
   createLlmConnectionSchema,
+  executeLlmSchema,
   findLlmConnectionsParamsSchema,
+  listProviderModelsParamsSchema,
   llmConnectionSchema,
+  llmModelSchema,
+  llmProviderInfoSchema,
+  llmResponseSchema,
+  llmStreamEventSchema,
   paginatedLlmConnectionSchema,
   updateLlmConnectionSchema,
 } from "@snipet/shared";
+import { z } from "zod";
 
 import type {
-  ExecuteLlm,
-  ExecuteLlmResponse,
-  ListLlmProvider,
-  ListProviderModels,
-  ListProviderModelsSearchParams,
-  LlmStreamEvent,
-} from "./schemas";
-import type {
   CreateLlmConnection,
+  ExecuteLlm,
   FindLlmConnectionsParams,
+  ListProviderModelsParams,
   LlmConnection,
+  LlmModel,
+  LlmProviderInfo,
+  LlmResponse,
+  LlmStreamEvent,
   Paginated,
   UpdateLlmConnection,
 } from "@snipet/shared";
@@ -59,11 +50,11 @@ const list = async (
   });
 
 const listProviders = async (
-  opts: ServiceGetOptions<ListLlmProvider> = {},
-): Promise<ListLlmProvider> =>
+  opts: ServiceGetOptions<LlmProviderInfo[]> = {},
+): Promise<LlmProviderInfo[]> =>
   http.get({
     url: `${LLM_CONNECTION_URL}/providers`,
-    schemas: { response: listLlmProviderSchema },
+    schemas: { response: z.array(llmProviderInfoSchema) },
     ...opts,
   });
 
@@ -109,35 +100,35 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
-// listProviderModels sources connection options from searchParams.connection_id
+// listProviderModels sources connection options from searchParams.connectionId
 // when given, else providerKey's default connection (backend-resolved).
 const listProviderModels = async (
   providerKey: string,
-  opts: ServiceGetOptions<ListProviderModels, ListProviderModelsSearchParams> = {},
-): Promise<ListProviderModels> =>
+  opts: ServiceGetOptions<LlmModel[], ListProviderModelsParams> = {},
+): Promise<LlmModel[]> =>
   http.get({
     url: `${LLM_CONNECTION_URL}/providers/{key}/models`,
     params: { key: providerKey },
     schemas: {
-      response: listProviderModelsSchema,
-      searchParams: listProviderModelsSearchParamsSchema,
+      response: z.array(llmModelSchema),
+      searchParams: listProviderModelsParamsSchema,
     },
     ...opts,
   });
 
 const execute = async (
   body: ExecuteLlm,
-  opts: ServicePostOptions<ExecuteLlm, ExecuteLlmResponse> = {},
-): Promise<ExecuteLlmResponse> =>
+  opts: ServicePostOptions<ExecuteLlm, LlmResponse> = {},
+): Promise<LlmResponse> =>
   http.post({
     url: `${LLM_CONNECTION_URL}/execute`,
     body,
-    schemas: { body: executeLlmSchema, response: executeLlmResponseSchema },
+    schemas: { body: executeLlmSchema, response: llmResponseSchema },
     ...opts,
   });
 
 // executeStream runs the streamed variant, invoking onEvent with each typed
-// SSE event ("text_delta" | "tool_call" | "error" | "done") as it arrives.
+// SSE event (llm_started, text_delta, tool_call, llm_skipped, message, error, done).
 const executeStream = async (
   body: ExecuteLlm,
   onEvent: (event: LlmStreamEvent) => void,
@@ -149,29 +140,8 @@ const executeStream = async (
     schemas: { body: executeLlmSchema },
     signal: opts.signal,
     onEvent: (event, data) => {
-      switch (event) {
-        case "llm_started":
-          onEvent({ event: "llm_started", data: llmStartEventSchema.parse(data) });
-          return;
-        case "text_delta":
-          onEvent({ event: "text_delta", data: llmTextDeltaEventSchema.parse(data) });
-          return;
-        case "tool_call":
-          onEvent({ event: "tool_call", data: llmToolCallEventSchema.parse(data) });
-          return;
-        case "llm_skipped":
-          onEvent({ event: "llm_skipped", data: llmSkippedEventSchema.parse(data) });
-          return;
-        case "message":
-          onEvent({ event: "message", data: llmMessageEventSchema.parse(data) });
-          return;
-        case "error":
-          onEvent({ event: "error", data: llmStreamErrorEventSchema.parse(data) });
-          return;
-        case "done":
-          onEvent({ event: "done", data: llmStreamDoneEventSchema.parse(data) });
-          return;
-      }
+      const parsed = llmStreamEventSchema.safeParse({ event, data });
+      if (parsed.success) onEvent(parsed.data);
     },
   });
 

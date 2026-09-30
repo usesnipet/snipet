@@ -1,13 +1,13 @@
 import { FormSelect } from "@/components/form/select";
 import { useFormContext } from "react-hook-form";
 
-import type { LlmProvider } from "../schemas";
+import type { LlmProviderInfo } from "@snipet/shared";
 
 type ProviderSelectProps = {
   name: string;
   /** Field that holds the provider config — reset when the provider changes. */
   configName: string;
-  providers: LlmProvider[];
+  providers: LlmProviderInfo[];
   label?: string;
   placeholder?: string;
   disabled?: boolean;
