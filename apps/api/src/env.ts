@@ -14,7 +14,7 @@ if (existsSync(rootEnvFile)) {
 }
 
 const envSchema = z.object({
-  PORT: z.coerce.number().int().default(3000),
+  PORT: z.coerce.number().int().default(8080),
   DATABASE_URL: z.string(),
   // Run pending migrations on boot.
   DB_AUTO_MIGRATE: z.stringbool().default(true),

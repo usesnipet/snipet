@@ -6,6 +6,7 @@ import { env } from "./env.js";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix("api");
   app.useGlobalFilters(new DbErrorFilter(app.get(HttpAdapterHost).httpAdapter));
   app.enableShutdownHooks();
   await app.listen(env.PORT);

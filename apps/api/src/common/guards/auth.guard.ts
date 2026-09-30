@@ -1,6 +1,4 @@
-import {
-  CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException
-} from "@nestjs/common";
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { hasRole, Role } from "@snipet/shared";
@@ -29,7 +27,11 @@ export class AuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<Request & { user?: AuthUser }>();
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
-    if (scheme !== "Bearer" || !token) throw new UnauthorizedException("missing bearer token");
+    if (scheme !== "Bearer" || !token) {
+      // Public routes still get request.user when a valid token is sent.
+      if (isPublic) return true;
+      throw new UnauthorizedException("missing bearer token");
+    }
 
     let payload: AccessTokenPayload;
     try {
