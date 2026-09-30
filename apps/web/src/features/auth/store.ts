@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import type { User } from "@/models/user";
+import type { User } from "@snipet/shared";
 
 export type Session = {
   accessToken: string;

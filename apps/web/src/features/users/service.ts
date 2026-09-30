@@ -2,19 +2,13 @@ import http from "@/lib/http";
 
 import {
   createUserSchema,
-  listUsersSearchParamsSchema,
+  findUsersParamsSchema,
   paginatedUserSchema,
   updateUserSchema,
   userSchema,
-} from "./schemas";
+} from "@snipet/shared";
 
-import type {
-  CreateUser,
-  ListUsersSearchParams,
-  PaginatedUser,
-  UpdateUser,
-  User,
-} from "./schemas";
+import type { CreateUser, FindUsersParams, Paginated, UpdateUser, User } from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -25,13 +19,13 @@ import type {
 const USERS_URL = "/api/users";
 
 const list = async (
-  opts: ServiceGetOptions<PaginatedUser, ListUsersSearchParams> = {},
-): Promise<PaginatedUser> =>
+  opts: ServiceGetOptions<Paginated<User>, FindUsersParams> = {},
+): Promise<Paginated<User>> =>
   http.get({
     url: USERS_URL,
     schemas: {
       response: paginatedUserSchema,
-      searchParams: listUsersSearchParamsSchema,
+      searchParams: findUsersParamsSchema,
     },
     ...opts,
   });

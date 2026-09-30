@@ -59,8 +59,6 @@ export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams 
     ? applySearchParams(pathUrl, searchParams as SearchParamsRecord)
     : pathUrl;
 
-  // access_token already carries the "Bearer " prefix (see auth.AuthResponse
-  // on the backend) — send it as-is.
   const accessToken = useAuthStore.getState().accessToken;
 
   const response = await fetch(requestUrl, {
@@ -68,7 +66,7 @@ export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams 
     body: body !== undefined ? JSON.stringify(body) : undefined,
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-      ...(accessToken ? { Authorization: accessToken } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },
   });

@@ -1,25 +1,24 @@
 import http from "@/lib/http";
-import { userSchema } from "@/models/user";
-
 import {
   authResponseSchema,
-  changePasswordSchema,
+  changeOwnPasswordSchema,
   loginSchema,
   refreshTokenSchema,
-} from "./schemas";
+  userSchema,
+} from "@snipet/shared";
 
 import type {
   AuthResponse,
-  ChangePassword,
+  ChangeOwnPassword,
   Login,
-  RefreshTokenPayload,
-} from "./schemas";
+  RefreshToken,
+  User,
+} from "@snipet/shared";
 import type {
   ServiceGetOptions,
   ServicePostOptions,
   ServicePutOptions,
 } from "@/lib/services";
-import type { User } from "@/models/user";
 
 const AUTH_URL = "/api/auth";
 
@@ -35,8 +34,8 @@ const login = async (
   });
 
 const refresh = async (
-  body: RefreshTokenPayload,
-  opts: ServicePostOptions<RefreshTokenPayload, AuthResponse> = {},
+  body: RefreshToken,
+  opts: ServicePostOptions<RefreshToken, AuthResponse> = {},
 ): Promise<AuthResponse> =>
   http.post({
     url: `${AUTH_URL}/refresh`,
@@ -46,8 +45,8 @@ const refresh = async (
   });
 
 const logout = async (
-  body: RefreshTokenPayload,
-  opts: ServicePostOptions<RefreshTokenPayload, void> = {},
+  body: RefreshToken,
+  opts: ServicePostOptions<RefreshToken, void> = {},
 ): Promise<void> =>
   http.post({
     url: `${AUTH_URL}/logout`,
@@ -64,13 +63,13 @@ const me = async (opts: ServiceGetOptions<User> = {}): Promise<User> =>
   });
 
 const changePassword = async (
-  body: ChangePassword,
-  opts: ServicePutOptions<ChangePassword, void> = {},
+  body: ChangeOwnPassword,
+  opts: ServicePutOptions<ChangeOwnPassword, void> = {},
 ): Promise<void> =>
   http.put({
     url: `${AUTH_URL}/me/password`,
     body,
-    schemas: { body: changePasswordSchema },
+    schemas: { body: changeOwnPasswordSchema },
     ...opts,
   });
 

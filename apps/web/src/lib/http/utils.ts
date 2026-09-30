@@ -2,7 +2,7 @@ import { authService } from "@/features/auth/service";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
 
-import type { AuthResponse } from "@/features/auth/schemas";
+import type { AuthResponse } from "@snipet/shared";
 import type { PathParamsRecord, SearchParamsRecord } from "./http";
 export function applyPathParams(url: string, params: PathParamsRecord): string {
   return Object.entries(params).reduce(
@@ -63,13 +63,13 @@ export async function handleRefreshToken(): Promise<boolean> {
 
   try {
     if (!refreshTokenPromise) {
-      refreshTokenPromise = authService.refresh({ refresh_token: refreshToken }, { retry: true });
+      refreshTokenPromise = authService.refresh({ refreshToken }, { retry: true });
     }
     const session = await refreshTokenPromise;
     useAuthStore.getState().setSession({
-      accessToken: session.access_token,
-      accessTokenExpiresAt: session.expires_at.toISOString(),
-      refreshToken: session.refresh_token,
+      accessToken: session.accessToken,
+      accessTokenExpiresAt: session.expiresAt.toISOString(),
+      refreshToken: session.refreshToken,
       user: session.user,
     });
     return true;

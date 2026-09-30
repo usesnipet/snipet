@@ -11,7 +11,7 @@ import { useDeleteUser, useListUsers } from "../hooks";
 import { UpdateUserDialog } from "./update-user-dialog";
 
 import type { DataTableColumn, DataTablePagination } from "@/components/data-table";
-import type { User } from "../schemas";
+import type { User } from "@snipet/shared";
 
 function useUsersListQuery(pagination: DataTablePagination) {
   return useListUsers({ searchParams: pagination });
@@ -74,7 +74,7 @@ const columns: DataTableColumn<User>[] = [
   {
     id: "created",
     header: "Created",
-    cell: (user) => <DateFormat date={user.created_at} />,
+    cell: (user) => <DateFormat date={user.createdAt} />,
   },
   {
     id: "actions",

@@ -5,13 +5,7 @@ import { queryClient } from "@/lib/query-client";
 
 import { usersService } from "./service";
 
-import type {
-  CreateUser,
-  ListUsersSearchParams,
-  PaginatedUser,
-  UpdateUser,
-  User,
-} from "./schemas";
+import type { CreateUser, FindUsersParams, Paginated, UpdateUser, User } from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -24,8 +18,8 @@ const BASE_QUERY_KEY = "users";
 
 export const listUsersQueryKey = () => [BASE_QUERY_KEY] as const;
 export const useListUsers = (
-  opts?: ServiceGetOptions<PaginatedUser, ListUsersSearchParams>,
-): UseQueryResult<PaginatedUser, Error> =>
+  opts?: ServiceGetOptions<Paginated<User>, FindUsersParams>,
+): UseQueryResult<Paginated<User>, Error> =>
   useQuery({
     queryKey: [...listUsersQueryKey(), opts?.searchParams],
     queryFn: () => usersService.list(opts),

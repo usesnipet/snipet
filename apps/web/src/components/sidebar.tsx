@@ -9,13 +9,16 @@ import { ToggleTheme } from "@/components/ui/toggle-theme";
 import { useCurrentUser, useLogout } from "@/features/auth/hooks";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
-import { BookText, Blocks, Home, Key, LogOut, MessageSquare, Server, Settings, Users, Waypoints, Wrench } from "lucide-react";
+import { hasRole, Role } from "@snipet/shared";
+import {
+  Blocks, BookText, Home, Key, LogOut, MessageSquare, Server, Settings, Users, Waypoints, Wrench
+} from "lucide-react";
 
 import { Version } from "./version";
 
 import type { NavEntry } from "@/components/sidebar/types";
 
-const isAdmin = () => useAuthStore.getState().user?.role === "admin";
+const isAdmin = () => hasRole(useAuthStore.getState().user?.role, [Role.Admin]) ;
 
 const navItems: NavEntry[] = [
   {

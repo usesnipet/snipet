@@ -8,13 +8,13 @@ import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
+import { createUserSchema, Role } from "@snipet/shared";
 
 import { useCreateUser } from "../hooks";
-import { createUserSchema } from "../schemas";
 
 import { RoleSelect } from "./role-select";
 
-import type { CreateUser, User } from "../schemas";
+import type { CreateUser, User } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
 type CreateUserDialogProps = DialogInstanceProps<{
@@ -25,7 +25,7 @@ const defaultValues: CreateUser = {
   username: "",
   name: "",
   password: "",
-  role: "user",
+  role: Role.User,
 };
 
 export function CreateUserDialog({ onCreated, close }: CreateUserDialogProps) {

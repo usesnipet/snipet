@@ -11,11 +11,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { useUpdateUser } from "../hooks";
-import { updateUserSchema } from "../schemas";
+import { updateUserSchema } from "@snipet/shared";
 
 import { RoleSelect } from "./role-select";
 
-import type { UpdateUser, User } from "../schemas";
+import type { UpdateUser, User } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
 type UpdateUserDialogProps = DialogInstanceProps<{

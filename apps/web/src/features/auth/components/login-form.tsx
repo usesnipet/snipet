@@ -8,9 +8,9 @@ import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 
 import { useLogin } from "../hooks";
-import { loginSchema } from "../schemas";
+import { loginSchema } from "@snipet/shared";
 
-import type { Login } from "../schemas";
+import type { Login } from "@snipet/shared";
 
 const defaultValues: Login = { username: "", password: "" };
 

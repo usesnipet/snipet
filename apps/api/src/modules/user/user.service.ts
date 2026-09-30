@@ -4,7 +4,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Role } from "@snipet/shared";
 import { hash } from "bcryptjs";
-import { Repository } from "typeorm";
+import { DeepPartial, QueryDeepPartialEntity, Repository } from "typeorm";
 
 import { CrudService } from "../../common/crud/crud.service.js";
 import { env } from "../../env.js";
@@ -33,8 +33,19 @@ export class UserService extends CrudService<User> implements OnApplicationBoots
     return this.repo.createQueryBuilder("user").addSelect("user.password").where("user.id = :id", { id }).getOne();
   }
 
-  async setPassword(id: string, password: string): Promise<void> {
-    await this.updateById(id, { password: await hashPassword(password) });
+  // Hashes the password and leaves the hash out of the returned user.
+  override async create(dto: DeepPartial<User>): Promise<User> {
+    const { password, ...user } = await super.create({ ...dto, password: await hashPassword(dto.password!) });
+    return user as User;
+  }
+
+  override async updateById(id: string, dto: QueryDeepPartialEntity<User>): Promise<void> {
+    if (typeof dto.password === "string") dto = { ...dto, password: await hashPassword(dto.password) };
+    await super.updateById(id, dto);
+  }
+
+  setPassword(id: string, password: string): Promise<void> {
+    return this.updateById(id, { password });
   }
 
   // Provisions the first admin on an empty users table.
@@ -45,7 +56,7 @@ export class UserService extends CrudService<User> implements OnApplicationBoots
     await this.create({
       username: env.ROOT_USERNAME,
       name: env.ROOT_USERNAME,
-      password: await hashPassword(password),
+      password,
       role: Role.Admin,
     });
     this.logger.warn(

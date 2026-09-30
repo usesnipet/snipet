@@ -1,15 +1,12 @@
 import { useCurrentUser } from "@/features/auth/hooks";
 import { ROUTES } from "@/routes";
+import { hasRole, Role } from "@snipet/shared";
 import { Navigate, Outlet } from "react-router";
 
-import type { Role } from "@/models/user";
-
-export function RequireRole({ role }: { role: Role }) {
+export function RequireRole({ role }: { role: Role | Role[] }) {
   const user = useCurrentUser();
+  const roles = Array.isArray(role) ? role : [role];
 
-  if (user?.role !== role) {
-    return <Navigate to={ROUTES.home} replace />;
-  }
-
+  if (hasRole(user?.role, roles)) return <Navigate to={ROUTES.home} replace />;
   return <Outlet />;
 }

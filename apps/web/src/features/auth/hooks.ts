@@ -8,9 +8,8 @@ import { ROUTES } from "@/routes";
 import { authService } from "./service";
 import { useAuthStore } from "./store";
 
-import type { AuthResponse, ChangePassword, Login } from "./schemas";
+import type { AuthResponse, ChangeOwnPassword, Login, User } from "@snipet/shared";
 import type { ServicePostOptions, ServicePutOptions } from "@/lib/services";
-import type { User } from "@/models/user";
 import type { RoutePath } from "@/routes";
 import type { UseMutationResult } from "@tanstack/react-query";
 
@@ -24,9 +23,9 @@ export const useLogin = (
     mutationFn: (data) => authService.login(data, opts),
     onSuccess: (result) => {
       setSession({
-        accessToken: result.access_token,
-        accessTokenExpiresAt: result.expires_at.toISOString(),
-        refreshToken: result.refresh_token,
+        accessToken: result.accessToken,
+        accessTokenExpiresAt: result.expiresAt.toISOString(),
+        refreshToken: result.refreshToken,
         user: result.user,
       });
       const params = new URLSearchParams(window.location.search);
@@ -47,7 +46,7 @@ export const useLogout = (): UseMutationResult<void, Error, void> => {
   return useMutation({
     mutationFn: async () => {
       if (refreshToken) {
-        await authService.logout({ refresh_token: refreshToken }).catch(() => {});
+        await authService.logout({ refreshToken }).catch(() => {});
       }
     },
     onSettled: () => {
@@ -59,8 +58,8 @@ export const useLogout = (): UseMutationResult<void, Error, void> => {
 };
 
 export const useChangePassword = (
-  opts?: ServicePutOptions<ChangePassword, void>,
-): UseMutationResult<void, Error, ChangePassword> => {
+  opts?: ServicePutOptions<ChangeOwnPassword, void>,
+): UseMutationResult<void, Error, ChangeOwnPassword> => {
   const clearSession = useAuthStore((s) => s.clearSession);
 
   return useMutation({

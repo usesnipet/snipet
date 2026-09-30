@@ -5,6 +5,7 @@ import { LoadingFallback } from "./components/loading-fallback";
 import { RequireAuth } from "./components/require-auth";
 import { RequireRole } from "./components/require-role";
 import { ROUTES } from "./routes";
+import { Role } from "@snipet/shared";
 
 import type { RoutePath } from "./routes";
 const Layout = lazy(() =>
@@ -45,7 +46,7 @@ export const Router = () => {
         <Routes>
           <Route path={toReactRouterPath(ROUTES.login)} element={<LoginPage />} />
           <Route element={<RequireAuth />}>
-            <Route element={<RequireRole role="admin" />}>
+            <Route element={<RequireRole role={Role.Admin} />}>
               {/* One optional-param route, so starting a chat doesn't remount the page. */}
               <Route path={`${toReactRouterPath(ROUTES.agentPlaygroundSession)}?`} element={<AgentPlaygroundPage />} />
             </Route>
@@ -56,7 +57,7 @@ export const Router = () => {
               <Route path={toReactRouterPath(ROUTES.knowledge)} element={<PlaceholderPage title="Knowledge" />} />
               <Route path={toReactRouterPath(ROUTES.connections)} element={<PlaceholderPage title="Connections" />} />
               <Route path={toReactRouterPath(ROUTES.settings)} element={<PlaceholderPage title="Settings" />} />
-              <Route element={<RequireRole role="admin" />}>
+              <Route element={<RequireRole role={Role.Admin} />}>
                 <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
                 <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
                 <Route path={toReactRouterPath(ROUTES.tools)} element={<ToolsPage />} />
