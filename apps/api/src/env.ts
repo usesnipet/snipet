@@ -34,7 +34,7 @@ const envSchema = z.object({
   // First admin, created when the users table is empty. Without a password a
   // random one is generated and logged once.
   ROOT_USERNAME: z.string().default("admin"),
-  ROOT_PASSWORD: z.union([z.literal(""), z.string().min(8)]).optional(),
+  ROOT_PASSWORD: z.union([z.literal(""), z.string()]).optional(),
 });
 
 export const env = envSchema.parse(process.env);
