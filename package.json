@@ -4,7 +4,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "lint": "turbo run build --filter=@snipet/shared && eslint . --cache",
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "migration:generate": "pnpm --filter @snipet/api migration:generate",
@@ -14,8 +14,17 @@
     "migration:show": "pnpm --filter @snipet/api migration:show"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
     "prettier": "^3.4.2",
-    "turbo": "^2.5.0"
+    "turbo": "^2.5.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.0"
   },
   "packageManager": "pnpm@10.26.0"
 }

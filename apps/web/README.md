@@ -7,7 +7,7 @@ shadcn/Radix + Tailwind v4.
 pnpm install
 pnpm dev         # dev server on :5173, proxies /api to BACKEND_URL (see .env.example)
 pnpm typecheck   # tsc -b
-pnpm lint        # eslint
+pnpm lint        # eslint, from the repo root
 pnpm build       # tsc -b && vite build -> dist/
 ```
 
