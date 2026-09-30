@@ -15,7 +15,7 @@ import { useDeleteApiKey, useListApiKey, useRollApiKey } from "../hooks";
 import { UpdateApiKeyExpirationDialog } from "./update-api-key-expiration-dialog";
 
 import type { DataTableColumn, DataTablePagination } from "@/components/data-table";
-import type { ApiKey, ApiKeyWithSecret } from "../schemas";
+import type { ApiKey, ApiKeyWithSecret } from "@snipet/shared";
 
 
 function useApiKeyTableQuery(pagination: DataTablePagination) {
@@ -88,7 +88,7 @@ export function ApiKeyTable() {
       cell: (row) => (
         <div className="flex flex-col gap-0.5">
           <span className="font-medium">{row.name}</span>
-          <span className="font-mono text-xs text-muted-foreground">{row.key_id}</span>
+          <span className="font-mono text-xs text-muted-foreground">{row.keyId}</span>
         </div>
       ),
     },
@@ -105,14 +105,14 @@ export function ApiKeyTable() {
       id: "expires_at",
       header: "Expires",
       cell: (row) => (
-        <DateFormat className="text-muted-foreground" emptyValue="Never" date={row.expires_at} />
+        <DateFormat className="text-muted-foreground" emptyValue="Never" date={row.expiresAt} />
       ),
     },
     {
       id: "created_at",
       header: "Created",
       cell: (row) => (
-        <DateFormat className="text-muted-foreground" date={row.created_at} />
+        <DateFormat className="text-muted-foreground" date={row.createdAt} />
       ),
     },
     {

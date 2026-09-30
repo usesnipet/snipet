@@ -11,9 +11,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useUpdateExpirationApiKey } from "../hooks";
+import { useUpdateApiKey } from "../hooks";
 
-import type { ApiKey } from "../schemas";
+import type { ApiKey } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 const formSchema = z.object({
   expires_at: z.string().optional(),
@@ -34,10 +34,10 @@ type UpdateApiKeyExpirationDialogProps = DialogInstanceProps<{
 export function UpdateApiKeyExpirationDialog({ apiKey, close }: UpdateApiKeyExpirationDialogProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { expires_at: toDatetimeLocalValue(apiKey.expires_at) },
+    defaultValues: { expires_at: toDatetimeLocalValue(apiKey.expiresAt) },
   });
 
-  const { mutateAsync, isPending } = useUpdateExpirationApiKey();
+  const { mutateAsync, isPending } = useUpdateApiKey();
 
   const onSubmit = form.handleSubmit(async (values) => {
     const expiresAt = resolveDurationExpiresAt(values.expires_at);
@@ -45,7 +45,7 @@ export function UpdateApiKeyExpirationDialog({ apiKey, close }: UpdateApiKeyExpi
     await mutateAsync({
       id: apiKey.id,
       data: {
-        expires_at: expiresAt ? new Date(expiresAt) : undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
       },
     });
     close();

@@ -14,7 +14,7 @@ import { z } from "zod";
 
 import { useCreateApiKey } from "../hooks";
 
-import type { ApiKeyWithSecret } from "../schemas";
+import type { ApiKeyWithSecret } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 const formSchema = z.object({
   name: z.string().min(1).max(255),
@@ -41,7 +41,7 @@ export function CreateApiKeyDialog({ onCreated, close }: CreateApiKeyDialogProps
     const result = await mutateAsync({
       data: {
         name: values.name,
-        expires_at: expiresAt ? new Date(expiresAt) : undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
       },
     });
     form.reset();

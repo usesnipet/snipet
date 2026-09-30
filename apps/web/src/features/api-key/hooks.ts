@@ -5,9 +5,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiKeyService } from "./service";
 
 import type {
-  ApiKey, ApiKeyWithSecret, CreateApiKey, ListApiKeySearchParams, PaginatedApiKey,
-  UpdateApiKeyExpiration
-} from "./schemas";
+  ApiKey, ApiKeyWithSecret, CreateApiKey, FindApiKeysParams, Paginated, UpdateApiKey
+} from "@snipet/shared";
 import type {
   ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions
 } from "@/lib/services";
@@ -17,8 +16,8 @@ const BASE_QUERY_KEY = "api-key";
 
 export const listApiKeyQueryKey = () => [BASE_QUERY_KEY, "list"] as const;
 export const useListApiKey = (
-  opts?: ServiceGetOptions<PaginatedApiKey, ListApiKeySearchParams>
-): UseQueryResult<PaginatedApiKey, Error> => {
+  opts?: ServiceGetOptions<Paginated<ApiKey>, FindApiKeysParams>
+): UseQueryResult<Paginated<ApiKey>, Error> => {
   return useQuery({
     queryKey: [...listApiKeyQueryKey(), opts?.searchParams],
     queryFn: () => apiKeyService.list(opts),
@@ -102,18 +101,18 @@ export const useRollApiKey = (
   })
 }
 
-export const updateExpirationApiKeyQueryKey = () => [BASE_QUERY_KEY, "updateExpiration"];
-export const useUpdateExpirationApiKey = (
-  opts?: ServicePutOptions<UpdateApiKeyExpiration, void>
-): UseMutationResult<void, Error, { id: string; data: UpdateApiKeyExpiration }> => {
+export const updateApiKeyQueryKey = () => [BASE_QUERY_KEY, "update"];
+export const useUpdateApiKey = (
+  opts?: ServicePutOptions<UpdateApiKey, void>
+): UseMutationResult<void, Error, { id: string; data: UpdateApiKey }> => {
   return useMutation({
-    mutationKey: updateExpirationApiKeyQueryKey(),
-    mutationFn: ({ id, data }: { id: string; data: UpdateApiKeyExpiration }) =>
-      apiKeyService.updateExpiration(id, data, opts),
+    mutationKey: updateApiKeyQueryKey(),
+    mutationFn: ({ id, data }: { id: string; data: UpdateApiKey }) =>
+      apiKeyService.update(id, data, opts),
     onSuccess: (_data, { id }) => {
       toast({
-        title: "API Key expiration updated successfully",
-        description: "The API key expiration has been updated successfully",
+        title: "API Key updated successfully",
+        description: "The API key has been updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: listApiKeyQueryKey() });
       queryClient.invalidateQueries({ queryKey: meApiKeyQueryKey() });
@@ -121,8 +120,8 @@ export const useUpdateExpirationApiKey = (
     },
     onError: () => {
       toast({
-        title: "Failed to update API Key expiration",
-        description: "The API Key expiration has not been updated successfully",
+        title: "Failed to update API Key",
+        description: "The API Key has not been updated successfully",
         variant: "destructive",
       });
     }

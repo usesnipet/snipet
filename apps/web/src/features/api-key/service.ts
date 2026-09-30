@@ -1,14 +1,12 @@
 import { http } from "@/lib/http";
-
 import {
-  apiKeySchema, apiKeyWithSecretSchema, createApiKeySchema,
-  listApiKeySearchParamsSchema, paginatedApiKeySchema, updateApiKeyExpirationSchema
-} from "./schemas";
+  apiKeySchema, apiKeyWithSecretSchema, createApiKeySchema, findApiKeysParamsSchema, paginatedApiKeySchema,
+  updateApiKeySchema
+} from "@snipet/shared";
 
 import type {
-  ApiKey, ApiKeyWithSecret, CreateApiKey, ListApiKeySearchParams, PaginatedApiKey,
-  UpdateApiKeyExpiration
-} from "./schemas";
+  ApiKey, ApiKeyWithSecret, CreateApiKey, FindApiKeysParams, Paginated, UpdateApiKey
+} from "@snipet/shared";
 import type {
   ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions
 } from "@/lib/services";
@@ -17,13 +15,13 @@ const apiKeysUrl = () => "/api/api-keys";
 const API_KEY_ME_URL = "/api/api-key/me";
 
 const list = async (
-  opts: ServiceGetOptions<PaginatedApiKey, ListApiKeySearchParams> = {},
-): Promise<PaginatedApiKey> => {
+  opts: ServiceGetOptions<Paginated<ApiKey>, FindApiKeysParams> = {},
+): Promise<Paginated<ApiKey>> => {
   return http.get({
     url: apiKeysUrl(),
     schemas: {
       response: paginatedApiKeySchema,
-      searchParams: listApiKeySearchParamsSchema,
+      searchParams: findApiKeysParamsSchema,
     },
     ...opts,
   })
@@ -44,17 +42,17 @@ const create = async (
   })
 }
 
-const updateExpiration = async (
+const update = async (
   id: string,
-  body: UpdateApiKeyExpiration,
-  opts: ServicePutOptions<UpdateApiKeyExpiration, void> = {},
+  body: UpdateApiKey,
+  opts: ServicePutOptions<UpdateApiKey, void> = {},
 ): Promise<void> => {
   return http.put({
-    url: `${apiKeysUrl()}/{id}/expiration`,
+    url: `${apiKeysUrl()}/{id}`,
     params: { id },
     body,
     schemas: {
-      body: updateApiKeyExpirationSchema,
+      body: updateApiKeySchema,
     },
     ...opts,
   })
@@ -111,6 +109,6 @@ export const apiKeyService = {
   me,
   findById,
   roll,
-  updateExpiration,
+  update,
   delete: remove,
 }

@@ -6,7 +6,7 @@ import { CreateApiKeyDialog } from "@/features/api-key/components/create-api-key
 import { useDialog } from "@/lib/dialog/use-dialog";
 import { Plus } from "lucide-react";
 
-import type { ApiKeyWithSecret } from "@/features/api-key/schemas";
+import type { ApiKeyWithSecret } from "@snipet/shared";
 export function ApiKeysPage() {
   const { openDialog } = useDialog();
 
