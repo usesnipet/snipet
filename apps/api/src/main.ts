@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { HttpAdapterHost, NestFactory } from "@nestjs/core";
 
 import { AppModule } from "./app.module.js";
@@ -9,6 +10,10 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
   app.useGlobalFilters(new DbErrorFilter(app.get(HttpAdapterHost).httpAdapter));
   app.enableShutdownHooks();
-  await app.listen(env.PORT);
+  const logger = new Logger("Main");
+  await app.listen(env.PORT).then(() => {
+    logger.log(`App listening on port ${env.PORT}`);
+  });
 }
+
 void bootstrap();
