@@ -35,6 +35,9 @@ const envSchema = z.object({
   // random one is generated and logged once.
   ROOT_USERNAME: z.string().default("admin"),
   ROOT_PASSWORD: z.union([z.literal(""), z.string()]).optional(),
+
+  // Set on release builds; otherwise the short commit hash (see system.service).
+  APP_VERSION: z.string().default("dev"),
 });
 
 export const env = envSchema.parse(process.env);

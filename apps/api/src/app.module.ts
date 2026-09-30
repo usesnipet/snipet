@@ -5,6 +5,7 @@ import { env } from "./env.js";
 import { dataSourceOptions } from "./infra/database/data-source.js";
 import { ensureDatabase } from "./infra/database/ensure-database.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
+import { SystemModule } from "./modules/system/system.module.js";
 import { UserModule } from "./modules/user/user.module.js";
 
 @Module({
@@ -16,6 +17,7 @@ import { UserModule } from "./modules/user/user.module.js";
       },
     }),
     AuthModule,
+    SystemModule,
     UserModule,
   ],
 })

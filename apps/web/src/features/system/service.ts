@@ -1,8 +1,7 @@
 import http from "@/lib/http";
+import { systemInfoSchema } from "@snipet/shared";
 
-import { systemInfoSchema } from "./schemas";
-
-import type { SystemInfo } from "./schemas";
+import type { SystemInfo } from "@snipet/shared";
 import type { ServiceGetOptions } from "@/lib/services";
 
 const SYSTEM_URL = "/api/system";
