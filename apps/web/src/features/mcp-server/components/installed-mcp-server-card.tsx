@@ -11,6 +11,7 @@ import { useDialog } from "@/lib/dialog";
 import { cn } from "@/lib/utils";
 import { EllipsisVertical, Pencil, Trash, Wrench } from "lucide-react";
 import moment from "moment";
+import { McpTransport } from "@snipet/shared";
 
 import { useDeleteMcpServer } from "../hooks";
 import { describeConfig, syncState } from "../lib/config";
@@ -18,7 +19,7 @@ import { describeConfig, syncState } from "../lib/config";
 import { McpServerFormDialog } from "./mcp-server-form-dialog";
 import { McpServerToolsDialog } from "./mcp-server-tools-dialog";
 
-import type { McpServer, McpServerRegistryItem } from "../schemas";
+import type { McpServer, McpServerRegistryItem } from "@snipet/shared";
 import type { Tool } from "@/models/tool";
 type Props = {
   server: McpServer;
@@ -56,7 +57,7 @@ export function InstalledMcpServerCard({ server, tools, registryItem }: Props) {
           <div className="flex flex-wrap items-center gap-1.5">
             <h2 className="truncate text-sm font-semibold leading-tight">{server.name}</h2>
             <Badge variant="outline" className="text-muted-foreground font-normal">
-              {server.transport === "http" ? "HTTP" : "stdio"}
+              {server.transport === McpTransport.HTTP ? "HTTP" : "stdio"}
             </Badge>
             {!registryItem && (
               <Badge variant="secondary" className="font-normal">Custom</Badge>

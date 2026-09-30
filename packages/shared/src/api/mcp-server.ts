@@ -24,7 +24,10 @@ export const mcpStdioConfigSchema = z.strictObject({
 });
 export type McpStdioConfig = z.infer<typeof mcpStdioConfigSchema>;
 
-export const mcpConfigSchemas = { http: mcpHttpConfigSchema, stdio: mcpStdioConfigSchema } as const;
+export const mcpConfigSchemas = {
+  [McpTransport.HTTP]: mcpHttpConfigSchema,
+  [McpTransport.STDIO]: mcpStdioConfigSchema,
+} as const;
 
 export const mcpServerConfigSchema = z.union([mcpHttpConfigSchema, mcpStdioConfigSchema]);
 export type McpServerConfig = z.infer<typeof mcpServerConfigSchema>;
@@ -88,7 +91,7 @@ const registryItemBase = {
 };
 
 export const mcpServerRegistryItemSchema = z.discriminatedUnion("transport", [
-  z.object({ ...registryItemBase, transport: z.literal("http"), config: mcpHttpRegistryConfigSchema }),
-  z.object({ ...registryItemBase, transport: z.literal("stdio"), config: mcpStdioRegistryConfigSchema }),
+  z.object({ ...registryItemBase, transport: z.literal(McpTransport.HTTP), config: mcpHttpRegistryConfigSchema }),
+  z.object({ ...registryItemBase, transport: z.literal(McpTransport.STDIO), config: mcpStdioRegistryConfigSchema }),
 ]);
 export type McpServerRegistryItem = z.infer<typeof mcpServerRegistryItemSchema>;

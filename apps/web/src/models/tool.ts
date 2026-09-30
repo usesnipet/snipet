@@ -1,4 +1,4 @@
-import { mcpServerSchema } from "@/models/mcp-server";
+import { mcpServerSchema } from "@snipet/shared";
 import { z } from "zod";
 
 // Where a tool comes from (tool.Source).

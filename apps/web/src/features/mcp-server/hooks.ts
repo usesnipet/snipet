@@ -7,13 +7,12 @@ import { mcpServerService } from "./service";
 
 import type {
   CreateMcpServer,
-  ListMcpServerRegistry,
-  ListMcpServersSearchParams,
-  McpServerRegistryItem,
-  PaginatedMcpServer,
-  UpdateMcpServer,
+  FindMcpServersParams,
   McpServer,
-} from "./schemas";
+  McpServerRegistryItem,
+  Paginated,
+  UpdateMcpServer,
+} from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -26,8 +25,8 @@ const BASE_QUERY_KEY = "mcp-server";
 
 export const listMcpServersQueryKey = () => [BASE_QUERY_KEY] as const;
 export const useListMcpServers = (
-  opts?: ServiceGetOptions<PaginatedMcpServer, ListMcpServersSearchParams>,
-): UseQueryResult<PaginatedMcpServer, Error> =>
+  opts?: ServiceGetOptions<Paginated<McpServer>, Partial<FindMcpServersParams>>,
+): UseQueryResult<Paginated<McpServer>, Error> =>
   useQuery({
     queryKey: [...listMcpServersQueryKey(), opts?.searchParams],
     queryFn: () => mcpServerService.list(opts),
@@ -36,8 +35,8 @@ export const useListMcpServers = (
 export const mcpServerRegistryQueryKey = () =>
   [BASE_QUERY_KEY, "registry"] as const;
 export const useMcpServerRegistry = (
-  opts?: ServiceGetOptions<ListMcpServerRegistry>,
-): UseQueryResult<ListMcpServerRegistry, Error> =>
+  opts?: ServiceGetOptions<McpServerRegistryItem[]>,
+): UseQueryResult<McpServerRegistryItem[], Error> =>
   useQuery({
     queryKey: mcpServerRegistryQueryKey(),
     queryFn: () => mcpServerService.listRegistry(opts),

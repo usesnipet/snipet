@@ -7,11 +7,13 @@ import { cn } from "@/lib/utils";
 import { Globe, Plus, Terminal, X } from "lucide-react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
-import type { McpServerForm, McpTransport } from "../schemas";
+import { McpTransport } from "@snipet/shared";
+
+import type { McpServerForm } from "../schemas";
 
 const TRANSPORTS: { value: McpTransport; label: string; hint: string; icon: React.ReactNode }[] = [
-  { value: "stdio", label: "Local command", hint: "Runs a process (npx, uvx, docker…)", icon: <Terminal /> },
-  { value: "http", label: "Remote URL", hint: "Connects to a hosted server over HTTP", icon: <Globe /> },
+  { value: McpTransport.STDIO, label: "Local command", hint: "Runs a process (npx, uvx, docker…)", icon: <Terminal /> },
+  { value: McpTransport.HTTP, label: "Remote URL", hint: "Connects to a hosted server over HTTP", icon: <Globe /> },
 ];
 
 type Props = {
@@ -53,7 +55,7 @@ export function McpServerFormFields({ hideTransport }: Props) {
         </div>
       )}
 
-      {transport === "stdio" ? (
+      {transport === McpTransport.STDIO ? (
         <FormInput
           name="commandLine"
           label="Command"

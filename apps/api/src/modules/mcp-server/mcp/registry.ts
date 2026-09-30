@@ -1,3 +1,5 @@
+import { McpTransport } from "@snipet/shared";
+
 import type { McpServerRegistryItem } from "@snipet/shared";
 
 // Built-in catalog of known MCP servers, sorted by key. It only surfaces
@@ -10,7 +12,7 @@ export const MCP_SERVERS_REGISTRY: McpServerRegistryItem[] = [
     description: "Fetch web pages and convert them to markdown",
     icon: "https://github.com/modelcontextprotocol.png",
     tags: ["web", "local", "official"],
-    transport: "stdio",
+    transport: McpTransport.STDIO,
     config: { command: "uvx", args: ["mcp-server-fetch"], timeout: 30 },
   },
   {
@@ -19,7 +21,7 @@ export const MCP_SERVERS_REGISTRY: McpServerRegistryItem[] = [
     description: "Read, write and search files inside the allowed directories",
     icon: "https://github.com/modelcontextprotocol.png",
     tags: ["files", "local", "official"],
-    transport: "stdio",
+    transport: McpTransport.STDIO,
     config: {
       command: "npx",
       args: ["-y", "@modelcontextprotocol/server-filesystem"],
@@ -39,7 +41,7 @@ export const MCP_SERVERS_REGISTRY: McpServerRegistryItem[] = [
     description: "Manage repositories, issues and pull requests through GitHub's hosted MCP server",
     icon: "https://github.com/github.png",
     tags: ["git", "remote", "official"],
-    transport: "http",
+    transport: McpTransport.HTTP,
     config: {
       url: "https://api.githubcopilot.com/mcp/",
       headersSchema: {
@@ -63,7 +65,7 @@ export const MCP_SERVERS_REGISTRY: McpServerRegistryItem[] = [
     description: "Knowledge-graph based persistent memory",
     icon: "https://github.com/modelcontextprotocol.png",
     tags: ["memory", "local", "official"],
-    transport: "stdio",
+    transport: McpTransport.STDIO,
     config: { command: "npx", args: ["-y", "@modelcontextprotocol/server-memory"], timeout: 30 },
   },
 ];

@@ -1,83 +1,5 @@
-import {
-  mcpHttpConfigSchema, mcpServerSchema, mcpStdioConfigSchema, mcpTransportSchema
-} from "@/models/mcp-server";
-import { paginatedSchema, paginationParamsSchema } from "@/schemas/paginated";
+import { mcpTransportSchema, McpTransport } from "@snipet/shared";
 import { z } from "zod";
-
-export {
-  mcpHttpConfigSchema,
-  mcpServerConfigSchema,
-  mcpServerSchema,
-  mcpStdioConfigSchema,
-  mcpTransportSchema,
-} from "@/models/mcp-server";
-export type {
-  McpHttpConfig,
-  McpServer,
-  McpServerConfig,
-  McpStdioConfig,
-  McpTransport,
-} from "@/models/mcp-server";
-
-export const createMcpServerSchema = mcpServerSchema
-  .pick({
-    name: true,
-    transport: true,
-    config: true,
-  })
-  .strict();
-export type CreateMcpServer = z.infer<typeof createMcpServerSchema>;
-
-export const updateMcpServerSchema = createMcpServerSchema.partial().strict();
-export type UpdateMcpServer = z.infer<typeof updateMcpServerSchema>;
-
-export const paginatedMcpServerSchema = paginatedSchema(mcpServerSchema);
-export type PaginatedMcpServer = z.infer<typeof paginatedMcpServerSchema>;
-
-export const listMcpServersSearchParamsSchema = paginationParamsSchema;
-export type ListMcpServersSearchParams = z.infer<
-  typeof listMcpServersSearchParamsSchema
->;
-
-// Default http config of a registry entry (mcp.HTTPRegistryConfig):
-// headers_schema is a JSON Schema of the headers the user fills in at install time.
-export const mcpHttpRegistryConfigSchema = mcpHttpConfigSchema
-  .extend({ headers_schema: z.record(z.string(), z.unknown()).optional() })
-  .strict();
-
-// Default stdio config of a registry entry (mcp.StdioRegistryConfig):
-// args_schema is a JSON Schema of the arguments appended at install time.
-export const mcpStdioRegistryConfigSchema = mcpStdioConfigSchema
-  .extend({ args_schema: z.record(z.string(), z.unknown()).optional() })
-  .strict();
-
-const mcpServerRegistryItemBaseSchema = z
-  .object({
-    key: z.string(),
-    name: z.string(),
-    description: z.string(),
-    icon: z.string(),
-    tags: z.array(z.string()),
-  })
-  .strict();
-
-// Registry entry — a known MCP server with its default config
-// (mcp.MCPServersRegistryItem), as returned by GET /api/mcp-server/registry.
-// No id and no relations, so it stays here rather than in @/models.
-export const mcpServerRegistryItemSchema = z.discriminatedUnion("transport", [
-  mcpServerRegistryItemBaseSchema.extend({
-    transport: z.literal("http"),
-    config: mcpHttpRegistryConfigSchema,
-  }),
-  mcpServerRegistryItemBaseSchema.extend({
-    transport: z.literal("stdio"),
-    config: mcpStdioRegistryConfigSchema,
-  }),
-]);
-export type McpServerRegistryItem = z.infer<typeof mcpServerRegistryItemSchema>;
-
-export const listMcpServerRegistrySchema = z.array(mcpServerRegistryItemSchema);
-export type ListMcpServerRegistry = z.infer<typeof listMcpServerRegistrySchema>;
 
 // Form shape behind the create/edit/install dialogs. The stdio command is
 // edited as one shell-like line and headers as rows; lib/config.ts converts
@@ -92,10 +14,10 @@ export const mcpServerFormSchema = z
     timeout: z.string().regex(/^\d*$/, "Use a whole number of seconds"),
   })
   .superRefine((values, ctx) => {
-    if (values.transport === "stdio" && !values.commandLine.trim()) {
+    if (values.transport === McpTransport.STDIO && !values.commandLine.trim()) {
       ctx.addIssue({ code: "custom", path: ["commandLine"], message: "Command is required" });
     }
-    if (values.transport === "http" && !z.url().safeParse(values.url.trim()).success) {
+    if (values.transport === McpTransport.HTTP && !z.url().safeParse(values.url.trim()).success) {
       ctx.addIssue({ code: "custom", path: ["url"], message: "Enter a valid URL" });
     }
   });

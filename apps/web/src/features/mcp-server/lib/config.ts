@@ -1,10 +1,7 @@
-import type {
-  CreateMcpServer,
-  McpServer,
-  McpServerForm,
-  McpServerRegistryItem,
-  McpTransport,
-} from "../schemas";
+import { McpTransport } from "@snipet/shared";
+
+import type { McpServerForm } from "../schemas";
+import type { CreateMcpServer, McpServer, McpServerConfig, McpServerRegistryItem } from "@snipet/shared";
 
 type ServerLike = { transport: McpTransport; config: Record<string, unknown> };
 
@@ -66,15 +63,15 @@ function asStringRecord(value: unknown): Record<string, string> {
   );
 }
 
-export function emptyForm(transport: McpTransport = "stdio"): McpServerForm {
+export function emptyForm(transport: McpTransport = McpTransport.STDIO): McpServerForm {
   return { name: "", transport, commandLine: "", url: "", headers: [], timeout: "30" };
 }
 
 export function toForm(name: string, transport: McpTransport, config: Record<string, unknown>): McpServerForm {
   const timeout = typeof config.timeout === "number" ? String(config.timeout) : "";
-  if (transport === "http") {
+  if (transport === McpTransport.HTTP) {
     return {
-      ...emptyForm("http"),
+      ...emptyForm(McpTransport.HTTP),
       name,
       url: asString(config.url),
       headers: Object.entries(asStringRecord(config.headers)).map(([key, value]) => ({ key, value })),
@@ -83,22 +80,22 @@ export function toForm(name: string, transport: McpTransport, config: Record<str
   }
   const command = asString(config.command);
   return {
-    ...emptyForm("stdio"),
+    ...emptyForm(McpTransport.STDIO),
     name,
     commandLine: command ? formatCommandLine([command, ...asStringArray(config.args)]) : "",
     timeout,
   };
 }
 
-export function fromForm(form: McpServerForm): CreateMcpServer {
+export function fromForm(form: McpServerForm): Omit<CreateMcpServer, "config"> & { config: McpServerConfig } {
   const timeout = form.timeout ? Number(form.timeout) : undefined;
-  if (form.transport === "http") {
+  if (form.transport === McpTransport.HTTP) {
     const headers = Object.fromEntries(
       form.headers.filter((h) => h.key.trim()).map((h) => [h.key.trim(), h.value]),
     );
     return {
       name: form.name.trim(),
-      transport: "http",
+      transport: McpTransport.HTTP,
       config: {
         url: form.url.trim(),
         ...(Object.keys(headers).length ? { headers } : {}),
@@ -109,14 +106,14 @@ export function fromForm(form: McpServerForm): CreateMcpServer {
   const [command, ...args] = parseCommandLine(form.commandLine);
   return {
     name: form.name.trim(),
-    transport: "stdio",
+    transport: McpTransport.STDIO,
     config: { command, args, ...(timeout ? { timeout } : {}) },
   };
 }
 
 /** One-line human summary of how the server is reached (command line or URL). */
 export function describeConfig({ transport, config }: ServerLike): string {
-  if (transport === "http") return asString(config.url);
+  if (transport === McpTransport.HTTP) return asString(config.url);
   const command = asString(config.command);
   return command ? formatCommandLine([command, ...asStringArray(config.args)]) : "";
 }
@@ -124,7 +121,7 @@ export function describeConfig({ transport, config }: ServerLike): string {
 // Identity used to tell which registry entry an installed server came from:
 // the URL for http, the command plus its package (first non-flag arg) for stdio.
 function identity({ transport, config }: ServerLike): string {
-  if (transport === "http") return `http:${asString(config.url).replace(/\/+$/, "")}`;
+  if (transport === McpTransport.HTTP) return `http:${asString(config.url).replace(/\/+$/, "")}`;
   const pkg = asStringArray(config.args).find((arg) => !arg.startsWith("-")) ?? "";
   return `stdio:${asString(config.command)} ${pkg}`;
 }
@@ -143,7 +140,7 @@ export type SyncState =
   | { kind: "synced"; at: Date };
 
 export function syncState(server: McpServer): SyncState {
-  const at = server.last_synced_at ?? undefined;
-  if (server.last_synced_error) return { kind: "error", message: server.last_synced_error, at };
+  const at = server.lastSyncedAt ?? undefined;
+  if (server.lastSyncedError) return { kind: "error", message: server.lastSyncedError, at };
   return at ? { kind: "synced", at } : { kind: "pending" };
 }

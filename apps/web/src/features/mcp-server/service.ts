@@ -2,23 +2,22 @@ import http from "@/lib/http";
 
 import {
   createMcpServerSchema,
-  listMcpServerRegistrySchema,
-  listMcpServersSearchParamsSchema,
+  findMcpServersParamsSchema,
   mcpServerRegistryItemSchema,
+  mcpServerSchema,
   paginatedMcpServerSchema,
   updateMcpServerSchema,
-  mcpServerSchema,
-} from "./schemas";
+} from "@snipet/shared";
+import { z } from "zod";
 
 import type {
   CreateMcpServer,
-  ListMcpServerRegistry,
-  ListMcpServersSearchParams,
-  McpServerRegistryItem,
-  PaginatedMcpServer,
-  UpdateMcpServer,
+  FindMcpServersParams,
   McpServer,
-} from "./schemas";
+  McpServerRegistryItem,
+  Paginated,
+  UpdateMcpServer,
+} from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -26,16 +25,16 @@ import type {
   ServicePutOptions,
 } from "@/lib/services";
 
-const MCP_SERVER_URL = "/api/mcp-server";
+const MCP_SERVER_URL = "/api/mcp-servers";
 
 const list = async (
-  opts: ServiceGetOptions<PaginatedMcpServer, ListMcpServersSearchParams> = {},
-): Promise<PaginatedMcpServer> =>
+  opts: ServiceGetOptions<Paginated<McpServer>, Partial<FindMcpServersParams>> = {},
+): Promise<Paginated<McpServer>> =>
   http.get({
     url: MCP_SERVER_URL,
     schemas: {
       response: paginatedMcpServerSchema,
-      searchParams: listMcpServersSearchParamsSchema,
+      searchParams: findMcpServersParamsSchema,
     },
     ...opts,
   });
@@ -83,11 +82,11 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
   });
 
 const listRegistry = async (
-  opts: ServiceGetOptions<ListMcpServerRegistry> = {},
-): Promise<ListMcpServerRegistry> =>
+  opts: ServiceGetOptions<McpServerRegistryItem[]> = {},
+): Promise<McpServerRegistryItem[]> =>
   http.get({
     url: `${MCP_SERVER_URL}/registry`,
-    schemas: { response: listMcpServerRegistrySchema },
+    schemas: { response: z.array(mcpServerRegistryItemSchema) },
     ...opts,
   });
 

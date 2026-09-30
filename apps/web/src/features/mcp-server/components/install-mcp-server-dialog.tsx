@@ -14,6 +14,7 @@ import validator from "@rjsf/validator-ajv8";
 import { ChevronRight, CircleCheck } from "lucide-react";
 import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
+import { McpTransport } from "@snipet/shared";
 
 import { useCreateMcpServer } from "../hooks";
 import { fromForm, toForm } from "../lib/config";
@@ -21,7 +22,8 @@ import { mcpServerFormSchema } from "../schemas";
 
 import { McpServerFormFields } from "./mcp-server-form-fields";
 
-import type { McpServerForm, McpServerRegistryItem } from "../schemas";
+import type { McpServerForm } from "../schemas";
+import type { McpServerRegistryItem } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 import type { ErrorSchema, RJSFSchema } from "@rjsf/utils";
 
@@ -48,7 +50,7 @@ function cleanValues(values: unknown): Record<string, string> | string[] {
  */
 export function InstallMcpServerDialog({ item, installedCount = 0, close }: InstallMcpServerDialogProps) {
   const formId = `install-mcp-server-${useId()}`;
-  const schema = (item.transport === "http" ? item.config.headers_schema : item.config.args_schema) as
+  const schema = (item.transport === McpTransport.HTTP ? item.config.headersSchema : item.config.argsSchema) as
     | RJSFSchema
     | undefined;
   const [schemaValues, setSchemaValues] = useState<unknown>();

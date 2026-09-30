@@ -14,7 +14,8 @@ import { mcpServerFormSchema } from "../schemas";
 
 import { McpServerFormFields } from "./mcp-server-form-fields";
 
-import type { McpServer, McpServerForm } from "../schemas";
+import type { McpServerForm } from "../schemas";
+import type { McpServer } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
 type McpServerFormDialogProps = DialogInstanceProps<{

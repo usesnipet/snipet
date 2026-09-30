@@ -5,7 +5,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Wrench } from "lucide-react";
 
-import type { McpServer } from "../schemas";
+import type { McpServer } from "@snipet/shared";
 import type { Tool } from "@/models/tool";
 import type { DialogInstanceProps } from "@/lib/dialog";
 

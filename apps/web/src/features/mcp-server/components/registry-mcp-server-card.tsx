@@ -2,10 +2,11 @@ import { CatalogCard } from "@/components/catalog";
 import { Icon } from "@/components/icon";
 import { useDialog } from "@/lib/dialog";
 import { Check, Plus } from "lucide-react";
+import { McpTransport } from "@snipet/shared";
 
 import { InstallMcpServerDialog } from "./install-mcp-server-dialog";
 
-import type { McpServerRegistryItem } from "../schemas";
+import type { McpServerRegistryItem } from "@snipet/shared";
 type Props = {
   item: McpServerRegistryItem;
   installedCount: number;
@@ -27,7 +28,7 @@ export function RegistryMcpServerCard({ item, installedCount }: Props) {
             <Check className="size-3.5" />
             Installed{installedCount > 1 ? ` ×${installedCount}` : ""}
           </span>
-        ) : item.transport === "http" ? "Remote · HTTP" : "Local · stdio"
+        ) : item.transport === McpTransport.HTTP ? "Remote · HTTP" : "Local · stdio"
       }
       cta={{
         label: installed ? "Add another" : "Install",

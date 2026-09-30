@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { mcpServerSchema } from "./mcp-server";
+import { mcpServerSchema } from "@snipet/shared";
 
 // One LLM of an agent; the runner tries them by ascending order.
 export const agentLlmSchema = z
