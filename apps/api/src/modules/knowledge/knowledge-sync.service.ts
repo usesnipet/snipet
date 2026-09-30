@@ -38,6 +38,7 @@ export class KnowledgeSyncService implements OnApplicationBootstrap, OnModuleDes
   onApplicationBootstrap() {
     if (!knowledgeEnabled) return;
     // Items left indexing by a crash are picked up again.
+    void this.enqueue(KnowledgeItemStatus.ERROR);
     void this.enqueue(KnowledgeItemStatus.INDEXING).then(() => this.trigger());
     if (env.KNOWLEDGE_SYNC_INTERVAL_SECONDS > 0) {
       this.timer = setInterval(() => this.trigger(), env.KNOWLEDGE_SYNC_INTERVAL_SECONDS * 1000);

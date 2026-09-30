@@ -3,8 +3,6 @@ import OpenAI from "openai";
 
 import { env } from "../../env.js";
 
-// Text embeddings through an OpenAI-compatible API (EMBEDDING_*), apart from
-// the chat models of llm-connection.
 @Injectable()
 export class EmbeddingService {
   private readonly client = new OpenAI({

@@ -38,6 +38,15 @@ export class PgvectorService implements OnModuleInit, OnModuleDestroy {
       .replaceAll("{{DIMENSIONS}}", String(env.EMBEDDING_DIMENSIONS))
       .replaceAll("{{FTS_LANGUAGE}}", env.FTS_LANGUAGE);
     await this.pool.query(schema);
+    // CREATE TABLE IF NOT EXISTS keeps an existing table as is.
+    const { rows } = await this.pool.query<{ dims: number }>(
+      `SELECT atttypmod AS dims FROM pg_attribute WHERE attrelid = 'knowledge_chunks'::regclass AND attname = 'embedding'`,
+    );
+    if (rows[0]?.dims !== env.EMBEDDING_DIMENSIONS) {
+      throw new Error(
+        `knowledge_chunks.embedding has ${rows[0]?.dims} dimensions but EMBEDDING_DIMENSIONS=${env.EMBEDDING_DIMENSIONS}; drop knowledge_chunks and reindex to change it`,
+      );
+    }
     this.logger.log("pgvector schema applied");
   }
 
