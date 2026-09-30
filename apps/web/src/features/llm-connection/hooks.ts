@@ -6,10 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { llmConnectionService } from "./service";
 
 import type {
-  CreateLlmConnection,
   ExecuteLlm,
   ExecuteLlmResponse,
-  ListLlmConnectionsSearchParams,
   ListLlmProvider,
   ListProviderModels,
   ListProviderModelsSearchParams,
@@ -17,10 +15,14 @@ import type {
   LlmSkippedEvent,
   LlmStreamEvent,
   LlmToolCallEvent,
-  PaginatedLlmConnection,
-  UpdateLlmConnection,
-  LlmConnection,
 } from "./schemas";
+import type {
+  CreateLlmConnection,
+  FindLlmConnectionsParams,
+  LlmConnection,
+  Paginated,
+  UpdateLlmConnection,
+} from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -33,8 +35,8 @@ const BASE_QUERY_KEY = "llm-connection";
 
 export const listLlmConnectionsQueryKey = () => [BASE_QUERY_KEY] as const;
 export const useListLlmConnections = (
-  opts?: ServiceGetOptions<PaginatedLlmConnection, ListLlmConnectionsSearchParams>,
-): UseQueryResult<PaginatedLlmConnection, Error> =>
+  opts?: ServiceGetOptions<Paginated<LlmConnection>, FindLlmConnectionsParams>,
+): UseQueryResult<Paginated<LlmConnection>, Error> =>
   useQuery({
     queryKey: [...listLlmConnectionsQueryKey(), opts?.searchParams],
     queryFn: () => llmConnectionService.list(opts),

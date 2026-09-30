@@ -1,4 +1,5 @@
-import type { LlmConnection, LlmProvider } from "../schemas";
+import type { LlmProvider } from "../schemas";
+import type { LlmConnection } from "@snipet/shared";
 
 /**
  * A registry entry (the provider driver available on the backend) joined with

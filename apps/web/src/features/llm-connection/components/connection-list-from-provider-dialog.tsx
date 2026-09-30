@@ -14,7 +14,7 @@ import { useDeleteLlmConnection, useListLlmConnections } from "../hooks";
 
 import { CreateLlmConnectionDialog } from "./create-llm-connection-dialog";
 
-import type { LlmConnection } from "../schemas";
+import type { LlmConnection } from "@snipet/shared";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
 type LlmConnectionListFromProviderDialogProps = DialogInstanceProps<{

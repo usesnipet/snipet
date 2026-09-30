@@ -9,11 +9,11 @@ import { useId } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCreateLlmConnection, useUpdateLlmConnection } from "../hooks";
-import { createLlmConnectionSchema } from "../schemas";
+import { createLlmConnectionSchema } from "@snipet/shared";
 
 import { LlmFormFields } from "./llm-form-fields";
 
-import type { CreateLlmConnection, LlmConnection } from "../schemas";
+import type { CreateLlmConnection, LlmConnection } from "@snipet/shared";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
 

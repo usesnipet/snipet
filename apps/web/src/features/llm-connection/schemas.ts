@@ -1,32 +1,10 @@
-import { llmConnectionSchema } from "@/models/llm-connection";
 import { llmMessageSchema } from "@/models/llm-message";
-import { paginatedSchema, paginationParamsSchema } from "@/schemas/paginated";
 import { z } from "zod";
 
-export { llmConnectionSchema } from "@/models/llm-connection";
-export type { LlmConnection } from "@/models/llm-connection";
 export type { LlmMessage, LlmRole } from "@/models/llm-message";
 
-export const createLlmConnectionSchema = llmConnectionSchema
-  .pick({
-    name: true,
-    provider: true,
-    config: true,
-    enabled: true,
-  })
-  .strict();
-export type CreateLlmConnection = z.infer<typeof createLlmConnectionSchema>;
-
-export const updateLlmConnectionSchema = createLlmConnectionSchema.partial().strict();
-export type UpdateLlmConnection = z.infer<typeof updateLlmConnectionSchema>;
-
-export const paginatedLlmConnectionSchema = paginatedSchema(llmConnectionSchema);
-export type PaginatedLlmConnection = z.infer<typeof paginatedLlmConnectionSchema>;
-
-export const listLlmConnectionsSearchParamsSchema = paginationParamsSchema;
-export type ListLlmConnectionsSearchParams = z.infer<
-  typeof listLlmConnectionsSearchParamsSchema
->;
+// Provider registry and execute contracts. The CRUD schemas live in
+// @snipet/shared; these move there once the backend serves these routes.
 
 // One auth method a provider accepts (llm.Auth). "static" carries the JSON
 // Schema its "auth" connection-options section must satisfy; "no-auth" needs

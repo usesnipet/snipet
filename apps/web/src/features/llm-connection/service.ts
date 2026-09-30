@@ -1,10 +1,8 @@
 import http, { httpSse } from "@/lib/http";
 
 import {
-  createLlmConnectionSchema,
   executeLlmSchema,
   executeLlmResponseSchema,
-  listLlmConnectionsSearchParamsSchema,
   listLlmProviderSchema,
   listProviderModelsSchema,
   listProviderModelsSearchParamsSchema,
@@ -15,24 +13,30 @@ import {
   llmMessageEventSchema,
   llmTextDeltaEventSchema,
   llmToolCallEventSchema,
+} from "./schemas";
+import {
+  createLlmConnectionSchema,
+  findLlmConnectionsParamsSchema,
+  llmConnectionSchema,
   paginatedLlmConnectionSchema,
   updateLlmConnectionSchema,
-  llmConnectionSchema,
-} from "./schemas";
+} from "@snipet/shared";
 
 import type {
-  CreateLlmConnection,
   ExecuteLlm,
   ExecuteLlmResponse,
-  ListLlmConnectionsSearchParams,
   ListLlmProvider,
   ListProviderModels,
   ListProviderModelsSearchParams,
   LlmStreamEvent,
-  PaginatedLlmConnection,
-  UpdateLlmConnection,
-  LlmConnection,
 } from "./schemas";
+import type {
+  CreateLlmConnection,
+  FindLlmConnectionsParams,
+  LlmConnection,
+  Paginated,
+  UpdateLlmConnection,
+} from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -40,16 +44,16 @@ import type {
   ServicePutOptions,
 } from "@/lib/services";
 
-const LLM_CONNECTION_URL = "/api/llm-connection";
+const LLM_CONNECTION_URL = "/api/llm-connections";
 
 const list = async (
-  opts: ServiceGetOptions<PaginatedLlmConnection, ListLlmConnectionsSearchParams> = {},
-): Promise<PaginatedLlmConnection> =>
+  opts: ServiceGetOptions<Paginated<LlmConnection>, FindLlmConnectionsParams> = {},
+): Promise<Paginated<LlmConnection>> =>
   http.get({
     url: LLM_CONNECTION_URL,
     schemas: {
       response: paginatedLlmConnectionSchema,
-      searchParams: listLlmConnectionsSearchParamsSchema,
+      searchParams: findLlmConnectionsParamsSchema,
     },
     ...opts,
   });
