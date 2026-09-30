@@ -7,6 +7,6 @@ export function RequireRole({ role }: { role: Role | Role[] }) {
   const user = useCurrentUser();
   const roles = Array.isArray(role) ? role : [role];
 
-  if (hasRole(user?.role, roles)) return <Navigate to={ROUTES.home} replace />;
+  if (!hasRole(user?.role, roles)) return <Navigate to={ROUTES.home} replace />;
   return <Outlet />;
 }
