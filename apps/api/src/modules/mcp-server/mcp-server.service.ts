@@ -23,7 +23,7 @@ export class McpServerService extends CrudService<McpServer> {
   override async create(dto: CreateMcpServer): Promise<McpServer> {
     validateConfig(dto.transport, dto.config);
     const server = await super.create(dto);
-    this.sync.enqueue(server.id);
+    await this.sync.enqueue(server.id);
     return server;
   }
 
@@ -34,7 +34,7 @@ export class McpServerService extends CrudService<McpServer> {
       validateConfig(dto.transport ?? existing.transport, dto.config ?? existing.config);
     }
     await super.updateById(id, dto);
-    if (dto.transport !== undefined || dto.config !== undefined) this.sync.enqueue(id);
+    if (dto.transport !== undefined || dto.config !== undefined) await this.sync.enqueue(id);
   }
 
   listRegistry(): McpServerRegistryItem[] {

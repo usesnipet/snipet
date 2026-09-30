@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import { McpTransport, ToolSource } from "@snipet/shared";
 
-import { McpServerSyncService } from "./mcp-server.sync.service.js";
+import { McpServerSyncProcessor } from "./mcp-server.sync.processor.js";
 
 import type { McpConnector } from "./mcp/connector.js";
 import type { McpServer } from "./mcp-server.entity.js";
@@ -21,18 +21,18 @@ function setup(listTools: () => Promise<unknown>) {
     delete: jest.fn(),
   };
   const servers = {
-    findOneByOrFail: resolves({ id: "s1", transport: McpTransport.STDIO, config: { command: "npx" } }),
+    findOneBy: resolves({ id: "s1", transport: McpTransport.STDIO, config: { command: "npx" } }),
     update: jest.fn(),
     manager: { transaction: (fn: (m: unknown) => Promise<void>) => fn({ getRepository: () => tools }) },
   };
-  const service = new McpServerSyncService(
+  const service = new McpServerSyncProcessor(
     servers as unknown as Repository<McpServer>,
     { listTools } as unknown as McpConnector,
   );
   return { service, servers, tools };
 }
 
-describe("McpServerSyncService.syncServer", () => {
+describe("McpServerSyncProcessor.syncServer", () => {
   it("updates, creates and deletes tools by name and clears the error", async () => {
     const { service, servers, tools } = setup(
       resolves([
@@ -63,5 +63,15 @@ describe("McpServerSyncService.syncServer", () => {
     expect(tools.save).not.toHaveBeenCalled();
     expect(tools.delete).not.toHaveBeenCalled();
     expect(servers.update).toHaveBeenCalledWith("s1", expect.objectContaining({ lastSyncedError: "spawn npx ENOENT" }));
+  });
+
+  it("skips servers deleted since the job was enqueued", async () => {
+    const { service, servers, tools } = setup(resolves([]));
+    servers.findOneBy.mockResolvedValue(null);
+
+    await service.syncServer("s1");
+
+    expect(tools.save).not.toHaveBeenCalled();
+    expect(servers.update).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,8 @@
+import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { Redis } from "ioredis";
 
 import { AuthGuard } from "./common/guards/auth.guard.js";
 import { env } from "./env.js";
@@ -25,6 +27,8 @@ import { UserModule } from "./modules/user/user.module.js";
         return { ...dataSourceOptions(env.DATABASE_URL), migrationsRun: env.DB_AUTO_MIGRATE };
       },
     }),
+    // BullMQ can't load ioredis itself under ESM, so it gets a client.
+    BullModule.forRoot({ connection: new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }) }),
     AgentModule,
     AgentRunModule,
     ApiKeyModule,

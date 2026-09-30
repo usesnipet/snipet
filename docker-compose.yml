@@ -9,10 +9,13 @@ services:
       PORT: 8080
       DATABASE_URL: postgresql://postgres:postgres@db:5432/snipet
       PGVECTOR_URL: postgresql://postgres:postgres@rag-db:5432/snipet_rag
+      REDIS_URL: redis://redis:6379
     depends_on:
       db:
         condition: service_healthy
       rag-db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
@@ -47,6 +50,20 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # BullMQ queues.
+  redis:
+    image: redis:8
+    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
   # Local S3-compatible knowledge source, for development.
   minio:
     image: minio/minio:latest
@@ -64,4 +81,5 @@ services:
 volumes:
   db:
   rag-db:
+  redis:
   minio:
