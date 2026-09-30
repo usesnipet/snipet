@@ -9,6 +9,7 @@ import { ensureDatabase } from "./infra/database/ensure-database.js";
 import { ApiKeyModule } from "./modules/api-key/api-key.module.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
 import { LlmConnectionModule } from "./modules/llm-connection/llm-connection.module.js";
+import { McpServerModule } from "./modules/mcp-server/mcp-server.module.js";
 import { SystemModule } from "./modules/system/system.module.js";
 import { UserModule } from "./modules/user/user.module.js";
 
@@ -23,6 +24,7 @@ import { UserModule } from "./modules/user/user.module.js";
     ApiKeyModule,
     AuthModule,
     LlmConnectionModule,
+    McpServerModule,
     SystemModule,
     UserModule,
   ],

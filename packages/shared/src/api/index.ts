@@ -2,6 +2,7 @@ export * from "./api-key.js";
 export * from "./auth.js";
 export * from "./llm-connection.js";
 export * from "./llm.js";
+export * from "./mcp-server.js";
 export * from "./pagination.js";
 export * from "./system.js";
 export * from "./user.js";
