@@ -25,11 +25,11 @@ generate a migration for the new table.
 
 ## Migrations (TypeORM CLI)
 
-Paths are relative to `apps/api`. Every script builds first; the CLI reads
+Files go to `apps/api/src/migrations`. Scripts build first; the CLI reads
 `dist/infra/database/cli-data-source.js`, which also creates the DB if missing.
 
-- `pnpm migration:generate src/migrations/<Name>`: diff entities vs the DB into a new migration.
-- `pnpm migration:create src/migrations/<Name>`: empty migration for hand-written SQL.
+- `pnpm migration:generate <Name>`: diff entities vs the DB into a new migration.
+- `pnpm migration:create <Name>`: empty migration for hand-written SQL.
 - `pnpm migration:run` / `pnpm migration:revert` / `pnpm migration:show`.
 - On boot the API runs pending migrations (`DB_AUTO_MIGRATE`, default `true`).
 

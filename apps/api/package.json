@@ -17,8 +17,8 @@
     "test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:e2e": "NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json",
     "dev": "nest start --watch",
-    "migration:generate": "nest build && typeorm -d dist/infra/database/cli-data-source.js migration:generate",
-    "migration:create": "typeorm migration:create",
+    "migration:generate": "nest build && sh -c 'typeorm -d dist/infra/database/cli-data-source.js migration:generate \"src/migrations/${1:?usage: pnpm migration:generate <Name>}\"' _",
+    "migration:create": "sh -c 'typeorm migration:create \"src/migrations/${1:?usage: pnpm migration:create <Name>}\"' _",
     "migration:run": "nest build && typeorm -d dist/infra/database/cli-data-source.js migration:run",
     "migration:revert": "nest build && typeorm -d dist/infra/database/cli-data-source.js migration:revert",
     "migration:show": "nest build && typeorm -d dist/infra/database/cli-data-source.js migration:show"
