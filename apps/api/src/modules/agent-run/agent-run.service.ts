@@ -1,20 +1,15 @@
 import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  OnApplicationBootstrap,
+  BadRequestException, ConflictException, Injectable, NotFoundException, OnApplicationBootstrap
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { AgentRunStatus } from "@snipet/shared";
-import { LessThan, MoreThan, Repository } from "typeorm";
+import { IsNull, LessThan, MoreThan, Repository } from "typeorm";
 
 import { AgentService } from "../agent/agent.service.js";
 
 import { AgentMessage, AgentRun, AgentSession } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
-import { ownerWhere } from "./owner.js";
 
 import type { FilterQuery } from "../../common/pagination/filter.js";
 import type { Owner } from "./owner.js";
@@ -51,7 +46,11 @@ export class AgentRunService implements OnApplicationBootstrap {
 
   async findSessions(query: FilterQuery<AgentSession>, owner: Owner): Promise<Paginated<AgentSession>> {
     const [data, total] = await this.sessions.findAndCount({
-      where: { ...query.where, ...ownerWhere(owner) },
+      where: {
+        ...query.where,
+        userId: owner.userId ?? IsNull(),
+        apiKeyId: owner.apiKeyId ?? IsNull(),
+      },
       order: query.order,
       take: query.take,
       skip: query.skip,
@@ -60,7 +59,11 @@ export class AgentRunService implements OnApplicationBootstrap {
   }
 
   async findSession(id: string, owner: Owner): Promise<AgentSession> {
-    const session = await this.sessions.findOneBy({ id, ...ownerWhere(owner) });
+    const session = await this.sessions.findOneBy({
+      id,
+      userId: owner.userId ?? IsNull(),
+      apiKeyId: owner.apiKeyId ?? IsNull(),
+    });
     if (!session) throw new NotFoundException("AgentSession not found");
     return session;
   }
@@ -100,7 +103,15 @@ export class AgentRunService implements OnApplicationBootstrap {
   }
 
   async findRun(id: string, owner: Owner): Promise<AgentRun> {
-    const run = await this.runs.findOne({ where: { id, session: ownerWhere(owner) } });
+    const run = await this.runs.findOne({
+      where: {
+        id,
+        session: {
+          userId: owner.userId ?? IsNull(),
+          apiKeyId: owner.apiKeyId ?? IsNull(),
+        },
+      },
+    });
     if (!run) throw new NotFoundException("AgentRun not found");
     return run;
   }
