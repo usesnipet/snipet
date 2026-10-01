@@ -48,8 +48,8 @@ export class KnowledgeController {
   @Roles(Role.Admin)
   @Post("knowledge-items/sync")
   @HttpCode(202)
-  startSync() {
-    this.sync.trigger();
+  async startSync() {
+    await this.sync.trigger();
   }
 
   @Get("knowledge/search")

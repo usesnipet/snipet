@@ -1,4 +1,5 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { KnowledgeItemKind, KnowledgeItemStatus } from "@snipet/shared";
 import { ChunkerType, extract as xbergExtract, ExtractInputKind } from "@xberg-io/xberg";
@@ -11,39 +12,33 @@ import { PgvectorService } from "../pgvector/pgvector.service.js";
 import { KnowledgeItem } from "./knowledge-item.entity.js";
 import { S3Source } from "./s3-source.js";
 
+import type { Job } from "bullmq";
 import type { ExtractedDocument, ExtractionResult } from "@xberg-io/xberg";
 import type { QueryDeepPartialEntity } from "typeorm";
+
+export const KNOWLEDGE_INDEX_QUEUE = "knowledge-index";
+export type KnowledgeIndexJob = { itemId: string };
 
 // xberg's error for a format it has no extractor for; retrying won't help.
 class UnsupportedFormatError extends Error {}
 
 // Extracts each queued item with xberg, embeds its chunks and stores them in
-// pgvector. At most KNOWLEDGE_INDEX_CONCURRENCY items at once, never the same
-// item twice at once.
-@Injectable()
-export class KnowledgeIndexService {
-  private readonly logger = new Logger(KnowledgeIndexService.name);
-  private readonly queue: string[] = [];
-  // Ids queued or indexing.
-  private readonly pending = new Set<string>();
-  // Ids enqueued again while indexing: their content may have changed since.
-  private readonly again = new Set<string>();
-  private readonly active = new Set<string>();
+// pgvector. Jobs are enqueued by KnowledgeSyncService.
+@Processor(KNOWLEDGE_INDEX_QUEUE, { concurrency: env.KNOWLEDGE_INDEX_CONCURRENCY })
+export class KnowledgeIndexProcessor extends WorkerHost {
+  private readonly logger = new Logger(KnowledgeIndexProcessor.name);
 
   constructor(
     @InjectRepository(KnowledgeItem) private readonly items: Repository<KnowledgeItem>,
     private readonly source: S3Source,
     private readonly embedding: EmbeddingService,
     private readonly pgvector: PgvectorService,
-  ) {}
+  ) {
+    super();
+  }
 
-  // Schedules indexing without blocking the caller.
-  enqueue(id: string) {
-    if (this.active.has(id)) this.again.add(id);
-    if (this.pending.has(id)) return;
-    this.pending.add(id);
-    this.queue.push(id);
-    this.drain();
+  process(job: Job<KnowledgeIndexJob>): Promise<void> {
+    return this.index(job.data.itemId);
   }
 
   // Replaces the item's chunks with the ones extracted from its current
@@ -86,6 +81,7 @@ export class KnowledgeIndexService {
       } else {
         this.logger.warn(`index ${item.externalId} failed: ${message}`);
         await this.finish(item, { status: KnowledgeItemStatus.ERROR, lastError: message });
+        throw err; // marks the job failed in Bull Board
       }
       return;
     }
@@ -96,21 +92,6 @@ export class KnowledgeIndexService {
   // has set it back to pending and enqueued it again.
   private finish(item: KnowledgeItem, update: QueryDeepPartialEntity<KnowledgeItem>) {
     return this.items.update({ id: item.id, hash: item.hash }, { reason: null, lastError: null, ...update });
-  }
-
-  private drain() {
-    while (this.active.size < env.KNOWLEDGE_INDEX_CONCURRENCY && this.queue.length) {
-      const id = this.queue.shift()!;
-      this.pending.delete(id);
-      this.active.add(id);
-      this.index(id)
-        .catch((err: unknown) => this.logger.error(`index of knowledge item ${id} failed: ${String(err)}`))
-        .finally(() => {
-          this.active.delete(id);
-          if (this.again.delete(id)) this.enqueue(id);
-          this.drain();
-        });
-    }
   }
 }
 
