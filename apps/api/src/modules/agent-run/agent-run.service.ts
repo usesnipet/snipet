@@ -79,7 +79,6 @@ export class AgentRunService implements OnApplicationBootstrap {
     await this.sessions.delete(id);
   }
 
-  // Newest first.
   async findMessages(
     sessionId: string,
     { take, before }: FindAgentMessagesParams,
@@ -94,7 +93,6 @@ export class AgentRunService implements OnApplicationBootstrap {
     return { data, total, take, skip: 0 };
   }
 
-  // Newest first.
   async findRuns({ sessionId, take, skip }: FindAgentRunsParams, owner: Owner): Promise<Paginated<AgentRun>> {
     await this.findSession(sessionId, owner);
     const [data, total] = await this.runs.findAndCount({

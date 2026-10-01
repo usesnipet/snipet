@@ -3,10 +3,10 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { AgentRunStatus } from "@snipet/shared";
 import { In, Repository } from "typeorm";
 
+import { toHttpException } from "../../common/filter/llm-error.filter.js";
+import { FailoverError, LlmError } from "../../infra/llm/errors.js";
 import { Agent } from "../agent/agent.entity.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
-import { FailoverError, LlmError } from "../../infra/llm/errors.js";
-import { toHttpException } from "../../common/filter/llm-error.filter.js";
 import { Tool } from "../tool/tool.entity.js";
 import { ToolService } from "../tool/tool.service.js";
 
@@ -42,12 +42,8 @@ export class AgentRunner {
     try {
       const stored = await this.messages.find({ where: { sessionId: run.sessionId }, order: { id: "ASC" } });
       const history: LlmMessage[] = stored.map(({ role, parts }) => ({ role, parts }));
-      const system: LlmMessage[] = agent.systemPrompt
-        ? [
-            { role: "system", parts: [{ type: "text", text: agent.systemPrompt }] },
-            { role: "system", parts: [{ type: "text", text: `Your name is ${agent.name}` }] },
-          ]
-        : [];
+      const system: LlmMessage[] = [{ role: "system", parts: [{ type: "text", text: `Your name is ${agent.name}` }] }];
+      if (agent.systemPrompt) system.push({ role: "system", parts: [{ type: "text", text: agent.systemPrompt }] });
       const { tools, toolIds } = await this.resolveTools(agent);
       const targets = agent.llms.map((llm) => ({
         model: llm.model,

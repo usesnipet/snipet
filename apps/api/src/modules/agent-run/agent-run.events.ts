@@ -5,8 +5,6 @@ import type { AgentRunEvent } from "@snipet/shared";
 type Listener = (event: AgentRunEvent) => void;
 
 // Live runs of this process: their abort switch and who follows their events.
-// ponytail: in-process, so a run is only followed and cancelled on the API
-// instance running it; move to pub/sub (e.g. Postgres LISTEN/NOTIFY) to scale out.
 @Injectable()
 export class AgentRunEvents {
   private readonly live = new Map<string, { abort: AbortController; listeners: Set<Listener> }>();

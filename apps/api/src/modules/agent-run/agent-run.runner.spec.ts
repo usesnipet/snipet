@@ -84,7 +84,7 @@ describe("AgentRunner.run", () => {
     const [{ messages, tools }] = llm.stream.mock.calls[1] as unknown as [
       { messages: LlmMessage[]; tools: { name: string }[] },
     ];
-    expect(messages.map((m) => m.role)).toEqual(["system", "user", "assistant", "tool"]);
+    expect(messages.map((m) => m.role)).toEqual(["system", "system", "user", "assistant", "tool"]);
     expect(tools.map((t) => t.name)).toEqual(["read_file"]); // delete_file is denied
   });
 
