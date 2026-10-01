@@ -15,8 +15,8 @@ if (existsSync(rootEnvFile)) {
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().default(8080),
+
   DATABASE_URL: z.string(),
-  // Run pending migrations on boot.
   DB_AUTO_MIGRATE: z.stringbool().default(true),
 
   JWT_SECRET: z.string().min(32),
@@ -43,10 +43,12 @@ const envSchema = z.object({
 
   // BullMQ queues.
   REDIS_URL: z.string().default("redis://localhost:6379"),
+  BULL_BOARD_USERNAME: z.string().default("admin"),
+  BULL_BOARD_PASSWORD: z.string().default("admin"),
 
   // Seconds between MCP server tool syncs; 0 disables periodic syncs.
   MCP_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300),
-  // MCP server syncs running at once, per API instance.
+  // MCP server syncs running at once.
   MCP_SYNC_CONCURRENCY: z.coerce.number().int().min(1).default(4),
 
   // Knowledge source: an S3 or S3-compatible bucket (MinIO, R2, ...). Without
@@ -55,19 +57,19 @@ const envSchema = z.object({
   KNOWLEDGE_S3_REGION: z.string().default("us-east-1"),
   KNOWLEDGE_S3_BUCKET: z.string().optional(),
   KNOWLEDGE_S3_PREFIX: z.string().default(""),
-  // Empty credentials fall back to the AWS default chain (env, profile, IAM role).
   KNOWLEDGE_S3_ACCESS_KEY_ID: z.string().optional(),
   KNOWLEDGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
-  // Addresses buckets as endpoint/bucket; most S3-compatible services need it.
   KNOWLEDGE_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
-  // Seconds between source syncs; 0 disables periodic syncs.
-  KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300),
+
+  // Seconds between knowledge source syncs; 0 disables periodic syncs.
+  KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300), // 5 minutes
   KNOWLEDGE_INDEX_CONCURRENCY: z.coerce.number().int().min(1).default(2),
   CHUNK_MAX_CHARACTERS: z.coerce.number().int().positive().default(1000),
   CHUNK_OVERLAP: z.coerce.number().int().min(0).default(200),
 
-  // Separate Postgres (with pgvector) holding the chunks and their embeddings.
-  PGVECTOR_URL: z.string().optional(),
+  // Postgres holding the chunks and their embeddings.
+  PGVECTOR_URL: z.url().optional(),
+
   // Postgres text search config for keyword search. Part of the chunks schema,
   // like EMBEDDING_DIMENSIONS: changing either needs knowledge_chunks dropped
   // and everything reindexed.
