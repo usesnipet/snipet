@@ -1,7 +1,6 @@
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, ServiceUnavailableException } from "@nestjs/common";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit, ServiceUnavailableException } from "@nestjs/common";
 import pg from "pg";
 
 import { env } from "../../env.js";
@@ -52,6 +51,16 @@ export class PgvectorService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     await this.pool?.end();
+  }
+
+  async dropAndCreate(): Promise<void> {
+    this.logger.warn("Dropping knowledge_chunks table and reapplying schema");
+    await this.pool?.query("DROP TABLE IF EXISTS knowledge_chunks");
+    const schema = readFileSync(join(import.meta.dirname, "schema.sql"), "utf8")
+      .replaceAll("{{DIMENSIONS}}", String(env.EMBEDDING_DIMENSIONS))
+      .replaceAll("{{FTS_LANGUAGE}}", env.FTS_LANGUAGE);
+    await this.pool?.query(schema);
+    this.logger.log("pgvector schema applied");
   }
 
   // Swaps every chunk of the item for the given ones, atomically.

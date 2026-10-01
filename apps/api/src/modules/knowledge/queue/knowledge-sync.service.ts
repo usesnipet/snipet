@@ -6,9 +6,10 @@ import { Queue } from "bullmq";
 import { Repository } from "typeorm";
 
 import { env, knowledgeEnabled } from "../../../env.js";
+import { PgvectorService } from "../../../infra/pgvector/pgvector.service.js";
+import { KnowledgeItem } from "../knowledge-item.entity.js";
 
 import { KNOWLEDGE_INDEX_QUEUE, KnowledgeIndexJob } from "./knowledge-index.processor.js";
-import { KnowledgeItem } from "../knowledge-item.entity.js";
 
 // Here, not in the processor: the processor imports this file.
 export const KNOWLEDGE_SYNC_QUEUE = "knowledge-sync";
@@ -24,9 +25,16 @@ export class KnowledgeSyncService implements OnApplicationBootstrap, OnModuleDes
     @InjectRepository(KnowledgeItem) private readonly items: Repository<KnowledgeItem>,
     @InjectQueue(KNOWLEDGE_SYNC_QUEUE) private readonly syncQueue: Queue,
     @InjectQueue(KNOWLEDGE_INDEX_QUEUE) private readonly indexQueue: Queue<KnowledgeIndexJob>,
+    private readonly pgvector: PgvectorService,
   ) {}
 
-  onApplicationBootstrap() {
+  async onApplicationBootstrap() {
+    if (env.KNOWLEDGE_INDEX_RESET) {
+      this.logger.warn("Resetting knowledge index");
+      await this.items.update({ status: KnowledgeItemStatus.INDEXED }, { status: KnowledgeItemStatus.PENDING });
+      await this.pgvector.dropAndCreate();
+    }
+
     if (!knowledgeEnabled) return;
     // Items whose indexing failed or whose job got lost are picked up again.
     void this.enqueueIndex(KnowledgeItemStatus.INDEXING).then(() => this.trigger());
