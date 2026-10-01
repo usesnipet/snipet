@@ -1,8 +1,8 @@
 import type { LlmConnectionOptions, LlmModel, LlmProviderInfo, LlmResponse } from "@snipet/shared";
 import OpenAI, { APIConnectionError, APIError, APIUserAbortError } from "openai";
 
-import { LlmError, llmErrorFromStatus } from "../../llm/errors.js";
-import type { GenerateRequest, LlmProvider, ProviderStreamEvent } from "../../llm/provider.js";
+import { LlmError, llmErrorFromStatus } from "../../errors.js";
+import type { GenerateRequest, LlmProvider, ProviderStreamEvent } from "../../provider.js";
 import { fromCompletion, toOpenAiMessages, toOpenAiTools, toStreamEvents } from "./openai.mapper.js";
 
 const AUTH_SCHEMA = {

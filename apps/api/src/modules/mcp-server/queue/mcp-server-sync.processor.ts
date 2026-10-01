@@ -3,11 +3,11 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { ToolSource } from "@snipet/shared";
 import { Repository } from "typeorm";
 
-import { env } from "../../env.js";
-import { Tool } from "../tool/tool.entity.js";
+import { env } from "../../../env.js";
+import { Tool } from "../../tool/tool.entity.js";
 
-import { McpServer } from "./mcp-server.entity.js";
-import { McpConnector, RemoteTool } from "./mcp/connector.js";
+import { McpServer } from "../mcp-server.entity.js";
+import { McpConnector, RemoteTool } from "../../../infra/mcp/connector.js";
 
 import type { Job } from "bullmq";
 

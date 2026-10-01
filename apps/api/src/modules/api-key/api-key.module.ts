@@ -3,7 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { ApiKeyController, ApiKeyMeController } from "./api-key.controller.js";
 import { ApiKey } from "./api-key.entity.js";
-import { ApiKeyGuard } from "./api-key.guard.js";
+import { ApiKeyGuard } from "../../common/guards/api-key.guard.js";
 import { ApiKeyService } from "./api-key.service.js";
 
 @Module({

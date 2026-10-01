@@ -1,22 +1,16 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
+import { LlmModule } from "../../infra/llm/llm.module.js";
+
 import { LlmConnectionController } from "./llm-connection.controller.js";
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionService } from "./llm-connection.service.js";
-import { LlmRegistry } from "./llm/registry.js";
-import { LlmRunner } from "./llm/runner.js";
-import { OllamaProvider } from "./providers/ollama/ollama.provider.js";
-import { OpenAiProvider } from "./providers/openai/openai.provider.js";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LlmConnection])],
+  imports: [TypeOrmModule.forFeature([LlmConnection]), LlmModule],
   controllers: [LlmConnectionController],
-  providers: [
-    LlmConnectionService,
-    { provide: LlmRegistry, useFactory: () => new LlmRegistry([new OpenAiProvider(), new OllamaProvider()]) },
-    { provide: LlmRunner, useFactory: (registry: LlmRegistry) => new LlmRunner(registry), inject: [LlmRegistry] },
-  ],
-  exports: [LlmConnectionService, LlmRunner],
+  providers: [LlmConnectionService],
+  exports: [LlmConnectionService, LlmModule],
 })
 export class LlmConnectionModule {}

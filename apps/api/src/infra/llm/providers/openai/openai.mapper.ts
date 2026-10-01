@@ -7,7 +7,7 @@ import type {
   ChatCompletionTool,
 } from "openai/resources/chat/completions";
 
-import type { ProviderStreamEvent } from "../../llm/provider.js";
+import type { ProviderStreamEvent } from "../../provider.js";
 
 // Pure mapping between our message model and the Chat Completions API.
 

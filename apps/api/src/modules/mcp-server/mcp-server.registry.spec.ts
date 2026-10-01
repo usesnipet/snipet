@@ -1,8 +1,8 @@
 import { McpTransport, mcpServerRegistryItemSchema } from "@snipet/shared";
 
-import { checkJsonSchema } from "../../../utils/json-schema/json-schema.js";
+import { checkJsonSchema } from "../../common/utils/json-schema/json-schema.js";
 
-import { MCP_SERVERS_REGISTRY } from "./registry.js";
+import { MCP_SERVERS_REGISTRY } from "./mcp-server.registry.js";
 
 describe("MCP_SERVERS_REGISTRY", () => {
   it("has unique keys, sorted", () => {

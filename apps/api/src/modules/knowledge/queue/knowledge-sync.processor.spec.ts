@@ -3,10 +3,10 @@ import { KnowledgeItemStatus } from "@snipet/shared";
 
 import { KnowledgeSyncProcessor } from "./knowledge-sync.processor.js";
 
-import type { PgvectorService } from "../pgvector/pgvector.service.js";
-import type { KnowledgeItem } from "./knowledge-item.entity.js";
+import type { PgvectorService } from "../../../infra/pgvector/pgvector.service.js";
+import type { KnowledgeItem } from "../knowledge-item.entity.js";
 import type { KnowledgeSyncService } from "./knowledge-sync.service.js";
-import type { S3Source, SourceObject } from "./s3-source.js";
+import type { S3Source, SourceObject } from "../../../infra/storage/s3-source.js";
 import type { Repository } from "typeorm";
 
 type Fn = (...args: unknown[]) => Promise<unknown>;

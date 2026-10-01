@@ -4,7 +4,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { Injectable } from "@nestjs/common";
 import { mcpConfigSchemas, McpTransport } from "@snipet/shared";
 
-import { env } from "../../../env.js";
+import { env } from "../../env.js";
 
 import type { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";

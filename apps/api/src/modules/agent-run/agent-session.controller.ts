@@ -6,11 +6,11 @@ import { ZodPipe } from "../../common/pipes/zod.pipe.js";
 
 import { findAgentMessagesParamsSchema, findAgentSessionsSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
-import { CurrentOwner } from "./owner.js";
+import { CurrentOwner } from "../../common/decorators/owner.decorator.js";
 
 import type { FilterQuery } from "../../common/pagination/filter.js";
 import type { AgentSession } from "./agent-run.entity.js";
-import type { Owner } from "./owner.js";
+import type { Owner } from "../../common/decorators/owner.decorator.js";
 import type { FindAgentMessagesParams } from "@snipet/shared";
 
 // Same access as running agents: admins, or any API key.

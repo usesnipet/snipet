@@ -7,7 +7,7 @@ import { App } from "supertest/types.js";
 // Runs against DATABASE_URL: use a dedicated database. The root user is
 // created with this password when the users table is empty.
 process.env.ROOT_PASSWORD ||= "e2e-root-password";
-const { AppModule } = await import("./../src/app.module.js");
+const { AppModule } = await import("../src/app.module.js");
 
 describe("App (e2e)", () => {
   let app: INestApplication<App>;

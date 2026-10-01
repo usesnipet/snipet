@@ -1,10 +1,10 @@
 import { jest } from "@jest/globals";
 import { McpTransport, ToolSource } from "@snipet/shared";
 
-import { McpServerSyncProcessor } from "./mcp-server.sync.processor.js";
+import { McpServerSyncProcessor } from "./mcp-server-sync.processor.js";
 
-import type { McpConnector } from "./mcp/connector.js";
-import type { McpServer } from "./mcp-server.entity.js";
+import type { McpConnector } from "../../../infra/mcp/connector.js";
+import type { McpServer } from "../mcp-server.entity.js";
 import type { Repository } from "typeorm";
 
 type Fn = (...args: unknown[]) => Promise<unknown>;

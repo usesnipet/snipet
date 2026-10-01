@@ -5,8 +5,8 @@ import { In, Repository } from "typeorm";
 
 import { Agent } from "../agent/agent.entity.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
-import { FailoverError, LlmError } from "../llm-connection/llm/errors.js";
-import { toHttpException } from "../llm-connection/llm/llm-error.filter.js";
+import { FailoverError, LlmError } from "../../infra/llm/errors.js";
+import { toHttpException } from "../../common/filter/llm-error.filter.js";
 import { Tool } from "../tool/tool.entity.js";
 import { ToolService } from "../tool/tool.service.js";
 

@@ -6,8 +6,8 @@ import { Repository } from "typeorm";
 import { CrudService } from "../../common/crud/crud.service.js";
 
 import { McpServer } from "./mcp-server.entity.js";
-import { McpServerSyncService } from "./mcp-server.sync.service.js";
-import { MCP_SERVERS_REGISTRY } from "./mcp/registry.js";
+import { McpServerSyncService } from "./queue/mcp-server-sync.service.js";
+import { MCP_SERVERS_REGISTRY } from "./mcp-server.registry.js";
 
 import type { CreateMcpServer, McpServerRegistryItem, McpTransport, UpdateMcpServer } from "@snipet/shared";
 

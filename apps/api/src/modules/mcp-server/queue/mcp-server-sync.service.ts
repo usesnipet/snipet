@@ -4,10 +4,10 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Queue } from "bullmq";
 import { Repository } from "typeorm";
 
-import { env } from "../../env.js";
+import { env } from "../../../env.js";
 
-import { McpServer } from "./mcp-server.entity.js";
-import { MCP_SYNC_QUEUE, McpSyncJob } from "./mcp-server.sync.processor.js";
+import { McpServer } from "../mcp-server.entity.js";
+import { MCP_SYNC_QUEUE, McpSyncJob } from "./mcp-server-sync.processor.js";
 
 // Enqueues MCP server tool syncs: every server on boot and on every
 // MCP_SYNC_INTERVAL_SECONDS, single servers on demand through enqueue().

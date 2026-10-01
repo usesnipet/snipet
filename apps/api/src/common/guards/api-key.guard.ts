@@ -1,9 +1,9 @@
-import { CanActivate, createParamDecorator, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 
 import type { Request } from "express";
 
-import { ApiKey } from "./api-key.entity.js";
-import { ApiKeyService } from "./api-key.service.js";
+import { ApiKey } from "../../modules/api-key/api-key.entity.js";
+import { ApiKeyService } from "../../modules/api-key/api-key.service.js";
 
 type ApiKeyRequest = Request & { apiKey?: ApiKey };
 
@@ -23,8 +23,3 @@ export class ApiKeyGuard implements CanActivate {
     return true;
   }
 }
-
-// The key that authenticated the request, set by ApiKeyGuard.
-export const CurrentApiKey = createParamDecorator(
-  (_: unknown, ctx: ExecutionContext) => ctx.switchToHttp().getRequest<ApiKeyRequest>().apiKey,
-);

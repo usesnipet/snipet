@@ -2,11 +2,12 @@ import { Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from "@nestjs/
 import { Role } from "@snipet/shared";
 
 import { CrudController } from "../../common/crud/crud.controller.js";
+import { CurrentApiKey } from "../../common/decorators/api-key.decorator.js";
 import { Public, Roles } from "../../common/decorators/auth.decorators.js";
+import { ApiKeyGuard } from "../../common/guards/api-key.guard.js";
 
 import { createApiKeySchema, findApiKeysSchema, updateApiKeySchema } from "./api-key.dto.js";
 import { ApiKey } from "./api-key.entity.js";
-import { ApiKeyGuard, CurrentApiKey } from "./api-key.guard.js";
 import { ApiKeyService } from "./api-key.service.js";
 
 @Roles(Role.Admin)

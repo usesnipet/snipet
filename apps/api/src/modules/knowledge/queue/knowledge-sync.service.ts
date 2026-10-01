@@ -5,10 +5,10 @@ import { KnowledgeItemStatus } from "@snipet/shared";
 import { Queue } from "bullmq";
 import { Repository } from "typeorm";
 
-import { env, knowledgeEnabled } from "../../env.js";
+import { env, knowledgeEnabled } from "../../../env.js";
 
 import { KNOWLEDGE_INDEX_QUEUE, KnowledgeIndexJob } from "./knowledge-index.processor.js";
-import { KnowledgeItem } from "./knowledge-item.entity.js";
+import { KnowledgeItem } from "../knowledge-item.entity.js";
 
 // Here, not in the processor: the processor imports this file.
 export const KNOWLEDGE_SYNC_QUEUE = "knowledge-sync";

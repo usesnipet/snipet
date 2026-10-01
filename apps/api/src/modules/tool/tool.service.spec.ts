@@ -4,7 +4,7 @@ import { McpTransport, ToolSource } from "@snipet/shared";
 
 import { ToolService } from "./tool.service.js";
 
-import type { McpConnector } from "../mcp-server/mcp/connector.js";
+import type { McpConnector } from "../../infra/mcp/connector.js";
 import type { McpServerService } from "../mcp-server/mcp-server.service.js";
 import type { Tool } from "./tool.entity.js";
 import type { Repository } from "typeorm";

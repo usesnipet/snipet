@@ -1,24 +1,12 @@
-import {
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Query,
-  ServiceUnavailableException,
-} from "@nestjs/common";
+import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from "@nestjs/common";
 import { knowledgeSearchParamsSchema, Role } from "@snipet/shared";
 
 import { Roles } from "../../common/decorators/auth.decorators.js";
 import { ZodPipe } from "../../common/pipes/zod.pipe.js";
-import { knowledgeEnabled } from "../../env.js";
-import { EmbeddingService } from "../embedding/embedding.service.js";
-import { PgvectorService } from "../pgvector/pgvector.service.js";
 
 import { findKnowledgeItemsSchema } from "./knowledge.dto.js";
 import { KnowledgeItemService } from "./knowledge-item.service.js";
-import { KnowledgeSyncService } from "./knowledge-sync.service.js";
+import { KnowledgeSyncService } from "./queue/knowledge-sync.service.js";
 
 import type { FilterQuery } from "../../common/pagination/filter.js";
 import type { KnowledgeItem } from "./knowledge-item.entity.js";
@@ -30,8 +18,6 @@ export class KnowledgeController {
   constructor(
     private readonly items: KnowledgeItemService,
     private readonly sync: KnowledgeSyncService,
-    private readonly embedding: EmbeddingService,
-    private readonly pgvector: PgvectorService,
   ) {}
 
   @Get("knowledge-items")
@@ -53,9 +39,7 @@ export class KnowledgeController {
   }
 
   @Get("knowledge/search")
-  async search(@Query(new ZodPipe(knowledgeSearchParamsSchema)) { q, limit }: KnowledgeSearchParams) {
-    if (!knowledgeEnabled) throw new ServiceUnavailableException("knowledge is not configured");
-    const [embedding] = await this.embedding.embed([q]);
-    return this.pgvector.search(q, embedding, limit);
+  search(@Query(new ZodPipe(knowledgeSearchParamsSchema)) { q, limit }: KnowledgeSearchParams) {
+    return this.items.search(q, limit);
   }
 }

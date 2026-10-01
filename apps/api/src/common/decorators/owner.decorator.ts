@@ -1,7 +1,7 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 
-import type { AuthUser } from "../../common/decorators/auth.decorators.js";
-import type { ApiKey } from "../api-key/api-key.entity.js";
+import type { AuthUser } from "./auth.decorators.js";
+import type { ApiKey } from "../../modules/api-key/api-key.entity.js";
 
 // Who a session belongs to: the logged-in user or the API key of the request.
 export type Owner = { userId: string; apiKeyId: null } | { userId: null; apiKeyId: string };

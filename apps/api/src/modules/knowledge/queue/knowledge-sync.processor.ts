@@ -4,11 +4,11 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { KnowledgeItemStatus } from "@snipet/shared";
 import { Repository } from "typeorm";
 
-import { PgvectorService } from "../pgvector/pgvector.service.js";
+import { PgvectorService } from "../../../infra/pgvector/pgvector.service.js";
 
-import { KnowledgeItem } from "./knowledge-item.entity.js";
+import { KnowledgeItem } from "../knowledge-item.entity.js";
 import { KNOWLEDGE_SYNC_QUEUE, KnowledgeSyncService } from "./knowledge-sync.service.js";
-import { S3Source } from "./s3-source.js";
+import { S3Source } from "../../../infra/storage/s3-source.js";
 
 import type { QueryDeepPartialEntity } from "typeorm";
 

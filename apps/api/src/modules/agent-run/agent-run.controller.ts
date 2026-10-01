@@ -6,9 +6,9 @@ import { ZodPipe } from "../../common/pipes/zod.pipe.js";
 
 import { findAgentRunsParamsSchema, startAgentRunSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
-import { CurrentOwner } from "./owner.js";
+import { CurrentOwner } from "../../common/decorators/owner.decorator.js";
 
-import type { Owner } from "./owner.js";
+import type { Owner } from "../../common/decorators/owner.decorator.js";
 import type { FindAgentRunsParams, StartAgentRun } from "@snipet/shared";
 import type { Response } from "express";
 

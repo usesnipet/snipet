@@ -5,9 +5,9 @@ import { DeepPartial, Not, QueryDeepPartialEntity, Repository } from "typeorm";
 import { CrudService } from "../../common/crud/crud.service.js";
 
 import { LlmConnection } from "./llm-connection.entity.js";
-import { LlmError } from "./llm/errors.js";
-import { LlmRegistry } from "./llm/registry.js";
-import { LlmRunner, LlmTarget, splitModelRef } from "./llm/runner.js";
+import { LlmError } from "../../infra/llm/errors.js";
+import { LlmRegistry } from "../../infra/llm/registry.js";
+import { LlmRunner, LlmTarget, splitModelRef } from "../../infra/llm/runner.js";
 
 import type {
   ExecuteLlm,

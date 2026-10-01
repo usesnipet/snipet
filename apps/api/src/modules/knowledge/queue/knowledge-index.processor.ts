@@ -5,12 +5,12 @@ import { KnowledgeItemKind, KnowledgeItemStatus } from "@snipet/shared";
 import { ChunkerType, extract as xbergExtract, ExtractInputKind } from "@xberg-io/xberg";
 import { Repository } from "typeorm";
 
-import { env } from "../../env.js";
-import { EmbeddingService } from "../embedding/embedding.service.js";
-import { PgvectorService } from "../pgvector/pgvector.service.js";
+import { env } from "../../../env.js";
+import { EmbeddingService } from "../../../infra/embedding/embedding.service.js";
+import { PgvectorService } from "../../../infra/pgvector/pgvector.service.js";
 
-import { KnowledgeItem } from "./knowledge-item.entity.js";
-import { S3Source } from "./s3-source.js";
+import { KnowledgeItem } from "../knowledge-item.entity.js";
+import { S3Source } from "../../../infra/storage/s3-source.js";
 
 import type { Job } from "bullmq";
 import type { ExtractedDocument, ExtractionResult } from "@xberg-io/xberg";

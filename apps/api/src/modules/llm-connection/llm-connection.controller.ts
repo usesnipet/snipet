@@ -12,8 +12,8 @@ import {
 } from "./llm-connection.dto.js";
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionService } from "./llm-connection.service.js";
-import { FailoverError, LlmError } from "./llm/errors.js";
-import { LlmErrorFilter, toHttpException } from "./llm/llm-error.filter.js";
+import { FailoverError, LlmError } from "../../infra/llm/errors.js";
+import { LlmErrorFilter, toHttpException } from "../../common/filter/llm-error.filter.js";
 
 import type { ExecuteLlm, ListProviderModelsParams, LlmStreamEvent } from "@snipet/shared";
 import type { Response } from "express";

@@ -3,7 +3,7 @@ import { Column, Entity, Index } from "typeorm";
 
 import { BaseEntity } from "../../common/crud/base.entity.js";
 import { env } from "../../env.js";
-import { open, seal } from "../../utils/secret-box.js";
+import { open, seal } from "../../common/utils/secret-box.js";
 
 import type { ValueTransformer } from "typeorm";
 
