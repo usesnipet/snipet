@@ -1,17 +1,17 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { OnWorkerEvent, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { KnowledgeItemStatus } from "@snipet/shared";
+import { Job } from "bullmq";
 import { Repository } from "typeorm";
 
 import { PgvectorService } from "../../../infra/pgvector/pgvector.service.js";
-
-import { KnowledgeItem } from "../knowledge-item.entity.js";
-import { KNOWLEDGE_SYNC_QUEUE, KnowledgeSyncService } from "./knowledge-sync.service.js";
 import { S3Source } from "../../../infra/storage/s3-source.js";
+import { KnowledgeItem } from "../knowledge-item.entity.js";
+
+import { KNOWLEDGE_SYNC_QUEUE, KnowledgeSyncService } from "./knowledge-sync.service.js";
 
 import type { QueryDeepPartialEntity } from "typeorm";
-
 const UPSERT_BATCH = 500;
 
 export interface SyncResult {
@@ -72,5 +72,10 @@ export class KnowledgeSyncProcessor extends WorkerHost {
     await this.syncService.enqueueIndex(KnowledgeItemStatus.PENDING);
     this.logger.log(`knowledge sync: upserted=${changed.length} deleted=${gone.length}`);
     return { upserted: changed.length, deleted: gone.length };
+  }
+
+  @OnWorkerEvent("failed")
+  onError(_: Job, error: Error) {
+    this.logger.error(`Knowledge sync failed: ${error.message}`);
   }
 }

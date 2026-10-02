@@ -1,11 +1,11 @@
 import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from "@nestjs/common";
 import { knowledgeSearchParamsSchema, Role } from "@snipet/shared";
 
-import { Roles } from "../../common/decorators/auth.decorators.js";
+import { Public, Roles } from "../../common/decorators/auth.decorators.js";
 import { ZodPipe } from "../../common/pipes/zod.pipe.js";
 
-import { findKnowledgeItemsSchema } from "./knowledge.dto.js";
 import { KnowledgeItemService } from "./knowledge-item.service.js";
+import { findKnowledgeItemsSchema } from "./knowledge.dto.js";
 import { KnowledgeSyncService } from "./queue/knowledge-sync.service.js";
 
 import type { FilterQuery } from "../../common/pagination/filter.js";
@@ -38,6 +38,7 @@ export class KnowledgeController {
     await this.sync.trigger();
   }
 
+  @Public()
   @Get("knowledge/search")
   search(@Query(new ZodPipe(knowledgeSearchParamsSchema)) { q, limit }: KnowledgeSearchParams) {
     return this.items.search(q, limit);
