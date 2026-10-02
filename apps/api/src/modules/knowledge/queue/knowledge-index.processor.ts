@@ -1,8 +1,10 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { KnowledgeItemKind, KnowledgeItemStatus } from "@snipet/shared";
 import { ChunkerType, extract as xbergExtract, ExtractInputKind } from "@xberg-io/xberg";
+import { Queue, RateLimitError } from "bullmq";
+import { RateLimitError as EmbeddingRateLimitError } from "openai";
 import { Repository } from "typeorm";
 
 import { env } from "../../../env.js";
@@ -22,14 +24,22 @@ export type KnowledgeIndexJob = { itemId: string };
 // xberg's error for a format it has no extractor for; retrying won't help.
 class UnsupportedFormatError extends Error {}
 
+// Queue pause when the embedding API rate limits without a Retry-After.
+const RATE_LIMIT_FALLBACK_MS = 60_000;
+
 // Extracts each queued item with xberg, embeds its chunks and stores them in
-// pgvector. Jobs are enqueued by KnowledgeSyncService.
-@Processor(KNOWLEDGE_INDEX_QUEUE, { concurrency: env.KNOWLEDGE_INDEX_CONCURRENCY })
+// pgvector. Jobs are enqueued by KnowledgeSyncService. The limiter never
+// limits by itself: BullMQ only honors queue.rateLimit() when one is set.
+@Processor(KNOWLEDGE_INDEX_QUEUE, {
+  concurrency: env.KNOWLEDGE_INDEX_CONCURRENCY,
+  limiter: { max: Number.MAX_SAFE_INTEGER, duration: 1000 },
+})
 export class KnowledgeIndexProcessor extends WorkerHost {
   private readonly logger = new Logger(KnowledgeIndexProcessor.name);
 
   constructor(
     @InjectRepository(KnowledgeItem) private readonly items: Repository<KnowledgeItem>,
+    @InjectQueue(KNOWLEDGE_INDEX_QUEUE) private readonly queue: Queue<KnowledgeIndexJob>,
     private readonly source: S3Source,
     private readonly embedding: EmbeddingService,
     private readonly pgvector: PgvectorService,
@@ -75,6 +85,15 @@ export class KnowledgeIndexProcessor extends WorkerHost {
       this.logger.log(`indexed ${item.externalId}: kind=${kind} chunks=${chunks.length}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      if (err instanceof EmbeddingRateLimitError) {
+        // Pauses the whole queue, since the limit is the provider's; the job
+        // goes back to waiting without using an attempt.
+        const ms = retryAfterMs(err.headers) ?? RATE_LIMIT_FALLBACK_MS;
+        this.logger.warn(`index ${item.externalId} rate limited, pausing queue ${ms}ms: ${message}`);
+        await this.finish(item, { status: KnowledgeItemStatus.PENDING });
+        await this.queue.rateLimit(ms);
+        throw new RateLimitError();
+      }
       if (err instanceof UnsupportedFormatError) {
         this.logger.log(`skipped ${item.externalId}: ${message}`);
         await this.finish(item, { status: KnowledgeItemStatus.SKIPPED, reason: message });
@@ -122,6 +141,14 @@ async function extract(filename: string, bytes: Uint8Array): Promise<ExtractedDo
   const doc = result.results?.[0];
   if (!doc) throw new Error("xberg: empty result");
   return doc;
+}
+
+// Retry-After is in seconds or an HTTP date.
+function retryAfterMs(headers: Headers): number | undefined {
+  const value = headers.get("retry-after");
+  if (!value) return undefined;
+  const ms = Number.isNaN(Number(value)) ? Date.parse(value) - Date.now() : Number(value) * 1000;
+  return Number.isFinite(ms) && ms > 0 ? ms : undefined;
 }
 
 // Thrown as "Unsupported format: <mime>" or reported as errorType unsupported_format.

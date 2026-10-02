@@ -61,8 +61,7 @@ const envSchema = z.object({
   KNOWLEDGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
   KNOWLEDGE_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
 
-  // Seconds between knowledge source syncs; 0 disables periodic syncs.
-  KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300), // 5 minutes
+  KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300), // Seconds between knowledge source syncs; 0 disables periodic syncs.
   KNOWLEDGE_INDEX_CONCURRENCY: z.coerce.number().int().min(1).default(2),
   KNOWLEDGE_INDEX_ERRORS: z.stringbool().default(false),
   KNOWLEDGE_INDEX_RESET: z.stringbool().default(false),
@@ -87,7 +86,7 @@ const envSchema = z.object({
   EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().max(2000).default(1536), // HNSW limit
   EMBEDDING_BATCH_SIZE: z.coerce.number().int().positive().default(100),
 
-  // Set on release builds; otherwise the short commit hash (see system.service).
+  // Set on release builds.
   APP_VERSION: z.string().default("dev"),
 });
 
