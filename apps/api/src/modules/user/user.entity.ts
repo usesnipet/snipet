@@ -1,7 +1,7 @@
 import type { Role, User as UserContract } from "@snipet/shared";
 import { Column, Entity } from "typeorm";
 
-import { BaseEntity } from "../../common/crud/base.entity.js";
+import { BaseEntity } from "@snipet/server-common";
 
 @Entity("users")
 export class User extends BaseEntity implements UserContract {

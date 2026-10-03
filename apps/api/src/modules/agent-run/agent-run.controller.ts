@@ -1,8 +1,7 @@
 import { Body, Controller, Get, Headers, HttpCode, Param, ParseUUIDPipe, Post, Query, Res } from "@nestjs/common";
 import { Role } from "@snipet/shared";
 
-import { AllowApiKey, Roles } from "../../common/decorators/auth.decorators.js";
-import { ZodPipe } from "../../common/pipes/zod.pipe.js";
+import { AllowApiKey, Roles, ZodPipe } from "@snipet/server-common";
 
 import { findAgentRunsParamsSchema, startAgentRunSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";

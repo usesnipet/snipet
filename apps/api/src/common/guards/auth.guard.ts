@@ -4,7 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import { hasRole, Role } from "@snipet/shared";
 
 import { ApiKeyService } from "../../modules/api-key/api-key.service.js";
-import { ALLOW_API_KEY, AuthUser, IS_PUBLIC, ROLES } from "../decorators/auth.decorators.js";
+import { ALLOW_API_KEY, AuthUser, IS_PUBLIC, ROLES } from "@snipet/server-common";
 
 import type { Request } from "express";
 

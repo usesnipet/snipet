@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { createHash, randomBytes } from "node:crypto";
 import { DeepPartial, Repository } from "typeorm";
 
-import { CrudService } from "../../common/crud/crud.service.js";
+import { CrudService } from "@snipet/server-common";
 
 import { ApiKey } from "./api-key.entity.js";
 

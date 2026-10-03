@@ -1,13 +1,12 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from "@nestjs/common";
 import { executeToolSchema, Role } from "@snipet/shared";
 
-import { Roles } from "../../common/decorators/auth.decorators.js";
-import { ZodPipe } from "../../common/pipes/zod.pipe.js";
+import { Roles, ZodPipe } from "@snipet/server-common";
+import type { FilterQuery } from "@snipet/server-common";
 
 import { findToolsSchema } from "./tool.dto.js";
 import { ToolService } from "./tool.service.js";
 
-import type { FilterQuery } from "../../common/pagination/filter.js";
 import type { Tool } from "./tool.entity.js";
 import type { ExecuteTool } from "@snipet/shared";
 

@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { BadRequestException } from "@nestjs/common";
 import type { LlmConnectionOptions, LlmModel, LlmProviderInfo } from "@snipet/shared";
 
-import { validateJson, type JsonSchema } from "../../common/utils/json-schema/json-schema.js";
+import { validateJson, type JsonSchema } from "@snipet/server-common";
 import { LlmError } from "./errors.js";
 import type { LlmProvider } from "./provider.js";
 

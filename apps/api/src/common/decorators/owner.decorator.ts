@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 
-import type { AuthUser } from "./auth.decorators.js";
+import type { AuthUser } from "@snipet/server-common";
 import type { ApiKey } from "../../modules/api-key/api-key.entity.js";
 
 // Who a session belongs to: the logged-in user or the API key of the request.

@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { AppModule } from "./app.module.js";
-import { DbErrorFilter } from "./common/filter/db-error.filter.js";
+import { DbErrorFilter } from "@snipet/server-common";
 import { env } from "./env.js";
 
 import type { NestExpressApplication } from "@nestjs/platform-express";

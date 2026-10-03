@@ -1,7 +1,7 @@
 import type { Tool as ToolContract, ToolSource } from "@snipet/shared";
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 
-import { BaseEntity } from "../../common/crud/base.entity.js";
+import { BaseEntity } from "@snipet/server-common";
 import { McpServer } from "../mcp-server/mcp-server.entity.js";
 
 @Entity("tools")

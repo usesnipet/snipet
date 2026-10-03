@@ -1,7 +1,7 @@
 import type { ApiKey as ApiKeyContract } from "@snipet/shared";
 import { Column, Entity } from "typeorm";
 
-import { BaseEntity } from "../../common/crud/base.entity.js";
+import { BaseEntity } from "@snipet/server-common";
 
 @Entity("api_keys")
 export class ApiKey extends BaseEntity implements ApiKeyContract {

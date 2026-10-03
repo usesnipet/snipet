@@ -3,8 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { ToolSource } from "@snipet/shared";
 import { Repository } from "typeorm";
 
-import { CrudService } from "../../common/crud/crud.service.js";
-import { validateJson } from "../../common/utils/json-schema/json-schema.js";
+import { CrudService, validateJson } from "@snipet/server-common";
 import { McpConnector } from "../../infra/mcp/connector.js";
 import { McpServerService } from "../mcp-server/mcp-server.service.js";
 

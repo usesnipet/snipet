@@ -11,7 +11,6 @@ import { KnowledgeItem } from "../knowledge-item.entity.js";
 
 import { KNOWLEDGE_INDEX_QUEUE, KnowledgeIndexJob } from "./knowledge-index.processor.js";
 
-// Here, not in the processor: the processor imports this file.
 export const KNOWLEDGE_SYNC_QUEUE = "knowledge-sync";
 
 // Enqueues source syncs, on boot and every KNOWLEDGE_SYNC_INTERVAL_SECONDS or

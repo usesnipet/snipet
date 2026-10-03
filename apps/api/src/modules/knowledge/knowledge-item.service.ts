@@ -2,7 +2,7 @@ import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { CrudService } from "../../common/crud/crud.service.js";
+import { CrudService } from "@snipet/server-common";
 import { knowledgeEnabled } from "../../env.js";
 import { EmbeddingService } from "../../infra/embedding/embedding.service.js";
 import { PgvectorService } from "../../infra/pgvector/pgvector.service.js";

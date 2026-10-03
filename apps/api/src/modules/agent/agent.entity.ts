@@ -14,7 +14,7 @@ import {
   PrimaryGeneratedColumn,
 } from "typeorm";
 
-import { BaseEntity } from "../../common/crud/base.entity.js";
+import { BaseEntity } from "@snipet/server-common";
 import { LlmConnection } from "../llm-connection/llm-connection.entity.js";
 import { McpServer } from "../mcp-server/mcp-server.entity.js";
 

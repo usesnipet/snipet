@@ -1,7 +1,7 @@
 import { KnowledgeItemStatus } from "@snipet/shared";
 import { Column, Entity, Index } from "typeorm";
 
-import { BaseEntity } from "../../common/crud/base.entity.js";
+import { BaseEntity } from "@snipet/server-common";
 
 import type { KnowledgeItemKind, KnowledgeItem as KnowledgeItemContract } from "@snipet/shared";
 

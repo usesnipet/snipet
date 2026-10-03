@@ -1,8 +1,7 @@
 import { Controller } from "@nestjs/common";
 import { Role } from "@snipet/shared";
 
-import { CrudController } from "../../common/crud/crud.controller.js";
-import { Roles } from "../../common/decorators/auth.decorators.js";
+import { CrudController, Roles } from "@snipet/server-common";
 
 import { createAgentSchema, findAgentsSchema, updateAgentSchema } from "./agent.dto.js";
 import { Agent } from "./agent.entity.js";

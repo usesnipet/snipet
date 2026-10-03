@@ -1,9 +1,7 @@
 import { Body, Controller, Get, HttpCode, Logger, Param, Post, Query, Res, UseFilters } from "@nestjs/common";
 import { executeLlmSchema, listProviderModelsParamsSchema } from "@snipet/shared";
 
-import { CrudController } from "../../common/crud/crud.controller.js";
-import { AllowApiKey, Public } from "../../common/decorators/auth.decorators.js";
-import { ZodPipe } from "../../common/pipes/zod.pipe.js";
+import { AllowApiKey, CrudController, Public, ZodPipe } from "@snipet/server-common";
 
 import {
   createLlmConnectionSchema,

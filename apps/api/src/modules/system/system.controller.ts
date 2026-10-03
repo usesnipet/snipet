@@ -1,6 +1,6 @@
 import { Controller, Get } from "@nestjs/common";
 
-import { Public } from "../../common/decorators/auth.decorators.js";
+import { Public } from "@snipet/server-common";
 
 import { SystemService } from "./system.service.js";
 

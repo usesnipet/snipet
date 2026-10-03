@@ -6,7 +6,7 @@ import { Role } from "@snipet/shared";
 import { hash } from "bcryptjs";
 import { DeepPartial, QueryDeepPartialEntity, Repository } from "typeorm";
 
-import { CrudService } from "../../common/crud/crud.service.js";
+import { CrudService } from "@snipet/server-common";
 import { env } from "../../env.js";
 import { User } from "./user.entity.js";
 

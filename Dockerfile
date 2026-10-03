@@ -9,8 +9,10 @@ FROM base AS build
 # Manifests first, so the install layer is cached until dependencies change.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
+COPY apps/knowledge/package.json apps/knowledge/
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
+COPY packages/server-common/package.json packages/server-common/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build

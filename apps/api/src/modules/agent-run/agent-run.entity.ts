@@ -8,7 +8,7 @@ import type {
 } from "@snipet/shared";
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-import { BaseEntity } from "../../common/crud/base.entity.js";
+import { BaseEntity } from "@snipet/server-common";
 import { Agent } from "../agent/agent.entity.js";
 import { ApiKey } from "../api-key/api-key.entity.js";
 import { User } from "../user/user.entity.js";

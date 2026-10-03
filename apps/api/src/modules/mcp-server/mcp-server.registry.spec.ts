@@ -1,6 +1,6 @@
 import { McpTransport, mcpServerRegistryItemSchema } from "@snipet/shared";
 
-import { checkJsonSchema } from "../../common/utils/json-schema/json-schema.js";
+import { checkJsonSchema } from "@snipet/server-common";
 
 import { MCP_SERVERS_REGISTRY } from "./mcp-server.registry.js";
 

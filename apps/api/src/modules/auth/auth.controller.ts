@@ -8,8 +8,7 @@ import {
   type RefreshToken,
 } from "@snipet/shared";
 
-import { CurrentUser, Public, type AuthUser } from "../../common/decorators/auth.decorators.js";
-import { ZodPipe } from "../../common/pipes/zod.pipe.js";
+import { CurrentUser, Public, ZodPipe, type AuthUser } from "@snipet/server-common";
 import { AuthService } from "./auth.service.js";
 
 @Controller("auth")

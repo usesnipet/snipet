@@ -1,14 +1,13 @@
 import { Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Query } from "@nestjs/common";
 import { Role } from "@snipet/shared";
 
-import { AllowApiKey, Roles } from "../../common/decorators/auth.decorators.js";
-import { ZodPipe } from "../../common/pipes/zod.pipe.js";
+import { AllowApiKey, Roles, ZodPipe } from "@snipet/server-common";
+import type { FilterQuery } from "@snipet/server-common";
 
 import { findAgentMessagesParamsSchema, findAgentSessionsSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
 import { CurrentOwner } from "../../common/decorators/owner.decorator.js";
 
-import type { FilterQuery } from "../../common/pagination/filter.js";
 import type { AgentSession } from "./agent-run.entity.js";
 import type { Owner } from "../../common/decorators/owner.decorator.js";
 import type { FindAgentMessagesParams } from "@snipet/shared";

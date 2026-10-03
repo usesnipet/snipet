@@ -1,9 +1,8 @@
 import type { McpServer as McpServerContract, McpServerConfig, McpTransport } from "@snipet/shared";
 import { Column, Entity } from "typeorm";
 
-import { BaseEntity } from "../../common/crud/base.entity.js";
+import { BaseEntity, open, seal } from "@snipet/server-common";
 import { env } from "../../env.js";
-import { open, seal } from "../../common/utils/secret-box.js";
 
 import type { ValueTransformer } from "typeorm";
 

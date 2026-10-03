@@ -4,7 +4,7 @@ import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { Redis } from "ioredis";
 
-import { basicAuth } from "../../common/middleware/basic-auth.middleware.js";
+import { basicAuth } from "@snipet/server-common";
 import { env } from "../../env.js";
 
 // BullMQ connection and Bull Board at /api/queues. Each module registers its

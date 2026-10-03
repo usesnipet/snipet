@@ -37,6 +37,7 @@
     "@nestjs/jwt": "^12.0.2",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^12.0.2",
+    "@snipet/server-common": "workspace:*",
     "@snipet/shared": "workspace:*",
     "@xberg-io/xberg": "^1.3.0",
     "bcryptjs": "^3.0.3",
@@ -91,6 +92,7 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@snipet/shared$": "<rootDir>/../../../packages/shared/src/index.ts",
+      "^@snipet/server-common$": "<rootDir>/../../../packages/server-common/src/index.ts",
       "^(\\.{1,2}/.*)\\.js$": "$1"
     }
   }

@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { mcpConfigSchemas } from "@snipet/shared";
 import { Repository } from "typeorm";
 
-import { CrudService } from "../../common/crud/crud.service.js";
+import { CrudService } from "@snipet/server-common";
 
 import { McpServer } from "./mcp-server.entity.js";
 import { McpServerSyncService } from "./queue/mcp-server-sync.service.js";
