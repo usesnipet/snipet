@@ -1,4 +1,5 @@
 export * from "./crud/base.entity.js";
+export * from "./database/ensure-database.js";
 export * from "./crud/crud.controller.js";
 export * from "./crud/crud.service.js";
 export * from "./decorators/auth.decorators.js";

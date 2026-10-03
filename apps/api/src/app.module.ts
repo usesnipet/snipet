@@ -2,11 +2,11 @@ import "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { ensureDatabase } from "@snipet/server-common";
 
 import { AuthGuard } from "./common/guards/auth.guard.js";
 import { env } from "./env.js";
 import { dataSourceOptions } from "./infra/database/data-source.js";
-import { ensureDatabase } from "./infra/database/ensure-database.js";
 import { QueueModule } from "./infra/queue/queue.module.js";
 import { AgentRunModule } from "./modules/agent-run/agent-run.module.js";
 import { AgentModule } from "./modules/agent/agent.module.js";

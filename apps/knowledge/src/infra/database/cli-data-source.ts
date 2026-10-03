@@ -5,6 +5,6 @@ import { env } from "../../env.js";
 import { dataSourceOptions } from "./data-source.js";
 import { ensureDatabase } from "@snipet/server-common";
 
-await ensureDatabase(env.DATABASE_URL);
+await ensureDatabase(env.KNOWLEDGE_DATABASE_URL);
 
-export default new DataSource(dataSourceOptions(env.DATABASE_URL));
+export default new DataSource(dataSourceOptions(env.KNOWLEDGE_DATABASE_URL));
