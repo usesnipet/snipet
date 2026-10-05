@@ -65,13 +65,18 @@ const DEFAULT_DURATION_OPTIONS: DurationSelectOption[] = [
 ];
 
 export function resolveDurationExpiresAt(
-  value: string | undefined,
+  value: string | null | Date | undefined,
   options: DurationSelectOption[] = DEFAULT_DURATION_OPTIONS,
   from?: Date,
-): string | null {
-  const option = options.find((item) => item.value === value);
+): Date | null {
+  const dateString = typeof value === "string" ? value : value?.toISOString();
+  if (value === null) return null;
+  if (value === undefined) return null;
+  const option = options.find((item) => item.value === dateString);
   if (!option?.resolveExpiresAt) return null;
-  return option.resolveExpiresAt(from);
+  const expiresAt = option.resolveExpiresAt(from);
+  if (!expiresAt) return null;
+  return new Date(expiresAt);
 }
 
 export type DurationSelectProps = {

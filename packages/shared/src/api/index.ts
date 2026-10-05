@@ -11,4 +11,3 @@ export * from "./pagination.js";
 export * from "./system.js";
 export * from "./tool.js";
 export * from "./user.js";
-export * from "./widget.js";

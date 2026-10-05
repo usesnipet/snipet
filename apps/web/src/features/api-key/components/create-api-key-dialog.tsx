@@ -3,45 +3,47 @@ import { FormDurationSelect } from "@/components/form/duration-select";
 import { FormInput } from "@/components/form/input";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
+import { FormAppSelect } from "@/features/app/components/app-select";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { createApiKeySchema } from "@snipet/shared";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 import { useCreateApiKey } from "../hooks";
 
-import type { ApiKeyWithSecret } from "@snipet/shared";
-import type { DialogInstanceProps } from "@/lib/dialog";
-const formSchema = z.object({
-  name: z.string().min(1).max(255),
-  expires_at: z.string().optional(),
-});
+import type { z } from "zod";
 
-type FormValues = z.infer<typeof formSchema>;
+import type { ApiKeyWithSecret, CreateApiKey } from "@snipet/shared";
+import type { DialogInstanceProps } from "@/lib/dialog";
+type CreateApiKeyInput = z.input<typeof createApiKeySchema>;
 
 type CreateApiKeyDialogProps = DialogInstanceProps<{
   onCreated: (apiKey: ApiKeyWithSecret) => void
 }>;
 
 export function CreateApiKeyDialog({ onCreated, close }: CreateApiKeyDialogProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { name: "", expires_at: "" },
+  const form = useForm<CreateApiKeyInput, unknown, CreateApiKey>({
+    resolver: zodResolver(createApiKeySchema),
+    defaultValues: { name: "", expiresAt: null, appId: "" },
   });
 
   const { mutateAsync, isPending } = useCreateApiKey();
 
   const onSubmit = form.handleSubmit(async (values) => {
-    const expiresAt = resolveDurationExpiresAt(values.expires_at);
-
     const result = await mutateAsync({
       data: {
         name: values.name,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        expiresAt: resolveDurationExpiresAt(values.expiresAt),
+        appId: values.appId,
       },
     });
     form.reset();
@@ -66,8 +68,13 @@ export function CreateApiKeyDialog({ onCreated, close }: CreateApiKeyDialogProps
               placeholder="Production"
               required
             />
+            <FormAppSelect
+              name="appId"
+              label="App"
+              placeholder="Select app"
+            />
             <FormDurationSelect
-              name="expires_at"
+              name="expiresAt"
               label="Expiration"
               placeholder="Select duration"
             />

@@ -24,11 +24,10 @@ export type ApiKeyWithSecret = z.infer<typeof apiKeyWithSecretSchema>;
 
 export const paginatedApiKeySchema = paginatedSchema(apiKeySchema);
 
-// null = never expires.
 export const createApiKeySchema = z.object({
   appId: z.uuid(),
   name: z.string().min(1).max(255),
-  expiresAt: z.coerce.date().nullable().optional(),
+  expiresAt: z.coerce.date().nullable().optional(), // null = never expires.
 });
 export type CreateApiKey = z.infer<typeof createApiKeySchema>;
 

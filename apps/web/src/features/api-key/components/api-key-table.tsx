@@ -5,7 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DateFormat } from "@/components/ui/date";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDialog } from "@/lib/dialog";
 import { CalendarClock, MoreHorizontal, RefreshCw, Trash2 } from "lucide-react";
@@ -90,6 +94,13 @@ export function ApiKeyTable() {
           <span className="font-medium">{row.name}</span>
           <span className="font-mono text-xs text-muted-foreground">{row.keyId}</span>
         </div>
+      ),
+    },
+    {
+      id: "app",
+      header: "App",
+      cell: (row) => (
+        <span className="font-medium">{row.appId}</span>
       ),
     },
     {
