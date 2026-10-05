@@ -7,6 +7,7 @@ export const ROUTES = {
   llmConnections: "/llm/connections",
   llmPlayground: "/llm/playground",
   mcpServers: "/mcp-servers",
+  apps: "/apps",
   tools: "/tools",
   toolPlayground: "/tools/playground",
   knowledge: "/knowledge",
