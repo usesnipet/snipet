@@ -1,11 +1,13 @@
 import { z } from "zod";
 
+import { appSchema } from "./app.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 // Never carries the key hash.
 export const apiKeySchema = z.object({
   id: z.uuid(),
   appId: z.uuid(),
+  app: appSchema.optional(),
   name: z.string(),
   // First chars of the key, safe to show to identify it.
   keyId: z.string(),
@@ -39,5 +41,6 @@ export type UpdateApiKey = z.infer<typeof updateApiKeySchema>;
 
 export const findApiKeysParamsSchema = paginationParamsSchema.extend({
   appId: z.uuid().optional(),
+  includeApp: z.coerce.boolean().optional(),
 });
 export type FindApiKeysParams = z.infer<typeof findApiKeysParamsSchema>;

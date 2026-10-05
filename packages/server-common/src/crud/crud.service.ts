@@ -18,6 +18,7 @@ export abstract class CrudService<T extends BaseEntity> {
       order: query.order,
       take: query.take,
       skip: query.skip,
+      relations: query.relations,
     });
     return { data, total, skip: query.skip, take: query.take };
   }

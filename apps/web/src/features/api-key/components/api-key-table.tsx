@@ -21,9 +21,8 @@ import { UpdateApiKeyExpirationDialog } from "./update-api-key-expiration-dialog
 import type { DataTableColumn, DataTablePagination } from "@/components/data-table";
 import type { ApiKey, ApiKeyWithSecret } from "@snipet/shared";
 
-
 function useApiKeyTableQuery(pagination: DataTablePagination) {
-  return useListApiKey({ searchParams: pagination })
+  return useListApiKey({ searchParams: { ...pagination, includeApp: true } })
 }
 
 export function ApiKeyTable() {
@@ -100,7 +99,7 @@ export function ApiKeyTable() {
       id: "app",
       header: "App",
       cell: (row) => (
-        <span className="font-medium">{row.appId}</span>
+        <span className="font-medium">{row.app?.name}</span>
       ),
     },
     {
