@@ -6,7 +6,7 @@ import { Repository } from "typeorm";
 import { CrudService } from "@snipet/server-common";
 
 import { McpServer } from "./mcp-server.entity.js";
-import { McpServerSyncService } from "./queue/mcp-server-sync.service.js";
+import { McpServerSyncService } from "./sync/mcp-server-sync.service.js";
 import { MCP_SERVERS_REGISTRY } from "./mcp-server.registry.js";
 
 import type { CreateMcpServer, McpServerRegistryItem, McpTransport, UpdateMcpServer } from "@snipet/shared";
@@ -23,7 +23,7 @@ export class McpServerService extends CrudService<McpServer> {
   override async create(dto: CreateMcpServer): Promise<McpServer> {
     validateConfig(dto.transport, dto.config);
     const server = await super.create(dto);
-    await this.sync.enqueue(server.id);
+    void this.sync.sync(server.id);
     return server;
   }
 
@@ -34,7 +34,7 @@ export class McpServerService extends CrudService<McpServer> {
       validateConfig(dto.transport ?? existing.transport, dto.config ?? existing.config);
     }
     await super.updateById(id, dto);
-    if (dto.transport !== undefined || dto.config !== undefined) await this.sync.enqueue(id);
+    if (dto.transport !== undefined || dto.config !== undefined) void this.sync.sync(id);
   }
 
   listRegistry(): McpServerRegistryItem[] {

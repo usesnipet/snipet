@@ -46,9 +46,9 @@ const envSchema = z.object({
   BULL_BOARD_USERNAME: z.string().default("admin"),
   BULL_BOARD_PASSWORD: z.string().default("admin"),
 
-  // Seconds between MCP server tool syncs; 0 disables periodic syncs.
-  MCP_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300),
-  // MCP server syncs running at once.
+  // Seconds between MCP server tool syncs.
+  MCP_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(300).default(300),
+  // MCP server syncs running concurrently.
   MCP_SYNC_CONCURRENCY: z.coerce.number().int().min(1).default(4),
 
   // Knowledge source: an S3 or S3-compatible bucket (MinIO, R2, ...). Without

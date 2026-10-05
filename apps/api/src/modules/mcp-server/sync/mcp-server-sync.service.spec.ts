@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import { McpTransport, ToolSource } from "@snipet/shared";
 
-import { McpServerSyncProcessor } from "./mcp-server-sync.processor.js";
+import { McpServerSyncService } from "./mcp-server-sync.service.js";
 
 import type { McpConnector } from "../../../infra/mcp/connector.js";
 import type { McpServer } from "../mcp-server.entity.js";
@@ -25,14 +25,14 @@ function setup(listTools: () => Promise<unknown>) {
     update: jest.fn(),
     manager: { transaction: (fn: (m: unknown) => Promise<void>) => fn({ getRepository: () => tools }) },
   };
-  const service = new McpServerSyncProcessor(
+  const service = new McpServerSyncService(
     servers as unknown as Repository<McpServer>,
     { listTools } as unknown as McpConnector,
   );
   return { service, servers, tools };
 }
 
-describe("McpServerSyncProcessor.syncServer", () => {
+describe("McpServerSyncService.syncServer", () => {
   it("updates, creates and deletes tools by name and clears the error", async () => {
     const { service, servers, tools } = setup(
       resolves([
@@ -65,7 +65,7 @@ describe("McpServerSyncProcessor.syncServer", () => {
     expect(servers.update).toHaveBeenCalledWith("s1", expect.objectContaining({ lastSyncedError: "spawn npx ENOENT" }));
   });
 
-  it("skips servers deleted since the job was enqueued", async () => {
+  it("skips servers deleted since the sync was asked", async () => {
     const { service, servers, tools } = setup(resolves([]));
     servers.findOneBy.mockResolvedValue(null);
 
@@ -73,5 +73,26 @@ describe("McpServerSyncProcessor.syncServer", () => {
 
     expect(tools.save).not.toHaveBeenCalled();
     expect(servers.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("McpServerSyncService.sync", () => {
+  it("runs one sync per server at a time with a single follow-up, and never throws", async () => {
+    let release!: () => void;
+    const listTools = jest
+      .fn<() => Promise<unknown>>()
+      .mockImplementationOnce(() => new Promise((_, reject) => (release = () => reject(new Error("down")))))
+      .mockResolvedValue([]);
+    const { service } = setup(listTools);
+
+    const first = service.sync("s1");
+    await new Promise((r) => setImmediate(r));
+    expect(service.sync("s1")).toBe(first);
+    void service.sync("s1");
+    release();
+
+    await expect(first).resolves.toBeUndefined();
+    await new Promise((r) => setImmediate(r));
+    expect(listTools).toHaveBeenCalledTimes(2);
   });
 });
