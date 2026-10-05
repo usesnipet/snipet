@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* Theme lives on :host so it stays inside the shadow root and never touches the host page. */
+:host {
+  all: initial;
+  --color-paper: oklch(0.959 0.007 115.707);
+  --color-ink: oklch(0.208 0.009 255.618);
+  --color-accent: oklch(0.616 0.117 76.014);
+}
+
+@theme inline {
+  --color-paper: var(--color-paper);
+  --color-ink: var(--color-ink);
+  --color-accent: var(--color-accent);
+}
+
+/*
+ * rem resolves against the HOST page's <html> font-size, which we don't control.
+ * Pin the scales we use to px so the widget looks the same on every site.
+ */
+@theme {
+  --spacing: 4px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-2xl: 16px;
+}
