@@ -1,11 +1,11 @@
 import { jest } from "@jest/globals";
 import { KnowledgeItemStatus } from "@snipet/shared";
 
-import { KnowledgeSyncProcessor } from "./knowledge-sync.processor.js";
+import { KnowledgeSyncService } from "./knowledge-sync.service.js";
 
 import type { PgvectorService } from "../../../infra/pgvector/pgvector.service.js";
 import type { KnowledgeItem } from "../knowledge-item.entity.js";
-import type { KnowledgeSyncService } from "./knowledge-sync.service.js";
+import type { KnowledgeIndexerService } from "./knowledge-indexer.service.js";
 import type { S3Source, SourceObject } from "../../../infra/storage/s3-source.js";
 import type { Repository } from "typeorm";
 
@@ -13,8 +13,8 @@ type Fn = (...args: unknown[]) => Promise<unknown>;
 
 const object = (key: string, hash: string): SourceObject => ({ key, name: key, hash, size: 1, lastModified: null });
 
-describe("KnowledgeSyncProcessor.process", () => {
-  it("upserts new and changed objects as pending, deletes gone ones and queues pending items", async () => {
+describe("KnowledgeSyncService.sync", () => {
+  it("upserts new and changed objects as pending, deletes gone ones and wakes the indexer", async () => {
     const items = {
       find: jest.fn<Fn>().mockResolvedValue([
         { id: "same", externalId: "same.md", hash: "h1" },
@@ -27,15 +27,15 @@ describe("KnowledgeSyncProcessor.process", () => {
     // for await also walks a plain array.
     const source = { list: () => [object("same.md", "h1"), object("changed.md", "new"), object("new.md", "h4")] };
     const pgvector = { deleteByItemIds: jest.fn<Fn>() };
-    const syncService = { enqueueIndex: jest.fn<Fn>() };
-    const processor = new KnowledgeSyncProcessor(
+    const indexer = { wake: jest.fn() };
+    const service = new KnowledgeSyncService(
       items as unknown as Repository<KnowledgeItem>,
       source as unknown as S3Source,
       pgvector as unknown as PgvectorService,
-      syncService as unknown as KnowledgeSyncService,
+      indexer as unknown as KnowledgeIndexerService,
     );
 
-    expect(await processor.process()).toEqual({ upserted: 2, deleted: 1 });
+    expect(await service.sync()).toEqual({ upserted: 2, deleted: 1 });
 
     const [upserted, conflict] = items.upsert.mock.calls[0] as [Partial<KnowledgeItem>[], string[]];
     expect(conflict).toEqual(["externalId"]);
@@ -45,7 +45,7 @@ describe("KnowledgeSyncProcessor.process", () => {
     ]);
     expect(pgvector.deleteByItemIds).toHaveBeenCalledWith(["gone"]);
     expect(items.delete).toHaveBeenCalledWith(["gone"]);
-    expect(syncService.enqueueIndex).toHaveBeenCalledWith(KnowledgeItemStatus.PENDING);
+    expect(indexer.wake).toHaveBeenCalled();
   });
 
   it("deletes nothing when listing the source fails", async () => {
@@ -59,14 +59,14 @@ describe("KnowledgeSyncProcessor.process", () => {
         throw new Error("AccessDenied");
       },
     };
-    const processor = new KnowledgeSyncProcessor(
+    const service = new KnowledgeSyncService(
       items as unknown as Repository<KnowledgeItem>,
       source as unknown as S3Source,
       { deleteByItemIds: jest.fn() } as unknown as PgvectorService,
-      { enqueueIndex: jest.fn() } as unknown as KnowledgeSyncService,
+      { wake: jest.fn() } as unknown as KnowledgeIndexerService,
     );
 
-    await expect(processor.process()).rejects.toThrow("AccessDenied");
+    await expect(service.sync()).rejects.toThrow("AccessDenied");
     expect(items.delete).not.toHaveBeenCalled();
   });
 });

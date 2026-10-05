@@ -61,7 +61,7 @@ const envSchema = z.object({
   KNOWLEDGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
   KNOWLEDGE_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
 
-  KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300), // Seconds between knowledge source syncs; 0 disables periodic syncs.
+  KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(300).default(300), // Seconds between knowledge source syncs
   KNOWLEDGE_INDEX_CONCURRENCY: z.coerce.number().int().min(1).default(2),
   KNOWLEDGE_INDEX_ERRORS: z.stringbool().default(false),
   KNOWLEDGE_INDEX_RESET: z.stringbool().default(false),
@@ -91,5 +91,3 @@ const envSchema = z.object({
 });
 
 export const env = envSchema.parse(process.env);
-
-export const knowledgeEnabled = Boolean(env.KNOWLEDGE_S3_BUCKET && env.PGVECTOR_URL);

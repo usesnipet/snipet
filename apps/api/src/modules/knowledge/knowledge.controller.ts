@@ -1,12 +1,12 @@
 import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from "@nestjs/common";
+import { Public, Roles, ZodPipe } from "@snipet/server-common";
 import { knowledgeSearchParamsSchema, Role } from "@snipet/shared";
 
-import { Public, Roles, ZodPipe } from "@snipet/server-common";
-import type { FilterQuery } from "@snipet/server-common";
-
+import { KnowledgeSyncService } from "./indexing/knowledge-sync.service.js";
 import { KnowledgeItemService } from "./knowledge-item.service.js";
 import { findKnowledgeItemsSchema } from "./knowledge.dto.js";
-import { KnowledgeSyncService } from "./queue/knowledge-sync.service.js";
+
+import type { FilterQuery } from "@snipet/server-common";
 
 import type { KnowledgeItem } from "./knowledge-item.entity.js";
 import type { KnowledgeSearchParams } from "@snipet/shared";
@@ -33,8 +33,8 @@ export class KnowledgeController {
   @Roles(Role.Admin)
   @Post("knowledge-items/sync")
   @HttpCode(202)
-  async startSync() {
-    await this.sync.trigger();
+  startSync() {
+    void this.sync.sync();
   }
 
   @Public()

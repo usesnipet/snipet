@@ -1,73 +1,120 @@
-import { InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
-import { Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { KnowledgeItemKind, KnowledgeItemStatus } from "@snipet/shared";
 import { ChunkerType, extract as xbergExtract, ExtractInputKind } from "@xberg-io/xberg";
-import { Queue, RateLimitError } from "bullmq";
+import { setTimeout as sleep } from "node:timers/promises";
 import { RateLimitError as EmbeddingRateLimitError } from "openai";
-import { Repository } from "typeorm";
+import { In, Not, Repository } from "typeorm";
 
 import { env } from "../../../env.js";
 import { EmbeddingService } from "../../../infra/embedding/embedding.service.js";
 import { PgvectorService } from "../../../infra/pgvector/pgvector.service.js";
-
-import { KnowledgeItem } from "../knowledge-item.entity.js";
 import { S3Source } from "../../../infra/storage/s3-source.js";
+import { KnowledgeItem } from "../knowledge-item.entity.js";
 
-import type { Job } from "bullmq";
 import type { ExtractedDocument, ExtractionResult } from "@xberg-io/xberg";
 import type { QueryDeepPartialEntity } from "typeorm";
-
-export const KNOWLEDGE_INDEX_QUEUE = "knowledge-index";
-export type KnowledgeIndexJob = { itemId: string };
 
 // xberg's error for a format it has no extractor for; retrying won't help.
 class UnsupportedFormatError extends Error {}
 
-// Queue pause when the embedding API rate limits without a Retry-After.
+// Pause when the embedding API rate limits without a Retry-After.
 const RATE_LIMIT_FALLBACK_MS = 60_000;
 
-// Extracts each queued item with xberg, embeds its chunks and stores them in
-// pgvector. Jobs are enqueued by KnowledgeSyncService. The limiter never
-// limits by itself: BullMQ only honors queue.rateLimit() when one is set.
-@Processor(KNOWLEDGE_INDEX_QUEUE, {
-  concurrency: env.KNOWLEDGE_INDEX_CONCURRENCY,
-  limiter: { max: Number.MAX_SAFE_INTEGER, duration: 1000 },
-})
-export class KnowledgeIndexProcessor extends WorkerHost {
-  private readonly logger = new Logger(KnowledgeIndexProcessor.name);
+// Indexes pending items in the background, up to KNOWLEDGE_INDEX_CONCURRENCY
+// at a time: each worker claims a pending item (pending -> indexing), extracts
+// it with xberg, embeds its chunks and stores them in pgvector, until none is
+// left. The item status is the queue; wake() starts workers after a sync.
+@Injectable()
+export class KnowledgeIndexerService implements OnModuleDestroy {
+  private readonly logger = new Logger(KnowledgeIndexerService.name);
+  private workers = 0;
+  // Set by wake() so a worker that just found nothing looks once more.
+  private woken = false;
+  private stopped = false;
+  private pausedUntil = 0;
+  // Never claimed twice at once, even when a sync makes it pending again mid-index.
+  private readonly active = new Set<string>();
 
   constructor(
     @InjectRepository(KnowledgeItem) private readonly items: Repository<KnowledgeItem>,
-    @InjectQueue(KNOWLEDGE_INDEX_QUEUE) private readonly queue: Queue<KnowledgeIndexJob>,
     private readonly source: S3Source,
     private readonly embedding: EmbeddingService,
     private readonly pgvector: PgvectorService,
-  ) {
-    super();
+  ) {}
+
+  onModuleDestroy() {
+    // Workers stop after their current item; one cut short stays indexing
+    // and is set back to pending on the next boot.
+    this.stopped = true;
   }
 
-  process(job: Job<KnowledgeIndexJob>): Promise<void> {
-    return this.index(job.data.itemId);
+  wake(): void {
+    this.woken = true;
+    while (!this.stopped && this.workers < env.KNOWLEDGE_INDEX_CONCURRENCY) {
+      this.workers++;
+      void this.work().finally(() => this.workers--);
+    }
+  }
+
+  private async work(): Promise<void> {
+    while (!this.stopped) {
+      const wait = this.pausedUntil - Date.now();
+      if (wait > 0) await sleep(wait);
+      let item: KnowledgeItem | null;
+      try {
+        item = await this.claim();
+      } catch (err) {
+        this.logger.error(`claim knowledge item: ${String(err)}`);
+        return; // the next sync wakes the workers again
+      }
+      if (!item) {
+        if (!this.woken) return;
+        this.woken = false;
+        continue;
+      }
+      this.active.add(item.id);
+      try {
+        await this.index(item);
+      } catch (err) {
+        this.logger.error(`index ${item.externalId}: ${String(err)}`);
+      } finally {
+        this.active.delete(item.id);
+      }
+    }
+  }
+
+  // Takes the oldest pending item. The conditional update makes it safe
+  // against another worker (or instance) claiming the same one.
+  private async claim(): Promise<KnowledgeItem | null> {
+    for (;;) {
+      const item = await this.items.findOne({
+        where: { status: KnowledgeItemStatus.PENDING, id: Not(In([...this.active])) },
+        order: { createdAt: "ASC" },
+      });
+      if (!item) return null;
+      const { affected } = await this.items.update(
+        { id: item.id, status: KnowledgeItemStatus.PENDING },
+        { status: KnowledgeItemStatus.INDEXING },
+      );
+      if (affected) return item;
+    }
   }
 
   // Replaces the item's chunks with the ones extracted from its current
   // content and records the outcome on the item.
-  async index(id: string): Promise<void> {
-    const item = await this.items.findOneBy({ id });
-    if (!item) return;
-    await this.items.update(id, { status: KnowledgeItemStatus.INDEXING });
+  async index(item: KnowledgeItem): Promise<void> {
     let kind: KnowledgeItemKind;
     try {
       // ponytail: whole object in memory and extraction in the API process;
-      // stream it or move indexing to a worker if files get big.
+      // stream it or move indexing to a worker thread if files get big.
       const { bytes } = await this.source.read(item.externalId);
       const doc = await extract(item.name, bytes);
       kind = kindFromMime(doc.mimeType ?? "");
       const chunks = doc.chunks ?? [];
       const vectors = await this.embedding.embed(chunks.map((c) => c.content));
       await this.pgvector.replaceChunks(
-        id,
+        item.id,
         chunks.map((c, i) => ({
           content: c.content,
           embedding: vectors[i],
@@ -86,21 +133,18 @@ export class KnowledgeIndexProcessor extends WorkerHost {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       if (err instanceof EmbeddingRateLimitError) {
-        // Pauses the whole queue, since the limit is the provider's; the job
-        // goes back to waiting without using an attempt.
+        // Pauses every worker, since the limit is the provider's; the item
+        // goes back to pending.
         const ms = retryAfterMs(err.headers) ?? RATE_LIMIT_FALLBACK_MS;
-        this.logger.warn(`index ${item.externalId} rate limited, pausing queue ${ms}ms: ${message}`);
+        this.logger.warn(`index ${item.externalId} rate limited, pausing ${ms}ms: ${message}`);
+        this.pausedUntil = Math.max(this.pausedUntil, Date.now() + ms);
         await this.finish(item, { status: KnowledgeItemStatus.PENDING });
-        await this.queue.rateLimit(ms);
-        throw new RateLimitError();
-      }
-      if (err instanceof UnsupportedFormatError) {
+      } else if (err instanceof UnsupportedFormatError) {
         this.logger.log(`skipped ${item.externalId}: ${message}`);
         await this.finish(item, { status: KnowledgeItemStatus.SKIPPED, reason: message });
       } else {
         this.logger.warn(`index ${item.externalId} failed: ${message}`);
         await this.finish(item, { status: KnowledgeItemStatus.ERROR, lastError: message });
-        throw err; // marks the job failed in Bull Board
       }
       return;
     }
@@ -108,7 +152,7 @@ export class KnowledgeIndexProcessor extends WorkerHost {
   }
 
   // Only while the item still has the content that was indexed: a newer sync
-  // has set it back to pending and enqueued it again.
+  // has set it back to pending for the workers to pick up again.
   private finish(item: KnowledgeItem, update: QueryDeepPartialEntity<KnowledgeItem>) {
     return this.items.update({ id: item.id, hash: item.hash }, { reason: null, lastError: null, ...update });
   }
