@@ -1,9 +1,8 @@
-import { Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, ParseUUIDPipe, Post } from "@nestjs/common";
+import { CrudController, Public, Roles } from "@snipet/server-common";
 import { Role } from "@snipet/shared";
 
-import { CrudController, Public, Roles } from "@snipet/server-common";
 import { CurrentApiKey } from "../../common/decorators/api-key.decorator.js";
-import { ApiKeyGuard } from "../../common/guards/api-key.guard.js";
 
 import { createApiKeySchema, findApiKeysSchema, updateApiKeySchema } from "./api-key.dto.js";
 import { ApiKey } from "./api-key.entity.js";
@@ -29,7 +28,6 @@ export class ApiKeyController extends CrudController<ApiKey>({
 // Called WITH an API key: introspects whichever key authenticated the request.
 // Own controller so the admin-only @Roles above doesn't apply.
 @Public()
-@UseGuards(ApiKeyGuard)
 @Controller("api-key")
 export class ApiKeyMeController {
   @Get("me")
