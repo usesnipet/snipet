@@ -41,11 +41,6 @@ const envSchema = z.object({
   ROOT_USERNAME: z.string().default("admin"),
   ROOT_PASSWORD: z.union([z.literal(""), z.string()]).optional(),
 
-  // BullMQ queues.
-  REDIS_URL: z.string().default("redis://localhost:6379"),
-  BULL_BOARD_USERNAME: z.string().default("admin"),
-  BULL_BOARD_PASSWORD: z.string().default("admin"),
-
   // Seconds between MCP server tool syncs.
   MCP_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(300).default(300),
   // MCP server syncs running concurrently.

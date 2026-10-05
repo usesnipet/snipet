@@ -1,4 +1,3 @@
-import "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -7,7 +6,6 @@ import { ensureDatabase } from "@snipet/server-common";
 import { AuthGuard } from "./common/guards/auth.guard.js";
 import { env } from "./env.js";
 import { dataSourceOptions } from "./infra/database/data-source.js";
-import { QueueModule } from "./infra/queue/queue.module.js";
 import { AgentRunModule } from "./modules/agent-run/agent-run.module.js";
 import { AgentModule } from "./modules/agent/agent.module.js";
 import { ApiKeyModule } from "./modules/api-key/api-key.module.js";
@@ -27,7 +25,6 @@ import { UserModule } from "./modules/user/user.module.js";
         return { ...dataSourceOptions(env.DATABASE_URL), migrationsRun: env.DB_AUTO_MIGRATE };
       },
     }),
-    QueueModule,
     AgentModule,
     AgentRunModule,
     ApiKeyModule,
