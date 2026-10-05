@@ -3,13 +3,14 @@ import { z } from "zod";
 import { llmPartSchema, llmRoleSchema } from "./llm.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// A conversation with one agent, owned by the user or the API key that
-// started it.
+// A conversation with one agent, owned by a user of this system or by an
+// app. externalUserId is the app's own id for its end user (null = the app itself).
 export const agentSessionSchema = z.object({
   id: z.uuid(),
   agentId: z.uuid(),
   userId: z.uuid().nullable(),
-  apiKeyId: z.uuid().nullable(),
+  appId: z.uuid().nullable(),
+  externalUserId: z.string().nullable(),
   title: z.string(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),

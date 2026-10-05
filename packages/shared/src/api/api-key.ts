@@ -5,6 +5,7 @@ import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 // Never carries the key hash.
 export const apiKeySchema = z.object({
   id: z.uuid(),
+  appId: z.uuid(),
   name: z.string(),
   // First chars of the key, safe to show to identify it.
   keyId: z.string(),
@@ -25,6 +26,7 @@ export const paginatedApiKeySchema = paginatedSchema(apiKeySchema);
 
 // null = never expires.
 export const createApiKeySchema = z.object({
+  appId: z.uuid(),
   name: z.string().min(1).max(255),
   expiresAt: z.coerce.date().nullable().optional(),
 });
@@ -36,5 +38,7 @@ export const updateApiKeySchema = z.object({
 });
 export type UpdateApiKey = z.infer<typeof updateApiKeySchema>;
 
-export const findApiKeysParamsSchema = paginationParamsSchema;
+export const findApiKeysParamsSchema = paginationParamsSchema.extend({
+  appId: z.uuid().optional(),
+});
 export type FindApiKeysParams = z.infer<typeof findApiKeysParamsSchema>;

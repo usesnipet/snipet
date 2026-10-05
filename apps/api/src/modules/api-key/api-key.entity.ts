@@ -1,10 +1,19 @@
 import type { ApiKey as ApiKeyContract } from "@snipet/shared";
-import { Column, Entity } from "typeorm";
-
 import { BaseEntity } from "@snipet/server-common";
+import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
+
+import { App } from "../app/app.entity.js";
 
 @Entity("api_keys")
 export class ApiKey extends BaseEntity implements ApiKeyContract {
+  @Index()
+  @Column({ type: "uuid" })
+  appId: string;
+
+  @ManyToOne(() => App, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "appId" })
+  app?: App;
+
   @Column({ length: 255 })
   name: string;
 

@@ -27,14 +27,21 @@ import type {
 
 const TITLE_LENGTH = 80;
 
+// null has to be IsNull(): TypeORM drops plain null/undefined from where.
+const ownedBy = (owner: Owner) => ({
+  userId: owner.userId ?? IsNull(),
+  appId: owner.appId ?? IsNull(),
+  externalUserId: owner.externalUserId ?? IsNull(),
+});
+
 // Sessions, runs and their messages, always scoped to their owner: a
 // session of someone else is a 404.
 @Injectable()
 export class AgentRunService implements OnApplicationBootstrap {
   constructor(
-    @InjectRepository(AgentSession) private readonly sessions: Repository<AgentSession>,
-    @InjectRepository(AgentRun) private readonly runs: Repository<AgentRun>,
-    @InjectRepository(AgentMessage) private readonly messages: Repository<AgentMessage>,
+    @InjectRepository(AgentSession) private readonly sessionsRepo: Repository<AgentSession>,
+    @InjectRepository(AgentRun) private readonly runsRepo: Repository<AgentRun>,
+    @InjectRepository(AgentMessage) private readonly messagesRepo: Repository<AgentMessage>,
     private readonly agents: AgentService,
     private readonly runner: AgentRunner,
     private readonly events: AgentRunEvents,
@@ -42,18 +49,17 @@ export class AgentRunService implements OnApplicationBootstrap {
 
   // Runs are in-process, so the ones still running on boot were cut short.
   async onApplicationBootstrap() {
-    await this.runs.update(
+    await this.runsRepo.update(
       { status: AgentRunStatus.RUNNING },
       { status: AgentRunStatus.FAILED, error: "interrupted by a server restart", finishedAt: new Date() },
     );
   }
 
   async findSessions(query: FilterQuery<AgentSession>, owner: Owner): Promise<Paginated<AgentSession>> {
-    const [data, total] = await this.sessions.findAndCount({
+    const [data, total] = await this.sessionsRepo.findAndCount({
       where: {
         ...query.where,
-        userId: owner.userId ?? IsNull(),
-        apiKeyId: owner.apiKeyId ?? IsNull(),
+        ...ownedBy(owner),
       },
       order: query.order,
       take: query.take,
@@ -63,20 +69,16 @@ export class AgentRunService implements OnApplicationBootstrap {
   }
 
   async findSession(id: string, owner: Owner): Promise<AgentSession> {
-    const session = await this.sessions.findOneBy({
-      id,
-      userId: owner.userId ?? IsNull(),
-      apiKeyId: owner.apiKeyId ?? IsNull(),
-    });
+    const session = await this.sessionsRepo.findOneBy({ id, ...ownedBy(owner) });
     if (!session) throw new NotFoundException("AgentSession not found");
     return session;
   }
 
   async deleteSession(id: string, owner: Owner): Promise<void> {
     await this.findSession(id, owner);
-    const running = await this.runs.findBy({ sessionId: id, status: AgentRunStatus.RUNNING });
+    const running = await this.runsRepo.findBy({ sessionId: id, status: AgentRunStatus.RUNNING });
     for (const run of running) this.events.abort(run.id);
-    await this.sessions.delete(id);
+    await this.sessionsRepo.delete(id);
   }
 
   async findMessages(
@@ -85,7 +87,7 @@ export class AgentRunService implements OnApplicationBootstrap {
     owner: Owner,
   ): Promise<Paginated<AgentMessage>> {
     await this.findSession(sessionId, owner);
-    const [data, total] = await this.messages.findAndCount({
+    const [data, total] = await this.messagesRepo.findAndCount({
       where: { sessionId, ...(before ? { id: LessThan(before) } : {}) },
       order: { id: "DESC" },
       take,
@@ -95,7 +97,7 @@ export class AgentRunService implements OnApplicationBootstrap {
 
   async findRuns({ sessionId, take, skip }: FindAgentRunsParams, owner: Owner): Promise<Paginated<AgentRun>> {
     await this.findSession(sessionId, owner);
-    const [data, total] = await this.runs.findAndCount({
+    const [data, total] = await this.runsRepo.findAndCount({
       where: { sessionId },
       order: { createdAt: "DESC" },
       take,
@@ -105,13 +107,10 @@ export class AgentRunService implements OnApplicationBootstrap {
   }
 
   async findRun(id: string, owner: Owner): Promise<AgentRun> {
-    const run = await this.runs.findOne({
+    const run = await this.runsRepo.findOne({
       where: {
         id,
-        session: {
-          userId: owner.userId ?? IsNull(),
-          apiKeyId: owner.apiKeyId ?? IsNull(),
-        },
+        session: ownedBy(owner),
       },
     });
     if (!run) throw new NotFoundException("AgentRun not found");
@@ -127,12 +126,12 @@ export class AgentRunService implements OnApplicationBootstrap {
     if (sessionId) {
       const session = await this.findSession(sessionId, owner);
       if (session.agentId !== agentId) throw new BadRequestException("the session belongs to another agent");
-      if (await this.runs.existsBy({ sessionId, status: AgentRunStatus.RUNNING })) {
+      if (await this.runsRepo.existsBy({ sessionId, status: AgentRunStatus.RUNNING })) {
         throw new ConflictException("the session already has a running run");
       }
     }
 
-    const run = await this.runs.manager.transaction(async (m) => {
+    const run = await this.runsRepo.manager.transaction(async (m) => {
       const sessions = m.getRepository(AgentSession);
       let id = sessionId;
       if (id) await sessions.update(id, { updatedAt: new Date() });
@@ -157,7 +156,7 @@ export class AgentRunService implements OnApplicationBootstrap {
     if (run.status !== AgentRunStatus.RUNNING) return;
     // Not live here: nothing is running it, just close it.
     if (!this.events.abort(id)) {
-      await this.runs.update(id, { status: AgentRunStatus.CANCELLED, finishedAt: new Date() });
+      await this.runsRepo.update(id, { status: AgentRunStatus.CANCELLED, finishedAt: new Date() });
     }
   }
 
@@ -174,13 +173,16 @@ export class AgentRunService implements OnApplicationBootstrap {
     signal.addEventListener("abort", stop);
 
     try {
-      const stored = await this.messages.find({ where: { runId: run.id, id: MoreThan(lastId) }, order: { id: "ASC" } });
+      const stored = await this.messagesRepo.find({
+        where: { runId: run.id, id: MoreThan(lastId) },
+        order: { id: "ASC" },
+      });
       for (const message of stored) {
         lastId = message.id;
         yield { event: "message", data: message };
       }
 
-      const current = await this.runs.findOneByOrFail({ id: run.id });
+      const current = await this.runsRepo.findOneByOrFail({ id: run.id });
       if (!unsubscribe || current.status !== AgentRunStatus.RUNNING) {
         yield { event: "run_finished", data: current };
         return;

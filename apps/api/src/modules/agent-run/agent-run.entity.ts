@@ -10,11 +10,13 @@ import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, Primary
 
 import { BaseEntity } from "@snipet/server-common";
 import { Agent } from "../agent/agent.entity.js";
-import { ApiKey } from "../api-key/api-key.entity.js";
+import { App } from "../app/app.entity.js";
 import { User } from "../user/user.entity.js";
 
-// Exactly one of userId / apiKeyId is set: whoever started the session.
+// Exactly one of userId / appId is set: whoever started the session.
+// externalUserId is only set with appId.
 @Entity("agent_sessions")
+@Index(["appId", "externalUserId"])
 export class AgentSession extends BaseEntity implements AgentSessionContract {
   @Index()
   @Column({ type: "uuid" })
@@ -32,13 +34,15 @@ export class AgentSession extends BaseEntity implements AgentSessionContract {
   @JoinColumn({ name: "userId" })
   user?: User;
 
-  @Index()
   @Column({ type: "uuid", nullable: true })
-  apiKeyId: string | null;
+  appId: string | null;
 
-  @ManyToOne(() => ApiKey, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "apiKeyId" })
-  apiKey?: ApiKey;
+  @ManyToOne(() => App, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "appId" })
+  app?: App;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  externalUserId: string | null;
 
   @Column({ length: 255 })
   title: string;
