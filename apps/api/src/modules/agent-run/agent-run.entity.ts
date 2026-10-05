@@ -6,7 +6,7 @@ import type {
   LlmPart,
   LlmRole,
 } from "@snipet/shared";
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Check, Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 import { BaseEntity } from "@snipet/server-common";
 import { Agent } from "../agent/agent.entity.js";
@@ -17,6 +17,8 @@ import { User } from "../user/user.entity.js";
 // externalUserId is only set with appId.
 @Entity("agent_sessions")
 @Index(["appId", "externalUserId"])
+@Check("CHK_agent_sessions_owner", `("userId" IS NULL) <> ("appId" IS NULL)`)
+@Check("CHK_agent_sessions_external_user", `"externalUserId" IS NULL OR "appId" IS NOT NULL`)
 export class AgentSession extends BaseEntity implements AgentSessionContract {
   @Index()
   @Column({ type: "uuid" })
