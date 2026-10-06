@@ -15,6 +15,12 @@
       <button onclick="SnipetWidget.disable()">Disable</button>
       <button onclick="SnipetWidget.enable()">Enable</button>
     </p>
+    <!-- Stands in for the host's backend: paste a token from the web app's Token playground. -->
+    <form id="auth">
+      <input name="token" placeholder="App token" size="40" />
+      <input name="agentId" placeholder="Agent id" size="36" />
+      <button type="submit">Save</button>
+    </form>
     <!-- data-snipet-widget marks the tag for dev only; the real embed is found via document.currentScript. -->
     <script
       type="module"
@@ -25,5 +31,22 @@
       data-size="lg"
       data-radius="16"
     ></script>
+    <!-- After the widget (module scripts run in order), so SnipetWidget exists. -->
+    <script type="module">
+      const TOKEN_KEY = "@snipet/access-token";
+      const AGENT_KEY = "@snipet/agent-id";
+      const form = document.getElementById("auth");
+      form.token.value = localStorage.getItem(TOKEN_KEY) ?? "";
+      form.agentId.value = localStorage.getItem(AGENT_KEY) ?? "";
+      const apply = () =>
+        SnipetWidget.configure({ token: form.token.value.trim() || undefined, agentId: form.agentId.value.trim() || undefined });
+      apply();
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        localStorage.setItem(TOKEN_KEY, form.token.value.trim());
+        localStorage.setItem(AGENT_KEY, form.agentId.value.trim());
+        apply();
+      });
+    </script>
   </body>
 </html>

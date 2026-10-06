@@ -113,13 +113,82 @@ button {
   background: oklch(1 0 0 / 0.1);
 }
 
+.sw-actions {
+  display: flex;
+  gap: calc(4px * var(--sw-scale));
+}
+
 .sw-body {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: calc(16px * var(--sw-scale));
+}
+
+.sw-empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: calc(16px * var(--sw-scale));
+  text-align: center;
   color: var(--sw-muted);
+}
+
+/* Messages */
+
+.sw-messages {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--sw-scale));
+}
+
+.sw-message {
+  max-width: 85%;
+  padding: calc(8px * var(--sw-scale)) calc(12px * var(--sw-scale));
+  border-radius: calc(var(--sw-radius) / 2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sw-user {
+  align-self: flex-end;
+  background: var(--sw-accent);
+  color: var(--sw-accent-text);
+}
+
+.sw-assistant {
+  align-self: flex-start;
+  background: var(--sw-input);
+  border: 1px solid var(--sw-border);
+}
+
+.sw-typing {
+  color: var(--sw-muted);
+}
+
+.sw-error {
+  color: light-dark(oklch(0.577 0.245 27.325), oklch(0.704 0.191 22.216));
+}
+
+/* Sessions */
+
+.sw-sessions {
+  list-style: none;
+  padding: calc(8px * var(--sw-scale));
+}
+
+.sw-session {
+  width: 100%;
+  padding: calc(8px * var(--sw-scale)) calc(12px * var(--sw-scale));
+  border-radius: calc(var(--sw-radius) / 2);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sw-session:hover,
+.sw-session[aria-current="true"] {
+  background: var(--sw-border);
 }
 
 /* Composer */
@@ -159,6 +228,11 @@ button {
 
 .sw-send:hover {
   opacity: 0.9;
+}
+
+.sw-send:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* Launcher */

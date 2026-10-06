@@ -271,6 +271,15 @@ importers:
 
   apps/widget:
     dependencies:
+      '@snipet/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      '@snipet/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@tanstack/react-query':
+        specifier: ^5.104.0
+        version: 5.104.0(react@19.3.0)
       lucide-react:
         specifier: ^1.26.0
         version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
@@ -280,6 +289,9 @@ importers:
       react-dom:
         specifier: ^19.2.7
         version: 19.3.0(react@19.3.0)
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
     devDependencies:
       '@types/react':
         specifier: ^19.2.17

@@ -5,6 +5,12 @@ export type Size = "sm" | "md" | "lg";
 
 export type WidgetConfig = {
   apiUrl: string;
+  /** Agent the widget chats with. */
+  agentId?: string;
+  /** End-user app token, from POST /app-tokens on the host's backend. */
+  token?: string;
+  /** Called when the token is rejected (e.g. expired); resolve a fresh one, or null to give up. */
+  getToken?: () => Promise<string | null | undefined>;
   theme: Theme;
   size: Size;
   /** Corner radius of the panel, in px. */
@@ -42,6 +48,8 @@ const number = (value: string | undefined, fallback: number) => {
 export function parseConfig(data: DOMStringMap): WidgetConfig {
   return {
     apiUrl: data.apiUrl ?? "",
+    agentId: data.agentId,
+    token: data.token,
     theme: oneOf(data.theme, THEMES, "light"),
     size: oneOf(data.size, SIZES, "md"),
     radius: number(data.radius, 16),
@@ -87,3 +95,13 @@ export function applyHostStyle(host: HTMLElement, config: WidgetConfig) {
 }
 
 export const useWidgetConfig = () => useSyncExternalStore(widgetStore.subscribe, widgetStore.get);
+
+/** The app token's "<app id>:<end user id>", to tell users apart (no signature check: that's the API's job). */
+export function tokenOwner(token: string | undefined): string | undefined {
+  try {
+    const payload = JSON.parse(atob(token!.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return `${payload.app.id}:${payload.sub}`;
+  } catch {
+    return undefined;
+  }
+}

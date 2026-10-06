@@ -10,9 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@snipet/client": "workspace:*",
+    "@snipet/shared": "workspace:*",
+    "@tanstack/react-query": "^5.104.0",
     "lucide-react": "^1.26.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
