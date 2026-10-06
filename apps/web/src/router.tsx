@@ -26,6 +26,8 @@ const McpServersPage = lazy(() =>
   import("./routes/mcp-servers/page").then((m) => ({ default: m.McpServersPage })));
 const AppsPage = lazy(() =>
   import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
+const AppTokenPlaygroundPage = lazy(() =>
+  import("./routes/app-token-playground/page").then((m) => ({ default: m.AppTokenPlaygroundPage })));
 const ToolsPage = lazy(() =>
   import("./routes/tools/page").then((m) => ({ default: m.ToolsPage })));
 const ToolPlaygroundPage = lazy(() =>
@@ -63,6 +65,7 @@ export const Router = () => {
                 <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
                 <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
                 <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
+                <Route path={toReactRouterPath(ROUTES.appTokenPlayground)} element={<AppTokenPlaygroundPage />} />
                 <Route path={toReactRouterPath(ROUTES.tools)} element={<ToolsPage />} />
                 <Route path={toReactRouterPath(ROUTES.toolPlayground)} element={<ToolPlaygroundPage />} />
                 <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />

@@ -66,7 +66,15 @@ const navItems: NavEntry[] = [
         icon: Users,
         visible: isAdmin,
       },
-      { title: "Apps", href: ROUTES.apps, icon: AppWindow, visible: isAdmin },
+      {
+        title: "Apps",
+        icon: AppWindow,
+        visible: isAdmin,
+        items: [
+          { title: "Browse", href: ROUTES.apps, exact: true },
+          { title: "Token playground", href: ROUTES.appTokenPlayground },
+        ],
+      },
       {
         title: "Api Key",
         href: ROUTES.apiKey,

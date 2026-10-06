@@ -1,7 +1,7 @@
 import { z, ZodType } from "zod";
 
-import { handleApiError, parseZodErrors } from "./errors";
 import { getHttpConfig } from "./config";
+import { handleApiError, parseZodErrors } from "./errors";
 import { applyPathParams, applySearchParams } from "./utils";
 
 export type ApiMethod = "GET" | "POST" | "PUT" | "DELETE";
@@ -20,6 +20,7 @@ export type ApiRequestOptions<
   THeaders = Record<string, string>
 > = {
   retry?: boolean;
+  skipAuth?: boolean;
   method: ApiMethod;
   url: string;
   body?: TBody;
@@ -38,7 +39,7 @@ export type ApiRequestOptions<
 export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(
   options: ApiRequestOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>,
 ): Promise<TResponse> {
-  const { url, method, schemas, retry } = options;
+  const { url, method, schemas, retry, skipAuth } = options;
   let { body, headers, params, searchParams } = options;
   const pathUrl = params ? applyPathParams(url, params as PathParamsRecord) : url;
 
@@ -57,7 +58,7 @@ export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams 
     : pathUrl;
 
   const { baseUrl = "", getAccessToken, refreshToken, onUnauthorized } = getHttpConfig();
-  const accessToken = getAccessToken?.();
+  const accessToken = skipAuth ? undefined : getAccessToken?.();
 
   const response = await fetch(baseUrl + requestUrl, {
     method,
@@ -70,7 +71,7 @@ export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams 
   });
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 && !skipAuth) {
       if (!retry) {
         if (await refreshToken?.()) return httpx({ ...options, retry: true });
       } else {

@@ -17,4 +17,7 @@ export default defineConfig({
       fileName: () => "widget.js",
     },
   },
+  server: {
+    port: 5174,
+  }
 });
