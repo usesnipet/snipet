@@ -1,28 +1,186 @@
-@import "tailwindcss";
-
-/* Theme lives on :host so it stays inside the shadow root and never touches the host page. */
-:host {
-  all: initial;
-  --color-paper: oklch(0.959 0.007 115.707);
-  --color-ink: oklch(0.208 0.009 255.618);
-  --color-accent: oklch(0.616 0.117 76.014);
-}
-
-@theme inline {
-  --color-paper: var(--color-paper);
-  --color-ink: var(--color-ink);
-  --color-accent: var(--color-accent);
-}
-
 /*
- * rem resolves against the HOST page's <html> font-size, which we don't control.
- * Pin the scales we use to px so the widget looks the same on every site.
+ * Snipet widget base styles. Everything lives in the shadow root, so the host
+ * page's CSS can't reach in. Ways to customize, from lightest to heaviest:
+ *
+ * 1. CSS variables, from the host page:   snipet-widget { --sw-accent: tomato; }
+ * 2. ::part(), from the host page:        snipet-widget::part(launcher) { ... }
+ * 3. Custom CSS inside the shadow root (data-css-url or SnipetWidget.configure({ css })),
+ *    which loads after this file and can restyle any .sw-* class.
+ *
+ * Sizes are px * --sw-scale, never rem: rem resolves against the host page's
+ * <html> font-size, which we don't control.
  */
-@theme {
-  --spacing: 4px;
-  --text-sm: 14px;
-  --text-sm--line-height: 20px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-2xl: 16px;
+
+/* Defaults on :host so the host page's own `snipet-widget { --sw-* }` rules win. */
+:host {
+  --sw-scale: 1;
+  --sw-radius: 16px;
+  --sw-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* light-dark() picks a side from color-scheme, set by data-theme. */
+  --sw-surface: light-dark(oklch(0.959 0.007 115.707), oklch(0.208 0.009 255.618));
+  --sw-text: light-dark(oklch(0.208 0.009 255.618), oklch(0.959 0.007 115.707));
+  --sw-muted: color-mix(in oklab, var(--sw-text) 55%, transparent);
+  --sw-border: light-dark(oklch(0 0 0 / 0.1), oklch(1 0 0 / 0.12));
+  --sw-input: light-dark(oklch(1 0 0), oklch(0.25 0.009 255.618));
+  --sw-header: light-dark(oklch(0.208 0.009 255.618), oklch(0.16 0.008 255.618));
+  --sw-header-text: oklch(0.959 0.007 115.707);
+  --sw-accent: oklch(0.616 0.117 76.014);
+  --sw-accent-text: oklch(1 0 0);
+  --sw-shadow: 0 25px 50px -12px oklch(0 0 0 / 0.25);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sw-root {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(12px * var(--sw-scale));
+  font-family: var(--sw-font);
+  font-size: calc(14px * var(--sw-scale));
+  line-height: 1.43;
+  color: var(--sw-text);
+}
+
+.sw-icon {
+  width: calc(16px * var(--sw-scale));
+  height: calc(16px * var(--sw-scale));
+  display: block;
+}
+
+/* Panel */
+
+.sw-panel {
+  display: flex;
+  flex-direction: column;
+  width: calc(380px * var(--sw-scale));
+  height: min(calc(560px * var(--sw-scale)), calc(100vh - 96px));
+  overflow: hidden;
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: var(--sw-radius);
+  box-shadow: var(--sw-shadow);
+}
+
+@media (max-width: 639px) {
+  .sw-panel {
+    width: calc(100vw - 32px);
+  }
+}
+
+.sw-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(12px * var(--sw-scale)) calc(16px * var(--sw-scale));
+  background: var(--sw-header);
+  color: var(--sw-header-text);
+}
+
+.sw-title {
+  font-weight: 600;
+}
+
+.sw-icon-button {
+  padding: calc(4px * var(--sw-scale));
+  border-radius: calc(var(--sw-radius) / 2);
+}
+
+.sw-icon-button:hover {
+  background: oklch(1 0 0 / 0.1);
+}
+
+.sw-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(16px * var(--sw-scale));
+  color: var(--sw-muted);
+}
+
+/* Composer */
+
+.sw-composer {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--sw-scale));
+  padding: calc(12px * var(--sw-scale));
+  border-top: 1px solid var(--sw-border);
+}
+
+.sw-input {
+  flex: 1;
+  min-width: 0;
+  padding: calc(8px * var(--sw-scale)) calc(12px * var(--sw-scale));
+  background: var(--sw-input);
+  border: 1px solid var(--sw-border);
+  border-radius: calc(var(--sw-radius) / 2);
+  outline: none;
+}
+
+.sw-input::placeholder {
+  color: var(--sw-muted);
+}
+
+.sw-input:focus {
+  border-color: var(--sw-accent);
+}
+
+.sw-send {
+  padding: calc(8px * var(--sw-scale));
+  background: var(--sw-accent);
+  color: var(--sw-accent-text);
+  border-radius: calc(var(--sw-radius) / 2);
+}
+
+.sw-send:hover {
+  opacity: 0.9;
+}
+
+/* Launcher */
+
+.sw-launcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(56px * var(--sw-scale));
+  height: calc(56px * var(--sw-scale));
+  background: var(--sw-accent);
+  color: var(--sw-accent-text);
+  border-radius: min(calc(var(--sw-radius) * 2), 50%);
+  box-shadow: var(--sw-shadow);
+  transition: transform 150ms;
+}
+
+.sw-launcher:hover {
+  transform: scale(1.05);
+}
+
+.sw-launcher .sw-icon {
+  width: calc(24px * var(--sw-scale));
+  height: calc(24px * var(--sw-scale));
 }

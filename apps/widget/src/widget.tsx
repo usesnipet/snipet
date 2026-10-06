@@ -1,57 +1,58 @@
 import { MessageCircle, SendHorizontal, X } from "lucide-react";
-import { useState } from "react";
 
+import { useWidgetConfig, widgetStore } from "./config";
+
+// `part` attributes let the host page style pieces with snipet-widget::part(name).
 export function Widget() {
-  const [open, setOpen] = useState(false);
+  const config = useWidgetConfig();
+  const { open } = config;
+  const setOpen = (value: boolean) => widgetStore.set({ open: value });
 
   return (
-    <div className="text-ink font-sans fixed right-4 bottom-4 z-2147483647 flex flex-col items-end gap-3 text-sm">
-      {open && (
-        <div className="bg-paper flex h-[min(560px,calc(100vh-6rem))] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-black/10 shadow-2xl sm:w-[380px]">
-          <header className="bg-ink text-paper flex items-center justify-between px-4 py-3">
-            <span className="font-semibold">Chat</span>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close chat"
-              className="cursor-pointer rounded-md p-1 hover:bg-white/10"
-            >
-              <X className="size-4" />
-            </button>
-          </header>
+    <>
+      {/* Custom CSS comes after the base <style>, so it wins at equal specificity. */}
+      {config.cssUrl && <link rel="stylesheet" href={config.cssUrl} />}
+      {config.css && <style>{config.css}</style>}
 
-          <div className="flex flex-1 items-center justify-center p-4 text-black/50">
-            How can I help you?
-          </div>
+      {config.enabled && (
+        <div className="sw-root" part="root">
+          {open && (
+            <div className="sw-panel" part="panel">
+              <header className="sw-header" part="header">
+                <span className="sw-title">Chat</span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close chat"
+                  className="sw-icon-button"
+                >
+                  <X className="sw-icon" />
+                </button>
+              </header>
 
-          <form
-            onSubmit={(event) => event.preventDefault()}
-            className="flex items-center gap-2 border-t border-black/10 p-3"
+              <div className="sw-body" part="body">How can I help you?</div>
+
+              <form onSubmit={(event) => event.preventDefault()} className="sw-composer" part="composer">
+                <input placeholder="Type a message..." className="sw-input" part="input" />
+                <button type="submit" aria-label="Send" className="sw-send" part="send">
+                  <SendHorizontal className="sw-icon" />
+                </button>
+              </form>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-label={open ? "Close chat" : "Open chat"}
+            aria-expanded={open}
+            className="sw-launcher"
+            part="launcher"
           >
-            <input
-              placeholder="Type a message…"
-              className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2 outline-none focus:border-accent"
-            />
-            <button
-              type="submit"
-              aria-label="Send"
-              className="bg-accent cursor-pointer rounded-lg p-2 text-white hover:opacity-90"
-            >
-              <SendHorizontal className="size-4" />
-            </button>
-          </form>
+            {open ? <X className="sw-icon" /> : <MessageCircle className="sw-icon" />}
+          </button>
         </div>
       )}
-
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-label={open ? "Close chat" : "Open chat"}
-        aria-expanded={open}
-        className="bg-accent flex size-14 cursor-pointer items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-105"
-      >
-        {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}
-      </button>
-    </div>
+    </>
   );
 }

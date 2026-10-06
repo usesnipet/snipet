@@ -8,6 +8,22 @@
   <body>
     <h1>Host page</h1>
     <p>Pretend this is a customer's site. The widget mounts in the bottom-right corner.</p>
-    <script type="module" src="/src/main.tsx"></script>
+    <p>
+      <button onclick="SnipetWidget.toggle()">Toggle</button>
+      <button onclick="SnipetWidget.configure({ theme: 'dark' })">Dark</button>
+      <button onclick="SnipetWidget.configure({ theme: 'light' })">Light</button>
+      <button onclick="SnipetWidget.disable()">Disable</button>
+      <button onclick="SnipetWidget.enable()">Enable</button>
+    </p>
+    <!-- data-snipet-widget marks the tag for dev only; the real embed is found via document.currentScript. -->
+    <script
+      type="module"
+      src="/src/main.tsx"
+      data-snipet-widget
+      data-api-url="http://localhost:8080"
+      data-theme="auto"
+      data-size="lg"
+      data-radius="16"
+    ></script>
   </body>
 </html>
