@@ -10,7 +10,6 @@ import type { WidgetConfig } from "./config";
 
 const HOST_TAG = "snipet-widget";
 
-// Host-page API: window.SnipetWidget.open(), .configure({ theme: "dark" }), ...
 const api = {
   open: () => widgetStore.set({ open: true }),
   close: () => widgetStore.set({ open: false }),
