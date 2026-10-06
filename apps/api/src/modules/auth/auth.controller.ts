@@ -8,9 +8,12 @@ import {
   type RefreshToken,
 } from "@snipet/shared";
 
-import { CurrentUser, Public, ZodPipe, type AuthUser } from "@snipet/server-common";
+import { ZodPipe } from "@snipet/server-common";
+
+import { Private, Public, UserAuth, type AuthUser, CurrentUser } from "../../common/decorators/auth.decorator.js";
 import { AuthService } from "./auth.service.js";
 
+@Private(UserAuth())
 @Controller("auth")
 export class AuthController {
   constructor(private readonly service: AuthService) {}

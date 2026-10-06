@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from "@nestjs/common";
-import { Public, Roles, ZodPipe } from "@snipet/server-common";
+import { ZodPipe } from "@snipet/server-common";
 import { knowledgeSearchParamsSchema, Role } from "@snipet/shared";
 
 import { KnowledgeSyncService } from "./indexing/knowledge-sync.service.js";
@@ -10,8 +10,10 @@ import type { FilterQuery } from "@snipet/server-common";
 
 import type { KnowledgeItem } from "./knowledge-item.entity.js";
 import type { KnowledgeSearchParams } from "@snipet/shared";
+import { Private, Public, UserAuth } from "../../common/decorators/auth.decorator.js";
 
 // Read-only: items come from the source sync.
+@Private(UserAuth())
 @Controller()
 export class KnowledgeController {
   constructor(
@@ -30,7 +32,7 @@ export class KnowledgeController {
   }
 
   // Starts a source sync now; it runs in the background.
-  @Roles(Role.Admin)
+  @Private(UserAuth(Role.Admin))
   @Post("knowledge-items/sync")
   @HttpCode(202)
   startSync() {

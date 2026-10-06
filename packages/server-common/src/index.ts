@@ -2,7 +2,6 @@ export * from "./crud/base.entity.js";
 export * from "./database/ensure-database.js";
 export * from "./crud/crud.controller.js";
 export * from "./crud/crud.service.js";
-export * from "./decorators/auth.decorators.js";
 export * from "./filter/db-error.filter.js";
 export * from "./middleware/basic-auth.middleware.js";
 export * from "./pagination/filter.js";

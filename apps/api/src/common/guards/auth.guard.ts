@@ -4,18 +4,18 @@ import { JwtService } from "@nestjs/jwt";
 import { hasRole, Role } from "@snipet/shared";
 
 import { ApiKeyService } from "../../modules/api-key/api-key.service.js";
-import { ALLOW_API_KEY, AuthUser, IS_PUBLIC, ROLES } from "@snipet/server-common";
+import { AUTH, AuthStrategy } from "../decorators/auth.decorator.js";
 
 import type { Request } from "express";
-
+import type { RequestAuth } from "../decorators/auth.decorator.js";
 export interface AccessTokenPayload {
   sub: string;
   role: Role;
 }
 
-// Global: every route needs `Authorization: Bearer <access token>` unless
-// marked @Public(); @Roles(...) further restricts by role. @AllowApiKey()
-// routes also accept `X-API-Key` (request.apiKey is set, request.user isn't).
+// Global: @Public() routes pass; @Private(...) routes need a credential for one
+// of their strategies, tried in order (sets request.auth); anything else is
+// denied, so a forgotten decorator fails closed.
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
@@ -25,35 +25,31 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const targets = [context.getHandler(), context.getClass()];
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, targets);
+    const strategies = this.reflector.getAllAndOverride<AuthStrategy[] | undefined>(AUTH, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (!strategies) throw new ForbiddenException("route is neither @Public nor @Private");
 
-    const request = context.switchToHttp().getRequest<Request & { user?: AuthUser; apiKey?: unknown }>();
-
+    const request = context.switchToHttp().getRequest<Request & { auth?: RequestAuth }>();
     const apiKey = request.headers["x-api-key"];
-    if (typeof apiKey === "string" && apiKey && this.reflector.getAllAndOverride<boolean>(ALLOW_API_KEY, targets)) {
-      request.apiKey = await this.apiKeys.verify(apiKey);
-      return true;
-    }
-
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
-    if (scheme !== "Bearer" || !token) {
-      // Public routes still get request.user when a valid token is sent.
-      if (isPublic) return true;
-      throw new UnauthorizedException("missing bearer token");
-    }
 
-    let payload: AccessTokenPayload;
-    try {
-      payload = await this.jwt.verifyAsync<AccessTokenPayload>(token);
-    } catch {
-      if (isPublic) return true;
-      throw new UnauthorizedException("invalid or expired token");
+    for (const strategy of strategies) {
+      if (strategy.type === "apiKey" && typeof apiKey === "string" && apiKey) {
+        request.auth = { type: "apiKey", apiKey: await this.apiKeys.verify(apiKey) };
+        return true;
+      }
+      if (strategy.type === "user" && scheme === "Bearer" && token) {
+        const payload = await this.jwt.verifyAsync<AccessTokenPayload>(token).catch(() => {
+          throw new UnauthorizedException("invalid or expired token");
+        });
+        if (!hasRole(payload.role, strategy.roles)) throw new ForbiddenException("insufficient role");
+        request.auth = { type: "user", user: { id: payload.sub, role: payload.role } };
+        return true;
+      }
     }
-    request.user = { id: payload.sub, role: payload.role };
-
-    const roles = this.reflector.getAllAndOverride<Role[] | undefined>(ROLES, targets);
-    if (roles && !hasRole(payload.role, roles)) throw new ForbiddenException("insufficient role");
-    return true;
+    if (!strategies.length) return true;
+    throw new UnauthorizedException("missing credentials");
   }
 }

@@ -1,7 +1,7 @@
 import { Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Query } from "@nestjs/common";
 import { Role } from "@snipet/shared";
 
-import { AllowApiKey, Roles, ZodPipe } from "@snipet/server-common";
+import { ZodPipe } from "@snipet/server-common";
 import type { FilterQuery } from "@snipet/server-common";
 
 import { findAgentMessagesParamsSchema, findAgentSessionsSchema } from "./agent-run.dto.js";
@@ -11,10 +11,10 @@ import { CurrentOwner } from "../../common/decorators/owner.decorator.js";
 import type { AgentSession } from "./agent-run.entity.js";
 import type { Owner } from "../../common/decorators/owner.decorator.js";
 import type { FindAgentMessagesParams } from "@snipet/shared";
+import { ApiKeyAuth, Private, UserAuth } from "../../common/decorators/auth.decorator.js";
 
 // Same access as running agents: admins, or any API key.
-@AllowApiKey()
-@Roles(Role.Admin)
+@Private(UserAuth(Role.Admin), ApiKeyAuth())
 @Controller("agent-sessions")
 export class AgentSessionController {
   constructor(private readonly service: AgentRunService) {}

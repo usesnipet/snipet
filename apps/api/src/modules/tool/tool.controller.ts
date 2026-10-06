@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from "@nestjs/common";
 import { executeToolSchema, Role } from "@snipet/shared";
 
-import { Roles, ZodPipe } from "@snipet/server-common";
+import { ZodPipe } from "@snipet/server-common";
 import type { FilterQuery } from "@snipet/server-common";
 
 import { findToolsSchema } from "./tool.dto.js";
@@ -9,10 +9,11 @@ import { ToolService } from "./tool.service.js";
 
 import type { Tool } from "./tool.entity.js";
 import type { ExecuteTool } from "@snipet/shared";
+import { Private, UserAuth } from "../../common/decorators/auth.decorator.js";
 
 // Read-only: tools come from MCP server syncs. Admin only, since executing
 // acts on the host through the MCP server and tools embed its config.
-@Roles(Role.Admin)
+@Private(UserAuth(Role.Admin))
 @Controller("tools")
 export class ToolController {
   constructor(private readonly service: ToolService) {}

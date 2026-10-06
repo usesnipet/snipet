@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Logger, Param, Post, Query, Res, UseFilters } from "@nestjs/common";
 import { executeLlmSchema, listProviderModelsParamsSchema } from "@snipet/shared";
 
-import { AllowApiKey, CrudController, Public, ZodPipe } from "@snipet/server-common";
+import { CrudController, ZodPipe } from "@snipet/server-common";
 
 import {
   createLlmConnectionSchema,
@@ -15,8 +15,9 @@ import { LlmErrorFilter, toHttpException } from "../../common/filter/llm-error.f
 
 import type { ExecuteLlm, ListProviderModelsParams, LlmStreamEvent } from "@snipet/shared";
 import type { Response } from "express";
+import { ApiKeyAuth, Private, Public, UserAuth } from "../../common/decorators/auth.decorator.js";
 
-@AllowApiKey()
+@Private(UserAuth(), ApiKeyAuth())
 @UseFilters(LlmErrorFilter)
 @Controller("llm-connections")
 export class LlmConnectionController extends CrudController<LlmConnection>({
