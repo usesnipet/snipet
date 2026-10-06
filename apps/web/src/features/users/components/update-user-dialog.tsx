@@ -10,7 +10,7 @@ import { useId } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useUpdateUser } from "../hooks";
+import { useUpdateUser } from "@snipet/client";
 import { updateUserSchema } from "@snipet/shared";
 
 import { RoleSelect } from "./role-select";

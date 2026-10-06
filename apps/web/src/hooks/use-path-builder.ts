@@ -1,4 +1,4 @@
-import { applyPathParams } from "@/lib/http";
+import { applyPathParams } from "@snipet/client";
 import { useParams } from "react-router";
 
 export function usePathBuilder() {

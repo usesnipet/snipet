@@ -17,6 +17,7 @@
     "@rjsf/shadcn": "^6.7.1",
     "@rjsf/utils": "^6.7.1",
     "@rjsf/validator-ajv8": "^6.7.1",
+    "@snipet/client": "workspace:*",
     "@snipet/shared": "workspace:*",
     "@tanstack/react-query": "^5.101.4",
     "class-variance-authority": "^0.7.1",

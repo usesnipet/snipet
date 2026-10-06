@@ -3,13 +3,13 @@ import { LoadingFallback } from "@/components/loading-fallback";
 import { Button } from "@/components/ui/button";
 import { InputSearch } from "@/components/ui/input-search";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useListTools } from "@/features/tool/hooks";
+import { useListTools } from "@snipet/client";
 import { useDialog } from "@/lib/dialog";
 import { cn } from "@/lib/utils";
 import { Blocks, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { useListMcpServers, useMcpServerRegistry } from "../hooks";
+import { useListMcpServers, useMcpServerRegistry } from "@snipet/client";
 import { describeConfig, matchRegistryItem } from "../lib/config";
 
 import { InstalledMcpServerCard } from "./installed-mcp-server-card";

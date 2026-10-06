@@ -8,7 +8,7 @@ import { ChevronDown, ChevronRight, ChevronUp, GripVertical, Info, Plus, X } fro
 import { useEffect, useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
-import { useListLlmConnections, useLlmProviders, useProviderModels } from "../hooks";
+import { useListLlmConnections, useLlmProviders, useProviderModels } from "@snipet/client";
 
 import type { LlmCapability, LlmConnection, LlmProviderInfo } from "@snipet/shared";
 import type { RJSFSchema } from "@rjsf/utils";

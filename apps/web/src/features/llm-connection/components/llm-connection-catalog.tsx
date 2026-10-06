@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 
-import { useListLlmConnections, useLlmProviders } from "../hooks";
+import { useListLlmConnections, useLlmProviders } from "@snipet/client";
 import {
   buildRegistryViews, filterRegistryViews, REGISTRY_SORTS, registryStats, sortRegistryViews
 } from "../lib/registry-view";

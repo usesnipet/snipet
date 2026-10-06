@@ -6,7 +6,7 @@ import { DateFormat } from "@/components/ui/date";
 import { useDialog } from "@/lib/dialog";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 
-import { useDeleteUser, useListUsers } from "../hooks";
+import { useDeleteUser, useListUsers } from "@snipet/client";
 
 import { UpdateUserDialog } from "./update-user-dialog";
 

@@ -5,11 +5,11 @@ import { toast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/query-client";
 import { ROUTES } from "@/routes";
 
-import { authService } from "./service";
+import { authService } from "@snipet/client";
 import { useAuthStore } from "./store";
 
 import type { AuthResponse, ChangeOwnPassword, Login, User } from "@snipet/shared";
-import type { ServicePostOptions, ServicePutOptions } from "@/lib/services";
+import type { ServicePostOptions, ServicePutOptions } from "@snipet/client";
 import type { RoutePath } from "@/routes";
 import type { UseMutationResult } from "@tanstack/react-query";
 

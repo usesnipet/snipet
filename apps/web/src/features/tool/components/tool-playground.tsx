@@ -10,7 +10,7 @@ import { Play } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 
-import { useExecuteTool, useListTools } from "../hooks";
+import { useExecuteTool, useListTools } from "@snipet/client";
 
 import type { Tool } from "@snipet/shared";
 import type { RJSFSchema } from "@rjsf/utils";

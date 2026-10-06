@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 
-import { useCreateMcpServer, useUpdateMcpServer } from "../hooks";
+import { useCreateMcpServer, useUpdateMcpServer } from "@snipet/client";
 import { emptyForm, fromForm, toForm } from "../lib/config";
 import { mcpServerFormSchema } from "../schemas";
 

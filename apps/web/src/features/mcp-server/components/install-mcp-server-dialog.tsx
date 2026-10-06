@@ -16,7 +16,7 @@ import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { McpTransport } from "@snipet/shared";
 
-import { useCreateMcpServer } from "../hooks";
+import { useCreateMcpServer } from "@snipet/client";
 import { fromForm, toForm } from "../lib/config";
 import { mcpServerFormSchema } from "../schemas";
 

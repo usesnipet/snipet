@@ -1,4 +1,4 @@
-import { applyPathParams } from "@/lib/http";
+import { applyPathParams } from "@snipet/client";
 import { logger } from "@/lib/logger";
 import { useNavigate as useNavigateReactRouter } from "react-router";
 

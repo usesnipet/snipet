@@ -2,7 +2,7 @@ import { FormInput } from "@/components/form/input";
 import { FormSelect } from "@/components/form/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useListMcpServers } from "@/features/mcp-server/hooks";
+import { useListMcpServers } from "@snipet/client";
 import { Plus, X } from "lucide-react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 

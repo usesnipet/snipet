@@ -5,9 +5,9 @@ import { ChatMessages } from "@/features/agent-run/components/chat-messages";
 import { SessionSidebar } from "@/features/agent-run/components/session-sidebar";
 import {
   useCancelRun, useLatestRun, useRunStream, useSession, useSessionMessages, useStartRun
-} from "@/features/agent-run/hooks";
+} from "@snipet/client";
 import { sessionPath } from "@/features/agent-run/lib/session-path";
-import { useListAgents } from "@/features/agent/hooks";
+import { useListAgents } from "@snipet/client";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";

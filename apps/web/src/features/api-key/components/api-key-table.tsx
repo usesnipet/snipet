@@ -14,7 +14,7 @@ import {
 import { useDialog } from "@/lib/dialog";
 import { CalendarClock, MoreHorizontal, RefreshCw, Trash2 } from "lucide-react";
 
-import { useDeleteApiKey, useListApiKey, useRollApiKey } from "../hooks";
+import { useDeleteApiKey, useListApiKey, useRollApiKey } from "@snipet/client";
 
 import { UpdateApiKeyExpirationDialog } from "./update-api-key-expiration-dialog";
 

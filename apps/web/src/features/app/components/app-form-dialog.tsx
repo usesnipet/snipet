@@ -11,7 +11,7 @@ import { useId } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useCreateApp, useUpdateApp } from "../hooks";
+import { useCreateApp, useUpdateApp } from "@snipet/client";
 import { createAppSchema } from "@snipet/shared";
 
 import type { App, CreateApp } from "@snipet/shared";

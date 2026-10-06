@@ -14,7 +14,7 @@ import { ArrowLeft, MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
 import moment from "moment";
 import { useNavigate } from "react-router";
 
-import { useDeleteSession, useListSessions } from "../hooks";
+import { useDeleteSession, useListSessions } from "@snipet/client";
 import { sessionPath } from "../lib/session-path";
 
 import type { AgentSession } from "@snipet/shared";

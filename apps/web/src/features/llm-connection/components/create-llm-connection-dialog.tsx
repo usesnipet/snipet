@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 
-import { useCreateLlmConnection, useUpdateLlmConnection } from "../hooks";
+import { useCreateLlmConnection, useUpdateLlmConnection } from "@snipet/client";
 import { createLlmConnectionSchema } from "@snipet/shared";
 
 import { LlmFormFields } from "./llm-form-fields";

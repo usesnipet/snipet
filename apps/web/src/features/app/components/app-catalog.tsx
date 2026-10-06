@@ -7,7 +7,7 @@ import { AppWindow, Pencil, Trash } from "lucide-react";
 import { useState } from "react";
 import stc from "string-to-color";
 
-import { useDeleteApp, useListApps } from "../hooks";
+import { useDeleteApp, useListApps } from "@snipet/client";
 
 import { AppFormDialog } from "./app-form-dialog";
 

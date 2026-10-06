@@ -13,8 +13,8 @@ import { EllipsisVertical, Pencil, Trash, Wrench } from "lucide-react";
 import moment from "moment";
 import { McpTransport } from "@snipet/shared";
 
-import { useDeleteMcpServer } from "../hooks";
-import { describeConfig, syncState } from "../lib/config";
+import { syncState, useDeleteMcpServer } from "@snipet/client";
+import { describeConfig } from "../lib/config";
 
 import { McpServerFormDialog } from "./mcp-server-form-dialog";
 import { McpServerToolsDialog } from "./mcp-server-tools-dialog";

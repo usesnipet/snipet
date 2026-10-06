@@ -6,7 +6,7 @@ import { DateFormat } from "@/components/ui/date";
 import { useDialog } from "@/lib/dialog";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 
-import { useDeleteAgent, useListAgents } from "../hooks";
+import { useDeleteAgent, useListAgents } from "@snipet/client";
 
 import { AgentFormDialog } from "./agent-form-dialog";
 

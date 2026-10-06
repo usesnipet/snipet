@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { useFormContext } from "react-hook-form";
 
-import { useListApps } from "../hooks";
+import { useListApps } from "@snipet/client";
 
 type Props = {
   placeholder?: string;

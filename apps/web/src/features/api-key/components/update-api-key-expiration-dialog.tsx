@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useUpdateApiKey } from "../hooks";
+import { useUpdateApiKey } from "@snipet/client";
 
 import type { ApiKey } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";

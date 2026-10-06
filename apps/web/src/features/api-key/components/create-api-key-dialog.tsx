@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createApiKeySchema } from "@snipet/shared";
 import { useForm } from "react-hook-form";
 
-import { useCreateApiKey } from "../hooks";
+import { useCreateApiKey } from "@snipet/client";
 
 import type { z } from "zod";
 

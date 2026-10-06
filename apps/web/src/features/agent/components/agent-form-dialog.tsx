@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 
-import { useCreateAgent, useUpdateAgent } from "../hooks";
+import { useCreateAgent, useUpdateAgent } from "@snipet/client";
 import { agentFormSchema } from "../schemas";
 
 import { AgentMcpServersField } from "./agent-mcp-servers-field";

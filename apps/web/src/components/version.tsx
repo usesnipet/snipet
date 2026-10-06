@@ -1,4 +1,4 @@
-import { useGetSystemInfo } from "@/features/system/hooks";
+import { useGetSystemInfo } from "@snipet/client";
 
 import { Loading } from "./ui/loading";
 

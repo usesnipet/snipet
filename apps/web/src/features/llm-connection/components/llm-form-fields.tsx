@@ -7,7 +7,7 @@ import { FieldGroup } from "@/components/ui/field";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 
-import { useLlmProviders } from "../hooks";
+import { useLlmProviders } from "@snipet/client";
 
 import { ProviderSelect } from "./provider-select";
 

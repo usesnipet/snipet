@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { Pencil, Trash } from "lucide-react";
 import { useMemo } from "react";
 
-import { useDeleteLlmConnection, useListLlmConnections } from "../hooks";
+import { useDeleteLlmConnection, useListLlmConnections } from "@snipet/client";
 
 import { CreateLlmConnectionDialog } from "./create-llm-connection-dialog";
 

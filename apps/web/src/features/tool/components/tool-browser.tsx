@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useListMcpServers, useMcpServerRegistry } from "@/features/mcp-server/hooks";
+import { useListMcpServers, useMcpServerRegistry } from "@snipet/client";
 import { matchRegistryItem } from "@/features/mcp-server/lib/config";
 import { useDebouncedState } from "@/hooks/use-debounced-state";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { ToolSource } from "@snipet/shared";
 
-import { useListTools } from "../hooks";
+import { useListTools } from "@snipet/client";
 
 import { ToolCard } from "./tool-card";
 import { ToolDetailsSheet } from "./tool-details-sheet";

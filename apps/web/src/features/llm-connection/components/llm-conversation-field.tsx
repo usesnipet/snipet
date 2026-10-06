@@ -14,9 +14,9 @@ import {
 import { useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
-import { useExecuteLlm, useExecuteLlmStream } from "../hooks";
+import { useExecuteLlm, useExecuteLlmStream } from "@snipet/client";
 
-import type { LlmSkippedEvent } from "../hooks";
+import type { LlmSkippedEvent } from "@snipet/client";
 import type { ExecuteLlm, ExecuteLlmTarget, LlmMessage, LlmRole } from "@snipet/shared";
 type Props = {
   /** Field-array path holding `LlmMessage[]` (@snipet/shared). */

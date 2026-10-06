@@ -1,7 +1,7 @@
 import { McpTransport } from "@snipet/shared";
 
 import type { McpServerForm } from "../schemas";
-import type { CreateMcpServer, McpServer, McpServerConfig, McpServerRegistryItem } from "@snipet/shared";
+import type { CreateMcpServer, McpServerConfig, McpServerRegistryItem } from "@snipet/shared";
 
 type ServerLike = { transport: McpTransport; config: Record<string, unknown> };
 
@@ -132,15 +132,4 @@ export function matchRegistryItem(
 ): McpServerRegistryItem | undefined {
   const id = identity(server);
   return registry.find((item) => identity(item) === id);
-}
-
-export type SyncState =
-  | { kind: "pending" }
-  | { kind: "error"; message: string; at?: Date }
-  | { kind: "synced"; at: Date };
-
-export function syncState(server: McpServer): SyncState {
-  const at = server.lastSyncedAt ?? undefined;
-  if (server.lastSyncedError) return { kind: "error", message: server.lastSyncedError, at };
-  return at ? { kind: "synced", at } : { kind: "pending" };
 }
