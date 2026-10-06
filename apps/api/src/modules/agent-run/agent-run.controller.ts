@@ -10,10 +10,11 @@ import { CurrentOwner } from "../../common/decorators/owner.decorator.js";
 import type { Owner } from "../../common/decorators/owner.decorator.js";
 import type { FindAgentRunsParams, StartAgentRun } from "@snipet/shared";
 import type { Response } from "express";
-import { ApiKeyAuth, Private, UserAuth } from "../../common/decorators/auth.decorator.js";
+import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "../../common/decorators/auth.decorator.js";
 
-// Admins, or any API key: running an agent runs its MCP tools on the host.
-@Private(UserAuth(Role.Admin), ApiKeyAuth())
+// Admins, API keys, or app end users (scoped to their own sessions by
+// CurrentOwner). Running an agent runs its MCP tools on the host.
+@Private(UserAuth(Role.Admin), ApiKeyAuth(), AppTokenAuth())
 @Controller("agent-runs")
 export class AgentRunController {
   constructor(private readonly service: AgentRunService) {}

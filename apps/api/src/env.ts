@@ -81,6 +81,20 @@ const envSchema = z.object({
   EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().max(2000).default(1536), // HNSW limit
   EMBEDDING_BATCH_SIZE: z.coerce.number().int().positive().default(100),
 
+  // Origins allowed to call the API from a browser (the widget's host pages),
+  // comma-separated; "*" allows any. Unset disables CORS.
+  CORS_ORIGINS: z
+    .string()
+    .optional()
+    .transform((v) =>
+      v === "*"
+        ? true
+        : v
+            ?.split(",")
+            .map((o) => o.trim())
+            .filter(Boolean),
+    ),
+
   // Set on release builds.
   APP_VERSION: z.string().default("dev"),
 });

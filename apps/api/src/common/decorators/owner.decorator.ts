@@ -4,8 +4,8 @@ import { requestAuth } from "./auth.decorator.js";
 
 import type { Request } from "express";
 
-// Who a session belongs to: the logged-in user, or the app of the request's
-// API key, optionally on behalf of one of its end users.
+// Who a session belongs to: the logged-in user, or an app, optionally on
+// behalf of one of its end users (the app token's, or the API key's pick).
 export type Owner =
   | { userId: string; appId: null; externalUserId: null }
   | { userId: null; appId: string; externalUserId: string | null };
@@ -17,6 +17,7 @@ const EXTERNAL_USER_HEADER = "x-external-user-id";
 export const CurrentOwner = createParamDecorator((_: unknown, ctx: ExecutionContext): Owner => {
   const auth = requestAuth(ctx);
   if (auth.type === "user") return { userId: auth.user.id, appId: null, externalUserId: null };
+  if (auth.type === "appToken") return { userId: null, appId: auth.token.app.id, externalUserId: auth.token.sub };
 
   const externalUserId = ctx.switchToHttp().getRequest<Request>().headers[EXTERNAL_USER_HEADER];
   if (

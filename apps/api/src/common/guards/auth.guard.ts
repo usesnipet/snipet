@@ -4,8 +4,11 @@ import { JwtService } from "@nestjs/jwt";
 import { hasRole, Role } from "@snipet/shared";
 
 import { ApiKeyService } from "../../modules/api-key/api-key.service.js";
+import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "../../modules/app-token/app-token.service.js";
 import { AUTH, AuthStrategy } from "../decorators/auth.decorator.js";
 
+import type { JwtVerifyOptions } from "@nestjs/jwt";
+import type { AppTokenPayload } from "@snipet/shared";
 import type { Request } from "express";
 import type { RequestAuth } from "../decorators/auth.decorator.js";
 export interface AccessTokenPayload {
@@ -35,21 +38,36 @@ export class AuthGuard implements CanActivate {
     const apiKey = request.headers["x-api-key"];
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
 
+    // User and app tokens share the Bearer header but not the signing key: a
+    // token that fails one is tried against the next strategy.
     for (const strategy of strategies) {
       if (strategy.type === "apiKey" && typeof apiKey === "string" && apiKey) {
         request.auth = { type: "apiKey", apiKey: await this.apiKeys.verify(apiKey) };
         return true;
       }
       if (strategy.type === "user" && scheme === "Bearer" && token) {
-        const payload = await this.jwt.verifyAsync<AccessTokenPayload>(token).catch(() => {
-          throw new UnauthorizedException("invalid or expired token");
-        });
+        const payload = await this.verify<AccessTokenPayload>(token, {});
+        if (!payload) continue;
         if (!hasRole(payload.role, strategy.roles)) throw new ForbiddenException("insufficient role");
         request.auth = { type: "user", user: { id: payload.sub, role: payload.role } };
         return true;
       }
+      if (strategy.type === "appToken" && scheme === "Bearer" && token) {
+        const payload = await this.verify<AppTokenPayload>(token, {
+          secret: APP_TOKEN_SECRET,
+          audience: APP_TOKEN_AUDIENCE,
+        });
+        if (!payload) continue;
+        request.auth = { type: "appToken", token: payload };
+        return true;
+      }
     }
     if (!strategies.length) return true;
+    if (scheme === "Bearer" && token) throw new UnauthorizedException("invalid or expired token");
     throw new UnauthorizedException("missing credentials");
+  }
+
+  private async verify<T extends object>(token: string, options: JwtVerifyOptions): Promise<T | null> {
+    return this.jwt.verifyAsync<T>(token, options).catch(() => null);
   }
 }

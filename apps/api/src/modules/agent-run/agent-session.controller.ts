@@ -11,10 +11,10 @@ import { CurrentOwner } from "../../common/decorators/owner.decorator.js";
 import type { AgentSession } from "./agent-run.entity.js";
 import type { Owner } from "../../common/decorators/owner.decorator.js";
 import type { FindAgentMessagesParams } from "@snipet/shared";
-import { ApiKeyAuth, Private, UserAuth } from "../../common/decorators/auth.decorator.js";
+import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "../../common/decorators/auth.decorator.js";
 
-// Same access as running agents: admins, or any API key.
-@Private(UserAuth(Role.Admin), ApiKeyAuth())
+// Same access as running agents: admins, API keys, or app end users (their own).
+@Private(UserAuth(Role.Admin), ApiKeyAuth(), AppTokenAuth())
 @Controller("agent-sessions")
 export class AgentSessionController {
   constructor(private readonly service: AgentRunService) {}

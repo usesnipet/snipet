@@ -4,9 +4,10 @@ import { JwtService } from "@nestjs/jwt";
 import { Role } from "@snipet/shared";
 
 import type { ApiKeyService } from "../../modules/api-key/api-key.service.js";
+import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "../../modules/app-token/app-token.service.js";
 
 import { AuthGuard } from "./auth.guard.js";
-import { ApiKeyAuth, Private, Public, UserAuth } from "../decorators/auth.decorator.js";
+import { ApiKeyAuth, AppTokenAuth, Private, Public, UserAuth } from "../decorators/auth.decorator.js";
 
 const jwt = new JwtService({ secret: "test" });
 const apiKeys = { verify: (key: string) => Promise.resolve({ id: key, appId: "app-1" }) } as unknown as ApiKeyService;
@@ -35,6 +36,12 @@ function run(
 }
 
 const bearer = (role: Role) => ({ authorization: `Bearer ${jwt.sign({ sub: "u-1", role })}` });
+const appToken = {
+  authorization: `Bearer ${jwt.sign(
+    { sub: "end-user", user: {}, app: { id: "app-1", name: "Shop" } },
+    { secret: APP_TOKEN_SECRET, audience: APP_TOKEN_AUDIENCE },
+  )}`,
+};
 
 describe("AuthGuard", () => {
   it("denies routes without @Public or @Private", async () => {
@@ -73,6 +80,20 @@ describe("AuthGuard", () => {
 
   it("rejects an invalid token", async () => {
     await expect(run({ cls: Private(UserAuth()) }, { authorization: "Bearer nope" })).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it("accepts an app token after a user strategy rejects it", async () => {
+    await expect(run({ cls: Private(UserAuth(Role.Admin), AppTokenAuth()) }, appToken)).resolves.toMatchObject({
+      type: "appToken",
+      token: { sub: "end-user", app: { id: "app-1" } },
+    });
+  });
+
+  it("app tokens and user tokens don't pass for each other", async () => {
+    await expect(run({ cls: Private(UserAuth()) }, appToken)).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(run({ cls: Private(AppTokenAuth()) }, bearer(Role.Admin))).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
   });
