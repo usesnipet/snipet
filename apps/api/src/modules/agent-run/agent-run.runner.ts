@@ -40,8 +40,18 @@ export class AgentRunner {
     let turns = 0;
 
     try {
-      const stored = await this.messages.find({ where: { sessionId: run.sessionId }, order: { id: "ASC" } });
-      const history: LlmMessage[] = stored.map(({ role, parts }) => ({ role, parts }));
+      // Only the most recent messages, starting at a user message so the window
+      // never opens on a tool result whose call was cut off. The run's own user
+      // message is the newest, so a user message is always found.
+      const stored = await this.messages.find({
+        where: { sessionId: run.sessionId },
+        order: { id: "DESC" },
+        take: HISTORY_LIMIT,
+      });
+      stored.reverse();
+      const history: LlmMessage[] = stored
+        .slice(stored.findIndex((m) => m.role === "user"))
+        .map(({ role, parts }) => ({ role, parts }));
       const system: LlmMessage[] = [{ role: "system", parts: [{ type: "text", text: `Your name is ${agent.name}` }] }];
       if (agent.systemPrompt) system.push({ role: "system", parts: [{ type: "text", text: agent.systemPrompt }] });
       const { tools, toolIds } = await this.resolveTools(agent);
@@ -157,6 +167,8 @@ const globToRegExp = (glob: string) =>
   );
 
 const INTERNAL_ERROR = "internal error";
+
+const HISTORY_LIMIT = 20;
 
 // Client-safe message for a failed run: LLM errors never carry the raw
 // provider message, which may hold hosts or credentials.

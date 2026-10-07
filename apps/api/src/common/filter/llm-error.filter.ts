@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import { BaseExceptionFilter } from "@nestjs/core";
 
-import { attemptReason, FailoverError, LlmError, type LlmErrorKind } from "../../infra/llm/errors.js";
+import { attemptReason, FailoverError, LlmError, LlmErrorKind } from "../../infra/llm/errors.js";
 
 // Client-safe responses: never the raw provider message for upstream
 // failures, which may carry hosts or credentials details.
@@ -24,7 +24,6 @@ const BY_KIND: Record<LlmErrorKind, (e: LlmError) => HttpException> = {
   rate_limit: () => new HttpException("llm provider rate limited", HttpStatus.TOO_MANY_REQUESTS),
   unavailable: () => new ServiceUnavailableException("llm provider unavailable"),
   context_too_long: () => new UnprocessableEntityException("conversation too long for this model"),
-  // Our own validation messages, safe to show.
   invalid_options: (e) => new BadRequestException(e.message),
   bad_request: () => new BadRequestException("invalid llm request"),
 };
