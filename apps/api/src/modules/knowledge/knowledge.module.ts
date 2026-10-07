@@ -15,5 +15,6 @@ import { KnowledgeController } from "./knowledge.controller.js";
   imports: [TypeOrmModule.forFeature([KnowledgeItem]), EmbeddingModule, PgvectorModule, StorageModule],
   controllers: [KnowledgeController],
   providers: [KnowledgeItemService, KnowledgeSyncService, KnowledgeIndexerService],
+  exports: [KnowledgeItemService],
 })
 export class KnowledgeModule {}

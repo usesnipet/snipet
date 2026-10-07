@@ -46,6 +46,8 @@ function setup(replies: (LlmMessage | Error)[]) {
     find: jest.fn<Fn>().mockResolvedValue([
       { id: "t1", name: "read_file", description: "", inputSchema: {}, mcpServerId: "s1" },
       { id: "t2", name: "delete_file", description: "", inputSchema: {}, mcpServerId: "s1" },
+      // Native: no grant, so deny patterns don't apply.
+      { id: "t3", name: "delete_knowledge", description: "", inputSchema: {}, mcpServerId: null },
     ]),
   };
   const llm = {
@@ -85,7 +87,7 @@ describe("AgentRunner.run", () => {
       { messages: LlmMessage[]; tools: { name: string }[] },
     ];
     expect(messages.map((m) => m.role)).toEqual(["system", "system", "user", "assistant", "tool"]);
-    expect(tools.map((t) => t.name)).toEqual(["read_file"]); // delete_file is denied
+    expect(tools.map((t) => t.name)).toEqual(["read_file", "delete_knowledge"]); // delete_file is denied
   });
 
   it("stops at maxTurns while the model keeps calling tools", async () => {

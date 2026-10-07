@@ -6,6 +6,7 @@ import { ToolService } from "./tool.service.js";
 
 import type { McpConnector } from "../../infra/mcp/connector.js";
 import type { McpServerService } from "../mcp-server/mcp-server.service.js";
+import type { NativeToolService } from "./native-tool.service.js";
 import type { Tool } from "./tool.entity.js";
 import type { Repository } from "typeorm";
 
@@ -22,15 +23,20 @@ const greet = {
 } as Partial<Tool>;
 const server = { id: "server-1", transport: McpTransport.STDIO, config: { command: "npx" } };
 
-function setup(tool: Partial<Tool> = greet, callTool = resolves({ content: "hi ana", isError: false })) {
+function setup(
+  tool: Partial<Tool> = greet,
+  callTool = resolves({ content: "hi ana", isError: false }),
+  runNative = resolves("found"),
+) {
   const repo = { findOneBy: resolves(tool), metadata: { name: "Tool" } };
   const servers = { findById: resolves(server) };
   const service = new ToolService(
     repo as unknown as Repository<Tool>,
     servers as unknown as McpServerService,
     { callTool } as unknown as McpConnector,
+    { run: runNative } as unknown as NativeToolService,
   );
-  return { service, callTool };
+  return { service, callTool, runNative };
 }
 
 describe("ToolService.execute", () => {
@@ -56,8 +62,24 @@ describe("ToolService.execute", () => {
     });
   });
 
-  it("rejects a non-mcp tool", async () => {
-    const { service } = setup({ ...greet, source: ToolSource.NATIVE, mcpServerId: null });
+  it("runs a native tool in process", async () => {
+    const { service, callTool, runNative } = setup({ ...greet, source: ToolSource.NATIVE, mcpServerId: null });
+    await expect(service.execute("tool-1", { name: "ana" })).resolves.toEqual({ content: "found", isError: false });
+    expect(runNative).toHaveBeenCalledWith("greet", { name: "ana" });
+    expect(callTool).not.toHaveBeenCalled();
+  });
+
+  it("returns an error result when a native tool fails", async () => {
+    const native = { ...greet, source: ToolSource.NATIVE, mcpServerId: null };
+    const { service } = setup(native, undefined, rejects(new Error("knowledge is not configured")));
+    await expect(service.execute("tool-1", { name: "ana" })).resolves.toEqual({
+      content: "knowledge is not configured",
+      isError: true,
+    });
+  });
+
+  it("rejects a tool of unknown source", async () => {
+    const { service } = setup({ ...greet, source: "other" as ToolSource });
     await expect(service.execute("tool-1", {})).rejects.toBeInstanceOf(BadRequestException);
   });
 });

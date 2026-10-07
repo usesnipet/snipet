@@ -1,6 +1,6 @@
 import { HttpException, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { AgentRunStatus } from "@snipet/shared";
+import { AgentRunStatus, ToolSource } from "@snipet/shared";
 import { In, Repository } from "typeorm";
 
 import { toHttpException } from "../../common/filter/llm-error.filter.js";
@@ -118,20 +118,19 @@ export class AgentRunner {
     }
   }
 
-  // The tools of the agent's MCP servers that pass the grant's allow/deny.
-  // Names are made unique and provider-safe; toolIds maps them back.
+  // Native tools, plus the tools of the agent's MCP servers that pass the
+  // grant's allow/deny. Names are made unique and provider-safe; toolIds maps
+  // them back.
   private async resolveTools(agent: Agent): Promise<{ tools?: LlmTool[]; toolIds: Map<string, string> }> {
     const toolIds = new Map<string, string>();
-    if (agent.mcpServers.length === 0) return { toolIds };
-
     const grants = new Map(agent.mcpServers.map((g) => [g.mcpServerId, g]));
     const available = await this.tools.find({
-      where: { mcpServerId: In([...grants.keys()]) },
+      where: [{ source: ToolSource.NATIVE }, ...(grants.size ? [{ mcpServerId: In([...grants.keys()]) }] : [])],
       order: { name: "ASC" },
     });
     const tools: LlmTool[] = [];
     for (const tool of available) {
-      if (!isGranted(tool.name, grants.get(tool.mcpServerId!)!)) continue;
+      if (tool.mcpServerId && !isGranted(tool.name, grants.get(tool.mcpServerId)!)) continue;
       const base = tool.name.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60);
       let name = base;
       for (let n = 2; toolIds.has(name); n++) name = `${base}_${n}`;
