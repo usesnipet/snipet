@@ -145,11 +145,11 @@ button {
   max-width: 85%;
   padding: calc(8px * var(--sw-scale)) calc(12px * var(--sw-scale));
   border-radius: calc(var(--sw-radius) / 2);
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .sw-user {
+  white-space: pre-wrap;
   align-self: flex-end;
   background: var(--sw-accent);
   color: var(--sw-accent-text);
@@ -158,6 +158,63 @@ button {
 .sw-assistant {
   align-self: flex-start;
   background: var(--sw-input);
+  border: 1px solid var(--sw-border);
+}
+
+/* Markdown in assistant replies; the reset above zeroes every margin. */
+
+.sw-assistant > * + * {
+  margin-top: calc(8px * var(--sw-scale));
+}
+
+.sw-assistant :is(ul, ol) {
+  padding-left: calc(20px * var(--sw-scale));
+}
+
+.sw-assistant :is(h1, h2, h3, h4, h5, h6) {
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.sw-assistant a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.sw-assistant code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: var(--sw-border);
+}
+
+.sw-assistant pre {
+  padding: calc(8px * var(--sw-scale));
+  border-radius: calc(var(--sw-radius) / 3);
+  background: var(--sw-border);
+  overflow-x: auto;
+}
+
+.sw-assistant pre code {
+  padding: 0;
+  background: none;
+}
+
+.sw-assistant blockquote {
+  padding-left: calc(8px * var(--sw-scale));
+  border-left: 3px solid var(--sw-border);
+  color: var(--sw-muted);
+}
+
+.sw-assistant table {
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+}
+
+.sw-assistant :is(th, td) {
+  padding: calc(4px * var(--sw-scale)) calc(8px * var(--sw-scale));
   border: 1px solid var(--sw-border);
 }
 

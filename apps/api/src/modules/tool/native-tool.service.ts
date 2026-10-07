@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { ToolSource } from "@snipet/shared";
 import { In, Not, Repository } from "typeorm";
 
-import { KnowledgeItemService } from "../knowledge/knowledge-item.service.js";
+import { KnowledgeService } from "../knowledge/knowledge.service.js";
 import { knowledgeEnabled } from "../knowledge/utils.js";
 
 import { Tool } from "./tool.entity.js";
@@ -25,7 +25,7 @@ export class NativeToolService implements OnApplicationBootstrap {
 
   constructor(
     @InjectRepository(Tool) private readonly repo: Repository<Tool>,
-    knowledge: KnowledgeItemService,
+    knowledge: KnowledgeService,
   ) {
     if (knowledgeEnabled()) this.add(searchKnowledge(knowledge));
   }
@@ -64,7 +64,7 @@ export class NativeToolService implements OnApplicationBootstrap {
   }
 }
 
-const searchKnowledge = (knowledge: KnowledgeItemService): NativeTool => ({
+const searchKnowledge = (knowledge: KnowledgeService): NativeTool => ({
   name: "search_knowledge",
   description:
     "Searches the knowledge base and returns the most relevant excerpts, each with its source document. " +

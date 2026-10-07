@@ -2,22 +2,22 @@ import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from "@n
 import { ZodPipe } from "@snipet/server-common";
 import { knowledgeSearchParamsSchema, Role } from "@snipet/shared";
 
+import { Private, Public, UserAuth } from "../../common/decorators/auth.decorator.js";
+
 import { KnowledgeSyncService } from "./indexing/knowledge-sync.service.js";
-import { KnowledgeItemService } from "./knowledge-item.service.js";
 import { findKnowledgeItemsSchema } from "./knowledge.dto.js";
+import { KnowledgeService } from "./knowledge.service.js";
 
 import type { FilterQuery } from "@snipet/server-common";
 
 import type { KnowledgeItem } from "./knowledge-item.entity.js";
 import type { KnowledgeSearchParams } from "@snipet/shared";
-import { Private, Public, UserAuth } from "../../common/decorators/auth.decorator.js";
-
 // Read-only: items come from the source sync.
 @Private(UserAuth())
 @Controller()
 export class KnowledgeController {
   constructor(
-    private readonly items: KnowledgeItemService,
+    private readonly items: KnowledgeService,
     private readonly sync: KnowledgeSyncService,
   ) {}
 

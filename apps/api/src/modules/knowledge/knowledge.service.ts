@@ -10,7 +10,7 @@ import { KnowledgeItem } from "./knowledge-item.entity.js";
 import { knowledgeEnabled } from "./utils.js";
 
 @Injectable()
-export class KnowledgeItemService extends CrudService<KnowledgeItem> {
+export class KnowledgeService extends CrudService<KnowledgeItem> {
   constructor(
     @InjectRepository(KnowledgeItem) repo: Repository<KnowledgeItem>,
     private readonly embedding: EmbeddingService,

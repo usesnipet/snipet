@@ -8,13 +8,13 @@ import { StorageModule } from "../../infra/storage/storage.module.js";
 import { KnowledgeIndexerService } from "./indexing/knowledge-indexer.service.js";
 import { KnowledgeSyncService } from "./indexing/knowledge-sync.service.js";
 import { KnowledgeItem } from "./knowledge-item.entity.js";
-import { KnowledgeItemService } from "./knowledge-item.service.js";
 import { KnowledgeController } from "./knowledge.controller.js";
+import { KnowledgeService } from "./knowledge.service.js";
 
 @Module({
   imports: [TypeOrmModule.forFeature([KnowledgeItem]), EmbeddingModule, PgvectorModule, StorageModule],
   controllers: [KnowledgeController],
-  providers: [KnowledgeItemService, KnowledgeSyncService, KnowledgeIndexerService],
-  exports: [KnowledgeItemService],
+  providers: [KnowledgeService, KnowledgeSyncService, KnowledgeIndexerService],
+  exports: [KnowledgeService],
 })
 export class KnowledgeModule {}

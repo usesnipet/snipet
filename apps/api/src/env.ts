@@ -60,7 +60,7 @@ const envSchema = z.object({
   KNOWLEDGE_INDEX_CONCURRENCY: z.coerce.number().int().min(1).default(2),
   KNOWLEDGE_INDEX_ERRORS: z.stringbool().default(false),
   KNOWLEDGE_INDEX_RESET: z.stringbool().default(false),
-  CHUNK_MAX_CHARACTERS: z.coerce.number().int().positive().default(1000),
+  CHUNK_MAX_CHARACTERS: z.coerce.number().int().positive().default(2000),
   CHUNK_OVERLAP: z.coerce.number().int().min(0).default(200),
 
   // Postgres holding the chunks and their embeddings.

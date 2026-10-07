@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AgentModule } from "../agent/agent.module.js";
+import { KnowledgeModule } from "../knowledge/knowledge.module.js";
 import { LlmConnectionModule } from "../llm-connection/llm-connection.module.js";
 import { Tool } from "../tool/tool.entity.js";
 import { ToolModule } from "../tool/tool.module.js";
@@ -19,6 +20,7 @@ import { AgentSessionController } from "./agent-session.controller.js";
     AgentModule,
     LlmConnectionModule,
     ToolModule,
+    KnowledgeModule,
   ],
   controllers: [AgentRunController, AgentSessionController],
   providers: [AgentRunService, AgentRunner, AgentRunEvents],

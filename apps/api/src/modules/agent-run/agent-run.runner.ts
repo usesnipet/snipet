@@ -6,6 +6,7 @@ import { In, Repository } from "typeorm";
 import { toHttpException } from "../../common/filter/llm-error.filter.js";
 import { FailoverError, LlmError } from "../../infra/llm/errors.js";
 import { Agent } from "../agent/agent.entity.js";
+import { KnowledgeService } from "../knowledge/knowledge.service.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import { Tool } from "../tool/tool.entity.js";
 import { ToolService } from "../tool/tool.service.js";
@@ -13,7 +14,7 @@ import { ToolService } from "../tool/tool.service.js";
 import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 
-import type { LlmMessage, LlmToolCallPart, LlmTool, ToolResult } from "@snipet/shared";
+import type { LlmMessage, LlmToolCallPart, LlmTool, ToolResult, KnowledgeSearchResult } from "@snipet/shared";
 
 // The agent loop: call the models, run the tools they ask for, feed the
 // results back, until a reply without tool calls or maxTurns LLM calls.
@@ -25,6 +26,7 @@ export class AgentRunner {
     @InjectRepository(AgentRun) private readonly runs: Repository<AgentRun>,
     @InjectRepository(AgentMessage) private readonly messages: Repository<AgentMessage>,
     @InjectRepository(Tool) private readonly tools: Repository<Tool>,
+    private readonly knowledge: KnowledgeService,
     private readonly llm: LlmConnectionService,
     private readonly toolService: ToolService,
     private readonly events: AgentRunEvents,
@@ -40,9 +42,6 @@ export class AgentRunner {
     let turns = 0;
 
     try {
-      // Only the most recent messages, starting at a user message so the window
-      // never opens on a tool result whose call was cut off. The run's own user
-      // message is the newest, so a user message is always found.
       const stored = await this.messages.find({
         where: { sessionId: run.sessionId },
         order: { id: "DESC" },
@@ -54,6 +53,16 @@ export class AgentRunner {
         .map(({ role, parts }) => ({ role, parts }));
       const system: LlmMessage[] = [{ role: "system", parts: [{ type: "text", text: `Your name is ${agent.name}` }] }];
       if (agent.systemPrompt) system.push({ role: "system", parts: [{ type: "text", text: agent.systemPrompt }] });
+      const lastUserMessage = history.findLast((m) => m.role === "user");
+      const content = lastUserMessage?.parts.map((p) => (p.type === "text" ? p.text : "")).join("\n");
+      if (content) {
+        const knowledge = await this.searchKnowledge(content);
+        system.push({
+          role: "system",
+          parts: [{ type: "text", text: `Knowledge search results: ${knowledge.map((k) => k.content).join("\n")}` }],
+        });
+      }
+
       const { tools, toolIds } = await this.resolveTools(agent);
       const targets = agent.llms.map((llm) => ({
         model: llm.model,
@@ -148,6 +157,10 @@ export class AgentRunner {
       tools.push({ name, description: tool.description, parameters: tool.inputSchema });
     }
     return { tools: tools.length ? tools : undefined, toolIds };
+  }
+
+  private async searchKnowledge(query: string, limit: number = 10): Promise<KnowledgeSearchResult[]> {
+    return this.knowledge.search(query, limit);
   }
 }
 

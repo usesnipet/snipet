@@ -112,6 +112,8 @@ export class KnowledgeIndexerService implements OnModuleDestroy {
       const doc = await extract(item.name, bytes);
       kind = kindFromMime(doc.mimeType ?? "");
       const chunks = doc.chunks ?? [];
+      console.log("chunks", chunks.length);
+
       const vectors = await this.embedding.embed(chunks.map((c) => c.content));
       await this.pgvector.replaceChunks(
         item.id,
