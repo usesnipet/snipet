@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Logger, Param, Post, Query, Res, UseFilters } from "@nestjs/common";
-import { executeLlmSchema, listProviderModelsParamsSchema } from "@snipet/shared";
+import { executeLlmSchema, listProviderModelsParamsSchema, Role } from "@snipet/shared";
 
-import { CrudController, ZodPipe } from "@snipet/server-common";
+import { CrudController, maskSecrets, ZodPipe } from "@snipet/server-common";
 
 import {
   createLlmConnectionSchema,
@@ -13,17 +13,23 @@ import { LlmConnectionService } from "./llm-connection.service.js";
 import { FailoverError, LlmError } from "../../infra/llm/errors.js";
 import { LlmErrorFilter, toHttpException } from "../../common/filter/llm-error.filter.js";
 
-import type { ExecuteLlm, ListProviderModelsParams, LlmStreamEvent } from "@snipet/shared";
+import type { ExecuteLlm, ListProviderModelsParams, LlmConnectionOptions, LlmStreamEvent } from "@snipet/shared";
 import type { Response } from "express";
 import { ApiKeyAuth, Private, Public, UserAuth } from "../../common/decorators/auth.decorator.js";
 
-@Private(UserAuth(), ApiKeyAuth())
+// CRUD is admin only and never returns credentials: `auth` values come back
+// as placeholders. Running models is open to any user and API keys.
+@Private(UserAuth(Role.Admin))
 @UseFilters(LlmErrorFilter)
 @Controller("llm-connections")
 export class LlmConnectionController extends CrudController<LlmConnection>({
   create: createLlmConnectionSchema,
   update: updateLlmConnectionSchema,
   filter: findLlmConnectionsSchema,
+  serialize: (conn: LlmConnection) => {
+    const { auth } = conn.config as LlmConnectionOptions;
+    return auth ? { ...conn, config: { ...conn.config, auth: maskSecrets(auth) } } : conn;
+  },
 }) {
   private readonly logger = new Logger(LlmConnectionController.name);
 
@@ -37,6 +43,7 @@ export class LlmConnectionController extends CrudController<LlmConnection>({
     return this.service.listProviders();
   }
 
+  @Private(UserAuth(), ApiKeyAuth())
   @Get("providers/:key/models")
   listProviderModels(
     @Param("key") key: string,
@@ -45,6 +52,7 @@ export class LlmConnectionController extends CrudController<LlmConnection>({
     return this.service.listProviderModels(key, query.connectionId);
   }
 
+  @Private(UserAuth(), ApiKeyAuth())
   @Post("execute")
   @HttpCode(200)
   execute(@Body(new ZodPipe(executeLlmSchema)) dto: ExecuteLlm) {
@@ -53,6 +61,7 @@ export class LlmConnectionController extends CrudController<LlmConnection>({
 
   // Server-Sent Events. Errors before the first event (bad input, unknown
   // model...) are plain HTTP errors; after that they arrive as an "error" event.
+  @Private(UserAuth(), ApiKeyAuth())
   @Post("execute/stream")
   async executeStream(@Body(new ZodPipe(executeLlmSchema)) dto: ExecuteLlm, @Res() res: Response) {
     const abort = new AbortController();

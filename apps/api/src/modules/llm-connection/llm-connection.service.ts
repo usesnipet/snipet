@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeepPartial, Not, QueryDeepPartialEntity, Repository } from "typeorm";
 
-import { CrudService } from "@snipet/server-common";
+import { CrudService, restoreSecrets } from "@snipet/server-common";
 
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmError } from "../../infra/llm/errors.js";
@@ -43,9 +43,16 @@ export class LlmConnectionService extends CrudService<LlmConnection> {
     });
   }
 
+  // `auth` placeholders keep the stored values, but only for the same
+  // provider: another provider must not receive this one's credentials.
   override async updateById(id: string, dto: QueryDeepPartialEntity<LlmConnection>): Promise<void> {
     const existing = await this.findById(id);
     const provider = (dto.provider as string | undefined) ?? existing.provider;
+    const auth = (dto.config as LlmConnectionOptions | undefined)?.auth;
+    if (auth) {
+      const stored = provider === existing.provider ? (existing.config as LlmConnectionOptions).auth : undefined;
+      dto = { ...dto, config: { ...(dto.config as LlmConnectionOptions), auth: restoreSecrets(auth, stored) } };
+    }
     if (dto.provider !== undefined || dto.config !== undefined) {
       await this.registry.connect(provider, (dto.config ?? existing.config) as LlmConnectionOptions);
     }

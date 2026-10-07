@@ -1,7 +1,7 @@
 import { Controller, Get, Param } from "@nestjs/common";
 import { Role } from "@snipet/shared";
 
-import { CrudController } from "@snipet/server-common";
+import { CrudController, maskSecrets } from "@snipet/server-common";
 
 import { createMcpServerSchema, findMcpServersSchema, updateMcpServerSchema } from "./mcp-server.dto.js";
 import { McpServer } from "./mcp-server.entity.js";
@@ -9,13 +9,18 @@ import { McpServerService } from "./mcp-server.service.js";
 import { Private, UserAuth } from "../../common/decorators/auth.decorator.js";
 
 // Admin only: MCP servers run arbitrary commands and URLs on the host and
-// their config holds credentials.
+// their config holds credentials; http `headers` values come back as
+// placeholders.
 @Private(UserAuth(Role.Admin))
 @Controller("mcp-servers")
 export class McpServerController extends CrudController<McpServer>({
   create: createMcpServerSchema,
   update: updateMcpServerSchema,
   filter: findMcpServersSchema,
+  serialize: (server: McpServer) =>
+    "headers" in server.config && server.config.headers
+      ? { ...server, config: { ...server.config, headers: maskSecrets(server.config.headers) } }
+      : server,
 }) {
   constructor(override readonly service: McpServerService) {
     super(service);

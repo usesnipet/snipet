@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { mcpConfigSchemas } from "@snipet/shared";
 import { Repository } from "typeorm";
 
-import { CrudService } from "@snipet/server-common";
+import { CrudService, restoreSecrets } from "@snipet/server-common";
 
 import { McpServer } from "./mcp-server.entity.js";
 import { McpServerSyncService } from "./sync/mcp-server-sync.service.js";
@@ -28,9 +28,15 @@ export class McpServerService extends CrudService<McpServer> {
   }
 
   // config is checked against the resulting transport, stored or new.
+  // `headers` placeholders keep the stored values.
   override async updateById(id: string, dto: UpdateMcpServer): Promise<void> {
     if (dto.transport !== undefined || dto.config !== undefined) {
       const existing = await this.findById(id);
+      const headers = dto.config?.headers as Record<string, unknown> | undefined;
+      if (headers) {
+        const stored = "headers" in existing.config ? existing.config.headers : undefined;
+        dto = { ...dto, config: { ...dto.config, headers: restoreSecrets(headers, stored) } };
+      }
       validateConfig(dto.transport ?? existing.transport, dto.config ?? existing.config);
     }
     await super.updateById(id, dto);

@@ -13,6 +13,8 @@ interface CrudSchemas {
   create: z.ZodType;
   update: z.ZodType;
   filter?: z.ZodType;
+  // Shapes each entity a route returns, e.g. to mask secrets.
+  serialize?: (entity: never) => unknown;
 }
 
 // Returns a base class with the 5 CRUD routes. Usage:
@@ -21,22 +23,25 @@ interface CrudSchemas {
 //     constructor(service: WidgetService) { super(service); }
 //   }
 export function CrudController<T extends BaseEntity>(schemas: CrudSchemas) {
+  const serialize = (schemas.serialize ?? ((entity: T) => entity)) as (entity: T) => unknown;
+
   abstract class Base {
     constructor(readonly service: CrudService<T>) {}
 
     @Get()
-    filter(@Query(new ZodPipe(schemas.filter ?? paginationParamsSchema)) query: FilterQuery<T>) {
-      return this.service.filter(query);
+    async filter(@Query(new ZodPipe(schemas.filter ?? paginationParamsSchema)) query: FilterQuery<T>) {
+      const page = await this.service.filter(query);
+      return { ...page, data: page.data.map(serialize) };
     }
 
     @Get(":id")
-    findById(@Param("id", ParseUUIDPipe) id: string) {
-      return this.service.findById(id);
+    async findById(@Param("id", ParseUUIDPipe) id: string) {
+      return serialize(await this.service.findById(id));
     }
 
     @Post()
-    create(@Body(new ZodPipe(schemas.create)) dto: object) {
-      return this.service.create(dto as DeepPartial<T>);
+    async create(@Body(new ZodPipe(schemas.create)) dto: object) {
+      return serialize(await this.service.create(dto as DeepPartial<T>));
     }
 
     @Put(":id")

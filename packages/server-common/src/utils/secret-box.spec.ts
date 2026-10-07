@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 
-import { isSealed, open, seal } from "./secret-box.js";
+import { isSealed, maskSecrets, open, restoreSecrets, seal, SECRET_PLACEHOLDER } from "./secret-box.js";
 
 describe("secret-box", () => {
   const key = randomBytes(32);
@@ -19,5 +19,16 @@ describe("secret-box", () => {
     const parts = sealed.split(":");
     parts[3] = Buffer.from("other").toString("base64url");
     expect(() => open(parts.join(":"), key)).toThrow();
+  });
+
+  it("masks secrets and restores the untouched ones", () => {
+    const stored = { apiKey: "sk-123", org: "acme" };
+    const masked = maskSecrets(stored);
+    expect(masked).toEqual({ apiKey: SECRET_PLACEHOLDER, org: SECRET_PLACEHOLDER });
+    expect(restoreSecrets({ ...masked, org: "other", extra: SECRET_PLACEHOLDER }, stored)).toEqual({
+      apiKey: "sk-123",
+      org: "other",
+    });
+    expect(restoreSecrets({ apiKey: SECRET_PLACEHOLDER }, null)).toEqual({});
   });
 });

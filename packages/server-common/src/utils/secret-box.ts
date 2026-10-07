@@ -23,3 +23,23 @@ export function open(sealed: string, key: Buffer): string {
 export function isSealed(value: unknown): value is string {
   return typeof value === "string" && value.startsWith(`${PREFIX}:`);
 }
+
+// Secrets are write-only over the API: responses carry this placeholder in
+// place of each value, and a request that sends it back keeps the stored one.
+export const SECRET_PLACEHOLDER = "__secret__";
+
+export function maskSecrets(secrets: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(Object.keys(secrets).map((key) => [key, SECRET_PLACEHOLDER]));
+}
+
+// Swaps placeholders in `incoming` for the `stored` values; a placeholder with
+// nothing stored under its key is dropped.
+export function restoreSecrets<T extends Record<string, unknown>>(
+  incoming: T,
+  stored: Record<string, unknown> | null | undefined,
+): T {
+  const entries = Object.entries(incoming)
+    .map(([key, value]) => [key, value === SECRET_PLACEHOLDER ? stored?.[key] : value])
+    .filter(([, value]) => value !== undefined);
+  return Object.fromEntries(entries) as T;
+}
