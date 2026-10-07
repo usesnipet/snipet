@@ -1,7 +1,7 @@
 import type { LlmConnection as LlmConnectionContract } from "@snipet/shared";
+import { BaseEntity, open, seal } from "@snipet/server-common";
 import { Column, Entity, Index } from "typeorm";
 
-import { BaseEntity, open, seal } from "@snipet/server-common";
 import { env } from "../../env.js";
 
 import type { ValueTransformer } from "typeorm";
@@ -16,7 +16,7 @@ const sealAuth: ValueTransformer = {
 };
 
 @Entity("llm_connections")
-// At most one default per provider; the service keeps it at exactly one.
+// At most one default per provider.
 @Index(["provider"], { unique: true, where: `"default"` })
 export class LlmConnection extends BaseEntity implements LlmConnectionContract {
   @Column({ length: 255 })
