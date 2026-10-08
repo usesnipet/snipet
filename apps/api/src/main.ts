@@ -2,7 +2,7 @@ import { Logger } from "@nestjs/common";
 import { HttpAdapterHost, NestFactory } from "@nestjs/core";
 import { DbErrorFilter } from "@snipet/server-common";
 import { existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
 import { AppModule } from "./app.module.js";
 import { env } from "./env.js";
@@ -10,10 +10,8 @@ import { env } from "./env.js";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
 
-// The built web app (apps/web/dist), same depth from src/ and dist/.
-const webDir = resolve(import.meta.dirname, "../../web/dist");
-
 async function bootstrap() {
+  const webDir = env.WEB_DIR;
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix("api");
   if (env.CORS_ORIGINS) app.enableCors({ origin: env.CORS_ORIGINS });
