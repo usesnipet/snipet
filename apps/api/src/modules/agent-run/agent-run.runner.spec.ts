@@ -7,6 +7,7 @@ import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner, isGranted } from "./agent-run.runner.js";
 
 import type { Agent } from "../agent/agent.entity.js";
+import type { KnowledgeService } from "../knowledge/knowledge.service.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import type { ToolService } from "../tool/tool.service.js";
 import type { AgentRun } from "./agent-run.entity.js";
@@ -41,6 +42,7 @@ function setup(replies: (LlmMessage | Error)[]) {
       return Promise.resolve({ ...m, id: nextId++ });
     }),
   };
+  const knowledge = { search: jest.fn<Fn>().mockResolvedValue([{ content: "kb hit" }]) };
   const runs = { update: jest.fn<Fn>(), findOneByOrFail: jest.fn<Fn>().mockResolvedValue(run) };
   const tools = {
     find: jest.fn<Fn>().mockResolvedValue([
@@ -64,6 +66,7 @@ function setup(replies: (LlmMessage | Error)[]) {
     runs as unknown as Repository<AgentRun>,
     messages as unknown as Repository<never>,
     tools as unknown as Repository<never>,
+    knowledge as unknown as KnowledgeService,
     llm as unknown as LlmConnectionService,
     { execute } as unknown as ToolService,
     new AgentRunEvents(),
@@ -86,7 +89,7 @@ describe("AgentRunner.run", () => {
     const [{ messages, tools }] = llm.stream.mock.calls[1] as unknown as [
       { messages: LlmMessage[]; tools: { name: string }[] },
     ];
-    expect(messages.map((m) => m.role)).toEqual(["system", "system", "user", "assistant", "tool"]);
+    expect(messages.map((m) => m.role)).toEqual(["system", "system", "system", "user", "assistant", "tool"]);
     expect(tools.map((t) => t.name)).toEqual(["read_file", "delete_knowledge"]); // delete_file is denied
   });
 
