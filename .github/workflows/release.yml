@@ -43,3 +43,23 @@ jobs:
       - run: gh release create "$GITHUB_REF_NAME" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
+
+  widget:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter=@snipet/widget
+      - run: pnpm --filter @snipet/widget version "${GITHUB_REF_NAME#v}" --no-git-tag-version
+      # pnpm pack rewrites workspace:* versions; trusted publishing needs npm >= 11.5.1.
+      - run: pnpm --filter @snipet/widget pack --pack-destination "$RUNNER_TEMP"
+      - run: npx -y npm@11 publish "$RUNNER_TEMP"/snipet-widget-*.tgz
