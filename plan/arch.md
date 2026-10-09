@@ -64,8 +64,8 @@ Is a abstract class that defines the interface for a health check driver.
 ## Properties
 - `key`: The key/name of the driver (e.g. `http-ping`, `tcp-ping` etc.).
 ## Methods
-- `validateOptions(options: unknown): Promise<void>`: Validates the options of the driver.
-- `checkHealth(options: unknown): Promise<HealthCheckResult>`: Checks the health of the driver.
+- `validateOptions(connectionId: string, options: unknown): Promise<void>`: Validates the options of the driver.
+- `checkHealth(connectionId: string, options: unknown): Promise<HealthCheckResult>`: Checks the health of the driver.
   - `options` is the options of the driver, from the plugin's `healthCheck` field. This options here are already parsed and validated.
   - return a `HealthCheckResult` object.
     - `isHealthy`: Whether the health check is successful.
@@ -113,11 +113,30 @@ Is a service that manages the plugin connections, registry and drivers.
 - `getPluginManifest(key: string): Promise<Plugin>`: Gets a plugin manifest by its key.
 - `validatePluginConnection(pluginConnection: PluginConnection): Promise<void>`: Validates the plugin connection against the plugin manifest.
   - get the plugin manifest from the plugin registry by the pluginKey.
-  - if not found, throw an error.
-  - validate the plugin connection against the plugin manifest.
+  - if not found, throw PluginNotFoundError.
+  - validate the plugin connection against the plugin manifest, throw PluginConnectionValidationFailedError if validation fails.
   - replace the template variables in the plugin manifest with the plugin connection's config.
-  - validate the options of the drivers against the plugin manifest.
-  - test the plugin connection by calling health check (if defined). If not successful, throw an error. If successful, return.
+  - validate the options of the drivers against the plugin manifest, throw PluginValidationError if validation fails.
+
+# PluginConnectionSyncService
+Is a service that syncs the plugin connection.
+## Properties
+- `pluginRegistry`: PluginRegistry
+- `driverRegistry`: DriverRegistry
+- `templateService`: TemplateService
+## Methods
+- `sync(connectionId: string): Promise<void>`: Syncs the plugin connection.
+  - get the plugin manifest from the plugin registry by the pluginKey.
+  - if not found, throw PluginNotFoundError.
+  - get the plugin connection by the id.
+  - if not found, throw PluginConnectionNotFoundError.
+  - replace the template variables in the plugin manifest with the plugin connection's config.
+  - validate the options of the drivers against the plugin manifest, throw PluginValidationError if validation fails.
+  - test the plugin connection by calling health check (if defined). If not successful, continue.
+  - try to sync the plugin connection.
+    - sync the plugin actions.
+  - if error on syncing the plugin connection, set the `lastSyncedError` and `lastSyncedAt` to the current time.
+  - if successful, set the `lastSyncedAt` to the current time.
 
 # TemplateService
 Is a service that replaces the template variables in the template string.

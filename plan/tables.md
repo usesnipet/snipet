@@ -9,7 +9,7 @@ An authenticated instance of a plugin (see [plugin.md](plugin.md)).
 | `description` | text | default `''` |
 | `pluginKey` | varchar(255) | Plugin manifest `key`. Indexed. |
 | `config` | text | Connection field values as JSON, fully sealed with `ENCRYPTION_KEY` (`seal`/`open` from `@snipet/server-common`). |
-| `enabled` | boolean | default `false` |
+| `enabled` | boolean | default `true` |
 | `lastSyncedAt` | timestamptz | nullable. Last successful action sync (e.g. MCP `listTools`). |
 | `lastSyncedError` | varchar(255) | nullable |
 | `createdAt` / `updatedAt` | timestamptz | `BaseEntity` |
@@ -21,6 +21,7 @@ An authenticated instance of a plugin (see [plugin.md](plugin.md)).
 
 ## agent_plugin_connections
 A list of plugin connections that are used by an agent.
+Unique constraint on `(agentId, pluginConnectionId)`.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -31,6 +32,8 @@ A list of plugin connections that are used by an agent.
 | `deny` | text[] | Array of strings. Denied actions. |
 | `createdAt` / `updatedAt` | timestamptz | `BaseEntity` |
 
+Allowed and denied actions are arrays of strings, representing the action names. Default is to allow all actions.
+
 ## plugin_actions
 A list of actions that are available for a plugin connection.
 
@@ -38,7 +41,7 @@ A list of actions that are available for a plugin connection.
 |---|---|---|
 | `id` | uuid | PK (`BaseEntity`) |
 | `pluginConnectionId` | uuid | FK to `plugin_connections.id`. |
-| `key` | varchar(255) | Action key. Indexed. Unique within the plugin connection. |
+| `name` | varchar(255) | Action name. Indexed. |
 | `description` | text | Action description. |
 | `inputSchema` | jsonb | Action input schema. JSON-schema like. |
 | `createdAt` / `updatedAt` | timestamptz | `BaseEntity` |
