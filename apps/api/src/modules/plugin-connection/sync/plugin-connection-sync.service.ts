@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
@@ -65,5 +66,13 @@ export class PluginConnectionSyncService {
       }
       if (stale.size) await actionsRepo.delete([...stale.values()]);
     });
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async syncAll(): Promise<void> {
+    const connections = await this.connections.find();
+    for (const conn of connections) {
+      await this.sync(conn.id);
+    }
   }
 }
