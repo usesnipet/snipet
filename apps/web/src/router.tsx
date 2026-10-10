@@ -24,6 +24,8 @@ const LlmPlaygroundPage = lazy(() =>
   import("./routes/llm-playground/page").then((m) => ({ default: m.LlmPlaygroundPage })));
 const McpServersPage = lazy(() =>
   import("./routes/mcp-servers/page").then((m) => ({ default: m.McpServersPage })));
+const PluginsPage = lazy(() =>
+  import("./routes/plugins/page").then((m) => ({ default: m.PluginsPage })));
 const AppsPage = lazy(() =>
   import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
 const AppTokenPlaygroundPage = lazy(() =>
@@ -64,6 +66,7 @@ export const Router = () => {
               <Route element={<RequireRole role={Role.Admin} />}>
                 <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
                 <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
+                <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
                 <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
                 <Route path={toReactRouterPath(ROUTES.appTokenPlayground)} element={<AppTokenPlaygroundPage />} />
                 <Route path={toReactRouterPath(ROUTES.tools)} element={<ToolsPage />} />

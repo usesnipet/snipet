@@ -1,4 +1,5 @@
 import { DeleteDialog } from "@/components/confirm-dialog";
+import { SyncStatus } from "@/components/sync-status";
 import { Icon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,11 +7,8 @@ import { Card } from "@/components/ui/card";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDialog } from "@/lib/dialog";
-import { cn } from "@/lib/utils";
 import { EllipsisVertical, Pencil, Trash, Wrench } from "lucide-react";
-import moment from "moment";
 import { McpTransport } from "@snipet/shared";
 
 import { syncState, useDeleteMcpServer } from "@snipet/client";
@@ -99,37 +97,5 @@ export function InstalledMcpServerCard({ server, tools, registryItem }: Props) {
         </Button>
       </div>
     </Card>
-  );
-}
-
-function SyncStatus({ sync }: { sync: ReturnType<typeof syncState> }) {
-  const dot = (className: string) => <span className={cn("size-1.5 shrink-0 rounded-full", className)} />;
-
-  if (sync.kind === "error") {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="text-destructive flex min-w-0 items-center gap-1.5">
-            {dot("bg-destructive")}
-            <span className="truncate">Sync failed: {sync.message}</span>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-sm">{sync.message}</TooltipContent>
-      </Tooltip>
-    );
-  }
-  if (sync.kind === "pending") {
-    return (
-      <span className="text-muted-foreground flex items-center gap-1.5">
-        {dot("bg-amber-500 animate-pulse")}
-        Waiting for first sync
-      </span>
-    );
-  }
-  return (
-    <span className="text-muted-foreground flex items-center gap-1.5" title={sync.at.toLocaleString()}>
-      {dot("bg-emerald-500")}
-      Synced {moment(sync.at).fromNow()}
-    </span>
   );
 }

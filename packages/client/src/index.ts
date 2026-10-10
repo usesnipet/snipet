@@ -17,6 +17,8 @@ export * from "./llm-connection/service";
 export * from "./mcp-server/hooks";
 export * from "./mcp-server/service";
 export * from "./mcp-server/sync-state";
+export * from "./plugin-connection/hooks";
+export * from "./plugin-connection/service";
 export * from "./system/hooks";
 export * from "./system/service";
 export * from "./tool/hooks";

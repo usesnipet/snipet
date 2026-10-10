@@ -1,21 +1,27 @@
-import type { LlmConnection, LlmProviderInfo } from "@snipet/shared";
+/** What the backend offers to connect to: an LLM provider, a plugin, … */
+export type RegistryEntry = {
+  key: string;
+  name: string;
+  description: string;
+  icon?: string;
+  tags?: string[];
+};
 
 /**
- * A registry entry (the provider driver available on the backend) joined with
- * the configured {@link LlmConnection} instances that point at it. One registry
- * entry can back many llm connections.
+ * A registry entry joined with the configured connections that point at it.
+ * One registry entry can back many connections.
  */
-export type RegistryView = {
+export type RegistryView<C = unknown> = {
   key: string;
   name: string;
   description: string;
   icon?: string;
   tags: string[];
-  /** Configured llm connection instances for this registry key. */
-  instances: LlmConnection[];
-  /** How many llm connections reference this registry entry. */
+  /** Configured connections for this registry key. */
+  instances: C[];
+  /** How many connections reference this registry entry. */
   connectionCount: number;
-  /** True when at least one llm connection is configured for this entry. */
+  /** True when at least one connection is configured for this entry. */
   connected: boolean;
 };
 
@@ -34,15 +40,15 @@ export const REGISTRY_SORTS: { value: RegistrySort; label: string }[] = [
   { value: "connections-desc", label: "Most connections" },
 ];
 
-export function buildRegistryViews(
-  registry: LlmProviderInfo[],
-  connections: LlmConnection[],
-): RegistryView[] {
-  const byKey = new Map<string, LlmConnection[]>();
+export function buildRegistryViews<C>(
+  registry: RegistryEntry[],
+  connections: C[],
+  keyOf: (connection: C) => string,
+): RegistryView<C>[] {
+  const byKey = new Map<string, C[]>();
   for (const connection of connections) {
-    const list = byKey.get(connection.provider) ?? [];
-    list.push(connection);
-    byKey.set(connection.provider, list);
+    const key = keyOf(connection);
+    byKey.set(key, [...(byKey.get(key) ?? []), connection]);
   }
 
   return registry.map((entry) => {
@@ -60,11 +66,11 @@ export function buildRegistryViews(
   });
 }
 
-export function filterRegistryViews(
-  views: RegistryView[],
+export function filterRegistryViews<V extends RegistryView>(
+  views: V[],
   filter: RegistryFilter,
   search: string,
-): RegistryView[] {
+): V[] {
   const query = search.trim().toLowerCase();
 
   return views.filter((view) => {
@@ -79,10 +85,10 @@ export function filterRegistryViews(
   });
 }
 
-export function sortRegistryViews(
-  views: RegistryView[],
+export function sortRegistryViews<V extends RegistryView>(
+  views: V[],
   sort: RegistrySort,
-): RegistryView[] {
+): V[] {
   const byName = (a: RegistryView, b: RegistryView) => a.name.localeCompare(b.name);
   const sorted = [...views];
 

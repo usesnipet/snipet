@@ -1,18 +1,16 @@
-import { CatalogList } from "@/components/catalog";
 import { LoadingFallback } from "@/components/loading-fallback";
 import { InputSearch } from "@/components/ui/input-search";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 
-import { useListLlmConnections, useLlmProviders } from "@snipet/client";
+import { CatalogList } from "./catalog-list";
 import {
   buildRegistryViews, filterRegistryViews, REGISTRY_SORTS, registryStats, sortRegistryViews
-} from "../lib/registry-view";
+} from "./registry-view";
 
-import { LlmConnectionCatalogCard } from "./llm-connection-catalog-card";
-
-import type { RegistryFilter, RegistrySort } from "../lib/registry-view";
+import type { ReactNode } from "react";
+import type { RegistryEntry, RegistryFilter, RegistrySort, RegistryView } from "./registry-view";
 
 type StatToggleProps = {
   active: boolean;
@@ -47,21 +45,30 @@ function StatToggle({ active, count, label, onClick }: StatToggleProps) {
   );
 }
 
-export function LlmConnectionCatalog() {
-  const registryQuery = useLlmProviders();
-  const connectionsQuery = useListLlmConnections();
+type RegistryCatalogProps<C> = {
+  registry: RegistryEntry[];
+  connections: C[];
+  /** Registry key a connection points at. */
+  keyOf: (connection: C) => string;
+  isLoading: boolean;
+  isError: boolean;
+  /** Plural, lowercase name of what the registry lists, e.g. "providers". */
+  noun: string;
+  renderItem: (view: RegistryView<C>) => ReactNode;
+};
 
+// Searchable, sortable grid of registry entries, filterable to the ones that
+// already have connections.
+export function RegistryCatalog<C>({
+  registry, connections, keyOf, isLoading, isError, noun, renderItem,
+}: RegistryCatalogProps<C>) {
   const [filter, setFilter] = useState<RegistryFilter>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<RegistrySort>("connected-first");
 
   const views = useMemo(
-    () =>
-      buildRegistryViews(
-        registryQuery.data ?? [],
-        connectionsQuery.data?.data ?? [],
-      ),
-    [registryQuery.data, connectionsQuery.data],
+    () => buildRegistryViews(registry, connections, keyOf),
+    [registry, connections, keyOf],
   );
 
   const stats = useMemo(() => registryStats(views), [views]);
@@ -71,16 +78,13 @@ export function LlmConnectionCatalog() {
     [views, filter, search, sort],
   );
 
-  const isLoading = registryQuery.isLoading || connectionsQuery.isLoading;
-  const isError = registryQuery.isError || connectionsQuery.isError;
-
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5">
       <div className="flex shrink-0 flex-wrap gap-2">
         <StatToggle
           active={filter === "all"}
           count={stats.available}
-          label="Available providers"
+          label={`Available ${noun}`}
           onClick={() => setFilter("all")}
         />
         <StatToggle
@@ -96,7 +100,7 @@ export function LlmConnectionCatalog() {
           <InputSearch
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search providers…"
+            placeholder={`Search ${noun}…`}
             className="w-full"
           />
         </div>
@@ -121,7 +125,7 @@ export function LlmConnectionCatalog() {
         {isLoading ? (
           <LoadingFallback className="min-h-40" />
         ) : isError ? (
-          <p className="text-destructive text-sm">Failed to load providers.</p>
+          <p className="text-destructive text-sm">Failed to load {noun}.</p>
         ) : (
           <CatalogList
             items={visible.map((view) => ({ id: view.key, view }))}
@@ -129,10 +133,10 @@ export function LlmConnectionCatalog() {
             containerClassName="h-full"
             emptyMessage={
               search || filter === "connected"
-                ? "No providers match your filters."
-                : "No providers available."
+                ? `No ${noun} match your filters.`
+                : `No ${noun} available.`
             }
-            renderItem={({ view }) => <LlmConnectionCatalogCard view={view} />}
+            renderItem={({ view }) => renderItem(view)}
           />
         )}
       </div>

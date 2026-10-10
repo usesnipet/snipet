@@ -11,7 +11,7 @@ import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
 import { hasRole, Role } from "@snipet/shared";
 import {
-  AppWindow, Blocks, BookText, Home, Key, LogOut, MessageSquare, Server, Settings, Users, Waypoints, Wrench
+  AppWindow, Blocks, BookText, Home, Key, LogOut, MessageSquare, Plug, Server, Settings, Users, Waypoints, Wrench
 } from "lucide-react";
 
 import { Version } from "./version";
@@ -43,6 +43,7 @@ const navItems: NavEntry[] = [
         ],
       },
       { title: "MCP Servers", href: ROUTES.mcpServers, icon: Blocks, visible: isAdmin },
+      { title: "Plugins", href: ROUTES.plugins, icon: Plug, visible: isAdmin },
       {
         title: "Tools",
         icon: Wrench,

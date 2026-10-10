@@ -1,0 +1,30 @@
+{
+  "key": "github",
+  "name": "GitHub",
+  "description": "Manage repositories, issues and pull requests through GitHub's hosted MCP server",
+  "icon": "https://github.com/github.png",
+  "tags": ["git", "remote", "official"],
+  "auth": { "type": "none" },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "Authorization": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "Authorization",
+        "description": "A GitHub personal access token, prefixed with \"Bearer \" (e.g. Bearer ghp_…)."
+      }
+    },
+    "required": ["Authorization"]
+  },
+  "actions": {
+    "driver": "mcp",
+    "options": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "{{ connection.Authorization }}"
+      }
+    }
+  }
+}
