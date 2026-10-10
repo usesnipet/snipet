@@ -2,7 +2,6 @@ export * from "./agent.js";
 export * from "./agent-run.js";
 export * from "./api-key.js";
 export * from "./app.js";
-export * from "./app-token.js";
 export * from "./auth.js";
 export * from "./knowledge.js";
 export * from "./llm-connection.js";

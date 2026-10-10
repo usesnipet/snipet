@@ -26,7 +26,7 @@ Discord answer: a single `discord` plugin, a single Connection; agent A uses its
 | Connection | Authenticated plugin instance | `mcp-server` rows, `llm-connection` rows |
 | Tool | Any action exposed to an agent | `tool` table |
 | Knowledge base | Sources + index strategy + embedding model | `knowledge` module |
-| App | Third-party system calling the API (API key + app tokens) | `app`/`app-token` |
+| App | Third-party system calling the API (API key + app tokens) | `app` |
 | Channel | Agent + Connection + plugin trigger | — |
 | Agent | Prompt + model + tools + knowledge bases | `agent` |
 

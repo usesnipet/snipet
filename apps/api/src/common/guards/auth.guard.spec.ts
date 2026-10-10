@@ -1,13 +1,14 @@
-import { ForbiddenException, UnauthorizedException, type ExecutionContext } from "@nestjs/common";
+import { ExecutionContext, ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Role } from "@snipet/shared";
 
-import type { ApiKeyService } from "../../modules/api-key/api-key.service.js";
-import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "../../modules/app-token/app-token.service.js";
+import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "../../modules/app/app.service.js";
+import { ApiKeyAuth, AppTokenAuth, Private, Public, UserAuth } from "../decorators/auth.decorator.js";
 
 import { AuthGuard } from "./auth.guard.js";
-import { ApiKeyAuth, AppTokenAuth, Private, Public, UserAuth } from "../decorators/auth.decorator.js";
+
+import type { ApiKeyService } from "../../modules/api-key/api-key.service.js";
 
 const jwt = new JwtService({ secret: "test" });
 const apiKeys = { verify: (key: string) => Promise.resolve({ id: key, appId: "app-1" }) } as unknown as ApiKeyService;

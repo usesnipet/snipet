@@ -7,7 +7,7 @@ export type WidgetConfig = {
   apiUrl: string;
   /** Agent the widget chats with. */
   agentId?: string;
-  /** End-user app token, from POST /app-tokens on the host's backend. */
+  /** End-user app token, from POST /apps/issue-token on the host's backend. */
   token?: string;
   /** Called when the token is rejected (e.g. expired); resolve a fresh one, or null to give up. */
   getToken?: () => Promise<string | null | undefined>;

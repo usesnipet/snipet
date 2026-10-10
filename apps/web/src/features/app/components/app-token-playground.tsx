@@ -1,6 +1,6 @@
-import { JsonViewer } from "@/components/json-viewer";
 import { FormInput } from "@/components/form/input";
 import { FormTextarea } from "@/components/form/textarea";
+import { JsonViewer } from "@/components/json-viewer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
@@ -8,14 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateAppToken } from "@snipet/client";
+import { useIssueAppToken } from "@snipet/client";
 import { Check, Copy, KeyRound } from "lucide-react";
 import moment from "moment";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import type { AppTokenResponse, CreateAppToken } from "@snipet/shared";
+import type { AppTokenResponse } from "@snipet/shared";
 
 const isJsonObject = (value: string) => {
   try {
@@ -41,14 +41,6 @@ const formSchema = z.object({
 type FormInput = z.input<typeof formSchema>;
 type FormOutput = z.output<typeof formSchema>;
 
-const toRequest = (values: FormOutput): CreateAppToken => ({
-  externalUserId: values.externalUserId,
-  name: values.name || undefined,
-  email: values.email || undefined,
-  metadata: values.metadata.trim() ? (JSON.parse(values.metadata) as Record<string, unknown>) : undefined,
-  expiresInSeconds: values.expiresInSeconds,
-});
-
 // decodeJwtPayload reads the token's claims for display only; it does not verify the signature.
 const decodeJwtPayload = (token: string): unknown => {
   const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
@@ -61,11 +53,20 @@ export function AppTokenPlayground() {
     resolver: zodResolver(formSchema),
     defaultValues: { apiKey: "", externalUserId: "", name: "", email: "", metadata: "", expiresInSeconds: 3600 },
   });
-  const { mutateAsync, isPending } = useCreateAppToken();
+  const { mutateAsync, isPending } = useIssueAppToken();
   const [result, setResult] = useState<AppTokenResponse | null>(null);
 
   const onSubmit = form.handleSubmit(async (values) => {
-    setResult(await mutateAsync({ apiKey: values.apiKey, data: toRequest(values) }));
+    setResult(await mutateAsync({
+      apiKey: values.apiKey,
+      data: {
+        externalUserId: values.externalUserId,
+        name: values.name,
+        email: values.email,
+        metadata: values.metadata.trim() ? (JSON.parse(values.metadata) as Record<string, unknown>) : undefined,
+        expiresInSeconds: values.expiresInSeconds,
+      }
+    }));
   });
 
   return (

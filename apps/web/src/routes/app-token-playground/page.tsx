@@ -1,5 +1,5 @@
 import { Page } from "@/components/page";
-import { AppTokenPlayground } from "@/features/app-token/components/app-token-playground";
+import { AppTokenPlayground } from "@/features/app/components/app-token-playground";
 
 export const AppTokenPlaygroundPage = () => (
   <Page
