@@ -72,6 +72,7 @@ const columns: DataTableColumn<Agent>[] = [
   },
   { id: "models", header: "Models", cell: (agent) => agent.llms.length },
   { id: "servers", header: "MCP servers", cell: (agent) => agent.mcpServers.length },
+  { id: "plugins", header: "Plugins", cell: (agent) => agent.pluginConnections.length },
   {
     id: "status",
     header: "Status",

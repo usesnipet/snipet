@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import { useCreateAgent, useUpdateAgent } from "@snipet/client";
 import { agentFormSchema } from "../schemas";
 
-import { AgentMcpServersField } from "./agent-mcp-servers-field";
+import { AgentMcpServersField, AgentPluginConnectionsField } from "./agent-grants-field";
 
 import type { AgentForm, AgentFormInput } from "../schemas";
 import type { Agent } from "@snipet/shared";
@@ -40,6 +40,9 @@ const toForm = (agent?: Agent): AgentFormInput => ({
     extraOptions: llm.extraOptions ?? undefined,
   })) ?? [{ model: "" }],
   mcpServers: (agent?.mcpServers ?? []).map(({ mcpServerId, allow, deny }) => ({ mcpServerId, allow, deny })),
+  pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, allow, deny }) => ({
+    pluginConnectionId, allow, deny,
+  })),
 });
 
 export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
@@ -80,6 +83,7 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
             </div>
             <LlmModelsField name="llms" allowedModelCapabilities={["text", "streaming"]} />
             <AgentMcpServersField />
+            <AgentPluginConnectionsField />
           </FieldGroup>
         </form>
       </Form>

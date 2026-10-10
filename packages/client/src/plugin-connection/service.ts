@@ -28,7 +28,7 @@ import type {
 const PLUGIN_CONNECTION_URL = "/api/plugin-connections";
 
 const list = async (
-  opts: ServiceGetOptions<Paginated<PluginConnection>, FindPluginConnectionsParams> = {},
+  opts: ServiceGetOptions<Paginated<PluginConnection>, Partial<FindPluginConnectionsParams>> = {},
 ): Promise<Paginated<PluginConnection>> =>
   http.get({
     url: PLUGIN_CONNECTION_URL,

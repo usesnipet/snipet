@@ -24,7 +24,7 @@ const BASE_QUERY_KEY = "plugin-connection";
 
 export const listPluginConnectionsQueryKey = () => [BASE_QUERY_KEY] as const;
 export const useListPluginConnections = (
-  opts?: ServiceGetOptions<Paginated<PluginConnection>, FindPluginConnectionsParams>,
+  opts?: ServiceGetOptions<Paginated<PluginConnection>, Partial<FindPluginConnectionsParams>>,
 ): UseQueryResult<Paginated<PluginConnection>, Error> =>
   useQuery({
     queryKey: [...listPluginConnectionsQueryKey(), opts?.searchParams],
