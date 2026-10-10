@@ -2,6 +2,7 @@ import type {
   Agent as AgentContract,
   AgentLlm as AgentLlmContract,
   AgentMcpServer as AgentMcpServerContract,
+  AgentPluginConnection as AgentPluginConnectionContract,
 } from "@snipet/shared";
 import { BaseEntity } from "@snipet/server-common";
 import {
@@ -42,6 +43,9 @@ export class Agent extends BaseEntity implements AgentContract {
 
   @OneToMany(() => AgentMcpServer, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
   mcpServers: AgentMcpServer[];
+
+  @OneToMany(() => AgentPluginConnection, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
+  pluginConnections: AgentPluginConnection[];
 
   // Eager relations come unordered.
   @AfterLoad()
@@ -105,11 +109,11 @@ export class AgentMcpServer implements AgentMcpServerContract {
 
 @Entity("agent_plugin_connections")
 @Unique(["agentId", "pluginConnectionId"])
-export class AgentPluginConnection extends BaseEntity {
+export class AgentPluginConnection extends BaseEntity implements AgentPluginConnectionContract {
   @Column({ type: "uuid" })
   agentId: string;
 
-  @ManyToOne(() => Agent, { onDelete: "CASCADE" })
+  @ManyToOne(() => Agent, (agent) => agent.pluginConnections, { onDelete: "CASCADE" })
   @JoinColumn({ name: "agentId" })
   agent?: Agent;
 

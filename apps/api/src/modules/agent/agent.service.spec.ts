@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import { NotFoundException } from "@nestjs/common";
 
-import { Agent, AgentLlm, AgentMcpServer } from "./agent.entity.js";
+import { Agent, AgentLlm, AgentMcpServer, AgentPluginConnection } from "./agent.entity.js";
 import { AgentService } from "./agent.service.js";
 
 import type { Repository } from "typeorm";
@@ -18,11 +18,18 @@ function setup(exists = true) {
     [Agent, repoMock()],
     [AgentLlm, repoMock()],
     [AgentMcpServer, repoMock()],
+    [AgentPluginConnection, repoMock()],
   ]);
   const m = { getRepository: (target: unknown) => repos.get(target) };
   const repo = { manager: { transaction: (fn: (em: unknown) => Promise<void>) => fn(m) } };
   const service = new AgentService(repo as unknown as Repository<Agent>);
-  return { service, agents: repos.get(Agent)!, llms: repos.get(AgentLlm)!, grants: repos.get(AgentMcpServer)! };
+  return {
+    service,
+    agents: repos.get(Agent)!,
+    llms: repos.get(AgentLlm)!,
+    grants: repos.get(AgentMcpServer)!,
+    pluginGrants: repos.get(AgentPluginConnection)!,
+  };
 }
 
 describe("AgentService.updateById", () => {
@@ -36,6 +43,16 @@ describe("AgentService.updateById", () => {
       { model: "openai/a", order: 0, agentId: "a1" },
       { model: "ollama/b", order: 1, agentId: "a1" },
     ]);
+    expect(grants.delete).not.toHaveBeenCalled();
+  });
+
+  it("replaces plugin connections when sent", async () => {
+    const { service, grants, pluginGrants } = setup();
+    const grant = { pluginConnectionId: "p1", allow: ["read_*"], deny: [] };
+    await service.updateById("a1", { pluginConnections: [grant] });
+
+    expect(pluginGrants.delete).toHaveBeenCalledWith({ agentId: "a1" });
+    expect(pluginGrants.insert).toHaveBeenCalledWith([{ ...grant, agentId: "a1" }]);
     expect(grants.delete).not.toHaveBeenCalled();
   });
 
