@@ -26,8 +26,6 @@ const PluginsPage = lazy(() =>
   import("./routes/plugins/page").then((m) => ({ default: m.PluginsPage })));
 const AppsPage = lazy(() =>
   import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
-const AppTokenPlaygroundPage = lazy(() =>
-  import("./routes/app-token-playground/page").then((m) => ({ default: m.AppTokenPlaygroundPage })));
 const PlaceholderPage = lazy(() =>
   import("./routes/placeholder/page").then((m) => ({ default: m.PlaceholderPage })));
 const UsersPage = lazy(() =>
@@ -61,7 +59,6 @@ export const Router = () => {
                 <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
                 <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
                 <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
-                <Route path={toReactRouterPath(ROUTES.appTokenPlayground)} element={<AppTokenPlaygroundPage />} />
                 <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
                 <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
               </Route>

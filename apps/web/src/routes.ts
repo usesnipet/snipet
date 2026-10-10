@@ -8,7 +8,6 @@ export const ROUTES = {
   llmPlayground: "/llm/playground",
   plugins: "/plugins",
   apps: "/apps",
-  appTokenPlayground: "/apps/token-playground",
   knowledge: "/knowledge",
   connections: "/connections",
   settings: "/settings",

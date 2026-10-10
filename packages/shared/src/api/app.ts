@@ -35,6 +35,8 @@ export type FindAppsParams = z.infer<typeof findAppsParamsSchema>;
 // Body of POST /apps/issue-token. The caller is an app's backend (it holds the API
 // key), so it's trusted to say who the end user is.
 export const issueAppTokenSchema = z.object({
+  /** When set, the request fails unless the API key belongs to this app. */
+  appId: z.uuid().optional(),
   externalUserId: z.string().min(1).max(255),
   name: z.preprocess((val) => (val === "" ? undefined : val), z.string().max(255).optional()),
   email: z.preprocess((val) => (val === "" ? undefined : val), z.email().optional()),

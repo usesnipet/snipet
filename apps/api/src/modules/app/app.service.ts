@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { CrudService } from "@snipet/server-common";
@@ -11,7 +11,6 @@ import { App } from "./app.entity.js";
 
 import type { AppTokenPayload, AppTokenResponse, issueAppTokenSchema } from "@snipet/shared";
 import type { z } from "zod";
-import type { ApiKey } from "../api-key/api-key.entity.js";
 
 export const APP_TOKEN_AUDIENCE = "app";
 
@@ -29,8 +28,9 @@ export class AppService extends CrudService<App> {
   }
 
   // Signs a token for one of the API key's app's end users.
-  async issueToken(apiKey: ApiKey, dto: z.output<typeof issueAppTokenSchema>): Promise<AppTokenResponse> {
-    const app = await this.findById(apiKey.appId);
+  async issueToken(appId: string, dto: z.output<typeof issueAppTokenSchema>): Promise<AppTokenResponse> {
+    if (dto.appId && dto.appId !== appId) throw new ForbiddenException("API key does not belong to this app");
+    const app = await this.findById(appId);
     const payload: AppTokenPayload = {
       sub: dto.externalUserId,
       user: { name: dto.name, email: dto.email, metadata: dto.metadata },

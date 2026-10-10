@@ -28,6 +28,6 @@ export class AppController extends CrudController<App>({
     @CurrentApiKey() apiKey: ApiKey,
     @Body(new ZodPipe(issueAppTokenSchema)) dto: z.output<typeof issueAppTokenSchema>,
   ) {
-    return this.service.issueToken(apiKey, dto);
+    return this.service.issueToken(apiKey.appId, dto);
   }
 }
