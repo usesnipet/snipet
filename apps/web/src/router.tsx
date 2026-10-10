@@ -1,3 +1,4 @@
+import { Role } from "@snipet/shared";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
 
@@ -5,7 +6,6 @@ import { LoadingFallback } from "./components/loading-fallback";
 import { RequireAuth } from "./components/require-auth";
 import { RequireRole } from "./components/require-role";
 import { ROUTES } from "./routes";
-import { Role } from "@snipet/shared";
 
 import type { RoutePath } from "./routes";
 const Layout = lazy(() =>
@@ -22,18 +22,12 @@ const LlmConnectionsPage = lazy(() =>
   import("./routes/llm-connections/page").then((m) => ({ default: m.LlmConnectionsPage })));
 const LlmPlaygroundPage = lazy(() =>
   import("./routes/llm-playground/page").then((m) => ({ default: m.LlmPlaygroundPage })));
-const McpServersPage = lazy(() =>
-  import("./routes/mcp-servers/page").then((m) => ({ default: m.McpServersPage })));
 const PluginsPage = lazy(() =>
   import("./routes/plugins/page").then((m) => ({ default: m.PluginsPage })));
 const AppsPage = lazy(() =>
   import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
 const AppTokenPlaygroundPage = lazy(() =>
   import("./routes/app-token-playground/page").then((m) => ({ default: m.AppTokenPlaygroundPage })));
-const ToolsPage = lazy(() =>
-  import("./routes/tools/page").then((m) => ({ default: m.ToolsPage })));
-const ToolPlaygroundPage = lazy(() =>
-  import("./routes/tool-playground/page").then((m) => ({ default: m.ToolPlaygroundPage })));
 const PlaceholderPage = lazy(() =>
   import("./routes/placeholder/page").then((m) => ({ default: m.PlaceholderPage })));
 const UsersPage = lazy(() =>
@@ -65,12 +59,9 @@ export const Router = () => {
               <Route path={toReactRouterPath(ROUTES.settings)} element={<PlaceholderPage title="Settings" />} />
               <Route element={<RequireRole role={Role.Admin} />}>
                 <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
-                <Route path={toReactRouterPath(ROUTES.mcpServers)} element={<McpServersPage />} />
                 <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
                 <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
                 <Route path={toReactRouterPath(ROUTES.appTokenPlayground)} element={<AppTokenPlaygroundPage />} />
-                <Route path={toReactRouterPath(ROUTES.tools)} element={<ToolsPage />} />
-                <Route path={toReactRouterPath(ROUTES.toolPlayground)} element={<ToolPlaygroundPage />} />
                 <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
                 <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
               </Route>

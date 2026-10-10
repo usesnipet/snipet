@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { CrudService } from "@snipet/server-common";
 import { QueryDeepPartialEntity, Repository } from "typeorm";
 
-import { CrudService } from "@snipet/server-common";
-
-import { Agent, AgentLlm, AgentMcpServer, AgentPluginConnection } from "./agent.entity.js";
+import { Agent, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
 
 import type { CreateAgent, UpdateAgent } from "@snipet/shared";
 
@@ -21,24 +20,18 @@ export class AgentService extends CrudService<Agent> {
     return this.findById(id);
   }
 
-  // llms, mcpServers and pluginConnections, when sent, replace the agent's
-  // whole list.
+  // llms and pluginConnections, when sent, replace the agent's whole list.
   override async updateById(id: string, dto: QueryDeepPartialEntity<Agent>): Promise<void> {
-    const { llms, mcpServers, pluginConnections, ...fields } = dto as UpdateAgent;
+    const { llms, pluginConnections, ...fields } = dto as UpdateAgent;
     await this.repo.manager.transaction(async (m) => {
       const agentRepo = m.getRepository(Agent);
       const llmRepo = m.getRepository(AgentLlm);
-      const mcpServerRepo = m.getRepository(AgentMcpServer);
       const pluginConnectionRepo = m.getRepository(AgentPluginConnection);
       if (!(await agentRepo.existsBy({ id }))) throw new NotFoundException("Agent not found");
       if (Object.keys(fields).length) await agentRepo.update(id, fields);
       if (llms) {
         await llmRepo.delete({ agentId: id });
         await llmRepo.save(llms.map((llm, order) => ({ ...llm, order, agentId: id })));
-      }
-      if (mcpServers) {
-        await mcpServerRepo.delete({ agentId: id });
-        await mcpServerRepo.insert(mcpServers.map((mcpServer) => ({ ...mcpServer, agentId: id })));
       }
       if (pluginConnections) {
         await pluginConnectionRepo.delete({ agentId: id });

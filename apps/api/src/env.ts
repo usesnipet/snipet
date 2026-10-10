@@ -47,11 +47,6 @@ const envSchema = z.object({
   // Plugin manifests (*.json). Defaults to apps/api/plugins (same depth from src/ and dist/).
   PLUGINS_DIR: z.string().default(resolve(import.meta.dirname, "../plugins")),
 
-  // Seconds between MCP server tool syncs.
-  MCP_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(300).default(300),
-  // MCP server syncs running concurrently.
-  MCP_SYNC_CONCURRENCY: z.coerce.number().int().min(1).default(4),
-
   // Knowledge source: an S3 or S3-compatible bucket (MinIO, R2, ...). Without
   // a bucket or PGVECTOR_URL the knowledge pipeline stays off.
   KNOWLEDGE_S3_ENDPOINT: z.string().optional(), // empty means AWS S3

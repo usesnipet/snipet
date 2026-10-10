@@ -13,7 +13,6 @@ const MAX_ERROR_LENGTH = 255;
 
 // Keeps plugin_actions in line with what each connection's action driver
 // lists. Runs on create/update and on demand.
-// ponytail: no periodic sync or per-connection lock yet; copy McpServerSyncService's loop when needed.
 @Injectable()
 export class PluginConnectionSyncService {
   private readonly logger = new Logger(PluginConnectionSyncService.name);

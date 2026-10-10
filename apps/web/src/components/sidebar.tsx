@@ -1,7 +1,10 @@
 import { SidebarContent } from "@/components/sidebar/content";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/components/ui/link";
 import { Sidebar as SidebarContainer, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
@@ -11,7 +14,17 @@ import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
 import { hasRole, Role } from "@snipet/shared";
 import {
-  AppWindow, Blocks, BookText, Home, Key, LogOut, MessageSquare, Plug, Server, Settings, Users, Waypoints, Wrench
+  AppWindow,
+  BookText,
+  Home,
+  Key,
+  LogOut,
+  MessageSquare,
+  Plug,
+  Server,
+  Settings,
+  Users,
+  Waypoints,
 } from "lucide-react";
 
 import { Version } from "./version";
@@ -42,17 +55,7 @@ const navItems: NavEntry[] = [
           { title: "Playground", href: ROUTES.llmPlayground },
         ],
       },
-      { title: "MCP Servers", href: ROUTES.mcpServers, icon: Blocks, visible: isAdmin },
       { title: "Plugins", href: ROUTES.plugins, icon: Plug, visible: isAdmin },
-      {
-        title: "Tools",
-        icon: Wrench,
-        visible: isAdmin,
-        items: [
-          { title: "Browse", href: ROUTES.tools, exact: true },
-          { title: "Playground", href: ROUTES.toolPlayground },
-        ],
-      },
       { title: "Knowledge", href: ROUTES.knowledge, icon: BookText, comingSoon: true },
       { title: "Connections", href: ROUTES.connections, icon: Waypoints, comingSoon: true },
     ],

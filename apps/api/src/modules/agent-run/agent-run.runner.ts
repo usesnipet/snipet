@@ -1,21 +1,20 @@
 import { HttpException, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { AgentRunStatus, ToolSource } from "@snipet/shared";
-import { In, Repository } from "typeorm";
+import { AgentRunStatus } from "@snipet/shared";
+import { Repository } from "typeorm";
 
 import { toHttpException } from "../../common/filter/llm-error.filter.js";
 import { FailoverError, LlmError } from "../../infra/llm/errors.js";
+import { ActionResult } from "../../infra/plugin/driver.js";
 import { Agent } from "../agent/agent.entity.js";
 import { KnowledgeService } from "../knowledge/knowledge.service.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
-import { Tool } from "../tool/tool.entity.js";
-import { ToolService } from "../tool/tool.service.js";
+import { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 
 import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 
-import type { LlmMessage, LlmToolCallPart, LlmTool, ToolResult, KnowledgeSearchResult } from "@snipet/shared";
-
+import type { LlmMessage, LlmToolCallPart, LlmTool, KnowledgeSearchResult } from "@snipet/shared";
 // The agent loop: call the models, run the tools they ask for, feed the
 // results back, until a reply without tool calls or maxTurns LLM calls.
 @Injectable()
@@ -25,11 +24,10 @@ export class AgentRunner {
   constructor(
     @InjectRepository(AgentRun) private readonly runs: Repository<AgentRun>,
     @InjectRepository(AgentMessage) private readonly messages: Repository<AgentMessage>,
-    @InjectRepository(Tool) private readonly tools: Repository<Tool>,
     private readonly knowledge: KnowledgeService,
     private readonly llm: LlmConnectionService,
-    private readonly toolService: ToolService,
     private readonly events: AgentRunEvents,
+    private readonly plugins: PluginConnectionService,
   ) {}
 
   // Answers the session's history, which ends with the run's user message.
@@ -63,7 +61,7 @@ export class AgentRunner {
         });
       }
 
-      const { tools, toolIds } = await this.resolveTools(agent);
+      const { tools, executors } = await this.resolveTools(agent);
       const targets = agent.llms.map((llm) => ({
         model: llm.model,
         connectionId: llm.connectionId ?? undefined,
@@ -91,9 +89,9 @@ export class AgentRunner {
         // Every call gets a result, even after a cancel, or the next run's
         // history would have calls the providers reject as unanswered.
         for (const call of calls) {
-          const result: ToolResult = signal.aborted
+          const result: ActionResult = signal.aborted
             ? { content: "cancelled", isError: true }
-            : await this.callTool(toolIds.get(call.name), call);
+            : await this.callTool(executors.get(call.name), call);
           const parts = [{ type: "tool_result" as const, toolCallId: call.id, ...result }];
           history.push(await this.save(run, { role: "tool", parts }, null));
         }
@@ -128,41 +126,43 @@ export class AgentRunner {
     return { role, parts };
   }
 
-  private async callTool(toolId: string | undefined, call: LlmToolCallPart): Promise<ToolResult> {
-    if (!toolId) return { content: `unknown tool "${call.name}"`, isError: true };
+  private async callTool(execute: Executor | undefined, call: LlmToolCallPart): Promise<ActionResult> {
+    if (!execute) return { content: `unknown tool "${call.name}"`, isError: true };
     try {
-      return await this.toolService.execute(toolId, (call.arguments ?? {}) as Record<string, unknown>);
+      return await execute((call.arguments ?? {}) as Record<string, unknown>);
     } catch (err) {
       return { content: err instanceof Error ? err.message : String(err), isError: true };
     }
   }
 
-  // Native tools, plus the tools of the agent's MCP servers that pass the
-  // grant's allow/deny. Names are made unique and provider-safe; toolIds maps
-  // them back.
-  private async resolveTools(agent: Agent): Promise<{ tools?: LlmTool[]; toolIds: Map<string, string> }> {
-    const toolIds = new Map<string, string>();
-    const grants = new Map(agent.mcpServers.map((g) => [g.mcpServerId, g]));
-    const available = await this.tools.find({
-      where: [{ source: ToolSource.NATIVE }, ...(grants.size ? [{ mcpServerId: In([...grants.keys()]) }] : [])],
-      order: { name: "ASC" },
-    });
+  // Native tools, plus the tools of the agent's actions
+  // of its plugin connections that pass the grant's allow/deny. Names are made
+  // unique and provider-safe; executors maps them back.
+  private async resolveTools(agent: Agent): Promise<{ tools?: LlmTool[]; executors: Map<string, Executor> }> {
+    const executors = new Map<string, Executor>();
     const tools: LlmTool[] = [];
-    for (const tool of available) {
-      if (tool.mcpServerId && !isGranted(tool.name, grants.get(tool.mcpServerId)!)) continue;
-      const base = tool.name.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60);
+    const add = (rawName: string, description: string, parameters: Record<string, unknown>, execute: Executor) => {
+      const base = rawName.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60);
       let name = base;
-      for (let n = 2; toolIds.has(name); n++) name = `${base}_${n}`;
-      toolIds.set(name, tool.id);
-      tools.push({ name, description: tool.description, parameters: tool.inputSchema });
+      for (let n = 2; executors.has(name); n++) name = `${base}_${n}`;
+      executors.set(name, execute);
+      tools.push({ name, description, parameters });
+    };
+
+    const pluginGrants = new Map((agent.pluginConnections ?? []).map((g) => [g.pluginConnectionId, g]));
+    for (const action of await this.plugins.findActions([...pluginGrants.keys()])) {
+      if (!isGranted(action.name, pluginGrants.get(action.pluginConnectionId)!)) continue;
+      add(action.name, action.description, action.inputSchema, (args) => this.plugins.executeAction(action.id, args));
     }
-    return { tools: tools.length ? tools : undefined, toolIds };
+    return { tools: tools.length ? tools : undefined, executors };
   }
 
   private async searchKnowledge(query: string, limit: number = 10): Promise<KnowledgeSearchResult[]> {
     return this.knowledge.search(query, limit);
   }
 }
+
+type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;
 
 // Empty allow means every tool; deny wins.
 export function isGranted(name: string, { allow, deny }: { allow: string[]; deny: string[] }): boolean {

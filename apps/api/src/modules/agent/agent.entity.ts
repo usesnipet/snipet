@@ -1,24 +1,12 @@
 import type {
   Agent as AgentContract,
   AgentLlm as AgentLlmContract,
-  AgentMcpServer as AgentMcpServerContract,
   AgentPluginConnection as AgentPluginConnectionContract,
 } from "@snipet/shared";
 import { BaseEntity } from "@snipet/server-common";
-import {
-  AfterLoad,
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryColumn,
-  PrimaryGeneratedColumn,
-  Unique,
-} from "typeorm";
+import { AfterLoad, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
 
 import { LlmConnection } from "../llm-connection/llm-connection.entity.js";
-import { McpServer } from "../mcp-server/mcp-server.entity.js";
 import { PluginConnection } from "../plugin-connection/plugin-connection.entity.js";
 
 @Entity("agents")
@@ -40,9 +28,6 @@ export class Agent extends BaseEntity implements AgentContract {
 
   @OneToMany(() => AgentLlm, (llm) => llm.agent, { eager: true, cascade: ["insert"] })
   llms: AgentLlm[];
-
-  @OneToMany(() => AgentMcpServer, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
-  mcpServers: AgentMcpServer[];
 
   @OneToMany(() => AgentPluginConnection, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
   pluginConnections: AgentPluginConnection[];
@@ -82,29 +67,6 @@ export class AgentLlm implements AgentLlmContract {
 
   @Column({ type: "jsonb", nullable: true })
   extraOptions: Record<string, unknown> | null;
-}
-
-@Entity("agent_mcp_servers")
-export class AgentMcpServer implements AgentMcpServerContract {
-  @PrimaryColumn({ type: "uuid" })
-  agentId: string;
-
-  @ManyToOne(() => Agent, (agent) => agent.mcpServers, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "agentId" })
-  agent?: Agent;
-
-  @PrimaryColumn({ type: "uuid" })
-  mcpServerId: string;
-
-  @ManyToOne(() => McpServer, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "mcpServerId" })
-  mcpServer?: McpServer;
-
-  @Column({ type: "text", array: true, default: [] })
-  allow: string[];
-
-  @Column({ type: "text", array: true, default: [] })
-  deny: string[];
 }
 
 @Entity("agent_plugin_connections")

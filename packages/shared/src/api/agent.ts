@@ -15,18 +15,7 @@ export const agentLlmSchema = z.object({
 });
 export type AgentLlm = z.infer<typeof agentLlmSchema>;
 
-// Grants an agent an MCP server's tools, narrowed by glob patterns on the
-// tool name. Empty allow means every tool; deny wins.
-export const agentMcpServerSchema = z.object({
-  agentId: z.uuid(),
-  mcpServerId: z.uuid(),
-  allow: z.array(z.string()),
-  deny: z.array(z.string()),
-});
-export type AgentMcpServer = z.infer<typeof agentMcpServerSchema>;
-
-// Grants an agent a plugin connection's actions, narrowed the same way as
-// agentMcpServerSchema.
+// Grants an agent a plugin connection's actions.
 export const agentPluginConnectionSchema = z.object({
   agentId: z.uuid(),
   pluginConnectionId: z.uuid(),
@@ -43,7 +32,6 @@ export const agentSchema = z.object({
   maxTurns: z.number().int(),
   enabled: z.boolean(),
   llms: z.array(agentLlmSchema),
-  mcpServers: z.array(agentMcpServerSchema),
   pluginConnections: z.array(agentPluginConnectionSchema),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -55,7 +43,7 @@ export const paginatedAgentSchema = paginatedSchema(agentSchema);
 // Glob patterns; blanks are dropped.
 const patternsSchema = z.array(z.string().trim()).transform((patterns) => patterns.filter(Boolean));
 
-// The position in llms is the order. llms, mcpServers and pluginConnections
+// The position in llms is the order. llms and pluginConnections
 // replace the whole list when sent.
 export const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(255),
@@ -77,15 +65,6 @@ export const createAgentSchema = z.object({
       }),
     )
     .min(1, "Add at least one model"),
-  mcpServers: z
-    .array(
-      z.object({
-        mcpServerId: z.uuid("Select a server"),
-        allow: patternsSchema,
-        deny: patternsSchema,
-      }),
-    )
-    .optional(),
   pluginConnections: z
     .array(
       z.object({

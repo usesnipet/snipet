@@ -1,7 +1,7 @@
 # Snipet architecture proposal (draft)
 
 ## Context
-Early version: LLM = OpenAI + Ollama, tools = MCP servers + native tools, knowledge = S3 + pgvector RAG, channel = widget/API. Goal: pluggable, simple, extensible, customizable agent builder. Need a model that covers many LLM providers, many external apps (via API, MCP, other), built-in tools, dev-made tools, many knowledge sources + indexing strategies, and inbound channels — without Discord-as-connector vs Discord-as-channel duplication.
+Early version: LLM = OpenAI + Ollama, tools = plugin actions, knowledge = S3 + pgvector RAG, channel = widget/API. Goal: pluggable, simple, extensible, customizable agent builder. Need a model that covers many LLM providers, many external apps (via API, MCP, other), built-in tools, dev-made tools, many knowledge sources + indexing strategies, and inbound channels — without Discord-as-connector vs Discord-as-channel duplication.
 
 ## Core idea: split by capability, not by app
 One plugin per external app. A plugin declares capabilities; each capability is used by a different part of the system.
@@ -22,9 +22,9 @@ Discord answer: a single `discord` plugin, a single Connection; agent A uses its
 | Concept | What | Today |
 |---|---|---|
 | Model provider | Driver for LLM/embedding APIs | `LlmProvider` + `LlmRegistry` + `llm-connection` |
-| Plugin | Driver for an external app or capability | MCP servers + `NativeToolService` |
-| Connection | Authenticated plugin instance | `mcp-server` rows, `llm-connection` rows |
-| Tool | Any action exposed to an agent | `tool` table |
+| Plugin | Driver for an external app or capability | `plugin` registry + drivers (`infra/plugin`) |
+| Connection | Authenticated plugin instance | `plugin-connection` rows, `llm-connection` rows |
+| Action | Any action exposed to an agent | `plugin-action` rows |
 | Knowledge base | Sources + index strategy + embedding model | `knowledge` module |
 | App | Third-party system calling the API (API key + app tokens) | `app` |
 | Channel | Agent + Connection + plugin trigger | — |
@@ -35,11 +35,11 @@ Discord answer: a single `discord` plugin, a single Connection; agent A uses its
 - Add `embed?()` capability to the same interface; drop the separate `EmbeddingService` env config, embeddings pick a Connection like chat does.
 - Providers to add: generic OpenAI-compatible (covers OpenRouter, Groq, DeepSeek, Together, vLLM, LM Studio, Azure-ish), Anthropic, Gemini, Bedrock. One file each under `infra/llm/providers/`.
 
-## 2. Plugins (replaces "MCP servers" + "tools" as top-level concepts)
+## 2. Plugins
 - Plugin interface: `info` (key, name, icon, auth methods, config schema), optional `actions(conn)`, `sources(conn)`, `triggers(conn)`, `healthCheck(conn)`.
 - Transport is an implementation detail, not a concept:
   - Native code plugin (github via REST, calculator).
-  - Generic `mcp` plugin: config = server URL/command; actions = MCP `listTools` (current `infra/mcp/connector.ts` moves here).
+  - Generic `mcp` driver: config = server URL; actions = MCP `listTools`.
   - Generic `http`/OpenAPI plugin later: config = spec URL; actions generated from spec.
 - Built-in tools (web search, calculator, search_knowledge) = plugins with `auth: none` and `builtin: true` — auto-attached to every agent, can be disabled per agent.
 - Custom plugins, two flavors:
@@ -47,7 +47,7 @@ Discord answer: a single `discord` plugin, a single Connection; agent A uses its
   - **Declarative plugin**: created from the UI, no code. Import an OpenAPI spec (YAML/JSON or URL) or point to an MCP server. Each OpenAPI operation becomes an action (user selects which ones, big specs would flood the agent with tools); auth comes from the spec's `securitySchemes`. Under the hood it is a row backed by the generic `openapi` / `mcp` plugin, shown in the UI as its own plugin.
 - Registry: same pattern as `LlmRegistry` (fixed at startup). Plugins live in-repo first: `packages/plugins/<key>` or `apps/api/src/plugins/<key>`. External npm/runtime loading later.
 - OAuth2: one central callback route that any plugin with `oauth2` auth reuses; tokens encrypted with existing `ENCRYPTION_KEY`.
-- Tool rows: `source = plugin key`, `connectionId`; sync on boot / interval like `mcp-server-sync.service.ts` today.
+- Action rows per connection, synced on boot and on an interval.
 
 ## 3. Knowledge
 Rule: **knowledge = files, indexed ahead of time; live/streaming data = actions, queried at runtime.**
@@ -86,7 +86,7 @@ Steps: (1) `allowedAgentIds` on App; (2) `channels` table + session owner column
 - Apps and Channels are separate concepts; name stays "App". Apps get an agent allowlist now.
 
 ## Suggested order
-1. Generic plugin interface + registry; port MCP and native tools onto it (no behavior change).
+1. Generic plugin interface + registry.
 2. Connections + central OAuth; first native plugin (GitHub or Google).
 3. More LLM providers + `embed` capability.
 4. Knowledge pipeline interfaces; port S3 + RAG; add Drive.

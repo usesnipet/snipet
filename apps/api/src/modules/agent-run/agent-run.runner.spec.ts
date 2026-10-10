@@ -9,6 +9,7 @@ import { AgentRunner, isGranted } from "./agent-run.runner.js";
 import type { Agent } from "../agent/agent.entity.js";
 import type { KnowledgeService } from "../knowledge/knowledge.service.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
+import type { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 import type { ToolService } from "../tool/tool.service.js";
 import type { AgentRun } from "./agent-run.entity.js";
 import type { LlmMessage, LlmStreamEvent } from "@snipet/shared";
@@ -27,6 +28,7 @@ const agent = {
   maxTurns: 5,
   llms: [{ model: "openai/gpt", connectionId: null, extraOptions: null }],
   mcpServers: [{ mcpServerId: "s1", allow: [], deny: ["*delete*"] }],
+  pluginConnections: [{ pluginConnectionId: "p1", allow: ["ask_*"], deny: [] }],
 } as unknown as Agent;
 const run = { id: "r1", sessionId: "s1" } as AgentRun;
 
@@ -61,6 +63,13 @@ function setup(replies: (LlmMessage | Error)[]) {
     }),
   };
   const execute = jest.fn<Fn>().mockResolvedValue({ content: "file a", isError: false });
+  const plugins = {
+    findActions: jest.fn<Fn>().mockResolvedValue([
+      { id: "a1", name: "ask_question", description: "", inputSchema: {}, pluginConnectionId: "p1" },
+      { id: "a2", name: "read_wiki", description: "", inputSchema: {}, pluginConnectionId: "p1" },
+    ]),
+    executeAction: jest.fn<Fn>().mockResolvedValue({ content: "answer", isError: false }),
+  };
 
   const runner = new AgentRunner(
     runs as unknown as Repository<AgentRun>,
@@ -70,15 +79,16 @@ function setup(replies: (LlmMessage | Error)[]) {
     llm as unknown as LlmConnectionService,
     { execute } as unknown as ToolService,
     new AgentRunEvents(),
+    plugins as unknown as PluginConnectionService,
   );
-  return { runner, runs, llm, execute, saved };
+  return { runner, runs, llm, execute, plugins, saved };
 }
 
 const finishedWith = (runs: { update: jest.Mock<Fn> }) => runs.update.mock.calls[0][1];
 
 describe("AgentRunner.run", () => {
   it("runs the tools the model calls and feeds the results back", async () => {
-    const { runner, runs, llm, execute, saved } = setup([callTool, answer]);
+    const { runner, runs, llm, execute, plugins, saved } = setup([callTool, answer]);
     await runner.run(agent, run);
 
     expect(execute).toHaveBeenCalledWith("t1", { path: "a" });
@@ -90,7 +100,22 @@ describe("AgentRunner.run", () => {
       { messages: LlmMessage[]; tools: { name: string }[] },
     ];
     expect(messages.map((m) => m.role)).toEqual(["system", "system", "system", "user", "assistant", "tool"]);
-    expect(tools.map((t) => t.name)).toEqual(["read_file", "delete_knowledge"]); // delete_file is denied
+    // delete_file is denied; read_wiki isn't in the plugin grant's allow.
+    expect(tools.map((t) => t.name)).toEqual(["read_file", "delete_knowledge", "ask_question"]);
+    expect(plugins.findActions).toHaveBeenCalledWith(["p1"]);
+  });
+
+  it("runs granted plugin actions", async () => {
+    const askQuestion: LlmMessage = {
+      role: "assistant",
+      parts: [{ type: "tool_call", id: "c1", name: "ask_question", arguments: { q: "x" } }],
+    };
+    const { runner, execute, plugins, saved } = setup([askQuestion, answer]);
+    await runner.run(agent, run);
+
+    expect(plugins.executeAction).toHaveBeenCalledWith("a1", { q: "x" });
+    expect(execute).not.toHaveBeenCalled();
+    expect(saved[1].parts).toEqual([{ type: "tool_result", toolCallId: "c1", content: "answer", isError: false }]);
   });
 
   it("stops at maxTurns while the model keeps calling tools", async () => {

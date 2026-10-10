@@ -4,8 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { AgentModule } from "../agent/agent.module.js";
 import { KnowledgeModule } from "../knowledge/knowledge.module.js";
 import { LlmConnectionModule } from "../llm-connection/llm-connection.module.js";
-import { Tool } from "../tool/tool.entity.js";
-import { ToolModule } from "../tool/tool.module.js";
+import { PluginConnectionModule } from "../plugin-connection/plugin-connection.module.js";
 
 import { AgentRunController } from "./agent-run.controller.js";
 import { AgentMessage, AgentRun, AgentSession } from "./agent-run.entity.js";
@@ -16,11 +15,11 @@ import { AgentSessionController } from "./agent-session.controller.js";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AgentSession, AgentRun, AgentMessage, Tool]),
+    TypeOrmModule.forFeature([AgentSession, AgentRun, AgentMessage]),
     AgentModule,
     LlmConnectionModule,
-    ToolModule,
     KnowledgeModule,
+    PluginConnectionModule,
   ],
   controllers: [AgentRunController, AgentSessionController],
   providers: [AgentRunService, AgentRunner, AgentRunEvents],

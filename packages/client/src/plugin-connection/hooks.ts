@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { syncState } from "../mcp-server/sync-state";
-
 import { pluginConnectionService } from "./service";
+import { syncState } from "./utils";
 
 import type {
   CreatePluginConnection,

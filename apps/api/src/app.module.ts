@@ -14,10 +14,8 @@ import { AppsModule } from "./modules/app/app.module.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
 import { KnowledgeModule } from "./modules/knowledge/knowledge.module.js";
 import { LlmConnectionModule } from "./modules/llm-connection/llm-connection.module.js";
-import { McpServerModule } from "./modules/mcp-server/mcp-server.module.js";
 import { PluginConnectionModule } from "./modules/plugin-connection/plugin-connection.module.js";
 import { SystemModule } from "./modules/system/system.module.js";
-import { ToolModule } from "./modules/tool/tool.module.js";
 import { UserModule } from "./modules/user/user.module.js";
 
 @Module({
@@ -36,10 +34,8 @@ import { UserModule } from "./modules/user/user.module.js";
     AuthModule,
     KnowledgeModule,
     LlmConnectionModule,
-    McpServerModule,
     PluginConnectionModule,
     SystemModule,
-    ToolModule,
     UserModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
