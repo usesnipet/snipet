@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -14,7 +14,7 @@ const MAX_ERROR_LENGTH = 255;
 // Keeps plugin_actions in line with what each connection's action driver
 // lists. Runs on create/update and on demand.
 @Injectable()
-export class PluginConnectionSyncService {
+export class PluginConnectionSyncService implements OnApplicationBootstrap {
   private readonly logger = new Logger(PluginConnectionSyncService.name);
 
   constructor(
@@ -22,6 +22,10 @@ export class PluginConnectionSyncService {
     private readonly plugins: PluginRegistry,
     private readonly drivers: DriverRegistry,
   ) {}
+
+  onApplicationBootstrap() {
+    void this.syncAll();
+  }
 
   // Never throws: the error is recorded on the connection, and the previous
   // actions are kept. Deleted connections are skipped.
