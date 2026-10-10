@@ -8,17 +8,14 @@ import { PluginNotFoundError } from "./errors.js";
 
 import type { DriverRegistry } from "./driver.registry.js";
 // Catalog of plugin manifests: every *.json in `dir`, loaded and checked at
-// startup. A bad manifest (invalid shape, duplicate key, unknown driver)
-// stops the app.
+// startup. Any errors are logged and the plugin is skipped.
 export class PluginRegistry {
   private readonly logger = new Logger(PluginRegistry.name);
   private readonly plugins: Map<string, PluginManifest>;
 
   constructor(dir: string, drivers: DriverRegistry) {
     const plugins = new Map<string, PluginManifest>();
-    for (const file of readdirSync(dir)
-      .filter((f) => f.endsWith(".json"))
-      .sort()) {
+    for (const file of readdirSync(dir).filter((f) => f.endsWith(".json"))) {
       const where = join(dir, file);
       const result = pluginManifestSchema.safeParse(JSON.parse(readFileSync(where, "utf8")));
       if (!result.success) {
@@ -27,7 +24,7 @@ export class PluginRegistry {
       }
       const p = result.data;
 
-      if (this.plugins.has(p.key)) {
+      if (plugins.has(p.key)) {
         this.logger.warn(`plugin manifest ${where}: key "${p.key}" registered twice`);
         continue;
       }
@@ -43,7 +40,7 @@ export class PluginRegistry {
         this.logger.warn(`plugin manifest ${where}: invalid connection schema`);
         continue;
       }
-      this.plugins.set(p.key, p);
+      plugins.set(p.key, p);
     }
     this.plugins = new Map([...plugins.entries()].sort((a, b) => a[0].localeCompare(b[0])));
   }

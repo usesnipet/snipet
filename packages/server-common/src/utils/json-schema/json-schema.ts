@@ -3,7 +3,7 @@ import z from "zod";
 
 export type JsonSchema = Record<string, unknown>;
 
-// Throws if schema is not a valid JSON Schema.
+// Returns true if schema is a valid JSON Schema.
 export function checkJsonSchema(schema: JsonSchema): boolean {
   try {
     z.fromJSONSchema(schema);

@@ -1,12 +1,12 @@
 import { Client } from "@modelcontextprotocol/sdk/client";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
-import { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol";
 import z from "zod";
 
 import { env } from "../../../env.js";
 
 import { validateOptions } from "./utils.js";
 
+import type { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol";
 import type { Action, ActionDriver, ActionResult } from "../driver.js";
 
 const optionsSchema = z.strictObject({
@@ -16,13 +16,9 @@ const optionsSchema = z.strictObject({
 });
 type McpActionOptions = z.infer<typeof optionsSchema>;
 
-// Actions are the tools of a remote MCP server. Only the http transport:
-// stdio would let a manifest run commands on the host.
-// ponytail: one MCP session per call (McpConnector), pool by connectionId if latency matters.
+// Actions are the tools of a remote MCP server. Only the http transport is supported.
 export class McpActionDriver implements ActionDriver<McpActionOptions> {
   readonly key = "mcp";
-
-  constructor() {}
 
   validateOptions(options: unknown): McpActionOptions {
     return validateOptions<McpActionOptions>(optionsSchema, options);
@@ -76,7 +72,7 @@ export class McpActionDriver implements ActionDriver<McpActionOptions> {
     const transport = new StreamableHTTPClientTransport(new URL(options.url), {
       requestInit: { headers: options.headers },
     });
-    const ms = (options.timeout ?? 10) * 1000;
+    const ms = options.timeout * 1000;
     const opts: RequestOptions = { signal: AbortSignal.timeout(ms), timeout: ms };
     const client = new Client({ name: "snipet", version: env.APP_VERSION });
     try {
