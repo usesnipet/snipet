@@ -3,6 +3,7 @@ import type {
   AgentLlm as AgentLlmContract,
   AgentMcpServer as AgentMcpServerContract,
 } from "@snipet/shared";
+import { BaseEntity } from "@snipet/server-common";
 import {
   AfterLoad,
   Column,
@@ -12,11 +13,12 @@ import {
   OneToMany,
   PrimaryColumn,
   PrimaryGeneratedColumn,
+  Unique,
 } from "typeorm";
 
-import { BaseEntity } from "@snipet/server-common";
 import { LlmConnection } from "../llm-connection/llm-connection.entity.js";
 import { McpServer } from "../mcp-server/mcp-server.entity.js";
+import { PluginConnection } from "../plugin-connection/plugin-connection.entity.js";
 
 @Entity("agents")
 export class Agent extends BaseEntity implements AgentContract {
@@ -93,6 +95,30 @@ export class AgentMcpServer implements AgentMcpServerContract {
   @ManyToOne(() => McpServer, { onDelete: "CASCADE" })
   @JoinColumn({ name: "mcpServerId" })
   mcpServer?: McpServer;
+
+  @Column({ type: "text", array: true, default: [] })
+  allow: string[];
+
+  @Column({ type: "text", array: true, default: [] })
+  deny: string[];
+}
+
+@Entity("agent_plugin_connections")
+@Unique(["agentId", "pluginConnectionId"])
+export class AgentPluginConnection extends BaseEntity {
+  @Column({ type: "uuid" })
+  agentId: string;
+
+  @ManyToOne(() => Agent, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "agentId" })
+  agent?: Agent;
+
+  @Column({ type: "uuid" })
+  pluginConnectionId: string;
+
+  @ManyToOne(() => PluginConnection, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "pluginConnectionId" })
+  pluginConnection?: PluginConnection;
 
   @Column({ type: "text", array: true, default: [] })
   allow: string[];

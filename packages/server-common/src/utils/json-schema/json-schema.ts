@@ -3,22 +3,14 @@ import z from "zod";
 
 export type JsonSchema = Record<string, unknown>;
 
-// Compiled schemas cached by object identity; schemas are usually constants
-// or loaded once from the DB.
-const compiled = new WeakMap<JsonSchema, z.ZodType>();
-
-function compile(schema: JsonSchema): z.ZodType {
-  let zodSchema = compiled.get(schema);
-  if (!zodSchema) {
-    zodSchema = z.fromJSONSchema(schema);
-    compiled.set(schema, zodSchema);
-  }
-  return zodSchema;
-}
-
 // Throws if schema is not a valid JSON Schema.
-export function checkJsonSchema(schema: JsonSchema): void {
-  compile(schema);
+export function checkJsonSchema(schema: JsonSchema): boolean {
+  try {
+    z.fromJSONSchema(schema);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Validates data against a JSON Schema and returns it with the schema's
@@ -27,7 +19,7 @@ export function checkJsonSchema(schema: JsonSchema): void {
 // are not re-applied.
 export function validateJson<T = Record<string, unknown>>(schema: JsonSchema | null | undefined, data: unknown): T {
   if (!schema) return data as T;
-  const result = compile(schema).safeParse(data);
+  const result = z.fromJSONSchema(schema).safeParse(data);
   if (!result.success) {
     throw new BadRequestException({
       message: "validation failed",

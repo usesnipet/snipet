@@ -44,6 +44,9 @@ const envSchema = z.object({
   ROOT_USERNAME: z.string().default("admin"),
   ROOT_PASSWORD: z.union([z.literal(""), z.string()]).optional(),
 
+  // Plugin manifests (*.json). Defaults to apps/api/plugins (same depth from src/ and dist/).
+  PLUGINS_DIR: z.string().default(resolve(import.meta.dirname, "../plugins")),
+
   // Seconds between MCP server tool syncs.
   MCP_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(300).default(300),
   // MCP server syncs running concurrently.

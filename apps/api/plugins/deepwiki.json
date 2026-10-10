@@ -1,0 +1,10 @@
+{
+  "key": "deepwiki",
+  "name": "DeepWiki",
+  "description": "Ask questions about public GitHub repositories",
+  "auth": { "type": "none" },
+  "actions": {
+    "driver": "mcp",
+    "options": { "url": "https://mcp.deepwiki.com/mcp" }
+  }
+}

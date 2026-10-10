@@ -9,6 +9,7 @@ export * from "./llm-connection.js";
 export * from "./llm.js";
 export * from "./mcp-server.js";
 export * from "./pagination.js";
+export * from "./plugin.js";
 export * from "./system.js";
 export * from "./tool.js";
 export * from "./user.js";
