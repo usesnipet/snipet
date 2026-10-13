@@ -1,0 +1,30 @@
+{
+  "key": "tavily",
+  "name": "Tavily",
+  "description": "Web search, extraction and crawling optimized for AI agents",
+  "icon": "https://github.com/tavily-ai.png",
+  "tags": ["search", "web", "remote", "official"],
+  "auth": { "type": "none" },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Tavily API key (tvly-…), from app.tavily.com."
+      }
+    },
+    "required": ["apiKey"]
+  },
+  "actions": {
+    "driver": "mcp",
+    "options": {
+      "url": "https://mcp.tavily.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

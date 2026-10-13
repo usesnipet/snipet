@@ -1,0 +1,30 @@
+{
+  "key": "neon",
+  "name": "Neon",
+  "description": "Manage Neon Postgres projects, branches and run SQL",
+  "icon": "https://github.com/neondatabase.png",
+  "tags": ["database", "postgres", "remote", "official"],
+  "auth": { "type": "none" },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Neon API key, from console.neon.tech/app/settings/api-keys."
+      }
+    },
+    "required": ["apiKey"]
+  },
+  "actions": {
+    "driver": "mcp",
+    "options": {
+      "url": "https://mcp.neon.tech/mcp",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}
