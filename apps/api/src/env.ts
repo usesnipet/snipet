@@ -36,7 +36,7 @@ const envSchema = z.object({
 
   ENCRYPTION_KEY: z
     .string()
-    .default("change-me")
+    .default("Y2opZ3fylU+VmHmdi9qSmJwdCGZbOHQ46WR1AgP21VU=")
     .transform((v) => Buffer.from(v, "base64"))
     .refine((b) => b.length === 32, "ENCRYPTION_KEY must be 32 bytes, base64-encoded"),
 
