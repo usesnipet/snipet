@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import OpenAI from "openai";
 
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 
 @Injectable()
 export class EmbeddingService {

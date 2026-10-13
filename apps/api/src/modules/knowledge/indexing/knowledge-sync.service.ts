@@ -5,9 +5,9 @@ import { KnowledgeItemStatus } from "@snipet/shared";
 // import { setTimeout as sleep } from "node:timers/promises";
 import { Repository } from "typeorm";
 
-import { env } from "../../../env.js";
-import { PgvectorService } from "../../../infra/pgvector/pgvector.service.js";
-import { S3Source } from "../../../infra/storage/s3-source.js";
+import { env } from "#src/env.js";
+import { PgvectorService } from "#src/infra/pgvector/pgvector.service.js";
+import { S3Source } from "#src/infra/storage/s3-source.js";
 import { KnowledgeItem } from "../knowledge-item.entity.js";
 import { knowledgeEnabled } from "../utils.js";
 

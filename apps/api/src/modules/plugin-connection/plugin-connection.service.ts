@@ -3,11 +3,11 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { CrudService, maskSecrets, restoreSecrets, validateJson } from "@snipet/server-common";
 import { DeepPartial, In, QueryDeepPartialEntity, Repository } from "typeorm";
 
-import { ActionResult } from "../../infra/plugin/driver.js";
-import { DriverRegistry } from "../../infra/plugin/driver.registry.js";
-import { PluginValidationError } from "../../infra/plugin/errors.js";
-import { PluginRegistry, secretFields } from "../../infra/plugin/plugin.registry.js";
-import { resolveOptions } from "../../infra/plugin/resolve.js";
+import { ActionResult } from "#src/infra/plugin/driver.js";
+import { DriverRegistry } from "#src/infra/plugin/driver.registry.js";
+import { PluginValidationError } from "#src/infra/plugin/errors.js";
+import { PluginRegistry, secretFields } from "#src/infra/plugin/plugin.registry.js";
+import { resolveOptions } from "#src/infra/plugin/resolve.js";
 
 import { PluginAction } from "./plugin-action.entity.js";
 import { PluginConnection } from "./plugin-connection.entity.js";

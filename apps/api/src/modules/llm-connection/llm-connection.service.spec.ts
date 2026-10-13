@@ -3,8 +3,8 @@ import { SECRET_PLACEHOLDER } from "@snipet/server-common";
 
 import { LlmConnectionService } from "./llm-connection.service.js";
 
-import type { LlmRegistry } from "../../infra/llm/registry.js";
-import type { LlmRunner } from "../../infra/llm/runner.js";
+import type { LlmRegistry } from "#src/infra/llm/registry.js";
+import type { LlmRunner } from "#src/infra/llm/runner.js";
 import type { LlmConnection } from "./llm-connection.entity.js";
 import type { Repository } from "typeorm";
 

@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 
 import { DriverRegistry } from "./driver.registry.js";
 import { HttpHealthCheckDriver } from "./drivers/http.health.js";

@@ -2,7 +2,7 @@ import type { PluginConnection as PluginConnectionContract } from "@snipet/share
 import { Column, Entity, Index } from "typeorm";
 
 import { BaseEntity, open, seal } from "@snipet/server-common";
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 
 import type { ValueTransformer } from "typeorm";
 

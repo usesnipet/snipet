@@ -3,7 +3,7 @@ import { Controller, Get } from "@nestjs/common";
 import { SystemService } from "./system.service.js";
 
 import type { SystemInfo } from "@snipet/shared";
-import { Public } from "../../common/decorators/auth.decorator.js";
+import { Public } from "#src/common/decorators/auth.decorator.js";
 
 @Public()
 @Controller("system")

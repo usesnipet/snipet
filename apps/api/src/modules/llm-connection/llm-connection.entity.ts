@@ -2,7 +2,7 @@ import type { LlmConnection as LlmConnectionContract } from "@snipet/shared";
 import { BaseEntity, open, seal } from "@snipet/server-common";
 import { Column, Entity, Index } from "typeorm";
 
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 
 import type { ValueTransformer } from "typeorm";
 

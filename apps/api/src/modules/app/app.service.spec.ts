@@ -1,7 +1,7 @@
 import { JwtService } from "@nestjs/jwt";
 import { issueAppTokenSchema } from "@snipet/shared";
 
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 
 import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET, AppService } from "./app.service.js";
 

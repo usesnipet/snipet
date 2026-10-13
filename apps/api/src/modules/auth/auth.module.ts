@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 import { UserModule } from "../user/user.module.js";
 
 import { AuthController } from "./auth.controller.js";

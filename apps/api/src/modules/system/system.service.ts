@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { execFileSync } from "node:child_process";
 
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 
 import type { SystemInfo } from "@snipet/shared";
 

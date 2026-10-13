@@ -10,12 +10,12 @@ import {
 } from "./llm-connection.dto.js";
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionService } from "./llm-connection.service.js";
-import { FailoverError, LlmError } from "../../infra/llm/errors.js";
-import { LlmErrorFilter, toHttpException } from "../../common/filter/llm-error.filter.js";
+import { FailoverError, LlmError } from "#src/infra/llm/errors.js";
+import { LlmErrorFilter, toHttpException } from "#src/common/filter/llm-error.filter.js";
 
 import type { ExecuteLlm, ListProviderModelsParams, LlmConnectionOptions, LlmStreamEvent } from "@snipet/shared";
 import type { Response } from "express";
-import { ApiKeyAuth, Private, Public, UserAuth } from "../../common/decorators/auth.decorator.js";
+import { ApiKeyAuth, Private, Public, UserAuth } from "#src/common/decorators/auth.decorator.js";
 
 // CRUD is admin only and never returns credentials: `auth` values come back
 // as placeholders. Running models is open to any user and API keys.

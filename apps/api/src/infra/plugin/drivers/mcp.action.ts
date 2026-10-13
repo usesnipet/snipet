@@ -2,7 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import z from "zod";
 
-import { env } from "../../../env.js";
+import { env } from "#src/env.js";
 
 import { validateOptions } from "./utils.js";
 

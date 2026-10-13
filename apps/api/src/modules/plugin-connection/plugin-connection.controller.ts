@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Pu
 import { ZodPipe } from "@snipet/server-common";
 import { Role } from "@snipet/shared";
 
-import { Private, UserAuth } from "../../common/decorators/auth.decorator.js";
+import { Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
 
 import {
   createPluginConnectionSchema,

@@ -6,10 +6,10 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { RateLimitError as EmbeddingRateLimitError } from "openai";
 import { In, Not, Repository } from "typeorm";
 
-import { env } from "../../../env.js";
-import { EmbeddingService } from "../../../infra/embedding/embedding.service.js";
-import { PgvectorService } from "../../../infra/pgvector/pgvector.service.js";
-import { S3Source } from "../../../infra/storage/s3-source.js";
+import { env } from "#src/env.js";
+import { EmbeddingService } from "#src/infra/embedding/embedding.service.js";
+import { PgvectorService } from "#src/infra/pgvector/pgvector.service.js";
+import { S3Source } from "#src/infra/storage/s3-source.js";
 import { KnowledgeItem } from "../knowledge-item.entity.js";
 
 import type { ExtractedDocument, ExtractionResult } from "@xberg-io/xberg";

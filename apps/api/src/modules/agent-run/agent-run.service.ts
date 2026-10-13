@@ -16,7 +16,7 @@ import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
 
 import type { FilterQuery } from "@snipet/server-common";
-import type { Owner } from "../../common/decorators/owner.decorator.js";
+import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type {
   AgentRunEvent,
   FindAgentMessagesParams,

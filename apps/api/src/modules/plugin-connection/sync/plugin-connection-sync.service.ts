@@ -3,9 +3,9 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { DriverRegistry } from "../../../infra/plugin/driver.registry.js";
-import { PluginRegistry } from "../../../infra/plugin/plugin.registry.js";
-import { resolveOptions } from "../../../infra/plugin/resolve.js";
+import { DriverRegistry } from "#src/infra/plugin/driver.registry.js";
+import { PluginRegistry } from "#src/infra/plugin/plugin.registry.js";
+import { resolveOptions } from "#src/infra/plugin/resolve.js";
 import { PluginAction } from "../plugin-action.entity.js";
 import { PluginConnection } from "../plugin-connection.entity.js";
 

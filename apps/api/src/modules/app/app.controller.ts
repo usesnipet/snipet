@@ -2,7 +2,7 @@ import { Body, Controller, Post } from "@nestjs/common";
 import { CrudController, ZodPipe } from "@snipet/server-common";
 import { issueAppTokenSchema, Role } from "@snipet/shared";
 
-import { ApiKeyAuth, CurrentApiKey, Private, UserAuth } from "../../common/decorators/auth.decorator.js";
+import { ApiKeyAuth, CurrentApiKey, Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
 
 import { createAppSchema, findAppsSchema, updateAppSchema } from "./app.dto.js";
 import { App } from "./app.entity.js";

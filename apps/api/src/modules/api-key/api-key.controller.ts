@@ -2,7 +2,7 @@ import { Controller, Get, Param, ParseUUIDPipe, Post } from "@nestjs/common";
 import { CrudController } from "@snipet/server-common";
 import { Role } from "@snipet/shared";
 
-import { ApiKeyAuth, Private, UserAuth, CurrentApiKey } from "../../common/decorators/auth.decorator.js";
+import { ApiKeyAuth, Private, UserAuth, CurrentApiKey } from "#src/common/decorators/auth.decorator.js";
 
 import { createApiKeySchema, findApiKeysSchema, updateApiKeySchema } from "./api-key.dto.js";
 import { ApiKey } from "./api-key.entity.js";

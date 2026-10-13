@@ -1,7 +1,7 @@
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { Injectable } from "@nestjs/common";
 
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 
 export interface SourceObject {
   key: string;

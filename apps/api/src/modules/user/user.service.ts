@@ -7,7 +7,7 @@ import { hash } from "bcryptjs";
 import { DeepPartial, QueryDeepPartialEntity, Repository } from "typeorm";
 
 import { CrudService } from "@snipet/server-common";
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 import { User } from "./user.entity.js";
 
 export const hashPassword = (password: string) => hash(password, 10);

@@ -10,9 +10,9 @@ import type {
 } from "@snipet/shared";
 import { Ollama, type ChatResponse, type Message, type Tool } from "ollama";
 
-import { LlmError, llmErrorFromStatus } from "../../errors.js";
-import type { GenerateRequest, LlmProvider, ProviderStreamEvent } from "../../provider.js";
-import { validateOptions } from "../../registry.js";
+import { LlmError, llmErrorFromStatus } from "#src/infra/llm/errors.js";
+import type { GenerateRequest, LlmProvider, ProviderStreamEvent } from "#src/infra/llm/provider.js";
+import { validateOptions } from "#src/infra/llm/registry.js";
 
 const CONFIG_SCHEMA = {
   type: "object",

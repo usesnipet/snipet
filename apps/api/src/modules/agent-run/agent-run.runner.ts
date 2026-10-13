@@ -3,10 +3,10 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { AgentRunStatus } from "@snipet/shared";
 import { Repository } from "typeorm";
 
-import { toHttpException } from "../../common/filter/llm-error.filter.js";
-import { FailoverError, LlmError } from "../../infra/llm/errors.js";
-import { ActionResult } from "../../infra/plugin/driver.js";
-import { isGranted } from "../../utils/grant.js";
+import { toHttpException } from "#src/common/filter/llm-error.filter.js";
+import { FailoverError, LlmError } from "#src/infra/llm/errors.js";
+import { ActionResult } from "#src/infra/plugin/driver.js";
+import { isGranted } from "#src/utils/grant.js";
 import { Agent } from "../agent/agent.entity.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";

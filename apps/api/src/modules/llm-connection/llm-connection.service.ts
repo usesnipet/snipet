@@ -5,9 +5,9 @@ import { DeepPartial, Not, QueryDeepPartialEntity, Repository } from "typeorm";
 import { CrudService, restoreSecrets } from "@snipet/server-common";
 
 import { LlmConnection } from "./llm-connection.entity.js";
-import { LlmError } from "../../infra/llm/errors.js";
-import { LlmRegistry } from "../../infra/llm/registry.js";
-import { LlmRunner, LlmTarget, splitModelRef } from "../../infra/llm/runner.js";
+import { LlmError } from "#src/infra/llm/errors.js";
+import { LlmRegistry } from "#src/infra/llm/registry.js";
+import { LlmRunner, LlmTarget, splitModelRef } from "#src/infra/llm/runner.js";
 
 import type {
   ExecuteLlm,
