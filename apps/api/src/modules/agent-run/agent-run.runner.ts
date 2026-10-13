@@ -15,7 +15,19 @@ import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 
 import type { LlmMessage, LlmPart, LlmToolCallPart, LlmTool } from "@snipet/shared";
+
 const HISTORY_LIMIT = 20;
+
+type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;
+
+const INTERNAL_ERROR = "internal error";
+
+// Client-safe message for a failed run: LLM errors never carry the raw
+// provider message, which may hold hosts or credentials.
+function describe(err: unknown): string {
+  if (err instanceof LlmError || err instanceof FailoverError) err = toHttpException(err);
+  return err instanceof HttpException ? err.message : INTERNAL_ERROR;
+}
 
 // The agent loop: call the models, run the tools they ask for, feed the
 // results back, until a reply without tool calls or maxTurns LLM calls.
@@ -160,15 +172,4 @@ export class AgentRunner {
     }
     return { tools: tools.length ? tools : undefined, executors };
   }
-}
-
-type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;
-
-const INTERNAL_ERROR = "internal error";
-
-// Client-safe message for a failed run: LLM errors never carry the raw
-// provider message, which may hold hosts or credentials.
-function describe(err: unknown): string {
-  if (err instanceof LlmError || err instanceof FailoverError) err = toHttpException(err);
-  return err instanceof HttpException ? err.message : INTERNAL_ERROR;
 }
