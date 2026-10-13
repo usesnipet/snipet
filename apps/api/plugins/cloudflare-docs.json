@@ -1,0 +1,12 @@
+{
+  "key": "cloudflare-docs",
+  "name": "Cloudflare Docs",
+  "description": "Search Cloudflare's developer documentation",
+  "icon": "https://github.com/cloudflare.png",
+  "tags": ["docs", "remote", "official"],
+  "auth": { "type": "none" },
+  "actions": {
+    "driver": "mcp",
+    "options": { "url": "https://docs.mcp.cloudflare.com/mcp" }
+  }
+}

@@ -21,7 +21,7 @@
         "description": "A personal access token for the MCP server."
       }
     },
-    "required": ["url"]
+    "required": ["url", "Authorization"]
   },
   "actions": {
     "driver": "mcp",

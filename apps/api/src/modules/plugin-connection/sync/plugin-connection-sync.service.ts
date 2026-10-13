@@ -1,11 +1,11 @@
+import { DriverRegistry } from "#src/infra/plugin/driver.registry.js";
+import { PluginRegistry } from "#src/infra/plugin/plugin.registry.js";
+import { resolveOptions } from "#src/infra/plugin/resolve.js";
 import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { DriverRegistry } from "#src/infra/plugin/driver.registry.js";
-import { PluginRegistry } from "#src/infra/plugin/plugin.registry.js";
-import { resolveOptions } from "#src/infra/plugin/resolve.js";
 import { PluginAction } from "../plugin-action.entity.js";
 import { PluginConnection } from "../plugin-connection.entity.js";
 
@@ -37,7 +37,7 @@ export class PluginConnectionSyncService implements OnApplicationBootstrap {
       await this.connections.update(id, { lastSyncedAt: new Date(), lastSyncedError: null });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`sync plugin connection ${id}: ${message}`);
+      this.logger.warn(`sync plugin connection ${conn.name} (${conn.pluginKey}) ${id}: ${message}`);
       await this.connections.update(id, {
         lastSyncedAt: new Date(),
         lastSyncedError: message.slice(0, MAX_ERROR_LENGTH),

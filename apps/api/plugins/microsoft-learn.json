@@ -1,0 +1,12 @@
+{
+  "key": "microsoft-learn",
+  "name": "Microsoft Learn",
+  "description": "Search and fetch official Microsoft and Azure documentation",
+  "icon": "https://github.com/microsoftdocs.png",
+  "tags": ["docs", "remote", "official"],
+  "auth": { "type": "none" },
+  "actions": {
+    "driver": "mcp",
+    "options": { "url": "https://learn.microsoft.com/api/mcp" }
+  }
+}
