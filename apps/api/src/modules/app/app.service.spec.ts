@@ -41,7 +41,10 @@ describe("AppService.issueToken", () => {
     const dto = issueAppTokenSchema.parse({ externalUserId: "u-42", name: "", email: "" });
 
     const { token } = await service.issueToken(appId, dto);
-    const payload = await jwt.verifyAsync<AppTokenPayload>(token, { secret: APP_TOKEN_SECRET, audience: APP_TOKEN_AUDIENCE });
+    const payload = await jwt.verifyAsync<AppTokenPayload>(token, {
+      secret: APP_TOKEN_SECRET,
+      audience: APP_TOKEN_AUDIENCE,
+    });
 
     expect(payload.user).toEqual({});
   });
