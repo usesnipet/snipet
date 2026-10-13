@@ -23,10 +23,10 @@ export function Icon({ name, icon, className }: Props) {
   const isUrl = !isRawSvg && trimmed && /^(https?:|data:|\/)/.test(trimmed);
 
   return (
-    <Avatar className={cn("size-9 rounded-full bg-primary", className)}>
+    <Avatar className={cn("size-9 rounded-full bg-white", className)}>
       {isUrl && <AvatarImage src={trimmed} alt="" className="object-contain" />}
       <AvatarFallback
-        className="rounded-lg text-xs font-semibold text-white"
+        className="rounded-lg text-xs font-semibold text-foreground"
         style={isRawSvg ? undefined : { backgroundColor: stc(name) }}
       >
         {isRawSvg ? <SVG svg={trimmed!} className="size-full" /> : initials(name)}
