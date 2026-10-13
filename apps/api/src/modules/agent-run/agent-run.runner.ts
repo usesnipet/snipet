@@ -6,15 +6,17 @@ import { Repository } from "typeorm";
 import { toHttpException } from "../../common/filter/llm-error.filter.js";
 import { FailoverError, LlmError } from "../../infra/llm/errors.js";
 import { ActionResult } from "../../infra/plugin/driver.js";
+import { isGranted } from "../../utils/grant.js";
 import { Agent } from "../agent/agent.entity.js";
-import { KnowledgeService } from "../knowledge/knowledge.service.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 
 import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 
-import type { LlmMessage, LlmToolCallPart, LlmTool, KnowledgeSearchResult } from "@snipet/shared";
+import type { LlmMessage, LlmPart, LlmToolCallPart, LlmTool } from "@snipet/shared";
+const HISTORY_LIMIT = 20;
+
 // The agent loop: call the models, run the tools they ask for, feed the
 // results back, until a reply without tool calls or maxTurns LLM calls.
 @Injectable()
@@ -24,11 +26,30 @@ export class AgentRunner {
   constructor(
     @InjectRepository(AgentRun) private readonly runs: Repository<AgentRun>,
     @InjectRepository(AgentMessage) private readonly messages: Repository<AgentMessage>,
-    private readonly knowledge: KnowledgeService,
     private readonly llm: LlmConnectionService,
     private readonly events: AgentRunEvents,
     private readonly plugins: PluginConnectionService,
   ) {}
+
+  private async getHistory(sessionId: string): Promise<LlmMessage[]> {
+    const stored = await this.messages.find({
+      where: { sessionId },
+      order: { id: "DESC" },
+      take: HISTORY_LIMIT,
+    });
+    stored.reverse();
+    const messages = stored.slice(stored.findIndex((m) => m.role === "user"));
+    // Providers reject calls without results and results without calls; the
+    // history window or a crashed run can leave either.
+    const all = messages.flatMap((m) => m.parts);
+    const calls = new Set(all.flatMap((p) => (p.type === "tool_call" ? [p.id] : [])));
+    const results = new Set(all.flatMap((p) => (p.type === "tool_result" ? [p.toolCallId] : [])));
+    const paired = (p: LlmPart) =>
+      p.type === "tool_call" ? results.has(p.id) : p.type === "tool_result" ? calls.has(p.toolCallId) : true;
+    return messages
+      .map(({ role, parts }) => ({ role, parts: parts.filter(paired) })) // the DB only holds valid messages
+      .filter((m) => m.parts.length > 0);
+  }
 
   // Answers the session's history, which ends with the run's user message.
   // Never throws: the outcome is written to the run.
@@ -40,26 +61,9 @@ export class AgentRunner {
     let turns = 0;
 
     try {
-      const stored = await this.messages.find({
-        where: { sessionId: run.sessionId },
-        order: { id: "DESC" },
-        take: HISTORY_LIMIT,
-      });
-      stored.reverse();
-      const history: LlmMessage[] = stored
-        .slice(stored.findIndex((m) => m.role === "user"))
-        .map(({ role, parts }) => ({ role, parts }));
+      const history = await this.getHistory(run.sessionId);
       const system: LlmMessage[] = [{ role: "system", parts: [{ type: "text", text: `Your name is ${agent.name}` }] }];
       if (agent.systemPrompt) system.push({ role: "system", parts: [{ type: "text", text: agent.systemPrompt }] });
-      const lastUserMessage = history.findLast((m) => m.role === "user");
-      const content = lastUserMessage?.parts.map((p) => (p.type === "text" ? p.text : "")).join("\n");
-      if (content) {
-        const knowledge = await this.searchKnowledge(content);
-        system.push({
-          role: "system",
-          parts: [{ type: "text", text: `Knowledge search results: ${knowledge.map((k) => k.content).join("\n")}` }],
-        });
-      }
 
       const { tools, executors } = await this.resolveTools(agent);
       const targets = agent.llms.map((llm) => ({
@@ -118,12 +122,12 @@ export class AgentRunner {
     }
   }
 
-  private async save(run: AgentRun, { role, parts }: LlmMessage, model: string | null): Promise<LlmMessage> {
+  private async save(run: AgentRun, llmMessage: LlmMessage, model: string | null): Promise<LlmMessage> {
     const message = await this.messages.save(
-      this.messages.create({ sessionId: run.sessionId, runId: run.id, role, parts, model }),
+      this.messages.create({ sessionId: run.sessionId, runId: run.id, ...llmMessage, model }),
     );
-    this.events.emit(run.id, { event: "message", data: message });
-    return { role, parts };
+    this.events.emit(run.id, { event: "message", data: { ...message, ...llmMessage } });
+    return llmMessage;
   }
 
   private async callTool(execute: Executor | undefined, call: LlmToolCallPart): Promise<ActionResult> {
@@ -156,32 +160,11 @@ export class AgentRunner {
     }
     return { tools: tools.length ? tools : undefined, executors };
   }
-
-  private async searchKnowledge(query: string, limit: number = 10): Promise<KnowledgeSearchResult[]> {
-    return this.knowledge.search(query, limit);
-  }
 }
 
 type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;
 
-// Empty allow means every tool; deny wins.
-export function isGranted(name: string, { allow, deny }: { allow: string[]; deny: string[] }): boolean {
-  const matches = (glob: string) => globToRegExp(glob).test(name);
-  return (allow.length === 0 || allow.some(matches)) && !deny.some(matches);
-}
-
-// Only "*" is special: any run of characters.
-const globToRegExp = (glob: string) =>
-  new RegExp(
-    `^${glob
-      .split("*")
-      .map((s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
-      .join(".*")}$`,
-  );
-
 const INTERNAL_ERROR = "internal error";
-
-const HISTORY_LIMIT = 20;
 
 // Client-safe message for a failed run: LLM errors never carry the raw
 // provider message, which may hold hosts or credentials.
