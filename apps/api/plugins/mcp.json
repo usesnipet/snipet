@@ -1,0 +1,35 @@
+{
+  "key": "mcp",
+  "name": "MCP",
+  "description": "Manage MCP servers",
+  "icon": "",
+  "tags": ["mcp", "server", "official"],
+  "auth": { "type": "none" },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "title": "URL",
+        "description": "The URL of the MCP server"
+      },
+      "Authorization": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "Authorization",
+        "description": "A personal access token for the MCP server."
+      }
+    },
+    "required": ["url"]
+  },
+  "actions": {
+    "driver": "mcp",
+    "options": {
+      "url": "{{ connection.url }}",
+      "headers": {
+        "Authorization": "{{ connection.Authorization }}"
+      }
+    }
+  }
+}
