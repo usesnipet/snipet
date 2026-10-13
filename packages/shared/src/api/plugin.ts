@@ -1,29 +1,14 @@
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../schemas/json.js";
+import { baseManifestSchema, driverSchema } from "../schemas/manifest.js";
+
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// One capability of a plugin: which driver runs it and the driver's fixed
-// options. String values may hold `{{connection.<field>}}` placeholders.
-export const pluginCapabilitySchema = z.object({
-  driver: z.string().min(1),
-  options: z.record(z.string(), z.unknown()).default({}),
-});
-export type PluginCapability = z.infer<typeof pluginCapabilitySchema>;
-
 // The JSON manifest of a plugin (see plan/plugin.md).
-export const pluginManifestSchema = z.object({
-  key: z
-    .string()
-    .min(2)
-    .max(30)
-    .regex(/^[a-z0-9][a-z0-9-]*$/),
-  name: z.string().min(1),
-  description: z.string().default(""),
-  icon: z.string().optional(),
-  auth: z.object({ type: z.literal("none") }).default({ type: "none" }),
-  connection: z.record(z.string(), z.unknown()).default({ type: "object", properties: {} }),
-  actions: pluginCapabilitySchema.optional(),
-  healthCheck: pluginCapabilitySchema.optional(),
+export const pluginManifestSchema = baseManifestSchema.extend({
+  actions: driverSchema.optional(),
+  healthCheck: driverSchema.optional(),
 });
 export type PluginManifest = z.infer<typeof pluginManifestSchema>;
 
@@ -33,7 +18,7 @@ export const pluginConnectionSchema = z.object({
   name: z.string(),
   description: z.string(),
   pluginKey: z.string(),
-  config: z.record(z.string(), z.unknown()),
+  config: jsonObjectSchema,
   enabled: z.boolean(),
   lastSyncedAt: z.coerce.date().nullable(),
   lastSyncedError: z.string().nullable(),
@@ -49,7 +34,7 @@ export const createPluginConnectionSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   pluginKey: z.string().min(1).max(255),
-  config: z.record(z.string(), z.unknown()),
+  config: jsonObjectSchema,
   enabled: z.boolean().optional(),
 });
 export type CreatePluginConnection = z.infer<typeof createPluginConnectionSchema>;

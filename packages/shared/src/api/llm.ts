@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../schemas/json.js";
+import { baseManifestSchema, driverSchema } from "../schemas/manifest.js";
+
 // --- messages ------------------------------------------------------------
 
 export const llmRoleSchema = z.enum(["system", "user", "assistant", "tool"]);
@@ -44,40 +47,30 @@ export const llmToolSchema = z.object({
 export type LlmTool = z.infer<typeof llmToolSchema>;
 
 // --- providers and models ------------------------------------------------
+export enum LlmCapability {
+  TEXT = "text",
+  VISION = "vision",
+  TOOLS = "tools",
+  EMBEDDING = "embedding",
+}
+export const llmCapabilitySchema = z.enum(LlmCapability);
 
-// "static": the connection's `auth` section must satisfy `data` (a JSON Schema).
-export const llmProviderAuthSchema = z.object({
-  type: z.enum(["no-auth", "static"]),
-  data: z.record(z.string(), z.unknown()).optional(),
+// The JSON manifest of an LLM provider. Vision/tools are per model (see
+// LlmModel.capabilities), so text, vision and tools all go through `chat`.
+export const llmManifestSchema = baseManifestSchema.extend({
+  models: driverSchema.optional(),
+  embeddings: driverSchema.optional(),
+  chat: driverSchema.optional(), // generate + stream
+  healthCheck: driverSchema.optional(),
 });
-export type LlmProviderAuth = z.infer<typeof llmProviderAuthSchema>;
-
-export const llmProviderInfoSchema = z.object({
-  key: z.string(),
-  name: z.string(),
-  description: z.string(),
-  icon: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  auth: z.array(llmProviderAuthSchema),
-  schemas: z.object({
-    // Validates the connection's `config` section (endpoint, headers, ...).
-    config: z.record(z.string(), z.unknown()).optional(),
-    // Validates a target's `extraOptions` on execute.
-    generateExtraOptions: z.record(z.string(), z.unknown()).optional(),
-  }),
-});
-export type LlmProviderInfo = z.infer<typeof llmProviderInfoSchema>;
-
-export const llmCapabilitySchema = z.enum(["text", "vision", "tools", "streaming", "embedding"]);
-export type LlmCapability = z.infer<typeof llmCapabilitySchema>;
+export type LlmManifest = z.infer<typeof llmManifestSchema>;
 
 export const llmModelSchema = z.object({
   key: z.string(),
   name: z.string(),
   description: z.string(),
   capabilities: z.array(llmCapabilitySchema),
-  // 0 = unknown.
-  contextWindow: z.number(),
+  contextWindow: z.number(), // 0 = unknown.
   maxOutputTokens: z.number().optional(),
 });
 export type LlmModel = z.infer<typeof llmModelSchema>;
@@ -90,20 +83,14 @@ export type ListProviderModelsParams = z.infer<typeof listProviderModelsParamsSc
 
 // --- execute -------------------------------------------------------------
 
-// A connection's options: { auth: {...}, config: {...} }.
-export const llmConnectionOptionsSchema = z.object({
-  auth: z.record(z.string(), z.unknown()).optional(),
-  config: z.record(z.string(), z.unknown()).optional(),
-});
-export type LlmConnectionOptions = z.infer<typeof llmConnectionOptionsSchema>;
-
 // One model the runner may try, in order. model is "provider/model".
-// connectionOptions is used as-is; else connectionId; else the provider's default connection.
+// connection (a config checked against the manifest) is used as-is; else
+// connectionId; else the provider's default connection.
 export const executeLlmTargetSchema = z.object({
   model: z.string().min(1),
   connectionId: z.uuid().optional(),
-  connectionOptions: llmConnectionOptionsSchema.optional(),
-  extraOptions: z.record(z.string(), z.unknown()).optional(),
+  connection: jsonObjectSchema.optional(),
+  extraOptions: jsonObjectSchema.optional(),
 });
 export type ExecuteLlmTarget = z.infer<typeof executeLlmTargetSchema>;
 
