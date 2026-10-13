@@ -19,7 +19,26 @@ describe("render", () => {
     });
   });
 
-  it("throws on a missing variable", () => {
-    expect(() => render("{{connection.nope}}", vars)).toThrow('template variable "connection.nope" is not set');
+  it("renders a missing variable as an empty string", () => {
+    expect(render({ a: "{{connection.nope}}", b: "Bearer {{ connection.nope }}" }, vars)).toEqual({
+      a: "",
+      b: "Bearer ",
+    });
+  });
+
+  it("uses the default when the variable is missing, null or empty", () => {
+    const v = { connection: { apiKey: "k1", empty: "", nil: null } };
+    expect(
+      render(
+        {
+          missing: '{{ connection.nope || "d" }}',
+          empty: '{{connection.empty||"d"}}',
+          nil: 'x-{{ connection.nil || "d" }}',
+          set: '{{ connection.apiKey || "d" }}',
+          blank: '{{ connection.nope || "" }}',
+        },
+        v,
+      ),
+    ).toEqual({ missing: "d", empty: "d", nil: "x-d", set: "k1", blank: "" });
   });
 });

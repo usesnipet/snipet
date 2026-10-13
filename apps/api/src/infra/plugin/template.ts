@@ -1,9 +1,12 @@
-const PLACEHOLDER = /\{\{\s*([\w.]+)\s*\}\}/g;
+// `{{ path.to.value }}` or `{{ path.to.value || "default" }}`
+const PLACEHOLDER = /\{\{\s*([\w.]+)\s*(?:\|\|\s*"([^"]*)"\s*)?\}\}/g;
+const WHOLE = new RegExp(`^${PLACEHOLDER.source}$`);
 
 // Fills `{{path.to.value}}` placeholders in every string of `value` (nested
 // objects and arrays included) from `vars`. Only values are rendered, never
 // keys. A string that is exactly one placeholder takes the variable as is,
-// so numbers and booleans keep their type. A missing variable throws.
+// so numbers and booleans keep their type. A missing (or null/empty) variable
+// falls back to its `|| "default"`, or to an empty string.
 export function render<T>(value: T, vars: Record<string, unknown>): T {
   if (typeof value === "string") return renderString(value, vars) as T;
   if (Array.isArray(value)) return value.map((v: unknown) => render(v, vars)) as T;
@@ -14,18 +17,16 @@ export function render<T>(value: T, vars: Record<string, unknown>): T {
 }
 
 function renderString(template: string, vars: Record<string, unknown>): unknown {
-  const whole = /^\{\{\s*([\w.]+)\s*\}\}$/.exec(template);
-  if (whole) return lookup(vars, whole[1]);
-  return template.replace(PLACEHOLDER, (_, path: string) => String(lookup(vars, path)));
+  const whole = WHOLE.exec(template);
+  if (whole) return lookup(vars, whole[1], whole[2]);
+  return template.replace(PLACEHOLDER, (_, path: string, fallback?: string) => String(lookup(vars, path, fallback)));
 }
 
-function lookup(vars: Record<string, unknown>, path: string): unknown {
+function lookup(vars: Record<string, unknown>, path: string, fallback = ""): unknown {
   let current: unknown = vars;
   for (const part of path.split(".")) {
-    if (current === null || typeof current !== "object" || !Object.hasOwn(current, part)) {
-      throw new Error(`template variable "${path}" is not set`);
-    }
+    if (current === null || typeof current !== "object" || !Object.hasOwn(current, part)) return fallback;
     current = (current as Record<string, unknown>)[part];
   }
-  return current;
+  return current == null || current === "" ? fallback : current;
 }
