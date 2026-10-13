@@ -19,10 +19,10 @@ const envSchema = z.object({
   // apps/web/dist (same depth from src/ and dist/).
   WEB_DIR: z.string().default(resolve(import.meta.dirname, "../../web/dist")),
 
-  DATABASE_URL: z.string(),
+  DATABASE_URL: z.string().default("postgresql://postgres:postgres@localhost:5432/postgres"),
   DB_AUTO_MIGRATE: z.stringbool().default(true),
 
-  JWT_SECRET: z.string().min(32),
+  JWT_SECRET: z.string().min(32).default("change-me"),
   JWT_EXPIRES_IN_SECONDS: z.coerce
     .number()
     .int()
@@ -36,6 +36,7 @@ const envSchema = z.object({
 
   ENCRYPTION_KEY: z
     .string()
+    .default("change-me")
     .transform((v) => Buffer.from(v, "base64"))
     .refine((b) => b.length === 32, "ENCRYPTION_KEY must be 32 bytes, base64-encoded"),
 
