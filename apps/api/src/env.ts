@@ -19,10 +19,10 @@ const envSchema = z.object({
   // apps/web/dist (same depth from src/ and dist/).
   WEB_DIR: z.string().default(resolve(import.meta.dirname, "../../web/dist")),
 
-  DATABASE_URL: z.string(),
+  DATABASE_URL: z.string().default("postgresql://postgres:postgres@localhost:5432/postgres"),
   DB_AUTO_MIGRATE: z.stringbool().default(true),
 
-  JWT_SECRET: z.string().min(32),
+  JWT_SECRET: z.string().min(32).default("change-me"),
   JWT_EXPIRES_IN_SECONDS: z.coerce
     .number()
     .int()
@@ -36,6 +36,7 @@ const envSchema = z.object({
 
   ENCRYPTION_KEY: z
     .string()
+    .default("Y2opZ3fylU+VmHmdi9qSmJwdCGZbOHQ46WR1AgP21VU=")
     .transform((v) => Buffer.from(v, "base64"))
     .refine((b) => b.length === 32, "ENCRYPTION_KEY must be 32 bytes, base64-encoded"),
 
@@ -44,10 +45,8 @@ const envSchema = z.object({
   ROOT_USERNAME: z.string().default("admin"),
   ROOT_PASSWORD: z.union([z.literal(""), z.string()]).optional(),
 
-  // Seconds between MCP server tool syncs.
-  MCP_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(300).default(300),
-  // MCP server syncs running concurrently.
-  MCP_SYNC_CONCURRENCY: z.coerce.number().int().min(1).default(4),
+  // Plugin manifests (*.json). Defaults to apps/api/plugins (same depth from src/ and dist/).
+  PLUGINS_DIR: z.string().default(resolve(import.meta.dirname, "../plugins")),
 
   // Knowledge source: an S3 or S3-compatible bucket (MinIO, R2, ...). Without
   // a bucket or PGVECTOR_URL the knowledge pipeline stays off.

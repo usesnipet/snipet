@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
+import { ScheduleModule } from "@nestjs/schedule";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ensureDatabase } from "@snipet/server-common";
 
@@ -10,17 +11,16 @@ import { AgentRunModule } from "./modules/agent-run/agent-run.module.js";
 import { AgentModule } from "./modules/agent/agent.module.js";
 import { ApiKeyModule } from "./modules/api-key/api-key.module.js";
 import { AppsModule } from "./modules/app/app.module.js";
-import { AppTokenModule } from "./modules/app-token/app-token.module.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
 import { KnowledgeModule } from "./modules/knowledge/knowledge.module.js";
 import { LlmConnectionModule } from "./modules/llm-connection/llm-connection.module.js";
-import { McpServerModule } from "./modules/mcp-server/mcp-server.module.js";
+import { PluginConnectionModule } from "./modules/plugin-connection/plugin-connection.module.js";
 import { SystemModule } from "./modules/system/system.module.js";
-import { ToolModule } from "./modules/tool/tool.module.js";
 import { UserModule } from "./modules/user/user.module.js";
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: async () => {
         await ensureDatabase(env.DATABASE_URL);
@@ -31,13 +31,11 @@ import { UserModule } from "./modules/user/user.module.js";
     AgentRunModule,
     ApiKeyModule,
     AppsModule,
-    AppTokenModule,
     AuthModule,
     KnowledgeModule,
     LlmConnectionModule,
-    McpServerModule,
+    PluginConnectionModule,
     SystemModule,
-    ToolModule,
     UserModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],

@@ -1,11 +1,19 @@
-import { CatalogPageContent } from "@/components/catalog";
+import { CatalogPageContent, RegistryCatalog } from "@/components/catalog";
 import { Page } from "@/components/page";
 import { CreateLlmConnectionDialog } from "@/features/llm-connection/components/create-llm-connection-dialog";
-import { LlmConnectionCatalog } from "@/features/llm-connection/components/llm-connection-catalog";
+import { LlmConnectionCatalogCard } from "@/features/llm-connection/components/llm-connection-catalog-card";
 import { useDialog } from "@/lib/dialog";
+
+import { useListLlmConnections, useLlmProviders } from "@snipet/client";
+
+import type { LlmConnection } from "@snipet/shared";
+
+const providerOf = (connection: LlmConnection) => connection.provider;
 
 export const LlmConnectionsPage = () => {
   const { openDialog } = useDialog();
+  const providers = useLlmProviders();
+  const connections = useListLlmConnections();
 
   const openCreate = () => {
     openDialog({
@@ -24,7 +32,15 @@ export const LlmConnectionsPage = () => {
         createLabel="Add connection"
         onCreate={openCreate}
       >
-        <LlmConnectionCatalog />
+        <RegistryCatalog
+          registry={providers.data ?? []}
+          connections={connections.data?.data ?? []}
+          keyOf={providerOf}
+          isLoading={providers.isLoading || connections.isLoading}
+          isError={providers.isError || connections.isError}
+          noun="providers"
+          renderItem={(view) => <LlmConnectionCatalogCard view={view} />}
+        />
       </CatalogPageContent>
     </Page>
   );

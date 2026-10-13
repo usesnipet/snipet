@@ -1,15 +1,20 @@
 import { CatalogCard, CatalogList } from "@/components/catalog";
 import { DeleteDialog } from "@/components/confirm-dialog";
 import { LoadingFallback } from "@/components/loading-fallback";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { InputSearch } from "@/components/ui/input-search";
 import { useDialog } from "@/lib/dialog";
-import { AppWindow, Pencil, Trash } from "lucide-react";
+import { AppWindow, KeyRound, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import stc from "string-to-color";
 
 import { useDeleteApp, useListApps } from "@snipet/client";
 
 import { AppFormDialog } from "./app-form-dialog";
+import { AppTokenDialog } from "./app-token-dialog";
 
 import type { App } from "@snipet/shared";
 
@@ -80,14 +85,31 @@ function AppCard({ app }: { app: App }) {
       title={app.name}
       updatedAt={app.updatedAt.toISOString()}
       meta={origins ? `${origins} allowed origin${origins === 1 ? "" : "s"}` : "Any origin"}
-      actions={[
-        {
-          label: "Edit",
-          icon: <Pencil />,
-          onClick: () => openDialog({ component: AppFormDialog, props: { app } }),
-        },
-        { label: "Delete", icon: <Trash />, onClick: openDelete },
-      ]}
+      headerActions={
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => openDialog({ component: AppFormDialog, props: { app } })}>
+              <Pencil />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDialog({ component: AppTokenDialog, props: { app } })}>
+              <KeyRound />
+              Generate token
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={openDelete}>
+              <Trash2 />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      }
     />
   );
 }

@@ -6,9 +6,11 @@ import { ArrowRight, Plus } from "lucide-react";
 import { LlmConnectionListFromProviderDialog } from "./connection-list-from-provider-dialog";
 import { CreateLlmConnectionDialog } from "./create-llm-connection-dialog";
 
-import type { RegistryView } from "../lib/registry-view";
+import type { RegistryView } from "@/components/catalog";
+import type { LlmConnection } from "@snipet/shared";
+
 export type LlmConnectionCatalogCardProps = {
-  view: RegistryView;
+  view: RegistryView<LlmConnection>;
 };
 
 export function LlmConnectionCatalogCard({ view }: LlmConnectionCatalogCardProps) {
@@ -22,7 +24,6 @@ export function LlmConnectionCatalogCard({ view }: LlmConnectionCatalogCardProps
 
   const onClick = () => {
     if (connected) {
-      console.log("configure");
       openDialog({
         component: LlmConnectionListFromProviderDialog,
         props: { provider: { name, key } }

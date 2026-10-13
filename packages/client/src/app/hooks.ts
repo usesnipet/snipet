@@ -4,7 +4,7 @@ import { listApiKeyQueryKey } from "../api-key/hooks";
 
 import { appService } from "./service";
 
-import type { App, CreateApp, FindAppsParams, Paginated, UpdateApp } from "@snipet/shared";
+import type { App, AppTokenResponse, CreateApp, FindAppsParams, IssueAppToken, Paginated, UpdateApp } from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -72,3 +72,13 @@ export const useDeleteApp = (
     },
   });
 };
+
+export const useIssueAppToken = (): UseMutationResult<
+  AppTokenResponse,
+  Error,
+  { apiKey: string; data: IssueAppToken }
+> =>
+  useMutation({
+    mutationFn: ({ apiKey, data }) => appService.issueToken(apiKey, data),
+    meta: { errorMessage: "Failed to emit token" },
+  });

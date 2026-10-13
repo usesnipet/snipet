@@ -1,0 +1,38 @@
+[
+  {
+    "key": "minio",
+    "name": "MinIO",
+    "icon": "minio.svg",
+    "auth": {
+      "type": "apiKey",
+      "fields": {
+        "accessKeyId": { "type": "string" },
+        "secretAccessKey": { "type": "string", "secret": true }
+      }
+    },
+    "config": {
+      "endpoint": { "type": "string" },
+      "bucket": { "type": "string" }
+    },
+    "storage": {
+      "driver": "s3",
+      "options": { "forcePathStyle": true, "endpoint": "{{config.endpoint}}" }
+    }
+  },
+  {
+    "key": "github",
+    "name": "GitHub",
+    "auth": { "type": "oauth2", "authorizeUrl": "https://.../api.git", "scopes": ["repo"] },
+    "actions": {
+      "driver": "openapi",
+      "options": { "specUrl": "https://.../api.git", "paths": ["issues/create", "repos/get"] }
+    },
+    "triggers": {
+      "driver": "webhook",
+      "options": {
+        "verify": { "type": "hmac-sha256", "header": "X-Hub-Signature-256" },
+        "events": ["issues.opened"]
+      }
+    }
+  }
+]

@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import { useCreateAgent, useUpdateAgent } from "@snipet/client";
 import { agentFormSchema } from "../schemas";
 
-import { AgentMcpServersField } from "./agent-mcp-servers-field";
+import { AgentPluginsField } from "./agent-plugins-field";
 
 import type { AgentForm, AgentFormInput } from "../schemas";
 import type { Agent } from "@snipet/shared";
@@ -39,7 +39,9 @@ const toForm = (agent?: Agent): AgentFormInput => ({
     connectionId: llm.connectionId ?? undefined,
     extraOptions: llm.extraOptions ?? undefined,
   })) ?? [{ model: "" }],
-  mcpServers: (agent?.mcpServers ?? []).map(({ mcpServerId, allow, deny }) => ({ mcpServerId, allow, deny })),
+  pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, allow, deny }) => ({
+    pluginConnectionId, allow, deny,
+  })),
 });
 
 export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
@@ -64,7 +66,7 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
       <DialogHeader>
         <DialogTitle>{agent ? "Edit agent" : "New agent"}</DialogTitle>
         <DialogDescription>
-          An agent loops between its models and tools until the task is done or it runs out of turns.
+          An agent loops between its models and plugin actions until the task is done or it runs out of turns.
         </DialogDescription>
       </DialogHeader>
 
@@ -79,7 +81,7 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
               <FormSwitch name="enabled" label="Enabled" fieldclassname="pb-2" />
             </div>
             <LlmModelsField name="llms" allowedModelCapabilities={["text", "streaming"]} />
-            <AgentMcpServersField />
+            <AgentPluginsField />
           </FieldGroup>
         </form>
       </Form>

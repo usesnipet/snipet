@@ -1,19 +1,18 @@
 import { Body, Controller, Get, Headers, HttpCode, Param, ParseUUIDPipe, Post, Query, Res } from "@nestjs/common";
+import { ZodPipe } from "@snipet/server-common";
 import { Role } from "@snipet/shared";
 
-import { ZodPipe } from "@snipet/server-common";
+import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "../../common/decorators/auth.decorator.js";
+import { CurrentOwner } from "../../common/decorators/owner.decorator.js";
 
 import { findAgentRunsParamsSchema, startAgentRunSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
-import { CurrentOwner } from "../../common/decorators/owner.decorator.js";
 
 import type { Owner } from "../../common/decorators/owner.decorator.js";
 import type { FindAgentRunsParams, StartAgentRun } from "@snipet/shared";
 import type { Response } from "express";
-import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "../../common/decorators/auth.decorator.js";
-
 // Admins, API keys, or app end users (scoped to their own sessions by
-// CurrentOwner). Running an agent runs its MCP tools on the host.
+// CurrentOwner). Running an agent runs its actions on the host.
 @Private(UserAuth(Role.Admin), ApiKeyAuth(), AppTokenAuth())
 @Controller("agent-runs")
 export class AgentRunController {

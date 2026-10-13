@@ -4,7 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import { hasRole, Role } from "@snipet/shared";
 
 import { ApiKeyService } from "../../modules/api-key/api-key.service.js";
-import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "../../modules/app-token/app-token.service.js";
+import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "../../modules/app/app.service.js";
 import { AUTH, AuthStrategy } from "../decorators/auth.decorator.js";
 
 import type { JwtVerifyOptions } from "@nestjs/jwt";

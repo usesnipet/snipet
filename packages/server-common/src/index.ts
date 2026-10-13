@@ -9,3 +9,4 @@ export * from "./pipes/zod.pipe.js";
 export * from "./utils/json-schema/json-schema.js";
 export * from "./utils/secret-box.js";
 export * from "./utils/sleep.js";
+export * from "./utils/map-by.js";

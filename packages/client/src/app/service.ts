@@ -1,14 +1,16 @@
-import http from "../http";
-
 import {
   appSchema,
+  appTokenResponseSchema,
   createAppSchema,
   findAppsParamsSchema,
+  issueAppTokenSchema,
   paginatedAppSchema,
   updateAppSchema,
 } from "@snipet/shared";
 
-import type { App, CreateApp, FindAppsParams, Paginated, UpdateApp } from "@snipet/shared";
+import http from "../http";
+
+import type { App, AppTokenResponse, CreateApp, FindAppsParams, IssueAppToken, Paginated, UpdateApp } from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -69,10 +71,27 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
+// issueToken emits an end-user token for the API key's app. API key only: no
+// bearer token, and a 401 (bad key) mustn't log the dashboard user out.
+const issueToken = async (
+  apiKey: string,
+  body: IssueAppToken,
+  opts: ServicePostOptions<IssueAppToken, AppTokenResponse> = {},
+): Promise<AppTokenResponse> =>
+  http.post({
+    url: `${APP_URL}/issue-token`,
+    body,
+    headers: { "X-API-Key": apiKey },
+    skipAuth: true,
+    schemas: { body: issueAppTokenSchema, response: appTokenResponseSchema },
+    ...opts,
+  });
+
 export const appService = {
   list,
   findById,
   create,
   update,
   delete: remove,
+  issueToken,
 };

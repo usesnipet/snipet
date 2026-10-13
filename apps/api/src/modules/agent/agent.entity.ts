@@ -1,22 +1,13 @@
 import type {
   Agent as AgentContract,
   AgentLlm as AgentLlmContract,
-  AgentMcpServer as AgentMcpServerContract,
+  AgentPluginConnection as AgentPluginConnectionContract,
 } from "@snipet/shared";
-import {
-  AfterLoad,
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryColumn,
-  PrimaryGeneratedColumn,
-} from "typeorm";
-
 import { BaseEntity } from "@snipet/server-common";
+import { AfterLoad, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
+
 import { LlmConnection } from "../llm-connection/llm-connection.entity.js";
-import { McpServer } from "../mcp-server/mcp-server.entity.js";
+import { PluginConnection } from "../plugin-connection/plugin-connection.entity.js";
 
 @Entity("agents")
 export class Agent extends BaseEntity implements AgentContract {
@@ -38,8 +29,8 @@ export class Agent extends BaseEntity implements AgentContract {
   @OneToMany(() => AgentLlm, (llm) => llm.agent, { eager: true, cascade: ["insert"] })
   llms: AgentLlm[];
 
-  @OneToMany(() => AgentMcpServer, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
-  mcpServers: AgentMcpServer[];
+  @OneToMany(() => AgentPluginConnection, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
+  pluginConnections: AgentPluginConnection[];
 
   // Eager relations come unordered.
   @AfterLoad()
@@ -78,21 +69,22 @@ export class AgentLlm implements AgentLlmContract {
   extraOptions: Record<string, unknown> | null;
 }
 
-@Entity("agent_mcp_servers")
-export class AgentMcpServer implements AgentMcpServerContract {
-  @PrimaryColumn({ type: "uuid" })
+@Entity("agent_plugin_connections")
+@Unique(["agentId", "pluginConnectionId"])
+export class AgentPluginConnection extends BaseEntity implements AgentPluginConnectionContract {
+  @Column({ type: "uuid" })
   agentId: string;
 
-  @ManyToOne(() => Agent, (agent) => agent.mcpServers, { onDelete: "CASCADE" })
+  @ManyToOne(() => Agent, (agent) => agent.pluginConnections, { onDelete: "CASCADE" })
   @JoinColumn({ name: "agentId" })
   agent?: Agent;
 
-  @PrimaryColumn({ type: "uuid" })
-  mcpServerId: string;
+  @Column({ type: "uuid" })
+  pluginConnectionId: string;
 
-  @ManyToOne(() => McpServer, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "mcpServerId" })
-  mcpServer?: McpServer;
+  @ManyToOne(() => PluginConnection, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "pluginConnectionId" })
+  pluginConnection?: PluginConnection;
 
   @Column({ type: "text", array: true, default: [] })
   allow: string[];

@@ -2,7 +2,10 @@ import type { RJSFSchema, UiSchema } from "@rjsf/utils";
 
 const PASSWORD_FIELD_RE = /(api[_-]?key|password|secret|token)/i;
 
-/** Marks secret-like properties as password widgets when the schema omits format. */
+/**
+ * Marks secret properties (`secret: true`, as plugin manifests do) or
+ * secret-like names as password widgets when the schema omits format.
+ */
 export function buildPasswordUiSchema(schema: RJSFSchema): UiSchema {
   const properties = schema.properties;
   if (!properties || typeof properties !== "object") {
@@ -26,7 +29,7 @@ export function buildPasswordUiSchema(schema: RJSFSchema): UiSchema {
     if (
       propSchema.type === "string" &&
       propSchema.format !== "password" &&
-      PASSWORD_FIELD_RE.test(key)
+      (propSchema.secret === true || PASSWORD_FIELD_RE.test(key))
     ) {
       ui[key] = { "ui:widget": "password" };
     }
