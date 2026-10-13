@@ -3,6 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "imports": {
+    "#src/*": {
+      "types": "./src/*",
+      "default": "./dist/*"
+    }
+  },
   "files": [
     "dist",
     "plugins"
@@ -87,6 +93,7 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
+      "^#src/(.*)\\.js$": "<rootDir>/$1",
       "^@snipet/shared$": "<rootDir>/../../../packages/shared/src/index.ts",
       "^@snipet/server-common$": "<rootDir>/../../../packages/server-common/src/index.ts",
       "^(\\.{1,2}/.*)\\.js$": "$1"
