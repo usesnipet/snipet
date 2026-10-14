@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { dataUrlSchema } from "../schemas/data-url.js";
 import { jsonObjectSchema } from "../schemas/json.js";
 
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
@@ -44,13 +45,6 @@ export type Agent = z.infer<typeof agentSchema>;
 
 export const paginatedAgentSchema = paginatedSchema(agentSchema);
 
-// Small image inlined as a data URL; the web app resizes it to 256px before
-// upload. The current avatar's URL may be sent back unchanged.
-const avatarDataUrlSchema = z
-  .string()
-  .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/, "Avatar must be a PNG, JPEG or WebP image")
-  .max(80_000, "Avatar is too large");
-
 // Glob patterns; blanks are dropped.
 const patternsSchema = z.array(z.string().trim()).transform((patterns) => patterns.filter(Boolean));
 
@@ -59,7 +53,10 @@ const patternsSchema = z.array(z.string().trim()).transform((patterns) => patter
 export const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(255),
   description: z.string().optional(),
-  avatar: z.union([avatarDataUrlSchema, z.url()]).nullable().optional(),
+  avatar: z
+    .union([dataUrlSchema.max(80_000, "Avatar is too large"), z.url()])
+    .nullable()
+    .optional(),
   systemPrompt: z.string().optional(),
   maxTurns: z
     .number()

@@ -11,6 +11,7 @@ import { AgentModule } from "#src/modules/agent/agent.module.js";
 import { ApiKeyModule } from "#src/modules/api-key/api-key.module.js";
 import { AppsModule } from "#src/modules/app/app.module.js";
 import { AuthModule } from "#src/modules/auth/auth.module.js";
+import { FilesModule } from "#src/modules/files/files.module.js";
 import { KnowledgeModule } from "#src/modules/knowledge/knowledge.module.js";
 import { LlmConnectionModule } from "#src/modules/llm-connection/llm-connection.module.js";
 import { PluginConnectionModule } from "#src/modules/plugin-connection/plugin-connection.module.js";
@@ -31,6 +32,7 @@ import { UserModule } from "#src/modules/user/user.module.js";
     ApiKeyModule,
     AppsModule,
     AuthModule,
+    FilesModule,
     KnowledgeModule,
     LlmConnectionModule,
     PluginConnectionModule,
