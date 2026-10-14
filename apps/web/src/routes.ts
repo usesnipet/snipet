@@ -8,9 +8,6 @@ export const ROUTES = {
   llmPlayground: "/llm/playground",
   plugins: "/plugins",
   apps: "/apps",
-  knowledge: "/knowledge",
-  connections: "/connections",
-  settings: "/settings",
   users: "/users",
   apiKey: "/api-keys"
 } as const;
