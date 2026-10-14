@@ -1,12 +1,12 @@
+import { toHttpException } from "#src/common/filter/llm-error.filter.js";
+import { FailoverError, LlmError } from "#src/llm/errors.js";
+import { ActionResult } from "#src/plugin/driver.js";
+import { isGranted } from "#src/utils/grant/grant.js";
 import { HttpException, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { AgentRunStatus } from "@snipet/shared";
 import { Repository } from "typeorm";
 
-import { toHttpException } from "#src/common/filter/llm-error.filter.js";
-import { FailoverError, LlmError } from "#src/infra/llm/errors.js";
-import { ActionResult } from "#src/infra/plugin/driver.js";
-import { isGranted } from "#src/utils/grant.js";
 import { Agent } from "../agent/agent.entity.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
@@ -15,7 +15,6 @@ import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 
 import type { LlmMessage, LlmPart, LlmToolCallPart, LlmTool } from "@snipet/shared";
-
 const HISTORY_LIMIT = 20;
 
 type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;

@@ -2,6 +2,7 @@ import type {
   Agent as AgentContract,
   AgentLlm as AgentLlmContract,
   AgentPluginConnection as AgentPluginConnectionContract,
+  JsonObject,
 } from "@snipet/shared";
 import { BaseEntity } from "@snipet/server-common";
 import { AfterLoad, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
@@ -65,8 +66,8 @@ export class AgentLlm implements AgentLlmContract {
   @JoinColumn({ name: "connectionId" })
   connection?: LlmConnection | null;
 
-  @Column({ type: "jsonb", nullable: true })
-  extraOptions: Record<string, unknown> | null;
+  @Column({ type: "json", nullable: true })
+  extraOptions: JsonObject | null;
 }
 
 @Entity("agent_plugin_connections")

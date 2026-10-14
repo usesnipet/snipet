@@ -1,0 +1,64 @@
+{
+  "key": "openai",
+  "name": "OpenAI",
+  "description": "OpenAI is a cloud-based AI platform that provides a range of AI services, including natural language processing, machine learning, and computer vision.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "OpenAI base URL, from openai.com/api-keys."
+      },
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "OpenAI API key, from openai.com/api-keys."
+      },
+      "organization": {
+        "type": "string",
+        "title": "Organization",
+        "description": "OpenAI organization, from openai.com/api-keys."
+      }
+    },
+    "required": ["baseUrl"]
+  },
+  "models": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl }}/v1",
+      "apiKey": "{{ connection.apiKey }}",
+      "organization": "{{ connection.organization }}",
+      "headers": {
+        "type": "object",
+        "additionalProperties": { "type": "string" },
+        "description": "Extra headers on every request"
+      }
+    }
+  },
+  "chat": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl }}/v1",
+      "apiKey": "{{ connection.apiKey }}",
+      "organization": "{{ connection.organization }}",
+      "headers": {
+        "type": "object",
+        "additionalProperties": { "type": "string" },
+        "description": "Extra headers on every request"
+      }
+    }
+  },
+  "healthCheck": {
+    "driver": "http",
+    "options": {
+      "url": "{{ connection.baseUrl }}/v1/models",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}",
+        "OpenAI-Organization": "{{ connection.organization }}"
+      }
+    }
+  }
+}

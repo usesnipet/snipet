@@ -47,6 +47,7 @@ const envSchema = z.object({
 
   // Plugin manifests (*.json). Defaults to apps/api/plugins (same depth from src/ and dist/).
   PLUGINS_DIR: z.string().default(resolve(import.meta.dirname, "../plugins")),
+  LLMS_DIR: z.string().default(resolve(import.meta.dirname, "../llms")),
 
   // Knowledge source: an S3 or S3-compatible bucket (MinIO, R2, ...). Without
   // a bucket or PGVECTOR_URL the knowledge pipeline stays off.

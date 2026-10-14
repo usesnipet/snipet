@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import { AgentRunStatus } from "@snipet/shared";
 
-import { LlmError } from "#src/infra/llm/errors.js";
+import { LlmError } from "#src/llm/errors.js";
 
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";

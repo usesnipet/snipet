@@ -1,8 +1,7 @@
-import type { PluginConnection as PluginConnectionContract } from "@snipet/shared";
-import { Column, Entity, Index } from "typeorm";
-
-import { BaseEntity, open, seal } from "@snipet/server-common";
+import type { JsonObject, PluginConnection as PluginConnectionContract } from "@snipet/shared";
 import { env } from "#src/env.js";
+import { BaseEntity, open, seal } from "@snipet/server-common";
+import { Column, Entity, Index } from "typeorm";
 
 import type { ValueTransformer } from "typeorm";
 
@@ -26,7 +25,7 @@ export class PluginConnection extends BaseEntity implements PluginConnectionCont
   pluginKey: string;
 
   @Column({ type: "text", transformer: sealConfig })
-  config: Record<string, unknown>;
+  config: JsonObject;
 
   @Column({ default: true })
   enabled: boolean;

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../schemas/json.js";
+
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 // One LLM of an agent; the runner tries them by ascending order. Same fields
@@ -11,7 +13,7 @@ export const agentLlmSchema = z.object({
   order: z.number().int(),
   model: z.string(),
   connectionId: z.uuid().nullable(),
-  extraOptions: z.record(z.string(), z.unknown()).nullable(),
+  extraOptions: jsonObjectSchema.nullable(),
 });
 export type AgentLlm = z.infer<typeof agentLlmSchema>;
 

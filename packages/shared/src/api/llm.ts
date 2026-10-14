@@ -58,8 +58,7 @@ export const llmCapabilitySchema = z.enum(LlmCapability);
 // The JSON manifest of an LLM provider. Vision/tools are per model (see
 // LlmModel.capabilities), so text, vision and tools all go through `chat`.
 export const llmManifestSchema = baseManifestSchema.extend({
-  models: driverSchema.optional(),
-  embeddings: driverSchema.optional(),
+  models: driverSchema,
   chat: driverSchema.optional(), // generate + stream
   healthCheck: driverSchema.optional(),
 });
@@ -71,7 +70,7 @@ export const llmModelSchema = z.object({
   description: z.string(),
   capabilities: z.array(llmCapabilitySchema),
   contextWindow: z.number(), // 0 = unknown.
-  maxOutputTokens: z.number().optional(),
+  maxOutputTokens: z.number().nullish(),
 });
 export type LlmModel = z.infer<typeof llmModelSchema>;
 
@@ -83,13 +82,11 @@ export type ListProviderModelsParams = z.infer<typeof listProviderModelsParamsSc
 
 // --- execute -------------------------------------------------------------
 
-// One model the runner may try, in order. model is "provider/model".
-// connection (a config checked against the manifest) is used as-is; else
-// connectionId; else the provider's default connection.
+// One model the runner may try, in order. model is "llm/model". Runs on
+// connectionId, else the llm's default connection.
 export const executeLlmTargetSchema = z.object({
   model: z.string().min(1),
   connectionId: z.uuid().optional(),
-  connection: jsonObjectSchema.optional(),
   extraOptions: jsonObjectSchema.optional(),
 });
 export type ExecuteLlmTarget = z.infer<typeof executeLlmTargetSchema>;

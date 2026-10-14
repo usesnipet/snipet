@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { PluginModule } from "#src/infra/plugin/plugin.module.js";
+import { PluginModule } from "#src/plugin/plugin.module.js";
 import { PluginAction } from "./plugin-action.entity.js";
 import { PluginConnectionController } from "./plugin-connection.controller.js";
 import { PluginConnection } from "./plugin-connection.entity.js";

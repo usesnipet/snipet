@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import { BaseExceptionFilter } from "@nestjs/core";
 
-import { attemptReason, FailoverError, LlmError, LlmErrorKind } from "#src/infra/llm/errors.js";
+import { attemptReason, FailoverError, LlmError, LlmErrorKind } from "#src/llm/errors.js";
 
 // Client-safe responses: never the raw provider message for upstream
 // failures, which may carry hosts or credentials details.
