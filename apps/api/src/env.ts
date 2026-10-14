@@ -14,7 +14,7 @@ if (existsSync(rootEnvFile)) {
 }
 
 const envSchema = z.object({
-  PORT: z.coerce.number().int().default(8080),
+  PORT: z.coerce.number().int().default(8852),
   // The built web app, served when it holds an index.html. Defaults to
   // apps/web/dist (same depth from src/ and dist/).
   WEB_DIR: z.string().default(resolve(import.meta.dirname, "../../web/dist")),

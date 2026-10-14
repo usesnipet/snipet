@@ -3,10 +3,10 @@ services:
     build: .
     image: snipet-agent
     ports:
-      - "8080:8080"
+      - "8852:8852"
     env_file: .env
     environment:
-      PORT: 8080
+      PORT: 8852
       DATABASE_URL: postgresql://postgres:postgres@db:5432/snipet
       PGVECTOR_URL: postgresql://postgres:postgres@rag-db:5432/snipet_rag
     depends_on:

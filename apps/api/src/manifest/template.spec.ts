@@ -1,7 +1,7 @@
 import { render } from "./template.js";
 
 describe("render", () => {
-  const vars = { connection: { apiKey: "k1", port: 8080 } };
+  const vars = { connection: { apiKey: "k1", port: 8852 } };
 
   it("fills placeholders in nested values but never in keys", () => {
     expect(
@@ -14,8 +14,8 @@ describe("render", () => {
 
   it("keeps the variable type when the string is a single placeholder", () => {
     expect(render({ port: "{{connection.port}}", url: "http://h:{{connection.port}}" }, vars)).toEqual({
-      port: 8080,
-      url: "http://h:8080",
+      port: 8852,
+      url: "http://h:8852",
     });
   });
 
