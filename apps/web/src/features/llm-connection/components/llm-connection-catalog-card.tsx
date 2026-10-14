@@ -3,7 +3,7 @@ import { Icon } from "@/components/icon";
 import { useDialog } from "@/lib/dialog";
 import { ArrowRight, Plus } from "lucide-react";
 
-import { LlmConnectionListFromProviderDialog } from "./connection-list-from-provider-dialog";
+import { LlmConnectionListDialog } from "./llm-connection-list-dialog";
 import { CreateLlmConnectionDialog } from "./create-llm-connection-dialog";
 
 import type { RegistryView } from "@/components/catalog";
@@ -25,13 +25,13 @@ export function LlmConnectionCatalogCard({ view }: LlmConnectionCatalogCardProps
   const onClick = () => {
     if (connected) {
       openDialog({
-        component: LlmConnectionListFromProviderDialog,
-        props: { provider: { name, key } }
+        component: LlmConnectionListDialog,
+        props: { llm: { name, key } }
       })
     } else {
       openDialog({
         component: CreateLlmConnectionDialog,
-        props: { defaultValues: { provider: key } }
+        props: { defaultValues: { llmKey: key } }
       });
     }
   }

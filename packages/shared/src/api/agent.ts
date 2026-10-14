@@ -5,8 +5,8 @@ import { jsonObjectSchema } from "../schemas/json.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 // One LLM of an agent; the runner tries them by ascending order. Same fields
-// as ExecuteLlmTarget: model is "provider/model", connectionId falls back to
-// the provider's default connection.
+// as ExecuteLlmTarget: model is "llm/model", connectionId falls back to
+// the llm's default connection.
 export const agentLlmSchema = z.object({
   id: z.uuid(),
   agentId: z.uuid(),
@@ -61,7 +61,7 @@ export const createAgentSchema = z.object({
   llms: z
     .array(
       z.object({
-        model: z.string().regex(/^[^/]+\/.+$/, "Select a provider and a model"),
+        model: z.string().regex(/^[^/]+\/.+$/, "Select an LLM and a model"),
         connectionId: z.uuid().optional(),
         extraOptions: z.record(z.string(), z.unknown()).optional(),
       }),

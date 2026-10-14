@@ -1,36 +1,36 @@
 import { FormSelect } from "@/components/form/select";
 import { useFormContext } from "react-hook-form";
 
-import type { LlmProviderInfo } from "@snipet/shared";
+import type { LlmManifest } from "@snipet/shared";
 
-type ProviderSelectProps = {
+type LlmSelectProps = {
   name: string;
-  /** Field that holds the provider config — reset when the provider changes. */
+  /** Field that holds the connection config — reset when the llm changes. */
   configName: string;
-  providers: LlmProviderInfo[];
+  llms: LlmManifest[];
   label?: string;
   placeholder?: string;
   disabled?: boolean;
   fieldclassname?: string;
-  /** Called after the provider changes, with the new driver key. */
+  /** Called after the llm changes, with the new driver key. */
   onAfterChange?: (key: string) => void;
 };
 
-export function ProviderSelect({
+export function LlmSelect({
   name,
   configName,
-  providers,
+  llms,
   label,
-  placeholder = "Select a provider",
+  placeholder = "Select an LLM",
   disabled,
   fieldclassname,
   onAfterChange,
-}: ProviderSelectProps) {
+}: LlmSelectProps) {
   const form = useFormContext();
 
-  const options = providers.map((provider) => ({
-    label: provider.name,
-    value: provider.key,
+  const options = llms.map((llm) => ({
+    label: llm.name,
+    value: llm.key,
   }));
 
   return (

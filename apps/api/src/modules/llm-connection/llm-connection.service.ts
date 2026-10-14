@@ -80,7 +80,7 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
   }
 
   // Models of connectionId, else of the llm's default connection.
-  async listProviderModels(llmKey: string, connectionId?: string): Promise<LlmModel[]> {
+  async listLLMModels(llmKey: string, connectionId?: string): Promise<LlmModel[]> {
     return this.findModels((await this.connectionFor(llmKey, connectionId)).id);
   }
 

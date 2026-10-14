@@ -4,7 +4,7 @@ import { jsonObjectSchema } from "../schemas/json.js";
 
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// A named, configured connection to an LLM provider.
+// A named, configured connection to an LLM.
 export const llmConnectionSchema = z.object({
   id: z.uuid(),
   name: z.string(),

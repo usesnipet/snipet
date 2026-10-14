@@ -15,7 +15,7 @@ import {
   UseFilters,
 } from "@nestjs/common";
 import { CrudController, ZodPipe } from "@snipet/server-common";
-import { executeLlmSchema, listProviderModelsParamsSchema, Role } from "@snipet/shared";
+import { executeLlmSchema, listLLMModelsParamsSchema, Role } from "@snipet/shared";
 
 import {
   createLlmConnectionSchema,
@@ -25,7 +25,7 @@ import {
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionService } from "./llm-connection.service.js";
 
-import type { ExecuteLlm, ListProviderModelsParams, LlmStreamEvent } from "@snipet/shared";
+import type { ExecuteLlm, ListLLMModelsParams, LlmStreamEvent } from "@snipet/shared";
 import type { Response } from "express";
 // CRUD is admin only and never returns credentials: secret config fields
 // come back as placeholders. Running models is open to any user and API keys.
@@ -59,18 +59,15 @@ export class LlmConnectionController extends CrudController<LlmConnection>({
   }
 
   @Public()
-  @Get("providers")
-  listProviders() {
+  @Get("llms")
+  listLLMs() {
     return this.service.listManifests();
   }
 
   @Private(UserAuth(), ApiKeyAuth())
-  @Get("providers/:key/models")
-  listProviderModels(
-    @Param("key") key: string,
-    @Query(new ZodPipe(listProviderModelsParamsSchema)) query: ListProviderModelsParams,
-  ) {
-    return this.service.listProviderModels(key, query.connectionId);
+  @Get("llms/:key/models")
+  listLLMModels(@Param("key") key: string, @Query(new ZodPipe(listLLMModelsParamsSchema)) query: ListLLMModelsParams) {
+    return this.service.listLLMModels(key, query.connectionId);
   }
 
   @Private(UserAuth(), ApiKeyAuth())

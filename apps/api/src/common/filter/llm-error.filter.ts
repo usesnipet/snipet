@@ -18,7 +18,7 @@ import { attemptReason, FailoverError, LlmError, LlmErrorKind } from "#src/llm/e
 // Client-safe responses: never the raw provider message for upstream
 // failures, which may carry hosts or credentials details.
 const BY_KIND: Record<LlmErrorKind, (e: LlmError) => HttpException> = {
-  provider_not_found: () => new NotFoundException("llm provider not found"),
+  llm_not_found: () => new NotFoundException("llm not found"),
   model_not_found: () => new NotFoundException("llm model not found"),
   auth: () => new UnauthorizedException("llm provider rejected credentials"),
   rate_limit: () => new HttpException("llm provider rate limited", HttpStatus.TOO_MANY_REQUESTS),

@@ -7,32 +7,21 @@ import { FieldGroup } from "@/components/ui/field";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 
-import { useLlmProviders } from "@snipet/client";
+import { useLLMs } from "@snipet/client";
 
-import { ProviderSelect } from "./provider-select";
+import { LlmSelect } from "./llm-select";
 
 import type { RJSFSchema } from "@rjsf/utils";
 export function LlmFormFields() {
   const form = useFormContext();
-  const { data: providers = [] } = useLlmProviders();
+  const { data: llms = [] } = useLLMs();
 
-  const providerKey = form.watch("provider") as string | undefined;
-  const selected = providers.find((provider) => provider.key === providerKey);
+  const llmKey = form.watch("llmKey") as string | undefined;
+  const selected = llms.find((llm) => llm.key === llmKey);
+  const configSchema = selected?.connection as RJSFSchema | undefined;
+  const hasConfig = Object.keys(configSchema?.properties ?? {}).length > 0;
 
-  // A provider can offer several auth methods; render the first "static" one
-  // that carries a schema (most providers only declare one). "no-auth" needs
-  // no form at all.
-  const authSchema = selected?.auth.find((method) => method.type === "static" && method.data)
-    ?.data as RJSFSchema | undefined;
-  const configSchema = (selected?.schemas.config ?? undefined) as RJSFSchema | undefined;
-
-  // The "config" form field holds the nested connection options the backend
-  // expects: { auth: {...}, config: {...} }.
-  const existingConnectionOptions = form.getValues("config") as
-    | { auth?: Record<string, unknown>; config?: Record<string, unknown> }
-    | undefined;
-
-  const [previousProviderKey, setPreviousProviderKey] = useState<string | undefined>(providerKey);
+  const [previousLlmKey, setPreviousLlmKey] = useState<string | undefined>(llmKey);
 
   return (
     <FieldGroup>
@@ -44,19 +33,19 @@ export function LlmFormFields() {
         required
       />
 
-      <ProviderSelect
-        name="provider"
+      <LlmSelect
+        name="llmKey"
         configName="config"
-        providers={providers}
-        label="Provider"
-        placeholder="Select a provider"
+        llms={llms}
+        label="LLM"
+        placeholder="Select an LLM"
         onAfterChange={(key) => {
-          const prev = providers.find((provider) => provider.key === previousProviderKey);
-          const picked = providers.find((provider) => provider.key === key);
+          const prev = llms.find((llm) => llm.key === previousLlmKey);
+          const picked = llms.find((llm) => llm.key === key);
           if (picked && (!form.getValues("name") || form.getValues("name") === prev?.name)) {
             form.setValue("name", picked.name, { shouldDirty: true });
           }
-          setPreviousProviderKey(key);
+          setPreviousLlmKey(key);
         }}
       />
 
@@ -83,33 +72,15 @@ export function LlmFormFields() {
         </div>
       ) : null}
 
-      {selected && authSchema ? (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Authentication</p>
-          <div className="rounded-lg border bg-muted/30 p-3">
-            <SchemaFormFields
-              key={`${providerKey}-auth`}
-              schema={authSchema}
-              defaultData={existingConnectionOptions?.auth}
-              onChange={(data) =>
-                form.setValue("config.auth", data, { shouldDirty: true })
-              }
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {selected && configSchema ? (
+      {selected && hasConfig ? (
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Configuration</p>
           <div className="rounded-lg border bg-muted/30 p-3">
             <SchemaFormFields
-              key={`${providerKey}-config`}
-              schema={configSchema}
-              defaultData={existingConnectionOptions?.config}
-              onChange={(data) =>
-                form.setValue("config.config", data, { shouldDirty: true })
-              }
+              key={`${llmKey}-config`}
+              schema={configSchema!}
+              defaultData={form.getValues("config")}
+              onChange={(data) => form.setValue("config", data, { shouldDirty: true })}
             />
           </div>
         </div>

@@ -58,7 +58,7 @@ export class AgentLlm implements AgentLlmContract {
   @Column({ length: 255 })
   model: string;
 
-  // A deleted connection falls back to the provider's default one.
+  // A deleted connection falls back to the llm's default one.
   @Column({ type: "uuid", nullable: true })
   connectionId: string | null;
 

@@ -80,10 +80,10 @@ describe("LlmConnectionService.resolveTargets", () => {
   });
 });
 
-describe("LlmConnectionService.listProviderModels", () => {
+describe("LlmConnectionService.listLLMModels", () => {
   it("reads the default connection's models from the database", async () => {
     const { service, models } = setup();
-    await service.listProviderModels("openai");
+    await service.listLLMModels("openai");
     expect(models.find).toHaveBeenCalledWith({ where: { llmConnectionId: "c2" }, order: { key: "ASC" } });
   });
 });

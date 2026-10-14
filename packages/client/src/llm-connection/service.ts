@@ -4,10 +4,10 @@ import {
   createLlmConnectionSchema,
   executeLlmSchema,
   findLlmConnectionsParamsSchema,
-  listProviderModelsParamsSchema,
+  listLLMModelsParamsSchema,
   llmConnectionSchema,
   llmModelSchema,
-  llmProviderInfoSchema,
+  llmManifestSchema,
   llmResponseSchema,
   llmStreamEventSchema,
   paginatedLlmConnectionSchema,
@@ -19,10 +19,10 @@ import type {
   CreateLlmConnection,
   ExecuteLlm,
   FindLlmConnectionsParams,
-  ListProviderModelsParams,
+  ListLLMModelsParams,
   LlmConnection,
   LlmModel,
-  LlmProviderInfo,
+  LlmManifest,
   LlmResponse,
   LlmStreamEvent,
   Paginated,
@@ -49,12 +49,12 @@ const list = async (
     ...opts,
   });
 
-const listProviders = async (
-  opts: ServiceGetOptions<LlmProviderInfo[]> = {},
-): Promise<LlmProviderInfo[]> =>
+const listLLMs = async (
+  opts: ServiceGetOptions<LlmManifest[]> = {},
+): Promise<LlmManifest[]> =>
   http.get({
-    url: `${LLM_CONNECTION_URL}/providers`,
-    schemas: { response: z.array(llmProviderInfoSchema) },
+    url: `${LLM_CONNECTION_URL}/llms`,
+    schemas: { response: z.array(llmManifestSchema) },
     ...opts,
   });
 
@@ -100,18 +100,34 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
-// listProviderModels sources connection options from searchParams.connectionId
-// when given, else providerKey's default connection (backend-resolved).
-const listProviderModels = async (
-  providerKey: string,
-  opts: ServiceGetOptions<LlmModel[], ListProviderModelsParams> = {},
+// The connection's models as last synced.
+const findModels = async (id: string, opts: ServiceGetOptions<LlmModel[]> = {}): Promise<LlmModel[]> =>
+  http.get({
+    url: `${LLM_CONNECTION_URL}/{id}/models`,
+    params: { id },
+    schemas: { response: z.array(llmModelSchema) },
+    ...opts,
+  });
+
+const sync = async (id: string, opts: ServicePostOptions<void, void> = {}): Promise<void> =>
+  http.post({
+    url: `${LLM_CONNECTION_URL}/{id}/sync`,
+    params: { id },
+    ...opts,
+  });
+
+// listLLMModels returns the synced models of searchParams.connectionId
+// when given, else of llmKey's default connection (backend-resolved).
+const listLLMModels = async (
+  llmKey: string,
+  opts: ServiceGetOptions<LlmModel[], ListLLMModelsParams> = {},
 ): Promise<LlmModel[]> =>
   http.get({
-    url: `${LLM_CONNECTION_URL}/providers/{key}/models`,
-    params: { key: providerKey },
+    url: `${LLM_CONNECTION_URL}/llms/{key}/models`,
+    params: { key: llmKey },
     schemas: {
       response: z.array(llmModelSchema),
-      searchParams: listProviderModelsParamsSchema,
+      searchParams: listLLMModelsParamsSchema,
     },
     ...opts,
   });
@@ -147,12 +163,14 @@ const executeStream = async (
 
 export const llmConnectionService = {
   list,
-  listProviders,
-  listProviderModels,
+  listLLMs,
+  listLLMModels,
   findById,
   create,
   update,
   delete: remove,
+  findModels,
+  sync,
   execute,
   executeStream,
 };

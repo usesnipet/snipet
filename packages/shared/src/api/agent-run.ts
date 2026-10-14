@@ -63,7 +63,7 @@ export const startAgentRunSchema = z.object({
 export type StartAgentRun = z.infer<typeof startAgentRunSchema>;
 
 // One LlmMessage of a session; id orders the conversation. model is the
-// "provider/model" that wrote an assistant message.
+// "llm/model" that wrote an assistant message.
 export const agentMessageSchema = z.object({
   id: z.number().int(),
   sessionId: z.uuid(),

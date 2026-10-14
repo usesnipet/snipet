@@ -19,6 +19,7 @@ import { agentFormSchema } from "../schemas";
 import { AgentPluginsField } from "./agent-plugins-field";
 
 import type { AgentForm, AgentFormInput } from "../schemas";
+import { LlmCapability } from "@snipet/shared";
 import type { Agent } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
@@ -80,7 +81,7 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
               <FormInput name="maxTurns" label="Max turns" inputMode="numeric" fieldclassname="max-w-32" />
               <FormSwitch name="enabled" label="Enabled" fieldclassname="pb-2" />
             </div>
-            <LlmModelsField name="llms" allowedModelCapabilities={["text", "streaming"]} />
+            <LlmModelsField name="llms" allowedModelCapabilities={[LlmCapability.TEXT]} />
             <AgentPluginsField />
           </FieldGroup>
         </form>

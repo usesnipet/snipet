@@ -3,8 +3,9 @@ import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DateFormat } from "@/components/ui/date";
+import { useClipboard } from "@/hooks/use-clipboard";
 import { useDialog } from "@/lib/dialog";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { CopyIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 import { useDeleteAgent, useListAgents } from "@snipet/client";
 
@@ -20,6 +21,7 @@ function useAgentsListQuery(pagination: DataTablePagination) {
 function RowActions({ agent }: { agent: Agent }) {
   const { openDialog } = useDialog();
   const { mutateAsync: deleteAgent } = useDeleteAgent();
+  const { copy } = useClipboard();
 
   const openDelete = () => openDialog({
     component: DeleteDialog,
@@ -37,6 +39,16 @@ function RowActions({ agent }: { agent: Agent }) {
 
   return (
     <div className="flex items-center justify-end gap-1">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Copy agent ID"
+        title="Copy agent ID"
+        onClick={() => copy(agent.id, { successTitle: "Agent ID copied", errorTitle: "Failed to copy agent ID" })}
+      >
+        <CopyIcon />
+      </Button>
       <Button
         type="button"
         variant="ghost"

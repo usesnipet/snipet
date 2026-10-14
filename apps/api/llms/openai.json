@@ -1,6 +1,7 @@
 {
   "key": "openai",
   "name": "OpenAI",
+  "icon": "https://openai.com/favicon.ico",
   "description": "OpenAI is a cloud-based AI platform that provides a range of AI services, including natural language processing, machine learning, and computer vision.",
   "connection": {
     "type": "object",
@@ -30,12 +31,7 @@
     "options": {
       "baseUrl": "{{ connection.baseUrl }}/v1",
       "apiKey": "{{ connection.apiKey }}",
-      "organization": "{{ connection.organization }}",
-      "headers": {
-        "type": "object",
-        "additionalProperties": { "type": "string" },
-        "description": "Extra headers on every request"
-      }
+      "organization": "{{ connection.organization }}"
     }
   },
   "chat": {
@@ -43,12 +39,7 @@
     "options": {
       "baseUrl": "{{ connection.baseUrl }}/v1",
       "apiKey": "{{ connection.apiKey }}",
-      "organization": "{{ connection.organization }}",
-      "headers": {
-        "type": "object",
-        "additionalProperties": { "type": "string" },
-        "description": "Extra headers on every request"
-      }
+      "organization": "{{ connection.organization }}"
     }
   },
   "healthCheck": {

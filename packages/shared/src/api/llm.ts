@@ -46,7 +46,7 @@ export const llmToolSchema = z.object({
 });
 export type LlmTool = z.infer<typeof llmToolSchema>;
 
-// --- providers and models ------------------------------------------------
+// --- llms and models ------------------------------------------------
 export enum LlmCapability {
   TEXT = "text",
   VISION = "vision",
@@ -55,7 +55,7 @@ export enum LlmCapability {
 }
 export const llmCapabilitySchema = z.enum(LlmCapability);
 
-// The JSON manifest of an LLM provider. Vision/tools are per model (see
+// The JSON manifest of an LLM. Vision/tools are per model (see
 // LlmModel.capabilities), so text, vision and tools all go through `chat`.
 export const llmManifestSchema = baseManifestSchema.extend({
   models: driverSchema,
@@ -74,11 +74,11 @@ export const llmModelSchema = z.object({
 });
 export type LlmModel = z.infer<typeof llmModelSchema>;
 
-// connectionId: stored connection to source options from; else the provider's default.
-export const listProviderModelsParamsSchema = z.object({
+// connectionId: the connection whose synced models to list; else the llm's default.
+export const listLLMModelsParamsSchema = z.object({
   connectionId: z.uuid().optional(),
 });
-export type ListProviderModelsParams = z.infer<typeof listProviderModelsParamsSchema>;
+export type ListLLMModelsParams = z.infer<typeof listLLMModelsParamsSchema>;
 
 // --- execute -------------------------------------------------------------
 
@@ -114,7 +114,7 @@ export type LlmResponse = z.infer<typeof llmResponseSchema>;
 // --- stream events (SSE `event:` name + `data:` payload) -----------------
 
 export const llmStreamEventSchema = z.discriminatedUnion("event", [
-  // The runner committed to this target ("provider/model").
+  // The runner committed to this target ("llm/model").
   z.object({ event: z.literal("llm_started"), data: z.object({ llm: z.string() }) }),
   // A target skipped during failover (rate limit, auth, unavailable).
   z.object({ event: z.literal("llm_skipped"), data: z.object({ llm: z.string(), error: z.string() }) }),

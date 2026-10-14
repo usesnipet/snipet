@@ -1,4 +1,4 @@
-// Error vocabulary shared by providers, registry and runner. Providers map
+// Error vocabulary shared by drivers, registry and runner. Drivers map
 // their SDK errors onto a kind; the runner fails over on some of them.
 export type LlmErrorKind =
   | "rate_limit"
@@ -8,7 +8,7 @@ export type LlmErrorKind =
   | "bad_request"
   | "model_not_found"
   | "context_too_long"
-  | "provider_not_found";
+  | "llm_not_found";
 
 export class LlmError extends Error {
   constructor(

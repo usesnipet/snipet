@@ -4,6 +4,7 @@ import { LlmConversationField } from "@/features/llm-connection/components/llm-c
 import { LlmModelsField } from "@/features/llm-connection/components/llm-models-field";
 import { useForm } from "react-hook-form";
 
+import { LlmCapability } from "@snipet/shared";
 import type { ExecuteLlm } from "@snipet/shared";
 
 const DEFAULT_VALUES: ExecuteLlm = {
@@ -23,7 +24,7 @@ export const LlmPlaygroundPage = () => {
       <Form {...form}>
         <form className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           <div className="lg:col-span-2">
-            <LlmModelsField name="targets" allowedModelCapabilities={["streaming", "text"]} />
+            <LlmModelsField name="targets" allowedModelCapabilities={[LlmCapability.TEXT]} />
           </div>
           <div className="lg:col-span-3">
             <LlmConversationField name="messages" targetsName="targets" />

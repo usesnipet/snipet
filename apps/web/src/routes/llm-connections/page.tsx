@@ -4,15 +4,15 @@ import { CreateLlmConnectionDialog } from "@/features/llm-connection/components/
 import { LlmConnectionCatalogCard } from "@/features/llm-connection/components/llm-connection-catalog-card";
 import { useDialog } from "@/lib/dialog";
 
-import { useListLlmConnections, useLlmProviders } from "@snipet/client";
+import { useListLlmConnections, useLLMs } from "@snipet/client";
 
 import type { LlmConnection } from "@snipet/shared";
 
-const providerOf = (connection: LlmConnection) => connection.provider;
+const llmOf = (connection: LlmConnection) => connection.llmKey;
 
 export const LlmConnectionsPage = () => {
   const { openDialog } = useDialog();
-  const providers = useLlmProviders();
+  const llms = useLLMs();
   const connections = useListLlmConnections();
 
   const openCreate = () => {
@@ -25,7 +25,7 @@ export const LlmConnectionsPage = () => {
   return (
     <Page
       title="LLM Connections"
-      description="Bring your own API keys or run models locally. Connect a provider to make it available to your agents."
+      description="Bring your own API keys or run models locally. Connect an LLM to make it available to your agents."
       documentTitle="LLM Connections"
     >
       <CatalogPageContent
@@ -33,12 +33,12 @@ export const LlmConnectionsPage = () => {
         onCreate={openCreate}
       >
         <RegistryCatalog
-          registry={providers.data ?? []}
+          registry={llms.data ?? []}
           connections={connections.data?.data ?? []}
-          keyOf={providerOf}
-          isLoading={providers.isLoading || connections.isLoading}
-          isError={providers.isError || connections.isError}
-          noun="providers"
+          keyOf={llmOf}
+          isLoading={llms.isLoading || connections.isLoading}
+          isError={llms.isError || connections.isError}
+          noun="llms"
           renderItem={(view) => <LlmConnectionCatalogCard view={view} />}
         />
       </CatalogPageContent>
