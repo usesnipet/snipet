@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form";
 import { useCreateAgent, useUpdateAgent } from "@snipet/client";
 import { agentFormSchema } from "../schemas";
 
+import { AgentAvatarField } from "./agent-avatar";
 import { AgentPluginsField } from "./agent-plugins-field";
 
 import type { AgentForm, AgentFormInput } from "../schemas";
@@ -32,6 +33,7 @@ type AgentFormDialogProps = DialogInstanceProps<{
 const toForm = (agent?: Agent): AgentFormInput => ({
   name: agent?.name ?? "",
   description: agent?.description ?? "",
+  avatar: agent?.avatar ?? null,
   systemPrompt: agent?.systemPrompt ?? "",
   maxTurns: agent?.maxTurns ?? 20,
   enabled: agent?.enabled ?? true,
@@ -74,6 +76,7 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
       <Form {...form}>
         <form id={formId} onSubmit={onSubmit}>
           <FieldGroup>
+            <AgentAvatarField name="avatar" />
             <FormInput name="name" label="Name" placeholder="e.g. Support triage" required />
             <FormInput name="description" label="Description" placeholder="What this agent is for" />
             <FormTextarea name="systemPrompt" label="System prompt" rows={5} placeholder="You are…" />
