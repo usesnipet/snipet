@@ -1,10 +1,10 @@
 import { jest } from "@jest/globals";
 import { NotFoundException } from "@nestjs/common";
 
-import type { Storage } from "#src/infra/storage/storage.js";
-
 import { Agent, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
 import { AgentService } from "./agent.service.js";
+
+import type { FilesStorage } from "../files/files.storage.js";
 
 import type { Repository } from "typeorm";
 
@@ -27,7 +27,7 @@ function setup(exists = true, avatar: string | null = null) {
     putDataUrl: jest.fn(() => Promise.resolve("agents/new.webp")),
     delete: jest.fn(() => Promise.resolve()),
   };
-  const service = new AgentService(repo as unknown as Repository<Agent>, storage as unknown as Storage);
+  const service = new AgentService(repo as unknown as Repository<Agent>, storage as unknown as FilesStorage);
   return {
     service,
     storage,

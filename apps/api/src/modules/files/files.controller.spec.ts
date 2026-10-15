@@ -3,9 +3,8 @@ import { Readable } from "node:stream";
 import request from "supertest";
 import { App } from "supertest/types.js";
 
-import { Storage } from "#src/infra/storage/storage.js";
-
 import { FilesController } from "./files.controller.js";
+import { FilesStorage } from "./files.storage.js";
 
 import type { INestApplication } from "@nestjs/common";
 
@@ -13,13 +12,13 @@ describe("FilesController", () => {
   let app: INestApplication<App>;
 
   beforeAll(async () => {
-    const storage = {
+    const files = {
       get: (key: string) =>
         Promise.resolve(key === "agents/a.webp" ? { body: Readable.from([Buffer.from("img")]) } : null),
     };
     const moduleRef = await Test.createTestingModule({
       controllers: [FilesController],
-      providers: [{ provide: Storage, useValue: storage }],
+      providers: [{ provide: FilesStorage, useValue: files }],
     }).compile();
     app = moduleRef.createNestApplication();
     app.setGlobalPrefix("api");
