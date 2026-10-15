@@ -8,5 +8,6 @@ export * from "./llm-connection.js";
 export * from "./llm.js";
 export * from "./pagination.js";
 export * from "./plugin.js";
+export * from "./settings.js";
 export * from "./system.js";
 export * from "./user.js";

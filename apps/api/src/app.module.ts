@@ -15,6 +15,7 @@ import { FilesModule } from "#src/modules/files/files.module.js";
 import { KnowledgeModule } from "#src/modules/knowledge/knowledge.module.js";
 import { LlmConnectionModule } from "#src/modules/llm-connection/llm-connection.module.js";
 import { PluginConnectionModule } from "#src/modules/plugin-connection/plugin-connection.module.js";
+import { SettingsModule } from "#src/modules/settings/settings.module.js";
 import { SystemModule } from "#src/modules/system/system.module.js";
 import { UserModule } from "#src/modules/user/user.module.js";
 
@@ -36,6 +37,7 @@ import { UserModule } from "#src/modules/user/user.module.js";
     KnowledgeModule,
     LlmConnectionModule,
     PluginConnectionModule,
+    SettingsModule,
     SystemModule,
     UserModule,
   ],
