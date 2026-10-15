@@ -13,92 +13,118 @@ if (existsSync(rootEnvFile)) {
   }
 }
 
-const envSchema = z.object({
-  PORT: z.coerce.number().int().default(8080),
-  // The built web app, served when it holds an index.html. Defaults to
-  // apps/web/dist (same depth from src/ and dist/).
-  WEB_DIR: z.string().default(resolve(import.meta.dirname, "../../web/dist")),
+const envSchema = z
+  .object({
+    PORT: z.coerce.number().int().default(8852),
+    // Base URL the server is reached at, used to build public file URLs.
+    // Defaults to http://localhost:$PORT.
+    PUBLIC_URL: z
+      .url()
+      .optional()
+      .transform((v) => v?.replace(/\/+$/, "")),
+    // The built web app, served when it holds an index.html. Defaults to
+    // apps/web/dist (same depth from src/ and dist/).
+    WEB_DIR: z.string().default(resolve(import.meta.dirname, "../../web/dist")),
 
-  DATABASE_URL: z.string().default("postgresql://postgres:postgres@localhost:5432/postgres"),
-  DB_AUTO_MIGRATE: z.stringbool().default(true),
+    DATABASE_URL: z.string().default("postgresql://postgres:postgres@localhost:5432/postgres"),
+    DB_AUTO_MIGRATE: z.stringbool().default(true),
 
-  JWT_SECRET: z.string().min(32).default("change-me"),
-  JWT_EXPIRES_IN_SECONDS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(15 * 60), // 15 minutes
-  REFRESH_TOKEN_EXPIRES_IN_SECONDS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(30 * 24 * 60 * 60), // 30 days
+    JWT_SECRET: z.string().min(32).default("change-me"),
+    JWT_EXPIRES_IN_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(15 * 60), // 15 minutes
+    REFRESH_TOKEN_EXPIRES_IN_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(30 * 24 * 60 * 60), // 30 days
 
-  ENCRYPTION_KEY: z
-    .string()
-    .default("Y2opZ3fylU+VmHmdi9qSmJwdCGZbOHQ46WR1AgP21VU=")
-    .transform((v) => Buffer.from(v, "base64"))
-    .refine((b) => b.length === 32, "ENCRYPTION_KEY must be 32 bytes, base64-encoded"),
+    ENCRYPTION_KEY: z
+      .string()
+      .default("Y2opZ3fylU+VmHmdi9qSmJwdCGZbOHQ46WR1AgP21VU=")
+      .transform((v) => Buffer.from(v, "base64"))
+      .refine((b) => b.length === 32, "ENCRYPTION_KEY must be 32 bytes, base64-encoded"),
 
-  // First admin, created when the users table is empty. Without a password a
-  // random one is generated and logged once.
-  ROOT_USERNAME: z.string().default("admin"),
-  ROOT_PASSWORD: z.union([z.literal(""), z.string()]).optional(),
+    // First admin, created when the users table is empty. Without a password a
+    // random one is generated and logged once.
+    ROOT_USERNAME: z.string().default("admin"),
+    ROOT_PASSWORD: z.union([z.literal(""), z.string()]).optional(),
 
-  // Plugin manifests (*.json). Defaults to apps/api/plugins (same depth from src/ and dist/).
-  PLUGINS_DIR: z.string().default(resolve(import.meta.dirname, "../plugins")),
+    // Plugin manifests (*.json). Defaults to apps/api/plugins (same depth from src/ and dist/).
+    PLUGINS_DIR: z.string().default(resolve(import.meta.dirname, "../plugins")),
+    LLMS_DIR: z.string().default(resolve(import.meta.dirname, "../llms")),
 
-  // Knowledge source: an S3 or S3-compatible bucket (MinIO, R2, ...). Without
-  // a bucket or PGVECTOR_URL the knowledge pipeline stays off.
-  KNOWLEDGE_S3_ENDPOINT: z.string().optional(), // empty means AWS S3
-  KNOWLEDGE_S3_REGION: z.string().default("us-east-1"),
-  KNOWLEDGE_S3_BUCKET: z.string().optional(),
-  KNOWLEDGE_S3_PREFIX: z.string().default(""),
-  KNOWLEDGE_S3_ACCESS_KEY_ID: z.string().optional(),
-  KNOWLEDGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
-  KNOWLEDGE_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
+    // Where uploaded files (e.g. agent avatars) live: the local filesystem or an
+    // S3 / S3-compatible bucket.
+    STORAGE_DRIVER: z.enum(["fs", "s3"]).default("fs"),
+    // Defaults to apps/api/storage (same depth from src/ and dist/).
+    STORAGE_FS_DIR: z.string().default(resolve(import.meta.dirname, "../storage")),
+    STORAGE_S3_ENDPOINT: z.string().optional(), // empty means AWS S3
+    STORAGE_S3_REGION: z.string().default("us-east-1"),
+    STORAGE_S3_BUCKET: z.string().optional(),
+    STORAGE_S3_PREFIX: z.string().default(""),
+    STORAGE_S3_ACCESS_KEY_ID: z.string().optional(),
+    STORAGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
+    STORAGE_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
 
-  KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(300).default(300), // Seconds between knowledge source syncs
-  KNOWLEDGE_INDEX_CONCURRENCY: z.coerce.number().int().min(1).default(2),
-  KNOWLEDGE_INDEX_ERRORS: z.stringbool().default(false),
-  KNOWLEDGE_INDEX_RESET: z.stringbool().default(false),
-  CHUNK_MAX_CHARACTERS: z.coerce.number().int().positive().default(2000),
-  CHUNK_OVERLAP: z.coerce.number().int().min(0).default(200),
+    // Knowledge source: an S3 or S3-compatible bucket (MinIO, R2, ...). Without
+    // a bucket or PGVECTOR_URL the knowledge pipeline stays off.
+    KNOWLEDGE_S3_ENDPOINT: z.string().optional(), // empty means AWS S3
+    KNOWLEDGE_S3_REGION: z.string().default("us-east-1"),
+    KNOWLEDGE_S3_BUCKET: z.string().optional(),
+    KNOWLEDGE_S3_PREFIX: z.string().default(""),
+    KNOWLEDGE_S3_ACCESS_KEY_ID: z.string().optional(),
+    KNOWLEDGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
+    KNOWLEDGE_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
 
-  // Postgres holding the chunks and their embeddings.
-  PGVECTOR_URL: z.url().optional(),
+    KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(300).default(300), // Seconds between knowledge source syncs
+    KNOWLEDGE_INDEX_CONCURRENCY: z.coerce.number().int().min(1).default(2),
+    KNOWLEDGE_INDEX_ERRORS: z.stringbool().default(false),
+    KNOWLEDGE_INDEX_RESET: z.stringbool().default(false),
+    CHUNK_MAX_CHARACTERS: z.coerce.number().int().positive().default(2000),
+    CHUNK_OVERLAP: z.coerce.number().int().min(0).default(200),
 
-  // Postgres text search config for keyword search. Part of the chunks schema,
-  // like EMBEDDING_DIMENSIONS: changing either needs knowledge_chunks dropped
-  // and everything reindexed.
-  FTS_LANGUAGE: z
-    .string()
-    .regex(/^[a-z_]+$/)
-    .default("simple"),
+    // Postgres holding the chunks and their embeddings.
+    PGVECTOR_URL: z.url().optional(),
 
-  // Any OpenAI-compatible embeddings API.
-  EMBEDDING_BASE_URL: z.string().default("https://api.openai.com/v1"),
-  EMBEDDING_API_KEY: z.string().optional(),
-  EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
-  EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().max(2000).default(1536), // HNSW limit
-  EMBEDDING_BATCH_SIZE: z.coerce.number().int().positive().default(100),
+    // Postgres text search config for keyword search. Part of the chunks schema,
+    // like EMBEDDING_DIMENSIONS: changing either needs knowledge_chunks dropped
+    // and everything reindexed.
+    FTS_LANGUAGE: z
+      .string()
+      .regex(/^[a-z_]+$/)
+      .default("simple"),
 
-  // Origins allowed to call the API from a browser (the widget's host pages),
-  // comma-separated; "*" allows any. Unset disables CORS.
-  CORS_ORIGINS: z
-    .string()
-    .optional()
-    .transform((v) =>
-      v === "*"
-        ? true
-        : v
-            ?.split(",")
-            .map((o) => o.trim())
-            .filter(Boolean),
-    ),
+    // Any OpenAI-compatible embeddings API.
+    EMBEDDING_BASE_URL: z.string().default("https://api.openai.com/v1"),
+    EMBEDDING_API_KEY: z.string().optional(),
+    EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
+    EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().max(2000).default(1536), // HNSW limit
+    EMBEDDING_BATCH_SIZE: z.coerce.number().int().positive().default(100),
 
-  // Set on release builds.
-  APP_VERSION: z.string().default("dev"),
-});
+    // Origins allowed to call the API from a browser (the widget's host pages),
+    // comma-separated; "*" allows any. Unset disables CORS.
+    CORS_ORIGINS: z
+      .string()
+      .optional()
+      .transform((v) =>
+        v === "*"
+          ? true
+          : v
+              ?.split(",")
+              .map((o) => o.trim())
+              .filter(Boolean),
+      ),
+
+    // Set on release builds.
+    APP_VERSION: z.string().default("dev"),
+  })
+  .refine((e) => e.STORAGE_DRIVER !== "s3" || e.STORAGE_S3_BUCKET, {
+    message: "STORAGE_S3_BUCKET is required when STORAGE_DRIVER=s3",
+    path: ["STORAGE_S3_BUCKET"],
+  })
+  .transform((e) => ({ ...e, PUBLIC_URL: e.PUBLIC_URL ?? `http://localhost:${e.PORT}` }));
 
 export const env = envSchema.parse(process.env);

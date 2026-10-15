@@ -1,0 +1,49 @@
+{
+  "key": "fireworks",
+  "name": "Fireworks AI",
+  "icon": "https://fireworks.ai/favicon.ico",
+  "description": "Fireworks AI serves open models such as Llama, Qwen and DeepSeek.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Fireworks AI API key, from fireworks.ai/account/api-keys."
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "Optional override, defaults to https://api.fireworks.ai/inference/v1."
+      }
+    },
+    "required": [
+      "apiKey"
+    ]
+  },
+  "models": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.fireworks.ai/inference/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "chat": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.fireworks.ai/inference/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "healthCheck": {
+    "driver": "http",
+    "options": {
+      "url": "{{ connection.baseUrl || \"https://api.fireworks.ai/inference/v1\" }}/models",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

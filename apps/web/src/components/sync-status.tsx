@@ -1,5 +1,5 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, truncate } from "@/lib/utils";
 import moment from "moment";
 
 import type { SyncState } from "@snipet/client";
@@ -13,7 +13,7 @@ export function SyncStatus({ sync }: { sync: SyncState }) {
         <TooltipTrigger asChild>
           <span className="text-destructive flex min-w-0 items-center gap-1.5">
             {dot("bg-destructive")}
-            <span className="truncate">Sync failed: {sync.message}</span>
+            <span className="truncate">Sync failed: {truncate(sync.message, 40)}</span>
           </span>
         </TooltipTrigger>
         <TooltipContent className="max-w-sm">{sync.message}</TooltipContent>

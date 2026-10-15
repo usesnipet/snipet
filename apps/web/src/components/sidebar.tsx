@@ -13,19 +13,7 @@ import { useCurrentUser, useLogout } from "@/features/auth/hooks";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
 import { hasRole, Role } from "@snipet/shared";
-import {
-  AppWindow,
-  BookText,
-  Home,
-  Key,
-  LogOut,
-  MessageSquare,
-  Plug,
-  Server,
-  Settings,
-  Users,
-  Waypoints,
-} from "lucide-react";
+import { AppWindow, Home, Key, LogOut, MessageSquare, Plug, Server, Users } from "lucide-react";
 
 import { Version } from "./version";
 
@@ -56,26 +44,19 @@ const navItems: NavEntry[] = [
         ],
       },
       { title: "Plugins", href: ROUTES.plugins, icon: Plug, visible: isAdmin },
-      { title: "Knowledge", href: ROUTES.knowledge, icon: BookText, comingSoon: true },
-      { title: "Connections", href: ROUTES.connections, icon: Waypoints, comingSoon: true },
+      { title: "Apps", href: ROUTES.apps, icon: AppWindow, visible: isAdmin },
     ],
   },
   {
     label: "Configure",
     items: [
-      { title: "Settings", href: ROUTES.settings, icon: Settings },
       {
         title: "Users",
         href: ROUTES.users,
         icon: Users,
         visible: isAdmin,
       },
-      {
-        title: "Apps",
-        href: ROUTES.apps,
-        icon: AppWindow,
-        visible: isAdmin,
-      },
+
       {
         title: "Api Key",
         href: ROUTES.apiKey,

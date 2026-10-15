@@ -23,9 +23,9 @@ RUN pnpm --filter @snipet/api deploy --prod --legacy /out/api
 FROM node:22-slim
 WORKDIR /app
 ARG APP_VERSION=dev
-ENV NODE_ENV=production PORT=8080 APP_VERSION=$APP_VERSION WEB_DIR=/app/public
+ENV NODE_ENV=production PORT=8852 APP_VERSION=$APP_VERSION WEB_DIR=/app/public
 COPY --from=build /out/api .
 COPY --from=build /app/apps/web/dist public
 USER node
-EXPOSE 8080
+EXPOSE 8852
 CMD ["node", "dist/main.js"]

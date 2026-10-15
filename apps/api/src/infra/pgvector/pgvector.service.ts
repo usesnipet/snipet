@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
 
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 
 import type { KnowledgeSearchResult } from "@snipet/shared";
 

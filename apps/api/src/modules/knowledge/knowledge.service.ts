@@ -3,8 +3,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { CrudService } from "@snipet/server-common";
 import { Repository } from "typeorm";
 
-import { EmbeddingService } from "../../infra/embedding/embedding.service.js";
-import { PgvectorService } from "../../infra/pgvector/pgvector.service.js";
+import { EmbeddingService } from "#src/infra/embedding/embedding.service.js";
+import { PgvectorService } from "#src/infra/pgvector/pgvector.service.js";
 
 import { KnowledgeItem } from "./knowledge-item.entity.js";
 import { knowledgeEnabled } from "./utils.js";

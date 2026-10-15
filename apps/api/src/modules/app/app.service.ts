@@ -5,7 +5,7 @@ import { CrudService } from "@snipet/server-common";
 import { createHmac } from "node:crypto";
 import { Repository } from "typeorm";
 
-import { env } from "../../env.js";
+import { env } from "#src/env.js";
 
 import { App } from "./app.entity.js";
 

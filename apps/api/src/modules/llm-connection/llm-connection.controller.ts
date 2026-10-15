@@ -1,7 +1,21 @@
-import { Body, Controller, Get, HttpCode, Logger, Param, Post, Query, Res, UseFilters } from "@nestjs/common";
-import { executeLlmSchema, listProviderModelsParamsSchema, Role } from "@snipet/shared";
-
-import { CrudController, maskSecrets, ZodPipe } from "@snipet/server-common";
+import { ApiKeyAuth, Private, Public, UserAuth } from "#src/common/decorators/auth.decorator.js";
+import { LlmErrorFilter, toHttpException } from "#src/common/filter/llm-error.filter.js";
+import { FailoverError, LlmError } from "#src/llm/errors.js";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Logger,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Res,
+  UseFilters,
+} from "@nestjs/common";
+import { CrudController, ZodPipe } from "@snipet/server-common";
+import { executeLlmSchema, listLLMModelsParamsSchema, Role } from "@snipet/shared";
 
 import {
   createLlmConnectionSchema,
@@ -10,15 +24,11 @@ import {
 } from "./llm-connection.dto.js";
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionService } from "./llm-connection.service.js";
-import { FailoverError, LlmError } from "../../infra/llm/errors.js";
-import { LlmErrorFilter, toHttpException } from "../../common/filter/llm-error.filter.js";
 
-import type { ExecuteLlm, ListProviderModelsParams, LlmConnectionOptions, LlmStreamEvent } from "@snipet/shared";
+import type { ExecuteLlm, ListLLMModelsParams, LlmStreamEvent } from "@snipet/shared";
 import type { Response } from "express";
-import { ApiKeyAuth, Private, Public, UserAuth } from "../../common/decorators/auth.decorator.js";
-
-// CRUD is admin only and never returns credentials: `auth` values come back
-// as placeholders. Running models is open to any user and API keys.
+// CRUD is admin only and never returns credentials: secret config fields
+// come back as placeholders. Running models is open to any user and API keys.
 @Private(UserAuth(Role.Admin))
 @UseFilters(LlmErrorFilter)
 @Controller("llm-connections")
@@ -26,10 +36,6 @@ export class LlmConnectionController extends CrudController<LlmConnection>({
   create: createLlmConnectionSchema,
   update: updateLlmConnectionSchema,
   filter: findLlmConnectionsSchema,
-  serialize: (conn: LlmConnection) => {
-    const { auth } = conn.config as LlmConnectionOptions;
-    return auth ? { ...conn, config: { ...conn.config, auth: maskSecrets(auth) } } : conn;
-  },
 }) {
   private readonly logger = new Logger(LlmConnectionController.name);
 
@@ -37,19 +43,31 @@ export class LlmConnectionController extends CrudController<LlmConnection>({
     super(service);
   }
 
+  override serialize(conn: LlmConnection) {
+    return this.service.mask(conn);
+  }
+
+  @Get(":id/models")
+  findModels(@Param("id", ParseUUIDPipe) id: string) {
+    return this.service.findModels(id);
+  }
+
+  @Post(":id/sync")
+  @HttpCode(204)
+  sync(@Param("id", ParseUUIDPipe) id: string) {
+    return this.service.sync(id);
+  }
+
   @Public()
-  @Get("providers")
-  listProviders() {
-    return this.service.listProviders();
+  @Get("llms")
+  listLLMs() {
+    return this.service.listManifests();
   }
 
   @Private(UserAuth(), ApiKeyAuth())
-  @Get("providers/:key/models")
-  listProviderModels(
-    @Param("key") key: string,
-    @Query(new ZodPipe(listProviderModelsParamsSchema)) query: ListProviderModelsParams,
-  ) {
-    return this.service.listProviderModels(key, query.connectionId);
+  @Get("llms/:key/models")
+  listLLMModels(@Param("key") key: string, @Query(new ZodPipe(listLLMModelsParamsSchema)) query: ListLLMModelsParams) {
+    return this.service.listLLMModels(key, query.connectionId);
   }
 
   @Private(UserAuth(), ApiKeyAuth())

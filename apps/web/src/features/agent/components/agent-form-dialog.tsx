@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { LlmModelsField } from "@/features/llm-connection/components/llm-models-field";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,9 +17,11 @@ import { useForm } from "react-hook-form";
 import { useCreateAgent, useUpdateAgent } from "@snipet/client";
 import { agentFormSchema } from "../schemas";
 
+import { AgentAvatarField } from "./agent-avatar";
 import { AgentPluginsField } from "./agent-plugins-field";
 
 import type { AgentForm, AgentFormInput } from "../schemas";
+import { LlmCapability } from "@snipet/shared";
 import type { Agent } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
@@ -31,6 +34,7 @@ type AgentFormDialogProps = DialogInstanceProps<{
 const toForm = (agent?: Agent): AgentFormInput => ({
   name: agent?.name ?? "",
   description: agent?.description ?? "",
+  avatar: agent?.avatar ?? null,
   systemPrompt: agent?.systemPrompt ?? "",
   maxTurns: agent?.maxTurns ?? 20,
   enabled: agent?.enabled ?? true,
@@ -62,7 +66,7 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
   });
 
   return (
-    <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+    <DialogContent className="sm:max-w-2xl">
       <DialogHeader>
         <DialogTitle>{agent ? "Edit agent" : "New agent"}</DialogTitle>
         <DialogDescription>
@@ -70,21 +74,24 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
         </DialogDescription>
       </DialogHeader>
 
-      <Form {...form}>
-        <form id={formId} onSubmit={onSubmit}>
-          <FieldGroup>
-            <FormInput name="name" label="Name" placeholder="e.g. Support triage" required />
-            <FormInput name="description" label="Description" placeholder="What this agent is for" />
-            <FormTextarea name="systemPrompt" label="System prompt" rows={5} placeholder="You are…" />
-            <div className="flex items-end gap-4">
-              <FormInput name="maxTurns" label="Max turns" inputMode="numeric" fieldclassname="max-w-32" />
-              <FormSwitch name="enabled" label="Enabled" fieldclassname="pb-2" />
-            </div>
-            <LlmModelsField name="llms" allowedModelCapabilities={["text", "streaming"]} />
-            <AgentPluginsField />
-          </FieldGroup>
-        </form>
-      </Form>
+      <ScrollArea className="max-h-[calc(100vh-250px)]">
+        <Form {...form}>
+          <form id={formId} onSubmit={onSubmit} className="p-1 pr-3">
+            <FieldGroup>
+              <AgentAvatarField name="avatar" />
+              <FormInput name="name" label="Name" placeholder="e.g. Support triage" required />
+              <FormInput name="description" label="Description" placeholder="What this agent is for" />
+              <FormTextarea name="systemPrompt" label="System prompt" rows={5} placeholder="You are…" />
+              <div className="flex items-end gap-4">
+                <FormInput name="maxTurns" label="Max turns" inputMode="numeric" fieldclassname="max-w-32" />
+                <FormSwitch name="enabled" label="Enabled" fieldclassname="pb-2" />
+              </div>
+              <LlmModelsField name="llms" allowedModelCapabilities={[LlmCapability.TEXT]} />
+              <AgentPluginsField />
+            </FieldGroup>
+          </form>
+        </Form>
+      </ScrollArea>
 
       <DialogFooter>
         <DialogClose asChild>

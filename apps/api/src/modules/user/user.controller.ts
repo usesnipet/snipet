@@ -5,7 +5,7 @@ import { CrudController } from "@snipet/server-common";
 import { createUserSchema, findUsersSchema, updateUserSchema } from "./user.dto.js";
 import { User } from "./user.entity.js";
 import { UserService } from "./user.service.js";
-import { Private, UserAuth } from "../../common/decorators/auth.decorator.js";
+import { Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
 
 @Private(UserAuth(Role.Admin))
 @Controller("users")

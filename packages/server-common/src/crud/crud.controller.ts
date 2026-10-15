@@ -28,20 +28,25 @@ export function CrudController<T extends BaseEntity>(schemas: CrudSchemas) {
   abstract class Base {
     constructor(readonly service: CrudService<T>) {}
 
+    // Shapes each entity a route returns; override to use the service.
+    serialize(entity: T): unknown {
+      return serialize(entity);
+    }
+
     @Get()
     async filter(@Query(new ZodPipe(schemas.filter ?? paginationParamsSchema)) query: FilterQuery<T>) {
       const page = await this.service.filter(query);
-      return { ...page, data: page.data.map(serialize) };
+      return { ...page, data: page.data.map((e) => this.serialize(e)) };
     }
 
     @Get(":id")
     async findById(@Param("id", ParseUUIDPipe) id: string) {
-      return serialize(await this.service.findById(id));
+      return this.serialize(await this.service.findById(id));
     }
 
     @Post()
     async create(@Body(new ZodPipe(schemas.create)) dto: object) {
-      return serialize(await this.service.create(dto as DeepPartial<T>));
+      return this.serialize(await this.service.create(dto as DeepPartial<T>));
     }
 
     @Put(":id")

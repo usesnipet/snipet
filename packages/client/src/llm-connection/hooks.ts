@@ -7,11 +7,11 @@ import type {
   CreateLlmConnection,
   ExecuteLlm,
   FindLlmConnectionsParams,
-  ListProviderModelsParams,
+  ListLLMModelsParams,
   LlmConnection,
   LlmMessage,
   LlmModel,
-  LlmProviderInfo,
+  LlmManifest,
   LlmResponse,
   LlmStreamEvent,
   Paginated,
@@ -36,26 +36,36 @@ export const useListLlmConnections = (
     queryFn: () => llmConnectionService.list(opts),
   });
 
-export const llmProvidersQueryKey = () =>
-  [BASE_QUERY_KEY, "providers"] as const;
-export const useLlmProviders = (
-  opts?: ServiceGetOptions<LlmProviderInfo[]>,
-): UseQueryResult<LlmProviderInfo[], Error> =>
+export const llmsQueryKey = () => [BASE_QUERY_KEY, "llms"] as const;
+export const useLLMs = (
+  opts?: ServiceGetOptions<LlmManifest[]>,
+): UseQueryResult<LlmManifest[], Error> =>
   useQuery({
-    queryKey: llmProvidersQueryKey(),
-    queryFn: () => llmConnectionService.listProviders(opts),
+    queryKey: llmsQueryKey(),
+    queryFn: () => llmConnectionService.listLLMs(opts),
   });
 
-export const providerModelsQueryKey = (providerKey: string, searchParams?: ListProviderModelsParams) =>
-  [BASE_QUERY_KEY, "providers", providerKey, "models", searchParams] as const;
-export const useProviderModels = (
-  providerKey: string,
-  opts?: ServiceGetOptions<LlmModel[], ListProviderModelsParams>,
+export const llmModelsQueryKey = (llmKey: string, searchParams?: ListLLMModelsParams) =>
+  [BASE_QUERY_KEY, "llms", llmKey, "models", searchParams] as const;
+export const useLLMModels = (
+  llmKey: string,
+  opts?: ServiceGetOptions<LlmModel[], ListLLMModelsParams>,
 ): UseQueryResult<LlmModel[], Error> =>
   useQuery({
-    queryKey: providerModelsQueryKey(providerKey, opts?.searchParams),
-    queryFn: () => llmConnectionService.listProviderModels(providerKey, opts),
-    enabled: !!providerKey,
+    queryKey: llmModelsQueryKey(llmKey, opts?.searchParams),
+    queryFn: () => llmConnectionService.listLLMModels(llmKey, opts),
+    enabled: !!llmKey,
+  });
+
+export const llmConnectionModelsQueryKey = (id: string) => [BASE_QUERY_KEY, id, "models"] as const;
+export const useLlmConnectionModels = (
+  id: string,
+  opts?: ServiceGetOptions<LlmModel[]>,
+): UseQueryResult<LlmModel[], Error> =>
+  useQuery({
+    queryKey: llmConnectionModelsQueryKey(id),
+    queryFn: () => llmConnectionService.findModels(id, opts),
+    enabled: !!id,
   });
 
 export const llmConnectionQueryKey = (id: string) => [BASE_QUERY_KEY, id] as const;
@@ -102,6 +112,18 @@ export const useDeleteLlmConnection = (
     mutationFn: (id: string) => llmConnectionService.delete(id, opts),
     meta: { successMessage: "LLM connection deleted", errorMessage: "Failed to delete LLM connection" },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: listLlmConnectionsQueryKey() }),
+  });
+};
+
+// Synced models change too, so everything under the connection is refetched.
+export const useSyncLlmConnection = (
+  opts?: ServicePostOptions<void, void>,
+): UseMutationResult<void, Error, string> => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => llmConnectionService.sync(id, opts),
+    meta: { successMessage: "LLM connection synced", errorMessage: "Failed to sync LLM connection" },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [BASE_QUERY_KEY] }),
   });
 };
 

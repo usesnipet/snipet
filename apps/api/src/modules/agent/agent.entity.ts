@@ -2,12 +2,30 @@ import type {
   Agent as AgentContract,
   AgentLlm as AgentLlmContract,
   AgentPluginConnection as AgentPluginConnectionContract,
+  JsonObject,
 } from "@snipet/shared";
+import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
 import { BaseEntity } from "@snipet/server-common";
-import { AfterLoad, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
+import {
+  AfterLoad,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Unique,
+  ValueTransformer,
+} from "typeorm";
 
 import { LlmConnection } from "../llm-connection/llm-connection.entity.js";
 import { PluginConnection } from "../plugin-connection/plugin-connection.entity.js";
+
+// Column holding a file path: reads as the public URL, writes back as the path.
+export const storagePathTransformer: ValueTransformer = {
+  from: (path: string | null) => path && toStorageUrl(path),
+  to: (url: string | null | undefined) => url && fromStorageUrl(url),
+};
 
 @Entity("agents")
 export class Agent extends BaseEntity implements AgentContract {
@@ -16,6 +34,10 @@ export class Agent extends BaseEntity implements AgentContract {
 
   @Column({ type: "text", default: "" })
   description: string;
+
+  // Stored as the file's path, read as its public URL.
+  @Column({ type: "text", nullable: true, transformer: storagePathTransformer })
+  avatar: string | null;
 
   @Column({ type: "text", default: "" })
   systemPrompt: string;
@@ -57,7 +79,7 @@ export class AgentLlm implements AgentLlmContract {
   @Column({ length: 255 })
   model: string;
 
-  // A deleted connection falls back to the provider's default one.
+  // A deleted connection falls back to the llm's default one.
   @Column({ type: "uuid", nullable: true })
   connectionId: string | null;
 
@@ -65,8 +87,8 @@ export class AgentLlm implements AgentLlmContract {
   @JoinColumn({ name: "connectionId" })
   connection?: LlmConnection | null;
 
-  @Column({ type: "jsonb", nullable: true })
-  extraOptions: Record<string, unknown> | null;
+  @Column({ type: "json", nullable: true })
+  extraOptions: JsonObject | null;
 }
 
 @Entity("agent_plugin_connections")

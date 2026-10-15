@@ -1,0 +1,30 @@
+{
+  "key": "apify",
+  "name": "Apify",
+  "description": "Run Apify Actors to scrape and automate thousands of websites",
+  "icon": "https://github.com/apify.png",
+  "tags": ["scraping", "web", "remote", "official"],
+  "auth": { "type": "none" },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API token",
+        "description": "Apify API token, from console.apify.com/account/integrations."
+      }
+    },
+    "required": ["apiKey"]
+  },
+  "actions": {
+    "driver": "mcp",
+    "options": {
+      "url": "https://mcp.apify.com",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

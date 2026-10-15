@@ -1,0 +1,49 @@
+{
+  "key": "ollama",
+  "name": "Ollama",
+  "icon": "https://ollama.com/public/ollama.png",
+  "description": "Ollama runs open models such as Llama, Qwen, Gemma and Mistral locally or on your own server.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "Ollama server URL, e.g. http://localhost:11434."
+      },
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Only needed when the server sits behind an authenticating proxy."
+      }
+    },
+    "required": ["baseUrl"]
+  },
+  "models": {
+    "driver": "ollama",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl }}",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  },
+  "chat": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl }}/v1",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "healthCheck": {
+    "driver": "http",
+    "options": {
+      "url": "{{ connection.baseUrl }}/api/version",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

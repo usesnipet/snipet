@@ -25,7 +25,7 @@ type CreateLlmConnectionDialogProps = DialogInstanceProps<{
 
 const DEFAULT_VALUES: CreateLlmConnection = {
   name: "",
-  provider: "",
+  llmKey: "",
   config: {},
   enabled: true
 };
@@ -33,7 +33,7 @@ const DEFAULT_VALUES: CreateLlmConnection = {
 export function CreateLlmConnectionDialog({ onSaved, close, defaultValues, llm }: CreateLlmConnectionDialogProps) {
   const isEditing = !!llm;
   const mergedDefaultValues = llm
-    ? { name: llm.name, provider: llm.provider, config: llm.config, enabled: llm.enabled }
+    ? { name: llm.name, llmKey: llm.llmKey, config: llm.config, enabled: llm.enabled }
     : { ...DEFAULT_VALUES, ...defaultValues };
   const formId = `create-llm-connection-${useId()}`;
   const form = useForm<CreateLlmConnection>({
@@ -64,7 +64,7 @@ export function CreateLlmConnectionDialog({ onSaved, close, defaultValues, llm }
         <DialogDescription>
           {isEditing
             ? <>Update settings for <span className="font-medium text-foreground">{llm.name}</span>.</>
-            : "Point at a provider and drop in your API key — it becomes available to your agents."}
+            : "Point at an LLM and drop in your API key — it becomes available to your agents."}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>

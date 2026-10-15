@@ -1,0 +1,12 @@
+{
+  "key": "exa",
+  "name": "Exa",
+  "description": "Web search and code context search powered by Exa",
+  "icon": "https://github.com/exa-labs.png",
+  "tags": ["search", "web", "remote"],
+  "auth": { "type": "none" },
+  "actions": {
+    "driver": "mcp",
+    "options": { "url": "https://mcp.exa.ai/mcp" }
+  }
+}

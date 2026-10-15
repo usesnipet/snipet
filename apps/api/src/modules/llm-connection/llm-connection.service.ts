@@ -2,68 +2,63 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeepPartial, Not, QueryDeepPartialEntity, Repository } from "typeorm";
 
-import { CrudService, restoreSecrets } from "@snipet/server-common";
+import { LlmError } from "#src/llm/errors.js";
+import { LLMDriverRegistry, LLMRegistry } from "#src/llm/llm.registry.js";
+import { LLMRunner, type LlmTarget } from "#src/llm/llm.runner.js";
+import { splitModelRef } from "#src/llm/model-ref.js";
+import { ConnectionService } from "#src/manifest/connection.service.js";
 
 import { LlmConnection } from "./llm-connection.entity.js";
-import { LlmError } from "../../infra/llm/errors.js";
-import { LlmRegistry } from "../../infra/llm/registry.js";
-import { LlmRunner, LlmTarget, splitModelRef } from "../../infra/llm/runner.js";
+import { LlmModel } from "./llm-model.entity.js";
+import { LlmConnectionSyncService } from "./sync/llm-connection-sync.service.js";
 
-import type {
-  ExecuteLlm,
-  ExecuteLlmTarget,
-  LlmConnectionOptions,
-  LlmModel,
-  LlmProviderInfo,
-  LlmResponse,
-  LlmStreamEvent,
-} from "@snipet/shared";
-// Writes run in a transaction so every provider with connections ends up
-// with exactly one default: setting `default` clears it on the provider's
-// other connections, and a provider left without one gets its oldest promoted.
+import type { LLMDrivers } from "#src/llm/driver.js";
+import type { ExecuteLlm, ExecuteLlmTarget, LlmManifest, LlmResponse, LlmStreamEvent } from "@snipet/shared";
+
+/**
+ * Service for managing LLM connections and running conversations.
+ */
 @Injectable()
-export class LlmConnectionService extends CrudService<LlmConnection> {
+export class LlmConnectionService extends ConnectionService<LlmConnection, LlmManifest, LLMDrivers> {
+  protected readonly keyField = "llmKey";
+
   constructor(
     @InjectRepository(LlmConnection) repo: Repository<LlmConnection>,
-    private readonly registry: LlmRegistry,
-    private readonly runner: LlmRunner,
+    @InjectRepository(LlmModel) private readonly models: Repository<LlmModel>,
+    llms: LLMRegistry,
+    drivers: LLMDriverRegistry,
+    private readonly syncer: LlmConnectionSyncService,
+    private readonly runner: LLMRunner,
   ) {
-    super(repo);
+    super(repo, llms, drivers);
   }
 
-  // Connection options are validated (and health-checked) before saving.
   override async create(dto: DeepPartial<LlmConnection>): Promise<LlmConnection> {
-    await this.registry.connect(dto.provider!, dto.config);
-    return this.repo.manager.transaction(async (m) => {
+    dto = this.checkCreate(dto);
+    const { id } = await this.repo.manager.transaction(async (m) => {
       const repo = m.getRepository(LlmConnection);
-      if (dto.default) await repo.update({ provider: dto.provider, default: true }, { default: false });
-      const { id } = await repo.save(repo.create(dto));
-      await promoteIfNoDefault(repo, dto.provider!);
-      return repo.findOneByOrFail({ id });
+      if (dto.default) await repo.update({ llmKey: dto.llmKey, default: true }, { default: false });
+      const saved = await repo.save(repo.create(dto));
+      await promoteIfNoDefault(repo, dto.llmKey!);
+      return saved;
     });
+    void this.syncer.sync(id);
+    return this.findById(id);
   }
 
-  // `auth` placeholders keep the stored values, but only for the same
-  // provider: another provider must not receive this one's credentials.
   override async updateById(id: string, dto: QueryDeepPartialEntity<LlmConnection>): Promise<void> {
     const existing = await this.findById(id);
-    const provider = (dto.provider as string | undefined) ?? existing.provider;
-    const auth = (dto.config as LlmConnectionOptions | undefined)?.auth;
-    if (auth) {
-      const stored = provider === existing.provider ? (existing.config as LlmConnectionOptions).auth : undefined;
-      dto = { ...dto, config: { ...(dto.config as LlmConnectionOptions), auth: restoreSecrets(auth, stored) } };
-    }
-    if (dto.provider !== undefined || dto.config !== undefined) {
-      await this.registry.connect(provider, (dto.config ?? existing.config) as LlmConnectionOptions);
-    }
+    const llmKey = (dto.llmKey as string | undefined) ?? existing.llmKey;
+    dto = await this.checkUpdate(id, dto);
 
     await this.repo.manager.transaction(async (m) => {
       const repo = m.getRepository(LlmConnection);
-      if (dto.default) await repo.update({ provider, default: true, id: Not(id) }, { default: false });
+      if (dto.default) await repo.update({ llmKey, default: true, id: Not(id) }, { default: false });
       if (Object.keys(dto).length > 0) await repo.update(id, dto);
-      await promoteIfNoDefault(repo, provider);
-      if (provider !== existing.provider) await promoteIfNoDefault(repo, existing.provider);
+      await promoteIfNoDefault(repo, llmKey);
+      if (llmKey !== existing.llmKey) await promoteIfNoDefault(repo, existing.llmKey);
     });
+    if (dto.llmKey !== undefined || dto.config !== undefined) void this.syncer.sync(id);
   }
 
   override async deleteById(id: string): Promise<void> {
@@ -71,19 +66,22 @@ export class LlmConnectionService extends CrudService<LlmConnection> {
     await this.repo.manager.transaction(async (m) => {
       const repo = m.getRepository(LlmConnection);
       await repo.delete(id);
-      await promoteIfNoDefault(repo, existing.provider);
+      await promoteIfNoDefault(repo, existing.llmKey);
     });
   }
 
-  listProviders(): LlmProviderInfo[] {
-    return this.registry.list();
+  sync(id: string): Promise<void> {
+    return this.syncer.sync(id);
   }
 
-  // Sources options from connectionId, else the provider's default connection.
-  async listProviderModels(providerKey: string, connectionId?: string): Promise<LlmModel[]> {
-    const options = await this.connectionOptions(providerKey, connectionId);
-    await this.registry.connect(providerKey, options);
-    return this.registry.models(providerKey, options);
+  // The connection's models as last synced.
+  findModels(connectionId: string): Promise<LlmModel[]> {
+    return this.models.find({ where: { llmConnectionId: connectionId }, order: { key: "ASC" } });
+  }
+
+  // Models of connectionId, else of the llm's default connection.
+  async listLLMModels(llmKey: string, connectionId?: string): Promise<LlmModel[]> {
+    return this.findModels((await this.connectionFor(llmKey, connectionId)).id);
   }
 
   async generate(dto: ExecuteLlm, signal?: AbortSignal): Promise<LlmResponse> {
@@ -94,35 +92,37 @@ export class LlmConnectionService extends CrudService<LlmConnection> {
     yield* this.runner.stream({ ...dto, targets: await this.resolveTargets(dto.targets), signal });
   }
 
-  // Inline connectionOptions win; else connectionId; else the provider's default connection.
-  private resolveTargets(targets: ExecuteLlmTarget[]): Promise<LlmTarget[]> {
+  // Each target with its connection's config, once its model is known to be
+  // among the connection's synced models.
+  async resolveTargets(targets: ExecuteLlmTarget[]): Promise<LlmTarget[]> {
     return Promise.all(
-      targets.map(async (t) => ({
-        model: t.model,
-        extraOptions: t.extraOptions,
-        connectionOptions:
-          t.connectionOptions ?? (await this.connectionOptions(splitModelRef(t.model)[0], t.connectionId)),
-      })),
+      targets.map(async (t) => {
+        const [llmKey, model] = splitModelRef(t.model);
+        const conn = await this.connectionFor(llmKey, t.connectionId);
+        if (!(await this.models.existsBy({ llmConnectionId: conn.id, key: model }))) {
+          throw new LlmError("model_not_found", `model "${t.model}" not found`);
+        }
+        return { model: t.model, connection: conn.config, extraOptions: t.extraOptions };
+      }),
     );
   }
 
-  // A provider without a stored connection gets empty options; connect()
-  // rejects them later if the provider needs any.
-  private async connectionOptions(providerKey: string, connectionId?: string): Promise<LlmConnectionOptions> {
+  private async connectionFor(llmKey: string, connectionId?: string): Promise<LlmConnection> {
     if (connectionId) {
       const conn = await this.findById(connectionId);
-      if (conn.provider !== providerKey) {
-        throw new LlmError("invalid_options", `connection "${connectionId}" is not a "${providerKey}" connection`);
+      if (conn.llmKey !== llmKey) {
+        throw new LlmError("bad_request", `connection "${connectionId}" is not a "${llmKey}" connection`);
       }
-      return conn.config;
+      return conn;
     }
-    const conn = await this.repo.findOneBy({ provider: providerKey, default: true });
-    return conn?.config ?? {};
+    const conn = await this.repo.findOneBy({ llmKey, default: true });
+    if (!conn) throw new LlmError("bad_request", `no "${llmKey}" connection`);
+    return conn;
   }
 }
 
-async function promoteIfNoDefault(repo: Repository<LlmConnection>, provider: string) {
-  if (await repo.existsBy({ provider, default: true })) return;
-  const oldest = await repo.findOne({ where: { provider }, order: { createdAt: "ASC" } });
+async function promoteIfNoDefault(repo: Repository<LlmConnection>, llmKey: string) {
+  if (await repo.existsBy({ llmKey, default: true })) return;
+  const oldest = await repo.findOne({ where: { llmKey }, order: { createdAt: "ASC" } });
   if (oldest) await repo.update(oldest.id, { default: true });
 }

@@ -1,7 +1,7 @@
 import { createParamDecorator, ExecutionContext, InternalServerErrorException, SetMetadata } from "@nestjs/common";
 
 import type { AppTokenPayload, Role } from "@snipet/shared";
-import type { ApiKey } from "../../modules/api-key/api-key.entity.js";
+import type { ApiKey } from "#src/modules/api-key/api-key.entity.js";
 
 // Who made the request, set by AuthGuard from the access token.
 export interface AuthUser {

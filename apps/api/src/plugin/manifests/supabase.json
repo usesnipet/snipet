@@ -1,0 +1,30 @@
+{
+  "key": "supabase",
+  "name": "Supabase",
+  "description": "Manage Supabase projects, databases, edge functions and docs",
+  "icon": "https://github.com/supabase.png",
+  "tags": ["database", "remote", "official"],
+  "auth": { "type": "none" },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "Access token",
+        "description": "Supabase personal access token (sbp_…), from supabase.com/dashboard/account/tokens."
+      }
+    },
+    "required": ["apiKey"]
+  },
+  "actions": {
+    "driver": "mcp",
+    "options": {
+      "url": "https://mcp.supabase.com/mcp",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

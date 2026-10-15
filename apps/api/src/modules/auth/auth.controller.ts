@@ -10,7 +10,7 @@ import {
 
 import { ZodPipe } from "@snipet/server-common";
 
-import { Private, Public, UserAuth, type AuthUser, CurrentUser } from "../../common/decorators/auth.decorator.js";
+import { Private, Public, UserAuth, type AuthUser, CurrentUser } from "#src/common/decorators/auth.decorator.js";
 import { AuthService } from "./auth.service.js";
 
 @Private(UserAuth())

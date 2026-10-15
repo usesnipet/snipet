@@ -3,8 +3,8 @@ import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { hasRole, Role } from "@snipet/shared";
 
-import { ApiKeyService } from "../../modules/api-key/api-key.service.js";
-import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "../../modules/app/app.service.js";
+import { ApiKeyService } from "#src/modules/api-key/api-key.service.js";
+import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "#src/modules/app/app.service.js";
 import { AUTH, AuthStrategy } from "../decorators/auth.decorator.js";
 
 import type { JwtVerifyOptions } from "@nestjs/jwt";

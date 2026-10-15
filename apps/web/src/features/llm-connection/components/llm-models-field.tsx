@@ -1,17 +1,13 @@
-import { SchemaFormFields } from "@/components/schema-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, ChevronUp, GripVertical, Info, Plus, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, GripVertical, Info, Plus, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
-import { useListLlmConnections, useLlmProviders, useProviderModels } from "@snipet/client";
+import { useListLlmConnections, useLLMModels, useLLMs } from "@snipet/client";
 
-import type { LlmCapability, LlmConnection, LlmProviderInfo } from "@snipet/shared";
-import type { RJSFSchema } from "@rjsf/utils";
+import type { LlmCapability, LlmConnection, LlmManifest } from "@snipet/shared";
 type Props = {
   /** Field-array path holding `ExecuteLlmTarget[]` (`ExecuteLlmTarget` in @snipet/shared). */
   name: string;
@@ -19,9 +15,9 @@ type Props = {
   allowedModelCapabilities?: LlmCapability[];
 };
 
-// splitModelRef mirrors the backend's llm.SplitModelRef: "provider-key/model"
+// splitModelRef mirrors the backend's splitModelRef: "llm-key/model"
 // split on the first "/". Either side empty (or no "/" at all) reads as "".
-function splitModelRef(ref: string): [providerKey: string, modelKey: string] {
+function splitModelRef(ref: string): [llmKey: string, modelKey: string] {
   const i = ref.indexOf("/");
   if (i <= 0) return ["", ""];
   return [ref.slice(0, i), ref.slice(i + 1)];
@@ -29,14 +25,12 @@ function splitModelRef(ref: string): [providerKey: string, modelKey: string] {
 
 /**
  * Renders the top-to-bottom, drag-to-reorder list of LLM targets for a
- * generate/stream call: connection (grouped by provider), model, and — when the provider declares a
- * `generateExtraOptions` schema — a collapsible advanced-settings form for
- * it. Backed by `useFieldArray` at `name`, so the parent form owns the data.
+ * generate/stream call: connection (grouped by llm) and model. Backed by `useFieldArray` at `name`, so the parent form owns the data.
  */
 export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
   const form = useFormContext();
   const { fields, append, remove, move } = useFieldArray({ control: form.control, name });
-  const { data: providers = [] } = useLlmProviders();
+  const { data: llms = [] } = useLLMs();
   const { data: connectionsPage } = useListLlmConnections();
   const connections = (connectionsPage?.data ?? []).filter((connection) => connection.enabled);
   const dragIndexRef = useRef<number | null>(null);
@@ -83,7 +77,7 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
               <LlmModelTargetRow
                 name={name}
                 index={index}
-                providers={providers}
+                llms={llms}
                 connections={connections}
                 total={fields.length}
                 onRemove={() => remove(index)}
@@ -108,7 +102,7 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
 type RowProps = {
   name: string;
   index: number;
-  providers: LlmProviderInfo[];
+  llms: LlmManifest[];
   connections: LlmConnection[];
   allowedModelCapabilities?: LlmCapability[];
   total: number;
@@ -117,36 +111,32 @@ type RowProps = {
   onMoveDown: () => void;
 };
 
-function LlmModelTargetRow({ name, index, providers, connections, total, onRemove, onMoveUp, onMoveDown, allowedModelCapabilities }: RowProps) {
+function LlmModelTargetRow({ name, index, llms, connections, total, onRemove, onMoveUp, onMoveDown, allowedModelCapabilities }: RowProps) {
   const form = useFormContext();
   const fieldPath = `${name}.${index}`;
   const modelRef = (useWatch({ control: form.control, name: `${fieldPath}.model` }) as string | undefined) ?? "";
   const connectionId = useWatch({ control: form.control, name: `${fieldPath}.connectionId` }) as string | undefined;
-  const [providerKey, modelKey] = splitModelRef(modelRef);
-  const selectedProvider = providers.find((provider) => provider.key === providerKey);
-  const { data: models = [], isLoading: isLoadingModels } = useProviderModels(providerKey, {
+  const [llmKey, modelKey] = splitModelRef(modelRef);
+  const { data: models = [], isLoading: isLoadingModels } = useLLMModels(llmKey, {
     searchParams: connectionId ? { connectionId } : undefined,
   });
-  const groups = providers
-    .map((provider) => ({ provider, items: connections.filter((connection) => connection.provider === provider.key) }))
+  const groups = llms
+    .map((llm) => ({ llm, items: connections.filter((connection) => connection.llmKey === llm.key) }))
     .filter((group) => group.items.length > 0);
   const filteredModels = allowedModelCapabilities
     ? models.filter((model) => allowedModelCapabilities.some((capability) => model.capabilities.includes(capability)))
     : models;
-  const extraOptionsSchema = selectedProvider?.schemas.generateExtraOptions as RJSFSchema | undefined;
-  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const handleConnectionChange = (nextConnectionId: string) => {
     const connection = connections.find((item) => item.id === nextConnectionId);
     if (!connection) return;
     form.setValue(`${fieldPath}.connectionId`, connection.id, { shouldDirty: true });
-    form.setValue(`${fieldPath}.model`, `${connection.provider}/`, { shouldDirty: true, shouldTouch: true });
+    form.setValue(`${fieldPath}.model`, `${connection.llmKey}/`, { shouldDirty: true, shouldTouch: true });
     form.setValue(`${fieldPath}.extraOptions`, undefined, { shouldDirty: true });
-    setAdvancedOpen(false);
   };
 
   const handleModelChange = (nextModelKey: string) => {
-    form.setValue(`${fieldPath}.model`, `${providerKey}/${nextModelKey}`, { shouldDirty: true, shouldTouch: true });
+    form.setValue(`${fieldPath}.model`, `${llmKey}/${nextModelKey}`, { shouldDirty: true, shouldTouch: true });
   };
 
   return (
@@ -174,9 +164,9 @@ function LlmModelTargetRow({ name, index, providers, connections, total, onRemov
             <SelectValue placeholder="Select a connection" />
           </SelectTrigger>
           <SelectContent>
-            {groups.map(({ provider, items }) => (
-              <SelectGroup key={provider.key}>
-                <SelectLabel>{provider.name}</SelectLabel>
+            {groups.map(({ llm, items }) => (
+              <SelectGroup key={llm.key}>
+                <SelectLabel>{llm.name}</SelectLabel>
                 {items.map((connection) => (
                   <SelectItem key={connection.id} value={connection.id}>
                     {connection.name}
@@ -200,30 +190,6 @@ function LlmModelTargetRow({ name, index, providers, connections, total, onRemov
           </SelectContent>
         </Select>
       </div>
-
-      {extraOptionsSchema ? (
-        <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-          <CollapsibleTrigger asChild>
-            <button
-              type="button"
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium"
-            >
-              <ChevronRight className={cn("size-3.5 transition-transform", advancedOpen && "rotate-90")} />
-              Advanced settings
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2">
-            <div className="bg-background rounded-lg border p-3">
-              <SchemaFormFields
-                key={`${fieldPath}-${providerKey}-extra`}
-                schema={extraOptionsSchema}
-                defaultData={form.getValues(`${fieldPath}.extraOptions`)}
-                onChange={(data) => form.setValue(`${fieldPath}.extraOptions`, data, { shouldDirty: true })}
-              />
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      ) : null}
     </div>
   );
 }

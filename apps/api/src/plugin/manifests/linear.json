@@ -1,0 +1,30 @@
+{
+  "key": "linear",
+  "name": "Linear",
+  "description": "Manage Linear issues, projects and comments",
+  "icon": "https://github.com/linear.png",
+  "tags": ["issues", "remote", "official"],
+  "auth": { "type": "none" },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Linear personal API key (lin_api_…), from Settings > Security & access."
+      }
+    },
+    "required": ["apiKey"]
+  },
+  "actions": {
+    "driver": "mcp",
+    "options": {
+      "url": "https://mcp.linear.app/mcp",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

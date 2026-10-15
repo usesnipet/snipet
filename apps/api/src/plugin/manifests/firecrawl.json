@@ -1,0 +1,27 @@
+{
+  "key": "firecrawl",
+  "name": "Firecrawl",
+  "description": "Scrape, crawl and search websites, returning clean markdown",
+  "icon": "https://github.com/firecrawl.png",
+  "tags": ["scraping", "web", "remote", "official"],
+  "auth": { "type": "none" },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Firecrawl API key (fc-…), from firecrawl.dev/app/api-keys."
+      }
+    },
+    "required": ["apiKey"]
+  },
+  "actions": {
+    "driver": "mcp",
+    "options": {
+      "url": "https://mcp.firecrawl.dev/{{ connection.apiKey }}/v2/mcp"
+    }
+  }
+}

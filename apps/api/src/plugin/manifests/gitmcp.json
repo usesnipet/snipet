@@ -1,0 +1,12 @@
+{
+  "key": "gitmcp",
+  "name": "GitMCP",
+  "description": "Documentation of any public GitHub repository (pass owner/repo to the tools)",
+  "icon": "https://github.com/idosal.png",
+  "tags": ["docs", "git", "remote"],
+  "auth": { "type": "none" },
+  "actions": {
+    "driver": "mcp",
+    "options": { "url": "https://gitmcp.io/docs" }
+  }
+}

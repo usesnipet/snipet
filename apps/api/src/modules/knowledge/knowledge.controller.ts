@@ -2,7 +2,7 @@ import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from "@n
 import { ZodPipe } from "@snipet/server-common";
 import { knowledgeSearchParamsSchema, Role } from "@snipet/shared";
 
-import { Private, Public, UserAuth } from "../../common/decorators/auth.decorator.js";
+import { Private, Public, UserAuth } from "#src/common/decorators/auth.decorator.js";
 
 import { KnowledgeSyncService } from "./indexing/knowledge-sync.service.js";
 import { findKnowledgeItemsSchema } from "./knowledge.dto.js";

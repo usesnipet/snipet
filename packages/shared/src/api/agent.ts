@@ -1,17 +1,20 @@
 import { z } from "zod";
 
+import { dataUrlSchema } from "../schemas/data-url.js";
+import { jsonObjectSchema } from "../schemas/json.js";
+
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 // One LLM of an agent; the runner tries them by ascending order. Same fields
-// as ExecuteLlmTarget: model is "provider/model", connectionId falls back to
-// the provider's default connection.
+// as ExecuteLlmTarget: model is "llm/model", connectionId falls back to
+// the llm's default connection.
 export const agentLlmSchema = z.object({
   id: z.uuid(),
   agentId: z.uuid(),
   order: z.number().int(),
   model: z.string(),
   connectionId: z.uuid().nullable(),
-  extraOptions: z.record(z.string(), z.unknown()).nullable(),
+  extraOptions: jsonObjectSchema.nullable(),
 });
 export type AgentLlm = z.infer<typeof agentLlmSchema>;
 
@@ -28,6 +31,8 @@ export const agentSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   description: z.string(),
+  // Public URL of the avatar image.
+  avatar: z.url().nullable(),
   systemPrompt: z.string(),
   maxTurns: z.number().int(),
   enabled: z.boolean(),
@@ -48,6 +53,10 @@ const patternsSchema = z.array(z.string().trim()).transform((patterns) => patter
 export const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(255),
   description: z.string().optional(),
+  avatar: z
+    .union([dataUrlSchema.max(80_000, "Avatar is too large"), z.url()])
+    .nullable()
+    .optional(),
   systemPrompt: z.string().optional(),
   maxTurns: z
     .number()
@@ -59,7 +68,7 @@ export const createAgentSchema = z.object({
   llms: z
     .array(
       z.object({
-        model: z.string().regex(/^[^/]+\/.+$/, "Select a provider and a model"),
+        model: z.string().regex(/^[^/]+\/.+$/, "Select an LLM and a model"),
         connectionId: z.uuid().optional(),
         extraOptions: z.record(z.string(), z.unknown()).optional(),
       }),

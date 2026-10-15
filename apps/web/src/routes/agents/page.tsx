@@ -1,9 +1,8 @@
-import { Page, PageActions } from "@/components/page";
-import { Button } from "@/components/ui/button";
+import { CatalogPageContent } from "@/components/catalog";
+import { Page } from "@/components/page";
+import { AgentCatalog } from "@/features/agent/components/agent-catalog";
 import { AgentFormDialog } from "@/features/agent/components/agent-form-dialog";
-import { AgentsTable } from "@/features/agent/components/agents-table";
 import { useDialog } from "@/lib/dialog";
-import { Plus } from "lucide-react";
 
 export const AgentsPage = () => {
   const { openDialog } = useDialog();
@@ -14,12 +13,12 @@ export const AgentsPage = () => {
       description="Agents loop between LLMs and tools until the task is done."
       documentTitle="Agents"
     >
-      <PageActions>
-        <Button onClick={() => openDialog({ component: AgentFormDialog, props: {} })}>
-          <Plus className="size-4" /> New agent
-        </Button>
-      </PageActions>
-      <AgentsTable />
+      <CatalogPageContent
+        createLabel="New agent"
+        onCreate={() => openDialog({ component: AgentFormDialog, props: {} })}
+      >
+        <AgentCatalog />
+      </CatalogPageContent>
     </Page>
   );
 };
