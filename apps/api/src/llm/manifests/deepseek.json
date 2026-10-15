@@ -1,0 +1,49 @@
+{
+  "key": "deepseek",
+  "name": "DeepSeek",
+  "icon": "https://www.deepseek.com/favicon.ico",
+  "description": "DeepSeek provides the DeepSeek chat and reasoning models.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "DeepSeek API key, from platform.deepseek.com/api_keys."
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "Optional override, defaults to https://api.deepseek.com/v1."
+      }
+    },
+    "required": [
+      "apiKey"
+    ]
+  },
+  "models": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.deepseek.com/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "chat": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.deepseek.com/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "healthCheck": {
+    "driver": "http",
+    "options": {
+      "url": "{{ connection.baseUrl || \"https://api.deepseek.com/v1\" }}/models",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

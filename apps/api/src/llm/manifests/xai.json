@@ -1,0 +1,49 @@
+{
+  "key": "xai",
+  "name": "xAI",
+  "icon": "https://x.ai/favicon.ico",
+  "description": "xAI provides the Grok model family.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "xAI API key, from console.x.ai."
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "Optional override, defaults to https://api.x.ai/v1."
+      }
+    },
+    "required": [
+      "apiKey"
+    ]
+  },
+  "models": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.x.ai/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "chat": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.x.ai/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "healthCheck": {
+    "driver": "http",
+    "options": {
+      "url": "{{ connection.baseUrl || \"https://api.x.ai/v1\" }}/models",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@
     "deleteOutDir": true,
     "assets": [
       { "include": "**/*.sql" },
-      { "include": "**/manifests/**/*.json" }
+      { "include": "**/manifests/**/*.json", "watchAssets": true }
     ]
   }
 }

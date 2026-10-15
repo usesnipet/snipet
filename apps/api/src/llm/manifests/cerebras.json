@@ -1,0 +1,49 @@
+{
+  "key": "cerebras",
+  "name": "Cerebras",
+  "icon": "https://www.cerebras.ai/favicon.ico",
+  "description": "Cerebras serves open models such as Llama and Qwen on its wafer-scale hardware.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Cerebras API key, from cloud.cerebras.ai."
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "Optional override, defaults to https://api.cerebras.ai/v1."
+      }
+    },
+    "required": [
+      "apiKey"
+    ]
+  },
+  "models": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.cerebras.ai/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "chat": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.cerebras.ai/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "healthCheck": {
+    "driver": "http",
+    "options": {
+      "url": "{{ connection.baseUrl || \"https://api.cerebras.ai/v1\" }}/models",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "key": "groq",
+  "name": "Groq",
+  "icon": "https://groq.com/favicon.ico",
+  "description": "Groq serves open models such as Llama, Qwen and GPT-OSS on its LPU hardware with very low latency.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Groq API key, from console.groq.com/keys."
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "Optional override, defaults to https://api.groq.com/openai/v1."
+      }
+    },
+    "required": [
+      "apiKey"
+    ]
+  },
+  "models": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.groq.com/openai/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "chat": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"https://api.groq.com/openai/v1\" }}",
+      "apiKey": "{{ connection.apiKey }}"
+    }
+  },
+  "healthCheck": {
+    "driver": "http",
+    "options": {
+      "url": "{{ connection.baseUrl || \"https://api.groq.com/openai/v1\" }}/models",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
+  }
+}

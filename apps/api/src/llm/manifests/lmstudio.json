@@ -1,0 +1,34 @@
+{
+  "key": "lmstudio",
+  "name": "LM Studio",
+  "icon": "https://lmstudio.ai/favicon.ico",
+  "description": "LM Studio runs open models locally behind an OpenAI-compatible server.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "LM Studio server URL, defaults to http://localhost:1234/v1."
+      }
+    }
+  },
+  "models": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}"
+    }
+  },
+  "chat": {
+    "driver": "openai",
+    "options": {
+      "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}"
+    }
+  },
+  "healthCheck": {
+    "driver": "http",
+    "options": {
+      "url": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}/models"
+    }
+  }
+}
