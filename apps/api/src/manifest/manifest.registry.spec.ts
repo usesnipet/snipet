@@ -44,17 +44,17 @@ describe("ManifestRegistry", () => {
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
   it("loads only the valid manifests, sorted by key", () => {
-    const registry = new ManifestRegistry("plugin", dir, pluginManifestSchema, drivers);
+    const registry = new ManifestRegistry("plugin", dir, dir, pluginManifestSchema, drivers);
     expect(registry.getAll().map((m) => m.key)).toEqual(["alpha", "beta"]);
   });
 
   it("applies the schema defaults", () => {
-    const registry = new ManifestRegistry("plugin", dir, pluginManifestSchema, drivers);
+    const registry = new ManifestRegistry("plugin", dir, dir, pluginManifestSchema, drivers);
     expect(registry.get("beta")).toMatchObject({ description: "", tags: [], actions: { driver: "mcp", options: {} } });
   });
 
   it("throws NotFoundException for an unknown key", () => {
-    const registry = new ManifestRegistry("plugin", dir, pluginManifestSchema, drivers);
+    const registry = new ManifestRegistry("plugin", dir, dir, pluginManifestSchema, drivers);
     expect(() => registry.get("gamma")).toThrow(NotFoundException);
     expect(() => registry.get("gamma")).toThrow('plugin "gamma" not found');
   });
