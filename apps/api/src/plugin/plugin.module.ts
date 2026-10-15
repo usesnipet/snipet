@@ -1,8 +1,8 @@
-import { Module } from "@nestjs/common";
-import { pluginManifestSchema } from "@snipet/shared";
-
 import { env } from "#src/env.js";
 import { HttpHealthCheckDriver } from "#src/manifest/drivers/http.health.js";
+import { Module } from "@nestjs/common";
+import { pluginManifestSchema } from "@snipet/shared";
+import { resolve } from "node:path";
 
 import { McpActionDriver } from "./drivers/mcp.action.js";
 import { PluginDriverRegistry, PluginRegistry } from "./plugin.registry.js";
@@ -17,7 +17,13 @@ import { PluginDriverRegistry, PluginRegistry } from "./plugin.registry.js";
     {
       provide: PluginRegistry,
       useFactory: (drivers: PluginDriverRegistry) =>
-        new PluginRegistry("plugin", env.PLUGINS_DIR, pluginManifestSchema, drivers),
+        new PluginRegistry(
+          "plugin",
+          env.PLUGINS_DIR,
+          resolve(import.meta.dirname, "./manifests"),
+          pluginManifestSchema,
+          drivers,
+        ),
       inject: [PluginDriverRegistry],
     },
   ],

@@ -2,6 +2,7 @@ import { env } from "#src/env.js";
 import { HttpHealthCheckDriver } from "#src/manifest/drivers/http.health.js";
 import { Module } from "@nestjs/common";
 import { llmManifestSchema } from "@snipet/shared";
+import { resolve } from "node:path";
 
 import { OpenAiChatDriver } from "./drivers/openai/openai.chat.js";
 import { OpenAiModelDriver } from "./drivers/openai/openai.model.js";
@@ -22,7 +23,8 @@ import { LLMRunner } from "./llm.runner.js";
     },
     {
       provide: LLMRegistry,
-      useFactory: (drivers: LLMDriverRegistry) => new LLMRegistry("llm", env.LLMS_DIR, llmManifestSchema, drivers),
+      useFactory: (drivers: LLMDriverRegistry) =>
+        new LLMRegistry("llm", env.LLMS_DIR, resolve(import.meta.dirname, "./manifests"), llmManifestSchema, drivers),
       inject: [LLMDriverRegistry],
     },
     LLMRunner,

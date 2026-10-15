@@ -17,16 +17,25 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
   constructor(
     private readonly name: string, // "plugin", "llm": used in logs and errors
     dir: string,
+    builtInDir: string,
     schema: z.ZodType<M>,
     drivers: DriverRegistry<D>,
   ) {
     this.logger = new Logger(`ManifestRegistry(${name})`);
     const manifests = new Map<string, M>();
-    for (const file of readdirSync(dir).filter((f) => f.endsWith(".json"))) {
-      const where = join(dir, file);
-      const error = this.load(where, schema, drivers, manifests);
-      if (error) this.logger.warn(`${name} manifest ${where}: ${error}`);
-    }
+    const loadFromDir = (dir: string) => {
+      try {
+        for (const file of readdirSync(dir).filter((f) => f.endsWith(".json"))) {
+          const where = join(dir, file);
+          const error = this.load(where, schema, drivers, manifests);
+          if (error) this.logger.warn(`${name} manifest ${where}: ${error}`);
+        }
+      } catch (error) {
+        if (error instanceof Error) this.logger.warn(`${name} manifest ${dir}: ${error.message}`);
+      }
+    };
+    loadFromDir(dir);
+    loadFromDir(builtInDir);
     this.manifests = new Map([...manifests.entries()].sort((a, b) => a[0].localeCompare(b[0])));
   }
 
