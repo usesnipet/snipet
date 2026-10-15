@@ -19,6 +19,12 @@
         "format": "password",
         "title": "Authorization",
         "description": "A personal access token for the MCP server."
+      },
+      "timeout": {
+        "type": "number",
+        "title": "Timeout",
+        "description": "The timeout in seconds for the MCP server",
+        "default": 10
       }
     },
     "required": ["url", "Authorization"]
@@ -27,6 +33,7 @@
     "driver": "mcp",
     "options": {
       "url": "{{ connection.url }}",
+      "timeout": "{{ connection.timeout }}",
       "headers": {
         "Authorization": "{{ connection.Authorization }}"
       }
