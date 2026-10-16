@@ -26,8 +26,10 @@ type PluginConnectionFormDialogProps = DialogInstanceProps<{
   connection?: PluginConnection;
 }>;
 
-// Secret config fields come back masked; sending the mask unchanged keeps the
-// stored value (the API restores it).
+/**
+ * Creates or edits a plugin connection. Secret config fields come back masked;
+ * sending the mask unchanged keeps the stored value (the API restores it).
+ */
 export function PluginConnectionFormDialog({ plugin, connection, close }: PluginConnectionFormDialogProps) {
   const isEditing = !!connection;
   const formId = `plugin-connection-${useId()}`;

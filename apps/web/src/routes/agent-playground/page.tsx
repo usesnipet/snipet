@@ -14,7 +14,7 @@ import { useNavigate, useParams } from "react-router";
 
 import type { AgentMessage } from "@snipet/shared";
 
-// The input shown as a user bubble until the stream echoes it back.
+/** The input shown as a user bubble until the stream echoes it back. */
 type PendingInput = { sessionId: string | undefined; text: string; runId?: string };
 
 export const AgentPlaygroundPage = () => {

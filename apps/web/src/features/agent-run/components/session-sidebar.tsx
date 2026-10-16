@@ -27,7 +27,7 @@ type Props = {
 
 type SessionGroup = { label: string; sessions: AgentSession[] };
 
-// groupByDate buckets sessions (already newest first) by last activity.
+/** Buckets sessions (already newest first) into Today, Yesterday, Previous 7 days and Older; empty groups are dropped. */
 function groupByDate(sessions: AgentSession[]): SessionGroup[] {
   const today = moment().startOf("day");
   const yesterday = today.clone().subtract(1, "day");

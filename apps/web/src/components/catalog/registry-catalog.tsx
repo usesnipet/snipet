@@ -57,8 +57,7 @@ type RegistryCatalogProps<C> = {
   renderItem: (view: RegistryView<C>) => ReactNode;
 };
 
-// Searchable, sortable grid of registry entries, filterable to the ones that
-// already have connections.
+/** Searchable, sortable grid of registry entries, filterable to the ones that already have connections. */
 export function RegistryCatalog<C>({
   registry, connections, keyOf, isLoading, isError, noun, renderItem,
 }: RegistryCatalogProps<C>) {

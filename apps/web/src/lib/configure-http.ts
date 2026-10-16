@@ -5,10 +5,11 @@ import { ROUTES } from "@/routes";
 
 import type { AuthResponse } from "@snipet/shared";
 
-// handleUnauthorized clears an expired/revoked session and bounces to
-// /login, preserving the current path to return to after signing back in.
-// A 401 on a request made with no access token (e.g. a bad login attempt)
-// isn't a session expiry, so it's left for the caller to handle instead.
+/**
+ * Clears an expired or revoked session and redirects to /login, keeping the
+ * current path to return to. A 401 without an access token (e.g. a bad login)
+ * isn't a session expiry, so it's left to the caller.
+ */
 function handleUnauthorized() {
   const { accessToken, clearSession } = useAuthStore.getState();
   if (!accessToken) return;
@@ -22,9 +23,10 @@ function handleUnauthorized() {
 
 let refreshTokenPromise: Promise<AuthResponse> | null = null;
 
-// handleRefreshToken exchanges the stored refresh token for a new session.
-// Concurrent callers share the same in-flight request. Returns whether the
-// refresh succeeded; on failure it logs the user out.
+/**
+ * Exchanges the stored refresh token for a new session; concurrent callers
+ * share one in-flight request. Returns whether it worked, logging out if not.
+ */
 async function handleRefreshToken(): Promise<boolean> {
   const refreshToken = useAuthStore.getState().refreshToken;
   if (!refreshToken) {

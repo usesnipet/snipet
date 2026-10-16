@@ -1,7 +1,7 @@
 import { useSystemSettings } from "@/context/settings-context";
 import { Bug } from "lucide-react";
 
-// Fixed on the top right of every signed-in page while debug mode is on.
+/** Badge fixed on the top right of every signed-in page while debug mode is on. */
 export function DebugModeBadge() {
   const { agentDebugEnabled } = useSystemSettings();
   if (!agentDebugEnabled) return null;

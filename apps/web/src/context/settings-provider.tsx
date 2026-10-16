@@ -7,8 +7,7 @@ import { LoadingFallback } from "@/components/loading-fallback";
 
 import { SettingsContext } from "./settings-context";
 
-// Loads the system settings once the user is signed in (the endpoint needs
-// auth) and holds the routes below until they arrive.
+/** Loads the system settings once signed in (the endpoint needs auth) and holds the child routes until they arrive. */
 export function SettingsProvider() {
   const { data, error } = useSettings();
 

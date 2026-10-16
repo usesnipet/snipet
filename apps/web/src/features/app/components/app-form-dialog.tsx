@@ -22,7 +22,7 @@ type AppFormDialogProps = DialogInstanceProps<{
   app?: App;
 }>;
 
-// Origins are typed one per line, then validated with the shared schema.
+/** App form schema: origins are typed one per line, then validated with the shared schema. */
 const appFormSchema = createAppSchema.extend({
   allowedOrigins: z
     .string()

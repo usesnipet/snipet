@@ -23,19 +23,17 @@ const loadingVariants = cva("animate-spin text-muted-foreground", {
 })
 
 export interface LoadingProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof loadingVariants> {
-  /** Texto para leitores de tela */
+  /** Screen-reader text, also shown under the spinner. */
   label?: string
-  /** Ícone personalizado para o spinner */
+  /** Replaces the default spinner icon. */
   icon?: React.ReactNode
-  /** Tipo de loading */
   variant?: "spinner" | "skeleton" | "pulse"
-  /** Número de itens para skeleton/pulse (apenas para esses variantes) */
+  /** How many skeleton/pulse rows to render. */
   count?: number
-  /** Altura dos itens skeleton/pulse */
+  /** Tailwind height class for each skeleton/pulse row. */
   height?: string
-  /** Largura dos itens skeleton/pulse */
+  /** Tailwind width class for every row, or one per row. */
   width?: string | string[]
-  /** Forma dos itens skeleton/pulse */
   shape?: "circle" | "square" | "rect"
   withLogo?: boolean
 }
@@ -54,7 +52,6 @@ export function Loading({
   ...props
 }: LoadingProps) {
 
-  // Função para renderizar o spinner
   const renderSpinner = () => (
     <div className="flex flex-col items-center justify-center gap-2" {...props}>
       {withLogo ? (
@@ -69,7 +66,6 @@ export function Loading({
     </div>
   )
 
-  // Função para renderizar skeletons
   const renderSkeleton = () => {
     const widths = Array.isArray(width) ? width : Array(count).fill(width)
     const shapeClasses = {
@@ -98,7 +94,6 @@ export function Loading({
     )
   }
 
-  // Função para renderizar pulse
   const renderPulse = () => {
     const widths = Array.isArray(width) ? width : Array(count).fill(width)
 
@@ -120,7 +115,6 @@ export function Loading({
     )
   }
 
-  // Renderizar o tipo de loading apropriado
   switch (variant) {
     case "skeleton":
       return renderSkeleton()

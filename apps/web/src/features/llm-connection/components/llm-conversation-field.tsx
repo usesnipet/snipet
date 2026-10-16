@@ -51,8 +51,7 @@ function newMessage(role: LlmRole = "user"): LlmMessage {
   return { role, parts: [{ type: "text", text: "" }] };
 }
 
-// extractText joins a message's TextParts — the only part type this builder
-// produces, but a target's reply could in principle carry others.
+/** Joins a message's text parts, skipping any other part type a reply may carry. */
 function extractText(message: LlmMessage): string {
   return message.parts
     .filter((part): part is Extract<LlmMessage["parts"][number], { type: "text" }> => part.type === "text")
@@ -62,9 +61,9 @@ function extractText(message: LlmMessage): string {
 }
 
 /**
- * Renders the drag-to-reorder conversation builder (role + text per message)
- * plus the Send split-button that runs it against `targetsName`'s targets,
- * either streamed or in one shot (see useExecuteLlm / useExecuteLlmStream).
+ * Drag-to-reorder conversation builder (role + text per message) with a Send
+ * split-button that runs it against the targets at `targetsName`, streamed or
+ * in one shot.
  */
 export function LlmConversationField({ name, targetsName }: Props) {
   const form = useFormContext();

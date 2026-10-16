@@ -32,7 +32,7 @@ const RUN_NOTICES: Partial<Record<AgentRun["status"], string>> = {
   max_turns: "The agent hit its turn limit before finishing",
 };
 
-// No typography plugin is installed, so markdown elements are styled here.
+/** Markdown element styles, since no typography plugin is installed. */
 const MARKDOWN_CLASS = cn(
   "space-y-3 leading-7 break-words",
   "[&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold",
@@ -185,7 +185,7 @@ function ToolCall({ call, result, running }: ToolCallProps) {
   );
 }
 
-// parseContent shows JSON results as a tree and anything else as a string.
+/** Parses JSON tool results so they render as a tree; anything else stays a string. */
 function parseContent(content: string): unknown {
   try {
     return JSON.parse(content);
