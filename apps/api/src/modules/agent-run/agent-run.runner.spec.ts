@@ -1,14 +1,13 @@
+import { LlmError } from "#src/llm/errors.js";
 import { jest } from "@jest/globals";
 import { AgentRunStatus } from "@snipet/shared";
-
-import { LlmError } from "#src/llm/errors.js";
 
 import { Debugger } from "../debug/debugger.js";
 
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
+import { AgentTools } from "./agent-tools.js";
 
-import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { Agent } from "../agent/agent.entity.js";
 import type { DebugService } from "../debug/debug.service.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
@@ -33,10 +32,9 @@ const agent = {
   llms: [{ model: "openai/gpt", connectionId: null, extraOptions: null }],
   pluginConnections: [{ pluginConnectionId: "p1", allow: ["ask_*"], deny: [] }],
 } as unknown as Agent;
-const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z") } as AgentRun;
-const owner: Owner = { userId: "u1", appId: null, externalUserId: null };
+const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z"), debugged: true } as AgentRun;
 
-// replies: what the model answers on each turn; an Error is thrown instead.
+/** replies: what the model answers on each turn; an Error is thrown instead. */
 function setup(replies: (LlmMessage | Error)[]) {
   let nextId = 1;
   const saved: LlmMessage[] = [];
@@ -68,9 +66,11 @@ function setup(replies: (LlmMessage | Error)[]) {
   // The debug files written, by path.
   const debugFiles = new Map<string, unknown>();
   const debugs = {
-    debug: async (dir: string, fn: (d: Debugger) => Promise<void>) => {
-      const d = new Debugger((file, json) =>
-        Promise.resolve(void debugFiles.set(`${dir}/${file}`, JSON.parse(json) as unknown)),
+    debug: async (dir: string, enabled: boolean, fn: (d: Debugger) => Promise<void>) => {
+      const d = new Debugger(
+        enabled
+          ? (file, json) => Promise.resolve(void debugFiles.set(`${dir}/${file}`, JSON.parse(json) as unknown))
+          : undefined,
       );
       await fn(d);
       await d.save();
@@ -82,7 +82,7 @@ function setup(replies: (LlmMessage | Error)[]) {
     messages as unknown as Repository<never>,
     llm as unknown as LlmConnectionService,
     new AgentRunEvents(),
-    plugins as unknown as PluginConnectionService,
+    new AgentTools(plugins as unknown as PluginConnectionService),
     debugs as unknown as DebugService,
   );
   return { runner, runs, llm, plugins, saved, debugFiles };
@@ -93,7 +93,7 @@ const finishedWith = (runs: { update: jest.Mock<Fn> }) => runs.update.mock.calls
 describe("AgentRunner.run", () => {
   it("runs the granted plugin actions the model calls and feeds the results back", async () => {
     const { runner, runs, llm, plugins, saved } = setup([callTool, answer]);
-    await runner.run(agent, run, owner);
+    await runner.run(agent, run);
 
     expect(plugins.executeAction).toHaveBeenCalledWith("a1", { q: "x" });
     expect(saved.map((m) => m.role)).toEqual(["assistant", "tool", "assistant"]);
@@ -111,21 +111,18 @@ describe("AgentRunner.run", () => {
 
   it("records the run in its debug files", async () => {
     const { runner, debugFiles } = setup([callTool, answer]);
-    await runner.run(agent, run, owner);
+    await runner.run(agent, run);
 
     const dir = "2026-10-16/suporte-tecnico_ag1/s1/14-32-05_r1/";
     const file = (name: string) => debugFiles.get(dir + name);
     expect([...debugFiles.keys()].map((path) => path.slice(dir.length)).sort()).toEqual([
       "agent.json",
-      "historyDropped.json",
       "outcome.json",
-      "run.json",
       "toolCalls/0001.json",
       "tools.json",
       "turns/0001.json",
       "turns/0002.json",
     ]);
-    expect(file("run.json")).toMatchObject({ id: "r1", owner });
     expect(file("tools.json")).toMatchObject({
       available: [{ name: "ask_question" }],
       denied: [{ action: "read_wiki", pluginConnectionId: "p1" }],
@@ -150,21 +147,21 @@ describe("AgentRunner.run", () => {
 
   it("stops at maxTurns while the model keeps calling tools", async () => {
     const { runner, runs } = setup([callTool, callTool]);
-    await runner.run({ ...agent, maxTurns: 2 } as Agent, run, owner);
+    await runner.run({ ...agent, maxTurns: 2 } as Agent, run);
 
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.MAX_TURNS, turns: 2 });
   });
 
   it("fails with a client-safe message on llm errors", async () => {
     const { runner, runs } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
-    await runner.run(agent, run, owner);
+    await runner.run(agent, run);
 
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "llm provider unavailable" });
   });
 
   it("keeps the raw error, hidden from the client, in the debug files", async () => {
     const { runner, debugFiles } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
-    await runner.run(agent, run, owner);
+    await runner.run(agent, run);
 
     const dir = "2026-10-16/suporte-tecnico_ag1/s1/14-32-05_r1/";
     expect(debugFiles.get(`${dir}error.json`)).toMatchObject({ message: "connect ECONNREFUSED 10.0.0.1" });

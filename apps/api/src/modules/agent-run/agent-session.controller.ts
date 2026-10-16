@@ -1,19 +1,17 @@
+import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
+import { CurrentOwner } from "#src/common/decorators/owner.decorator.js";
 import { Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Query } from "@nestjs/common";
-import { Role } from "@snipet/shared";
-
 import { ZodPipe } from "@snipet/server-common";
-import type { FilterQuery } from "@snipet/server-common";
+import { Role } from "@snipet/shared";
 
 import { findAgentMessagesParamsSchema, findAgentSessionsSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
-import { CurrentOwner } from "#src/common/decorators/owner.decorator.js";
+
+import type { FilterQuery } from "@snipet/server-common";
 
 import type { AgentSession } from "./agent-run.entity.js";
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { FindAgentMessagesParams } from "@snipet/shared";
-import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
-
-// Same access as running agents: admins, API keys, or app end users (their own).
 @Private(UserAuth(Role.Admin), ApiKeyAuth(), AppTokenAuth())
 @Controller("agent-sessions")
 export class AgentSessionController {

@@ -14,12 +14,14 @@ export class DebugService {
     private readonly storage: DebugStorage,
   ) {}
 
-  // Runs fn with a Debugger whose files go in the folder dir. It records only
-  // when the agentDebugEnabled setting is on when fn starts. What's left is
-  // saved when fn ends, with its error if it throws.
-  async debug<T>(dir: string, fn: (d: Debugger) => Promise<T>): Promise<T> {
+  /**
+   * Runs fn with a Debugger whose files go in the folder dir, recording only
+   * when enabled (from isEnabled(), read by the caller so it can tell the
+   * user). What's left is saved when fn ends, with its error if it throws.
+   */
+  async debug<T>(dir: string, enabled: boolean, fn: (d: Debugger) => Promise<T>): Promise<T> {
     const d = new Debugger(
-      (await this.isEnabled()) ? (file, json) => this.storage.put(`${dir}/${file}`, json) : undefined,
+      enabled ? (file, json) => this.storage.put(`${dir}/${file}`, json) : undefined,
       (file, err) => this.logger.warn(`save debug ${dir}/${file}: ${String(err)}`),
     );
     try {
@@ -32,8 +34,8 @@ export class DebugService {
     }
   }
 
-  // Debugging must never break what it watches.
-  private async isEnabled(): Promise<boolean> {
+  /** The agentDebugEnabled setting. */
+  async isEnabled(): Promise<boolean> {
     try {
       return (await this.settings.get()).agentDebugEnabled;
     } catch (err) {

@@ -4,7 +4,7 @@ import { Debugger } from "./debugger.js";
 
 type Write = (file: string, json: string) => Promise<void>;
 
-// A Debugger whose writes land in files, as parsed JSON.
+/** A Debugger whose writes land in files, as parsed JSON. */
 function setup(write?: Write) {
   const files = new Map<string, unknown>();
   const onError = jest.fn();

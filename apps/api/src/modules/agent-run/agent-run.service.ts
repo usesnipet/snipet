@@ -10,6 +10,7 @@ import { AgentRunStatus } from "@snipet/shared";
 import { IsNull, LessThan, MoreThan, Repository } from "typeorm";
 
 import { AgentService } from "../agent/agent.service.js";
+import { DebugService } from "../debug/debug.service.js";
 
 import { AgentMessage, AgentRun, AgentSession } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
@@ -27,15 +28,12 @@ import type {
 
 const TITLE_LENGTH = 80;
 
-// null has to be IsNull(): TypeORM drops plain null/undefined from where.
 const ownedBy = (owner: Owner) => ({
   userId: owner.userId ?? IsNull(),
   appId: owner.appId ?? IsNull(),
   externalUserId: owner.externalUserId ?? IsNull(),
 });
 
-// Sessions, runs and their messages, always scoped to their owner: a
-// session of someone else is a 404.
 @Injectable()
 export class AgentRunService implements OnApplicationBootstrap {
   constructor(
@@ -45,9 +43,9 @@ export class AgentRunService implements OnApplicationBootstrap {
     private readonly agents: AgentService,
     private readonly runner: AgentRunner,
     private readonly events: AgentRunEvents,
+    private readonly debugs: DebugService,
   ) {}
 
-  // Runs are in-process, so the ones still running on boot were cut short.
   async onApplicationBootstrap() {
     await this.runsRepo.update(
       { status: AgentRunStatus.RUNNING },
@@ -117,8 +115,10 @@ export class AgentRunService implements OnApplicationBootstrap {
     return run;
   }
 
-  // Stores the input and answers it in the background; follow the run's
-  // events for the answer.
+  /**
+   * Stores the input and answers it in the background; follow the run's
+   * events for the answer.
+   */
   async start({ agentId, sessionId, input }: StartAgentRun, owner: Owner): Promise<AgentRun> {
     const agent = await this.agents.findById(agentId);
     if (!agent.enabled) throw new BadRequestException("agent is disabled");
@@ -131,12 +131,13 @@ export class AgentRunService implements OnApplicationBootstrap {
       }
     }
 
+    const debugged = await this.debugs.isEnabled();
     const run = await this.runsRepo.manager.transaction(async (m) => {
       const sessions = m.getRepository(AgentSession);
       let id = sessionId;
       if (id) await sessions.update(id, { updatedAt: new Date() });
       else ({ id } = await sessions.save({ agentId, ...owner, title: input.split("\n")[0].slice(0, TITLE_LENGTH) }));
-      const run = await m.getRepository(AgentRun).save({ sessionId: id, status: AgentRunStatus.RUNNING });
+      const run = await m.getRepository(AgentRun).save({ sessionId: id, status: AgentRunStatus.RUNNING, debugged });
       await m.getRepository(AgentMessage).save({
         sessionId: id,
         runId: run.id,
@@ -147,7 +148,7 @@ export class AgentRunService implements OnApplicationBootstrap {
       return m.getRepository(AgentRun).findOneByOrFail({ id: run.id });
     });
 
-    void this.runner.run(agent, run, owner);
+    void this.runner.run(agent, run);
     return run;
   }
 
@@ -160,8 +161,10 @@ export class AgentRunService implements OnApplicationBootstrap {
     }
   }
 
-  // The run's stored messages after lastId, then its live events until it
-  // finishes. Subscribes before reading, so nothing falls in between.
+  /**
+   * The run's stored messages after lastId, then its live events until it
+   * finishes. Subscribes before reading, so nothing falls in between.
+   */
   async *follow(run: AgentRun, lastId: number, signal: AbortSignal): AsyncGenerator<AgentRunEvent> {
     const queue: AgentRunEvent[] = [];
     let wake: (() => void) | undefined;

@@ -4,7 +4,7 @@ import type { AgentRunEvent } from "@snipet/shared";
 
 type Listener = (event: AgentRunEvent) => void;
 
-// Live runs of this process: their abort switch and who follows their events.
+/** Live runs of this process: their abort switch and who follows their events. */
 @Injectable()
 export class AgentRunEvents {
   private readonly live = new Map<string, { abort: AbortController; listeners: Set<Listener> }>();
@@ -23,7 +23,7 @@ export class AgentRunEvents {
     for (const listener of this.live.get(runId)?.listeners ?? []) listener(event);
   }
 
-  // Returns the unsubscribe function, or undefined when the run isn't live.
+  /** Returns the unsubscribe function, or undefined when the run isn't live. */
   subscribe(runId: string, listener: Listener): (() => void) | undefined {
     const listeners = this.live.get(runId)?.listeners;
     if (!listeners) return undefined;
@@ -31,7 +31,7 @@ export class AgentRunEvents {
     return () => listeners.delete(listener);
   }
 
-  // False when the run isn't live here.
+  /** False when the run isn't live here. */
   abort(runId: string): boolean {
     const run = this.live.get(runId);
     run?.abort.abort();

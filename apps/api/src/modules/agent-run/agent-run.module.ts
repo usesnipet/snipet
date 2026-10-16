@@ -12,6 +12,7 @@ import { AgentMessage, AgentRun, AgentSession } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
 import { AgentRunService } from "./agent-run.service.js";
+import { AgentTools } from "./agent-tools.js";
 import { AgentSessionController } from "./agent-session.controller.js";
 
 @Module({
@@ -24,6 +25,6 @@ import { AgentSessionController } from "./agent-session.controller.js";
     PluginConnectionModule,
   ],
   controllers: [AgentRunController, AgentSessionController],
-  providers: [AgentRunService, AgentRunner, AgentRunEvents],
+  providers: [AgentRunService, AgentRunner, AgentRunEvents, AgentTools],
 })
 export class AgentRunModule {}
