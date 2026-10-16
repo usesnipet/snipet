@@ -13,7 +13,7 @@ import { useCurrentUser, useLogout } from "@/features/auth/hooks";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
 import { hasRole, Role } from "@snipet/shared";
-import { AppWindow, Home, Key, LogOut, MessageSquare, Plug, Server, Users } from "lucide-react";
+import { AppWindow, Home, Key, LogOut, MessageSquare, Plug, Server, Settings, Users } from "lucide-react";
 
 import { Version } from "./version";
 
@@ -61,6 +61,12 @@ const navItems: NavEntry[] = [
         title: "Api Key",
         href: ROUTES.apiKey,
         icon: Key,
+        visible: isAdmin,
+      },
+      {
+        title: "Settings",
+        href: ROUTES.settings,
+        icon: Settings,
         visible: isAdmin,
       },
     ],

@@ -29,6 +29,8 @@ const AppsPage = lazy(() =>
   import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
 const UsersPage = lazy(() =>
   import("./routes/users/page").then((m) => ({ default: m.UsersPage })));
+const SettingsPage = lazy(() =>
+  import("./routes/settings/page").then((m) => ({ default: m.SettingsPage })));
 const ApiKeysPage = lazy(() =>
   import("./routes/api-keys/page").then((m) => ({ default: m.ApiKeysPage })));
 
@@ -58,6 +60,7 @@ export const Router = () => {
                   <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
                   <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
                   <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
+                  <Route path={toReactRouterPath(ROUTES.settings)} element={<SettingsPage />} />
                 </Route>
               </Route>
             </Route>
