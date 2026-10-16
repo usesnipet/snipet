@@ -8,16 +8,21 @@ import { AgentRunStatus } from "@snipet/shared";
 import { Repository } from "typeorm";
 
 import { Agent } from "../agent/agent.entity.js";
+import { DebugService } from "../debug/debug.service.js";
+import { Debugger, describeError } from "../debug/debugger.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 
 import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 
+import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { LlmMessage, LlmPart, LlmToolCallPart, LlmTool } from "@snipet/shared";
+
 const HISTORY_LIMIT = 20;
 
 type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;
+type DeniedAction = { action: string; pluginConnectionId: string };
 
 const INTERNAL_ERROR = "internal error";
 
@@ -26,6 +31,20 @@ const INTERNAL_ERROR = "internal error";
 function describe(err: unknown): string {
   if (err instanceof LlmError || err instanceof FailoverError) err = toHttpException(err);
   return err instanceof HttpException ? err.message : INTERNAL_ERROR;
+}
+
+function debugPath(agent: Agent, run: AgentRun): string {
+  const iso = run.createdAt.toISOString();
+  const slug =
+    agent.name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .slice(0, 40)
+      .replace(/^-+|-+$/g, "") || "agent";
+  const time = iso.slice(11, 19).replaceAll(":", "-");
+  return `${iso.slice(0, 10)}/${slug}_${agent.id}/${run.sessionId}/${time}_${run.id}`;
 }
 
 // The agent loop: call the models, run the tools they ask for, feed the
@@ -40,16 +59,20 @@ export class AgentRunner {
     private readonly llm: LlmConnectionService,
     private readonly events: AgentRunEvents,
     private readonly plugins: PluginConnectionService,
+    private readonly debugs: DebugService,
   ) {}
 
-  private async getHistory(sessionId: string): Promise<LlmMessage[]> {
+  // The session's last messages, plus what was left out of them for the
+  // debug files.
+  private async getHistory(sessionId: string) {
     const stored = await this.messages.find({
       where: { sessionId },
       order: { id: "DESC" },
       take: HISTORY_LIMIT,
     });
     stored.reverse();
-    const messages = stored.slice(stored.findIndex((m) => m.role === "user"));
+    const firstUser = stored.findIndex((m) => m.role === "user");
+    const messages = stored.slice(firstUser);
     // Providers reject calls without results and results without calls; the
     // history window or a crashed run can leave either.
     const all = messages.flatMap((m) => m.parts);
@@ -57,43 +80,85 @@ export class AgentRunner {
     const results = new Set(all.flatMap((p) => (p.type === "tool_result" ? [p.toolCallId] : [])));
     const paired = (p: LlmPart) =>
       p.type === "tool_call" ? results.has(p.id) : p.type === "tool_result" ? calls.has(p.toolCallId) : true;
-    return messages
+    const history: LlmMessage[] = messages
       .map(({ role, parts }) => ({ role, parts: parts.filter(paired) })) // the DB only holds valid messages
       .filter((m) => m.parts.length > 0);
+    const dropped = {
+      limit: HISTORY_LIMIT,
+      loaded: stored.length,
+      beforeFirstUser: firstUser,
+      unpairedParts: all.length - history.reduce((n, m) => n + m.parts.length, 0),
+    };
+    return { history, dropped };
   }
 
   // Answers the session's history, which ends with the run's user message.
   // Never throws: the outcome is written to the run.
-  async run(agent: Agent, run: AgentRun): Promise<void> {
+  async run(agent: Agent, run: AgentRun, owner: Owner): Promise<void> {
     // Opened before the first await, so a cancel right after start lands.
     const signal = this.events.open(run.id);
+    await this.debugs.debug(debugPath(agent, run), (d) => this.execute(agent, run, owner, signal, d));
+  }
+
+  private async execute(agent: Agent, run: AgentRun, owner: Owner, signal: AbortSignal, d: Debugger): Promise<void> {
     let status = AgentRunStatus.MAX_TURNS;
     let error: string | null = null;
     let turns = 0;
 
     try {
-      const history = await this.getHistory(run.sessionId);
+      d.update("run", { id: run.id, sessionId: run.sessionId, startedAt: run.createdAt, owner });
+      const { history, dropped } = await this.getHistory(run.sessionId);
+      if (dropped.loaded > 0) d.update("historyDropped", dropped);
       const system: LlmMessage[] = [{ role: "system", parts: [{ type: "text", text: `Your name is ${agent.name}` }] }];
       if (agent.systemPrompt) system.push({ role: "system", parts: [{ type: "text", text: agent.systemPrompt }] });
 
-      const { tools, executors } = await this.resolveTools(agent);
+      const { tools, executors, denied } = await this.resolveTools(agent);
       const targets = agent.llms.map((llm) => ({
         model: llm.model,
         connectionId: llm.connectionId ?? undefined,
         extraOptions: llm.extraOptions ?? undefined,
       }));
+      d.update("agent", {
+        id: agent.id,
+        name: agent.name,
+        systemPrompt: agent.systemPrompt,
+        maxTurns: agent.maxTurns,
+        llms: targets,
+        pluginGrants: agent.pluginConnections,
+      });
+      d.update("tools", { available: tools ?? [], denied });
+      if (d.enabled) {
+        this.logger.log(`debugging conversation ${run.id}`);
+        this.events.emit(run.id, {
+          event: "message",
+          data: {
+            id: 0,
+            sessionId: run.sessionId,
+            runId: run.id,
+            role: "assistant",
+            parts: [{ type: "text", text: "This conversation is being debugged and is not private." }],
+            model: null,
+            createdAt: new Date(),
+          },
+        });
+      }
 
       while (turns < agent.maxTurns) {
         turns++;
         let reply: LlmMessage | undefined;
         let model: string | null = null;
-        const stream = this.llm.stream({ targets, messages: [...system, ...history], tools }, signal);
+        const skipped: unknown[] = [];
+        const messages = [...system, ...history];
+        const started = Date.now();
+        const stream = this.llm.stream({ targets, messages, tools }, signal);
         for await (const event of stream) {
           if (event.event === "llm_started") model = event.data.llm;
+          else if (event.event === "llm_skipped") skipped.push(event.data);
           else if (event.event === "text_delta") this.events.emit(run.id, event);
           else if (event.event === "message") reply = event.data.message;
         }
         if (!reply) throw new Error("llm stream ended without a message");
+        d.append("turns", { turn: turns, model, skipped, durationMs: Date.now() - started, messages, reply });
         history.push(await this.save(run, reply, model));
 
         const calls = reply.parts.filter((p): p is LlmToolCallPart => p.type === "tool_call");
@@ -104,12 +169,17 @@ export class AgentRunner {
         // Every call gets a result, even after a cancel, or the next run's
         // history would have calls the providers reject as unanswered.
         for (const call of calls) {
-          const result: ActionResult = signal.aborted
-            ? { content: "cancelled", isError: true }
-            : await this.callTool(executors.get(call.name), call);
+          const execute = executors.get(call.name);
+          const { result, startedAt, durationMs } = await d.time(() =>
+            signal.aborted
+              ? Promise.resolve<ActionResult>({ content: "cancelled", isError: true })
+              : this.callTool(execute, call),
+          );
+          d.append("toolCalls", { turn: turns, ...call, known: !!execute, startedAt, durationMs, result });
           const parts = [{ type: "tool_result" as const, toolCallId: call.id, ...result }];
           history.push(await this.save(run, { role: "tool", parts }, null));
         }
+        await d.save();
         signal.throwIfAborted();
       }
     } catch (err) {
@@ -120,7 +190,9 @@ export class AgentRunner {
         error = describe(err);
         if (error === INTERNAL_ERROR) this.logger.error(err);
       }
+      d.update("error", describeError(err)); // the raw error, which the client never sees
     }
+    d.update("outcome", { status, error, turns });
 
     try {
       await this.runs.update(run.id, { status, error, turns, finishedAt: new Date() });
@@ -150,10 +222,13 @@ export class AgentRunner {
     }
   }
 
-  // Native tools, plus the tools of the agent's actions
-  // of its plugin connections that pass the grant's allow/deny. Names are made
-  // unique and provider-safe; executors maps them back.
-  private async resolveTools(agent: Agent): Promise<{ tools?: LlmTool[]; executors: Map<string, Executor> }> {
+  // Native tools, plus the tools of the agent's actions of its plugin
+  // connections that pass the grant's allow/deny; the others are returned as
+  // denied. Names are made unique and provider-safe; executors maps them back.
+  private async resolveTools(
+    agent: Agent,
+  ): Promise<{ tools?: LlmTool[]; executors: Map<string, Executor>; denied: DeniedAction[] }> {
+    const denied: DeniedAction[] = [];
     const executors = new Map<string, Executor>();
     const tools: LlmTool[] = [];
     const add = (rawName: string, description: string, parameters: Record<string, unknown>, execute: Executor) => {
@@ -166,9 +241,12 @@ export class AgentRunner {
 
     const pluginGrants = new Map((agent.pluginConnections ?? []).map((g) => [g.pluginConnectionId, g]));
     for (const action of await this.plugins.findActions([...pluginGrants.keys()])) {
-      if (!isGranted(action.name, pluginGrants.get(action.pluginConnectionId)!)) continue;
+      if (!isGranted(action.name, pluginGrants.get(action.pluginConnectionId)!)) {
+        denied.push({ action: action.name, pluginConnectionId: action.pluginConnectionId });
+        continue;
+      }
       add(action.name, action.description, action.inputSchema, (args) => this.plugins.executeAction(action.id, args));
     }
-    return { tools: tools.length ? tools : undefined, executors };
+    return { tools: tools.length ? tools : undefined, executors, denied };
   }
 }
