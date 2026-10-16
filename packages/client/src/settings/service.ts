@@ -9,7 +9,7 @@ const SETTINGS_URL = "/api/settings";
 const get = async (opts: ServiceGetOptions<Settings> = {}): Promise<Settings> =>
   http.get({ url: SETTINGS_URL, schemas: { response: settingsSchema }, ...opts });
 
-// Only the keys sent are updated.
+/** Updates settings; only the keys sent change. */
 const update = async (body: UpdateSettings, opts: ServicePutOptions<UpdateSettings, void> = {}): Promise<void> =>
   http.put({ url: SETTINGS_URL, body, schemas: { body: updateSettingsSchema }, ...opts });
 

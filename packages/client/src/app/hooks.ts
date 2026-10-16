@@ -58,7 +58,7 @@ export const useUpdateApp = (
   });
 };
 
-// Deleting an app also deletes its API keys (and sessions) on the server.
+/** Deletes an app; the server also deletes its API keys (and sessions) on the server. */
 export const useDeleteApp = (
   opts?: ServiceDeleteOptions<void>,
 ): UseMutationResult<void, Error, string> => {

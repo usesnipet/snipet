@@ -1,4 +1,4 @@
-// Each app wires auth into the client once, at startup, via configureHttp.
+/** Auth and URL wiring for the client, set once per app at startup via configureHttp. */
 export type HttpConfig = {
   /** Prefix for every request URL, e.g. "https://api.example.com". Defaults to same origin. */
   baseUrl?: string;

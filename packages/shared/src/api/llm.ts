@@ -9,7 +9,7 @@ export const llmRoleSchema = z.enum(["system", "user", "assistant", "tool"]);
 export type LlmRole = z.infer<typeof llmRoleSchema>;
 
 export const llmTextPartSchema = z.object({ type: z.literal("text"), text: z.string() });
-// source: http(s) URL, data URI or bare base64.
+/** source: http(s) URL, data URI or bare base64. */
 export const llmImagePartSchema = z.object({ type: z.literal("image"), source: z.string(), mimeType: z.string() });
 export const llmToolCallPartSchema = z.object({
   type: z.literal("tool_call"),
@@ -38,7 +38,7 @@ export const llmMessageSchema = z.object({
 });
 export type LlmMessage = z.infer<typeof llmMessageSchema>;
 
-// A tool offered to the model; parameters is the JSON Schema of its arguments.
+/** A tool offered to the model; parameters is the JSON Schema of its arguments. */
 export const llmToolSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -55,8 +55,10 @@ export enum LlmCapability {
 }
 export const llmCapabilitySchema = z.enum(LlmCapability);
 
-// The JSON manifest of an LLM. Vision/tools are per model (see
-// LlmModel.capabilities), so text, vision and tools all go through `chat`.
+/**
+ * The JSON manifest of an LLM. Vision/tools are per model (see
+ * LlmModel.capabilities), so text, vision and tools all go through `chat`.
+ */
 export const llmManifestSchema = baseManifestSchema.extend({
   models: driverSchema,
   chat: driverSchema.optional(), // generate + stream
@@ -74,7 +76,7 @@ export const llmModelSchema = z.object({
 });
 export type LlmModel = z.infer<typeof llmModelSchema>;
 
-// connectionId: the connection whose synced models to list; else the llm's default.
+/** connectionId: the connection whose synced models to list; else the llm's default. */
 export const listLLMModelsParamsSchema = z.object({
   connectionId: z.uuid().optional(),
 });
@@ -82,8 +84,10 @@ export type ListLLMModelsParams = z.infer<typeof listLLMModelsParamsSchema>;
 
 // --- execute -------------------------------------------------------------
 
-// One model the runner may try, in order. model is "llm/model". Runs on
-// connectionId, else the llm's default connection.
+/**
+ * One model the runner may try, in order. model is "llm/model". Runs on
+ * connectionId, else the llm's default connection.
+ */
 export const executeLlmTargetSchema = z.object({
   model: z.string().min(1),
   connectionId: z.uuid().optional(),

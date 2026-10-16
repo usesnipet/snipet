@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// Bare origin ("https://app.example.com"): matched exactly against the Origin header.
+/** Bare origin ("https://app.example.com"): matched exactly against the Origin header. */
 const originSchema = z
   .string()
   .refine((s) => URL.canParse(s) && new URL(s).origin === s, "must be an origin like https://app.example.com");
@@ -32,8 +32,10 @@ export const findAppsParamsSchema = paginationParamsSchema.extend({
 });
 export type FindAppsParams = z.infer<typeof findAppsParamsSchema>;
 
-// Body of POST /apps/issue-token. The caller is an app's backend (it holds the API
-// key), so it's trusted to say who the end user is.
+/**
+ * Body of POST /apps/issue-token. The caller is an app's backend (it holds the API
+ * key), so it's trusted to say who the end user is.
+ */
 export const issueAppTokenSchema = z.object({
   /** When set, the request fails unless the API key belongs to this app. */
   appId: z.uuid().optional(),
@@ -57,7 +59,7 @@ export const appTokenResponseSchema = z.object({
 });
 export type AppTokenResponse = z.infer<typeof appTokenResponseSchema>;
 
-// What the signed token carries.
+/** What the signed token carries. */
 export type AppTokenPayload = {
   sub: string;
   user: { name?: string; email?: string; metadata?: Record<string, unknown> };

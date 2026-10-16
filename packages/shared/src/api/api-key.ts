@@ -3,13 +3,13 @@ import { z } from "zod";
 import { appSchema } from "./app.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// Never carries the key hash.
+/** Never carries the key hash. */
 export const apiKeySchema = z.object({
   id: z.uuid(),
   appId: z.uuid(),
   app: appSchema.optional(),
   name: z.string(),
-  // First chars of the key, safe to show to identify it.
+  /** First chars of the key, safe to show to identify it. */
   keyId: z.string(),
   active: z.boolean(),
   expiresAt: z.coerce.date().nullable(),
@@ -18,7 +18,7 @@ export const apiKeySchema = z.object({
 });
 export type ApiKey = z.infer<typeof apiKeySchema>;
 
-// Returned only on create and roll: the plaintext key is never stored.
+/** Returned only on create and roll: the plaintext key is never stored. */
 export const apiKeyWithSecretSchema = apiKeySchema.extend({
   key: z.string(),
 });

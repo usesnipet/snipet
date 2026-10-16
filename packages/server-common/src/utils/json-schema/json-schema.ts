@@ -3,7 +3,7 @@ import z from "zod";
 
 export type JsonSchema = Record<string, unknown>;
 
-// Returns true if schema is a valid JSON Schema.
+/** Returns true if schema is a valid JSON Schema. */
 export function checkJsonSchema(schema: JsonSchema): boolean {
   try {
     z.fromJSONSchema(schema);
@@ -13,10 +13,12 @@ export function checkJsonSchema(schema: JsonSchema): boolean {
   }
 }
 
-// Validates data against a JSON Schema and returns it with the schema's
-// "default"s filled in. A null/undefined schema accepts anything.
-// Note: a default on a nested object is used as-is, its own inner defaults
-// are not re-applied.
+/**
+ * Validates data against a JSON Schema and returns it with the schema's
+ * "default"s filled in. A null/undefined schema accepts anything.
+ * Note: a default on a nested object is used as-is, its own inner defaults
+ * are not re-applied.
+ */
 export function validateJson<T = Record<string, unknown>>(schema: JsonSchema | null | undefined, data: unknown): T {
   if (!schema) return data as T;
   const result = z.fromJSONSchema(schema).safeParse(data);

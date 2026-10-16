@@ -9,7 +9,7 @@ export enum Role {
 
 export const roleSchema = z.enum(Role);
 
-// Never carries the password hash.
+/** Never carries the password hash. */
 export const userSchema = z.object({
   id: z.uuid(),
   username: z.string(),
@@ -30,7 +30,7 @@ export const createUserSchema = z.object({
 });
 export type CreateUser = z.infer<typeof createUserSchema>;
 
-// Username is the login handle and never changes.
+/** Username is the login handle and never changes. */
 export const updateUserSchema = createUserSchema.omit({ username: true }).partial();
 export type UpdateUser = z.infer<typeof updateUserSchema>;
 

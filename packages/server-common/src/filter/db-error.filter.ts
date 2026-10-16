@@ -9,7 +9,7 @@ import {
 import { BaseExceptionFilter } from "@nestjs/core";
 import { QueryFailedError } from "typeorm";
 
-// Postgres error codes -> HTTP errors, so services don't special-case them.
+/** Postgres error codes -> HTTP errors, so services don't special-case them. */
 const PG_ERRORS: Record<string, () => HttpException> = {
   // unique_violation
   "23505": () => new ConflictException("already exists"),

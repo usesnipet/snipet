@@ -8,7 +8,7 @@ export const loginSchema = z.object({
 });
 export type Login = z.infer<typeof loginSchema>;
 
-// Body of both POST /auth/refresh and POST /auth/logout.
+/** Body of both POST /auth/refresh and POST /auth/logout. */
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1),
 });

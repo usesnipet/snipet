@@ -5,9 +5,11 @@ import { jsonObjectSchema } from "../schemas/json.js";
 
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// One LLM of an agent; the runner tries them by ascending order. Same fields
-// as ExecuteLlmTarget: model is "llm/model", connectionId falls back to
-// the llm's default connection.
+/**
+ * One LLM of an agent; the runner tries them by ascending order. Same fields
+ * as ExecuteLlmTarget: model is "llm/model", connectionId falls back to
+ * the llm's default connection.
+ */
 export const agentLlmSchema = z.object({
   id: z.uuid(),
   agentId: z.uuid(),
@@ -18,7 +20,7 @@ export const agentLlmSchema = z.object({
 });
 export type AgentLlm = z.infer<typeof agentLlmSchema>;
 
-// Grants an agent a plugin connection's actions.
+/** Grants an agent a plugin connection's actions. */
 export const agentPluginConnectionSchema = z.object({
   agentId: z.uuid(),
   pluginConnectionId: z.uuid(),
@@ -31,7 +33,7 @@ export const agentSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   description: z.string(),
-  // Public URL of the avatar image.
+  /** Public URL of the avatar image. */
   avatar: z.url().nullable(),
   systemPrompt: z.string(),
   maxTurns: z.number().int(),
@@ -45,11 +47,13 @@ export type Agent = z.infer<typeof agentSchema>;
 
 export const paginatedAgentSchema = paginatedSchema(agentSchema);
 
-// Glob patterns; blanks are dropped.
+/** Glob patterns; blanks are dropped. */
 const patternsSchema = z.array(z.string().trim()).transform((patterns) => patterns.filter(Boolean));
 
-// The position in llms is the order. llms and pluginConnections
-// replace the whole list when sent.
+/**
+ * The position in llms is the order. llms and pluginConnections
+ * replace the whole list when sent.
+ */
 export const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(255),
   description: z.string().optional(),

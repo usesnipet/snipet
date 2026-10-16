@@ -3,8 +3,10 @@ import { DataSource } from "typeorm";
 
 const logger = new Logger("Database");
 
-// Creates the database named in `url` if it doesn't exist, connecting to the
-// `postgres` maintenance database to do it. The DB user needs CREATEDB.
+/**
+ * Creates the database named in `url` if it doesn't exist, connecting to the
+ * `postgres` maintenance database to do it. The DB user needs CREATEDB.
+ */
 export async function ensureDatabase(url: string): Promise<void> {
   const name = decodeURIComponent(new URL(url).pathname.slice(1));
   const adminUrl = new URL(url);

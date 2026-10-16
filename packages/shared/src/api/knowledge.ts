@@ -2,8 +2,10 @@ import { z } from "zod";
 
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// Where a knowledge item is in the indexing pipeline. pending: new or changed
-// in the source, waiting to be indexed; skipped: format not supported.
+/**
+ * Where a knowledge item is in the indexing pipeline. pending: new or changed
+ * in the source, waiting to be indexed; skipped: format not supported.
+ */
 export enum KnowledgeItemStatus {
   PENDING = "pending",
   INDEXING = "indexing",
@@ -13,7 +15,7 @@ export enum KnowledgeItemStatus {
 }
 export const knowledgeItemStatusSchema = z.enum(KnowledgeItemStatus);
 
-// Content class, from the MIME type detected at extraction.
+/** Content class, from the MIME type detected at extraction. */
 export enum KnowledgeItemKind {
   TEXT = "text",
   DOCUMENT = "document",
@@ -25,8 +27,10 @@ export enum KnowledgeItemKind {
 }
 export const knowledgeItemKindSchema = z.enum(KnowledgeItemKind);
 
-// One object of the knowledge source (e.g. an S3 key). Items are not created
-// by clients: the source sync keeps them in line with the source.
+/**
+ * One object of the knowledge source (e.g. an S3 key). Items are not created
+ * by clients: the source sync keeps them in line with the source.
+ */
 export const knowledgeItemSchema = z.object({
   id: z.uuid(),
   externalId: z.string(),
@@ -47,7 +51,7 @@ export type KnowledgeItem = z.infer<typeof knowledgeItemSchema>;
 export const paginatedKnowledgeItemSchema = paginatedSchema(knowledgeItemSchema);
 
 export const findKnowledgeItemsParamsSchema = paginationParamsSchema.extend({
-  // Matches the name, case-insensitive.
+  /** Matches the name, case-insensitive. */
   search: z.string().trim().max(255).optional(),
   status: knowledgeItemStatusSchema.optional(),
   kind: knowledgeItemKindSchema.optional(),
@@ -60,7 +64,7 @@ export const knowledgeSearchParamsSchema = z.object({
 });
 export type KnowledgeSearchParams = z.infer<typeof knowledgeSearchParamsSchema>;
 
-// A chunk ranked by Reciprocal Rank Fusion of vector and full-text rank.
+/** A chunk ranked by Reciprocal Rank Fusion of vector and full-text rank. */
 export const knowledgeSearchResultSchema = z.object({
   id: z.uuid(),
   knowledgeItemId: z.uuid(),

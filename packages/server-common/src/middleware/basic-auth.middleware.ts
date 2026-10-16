@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 
 import type { NextFunction, Request, Response } from "express";
 
-// Hashing first gives timingSafeEqual equal-length inputs.
+/** Hashing first gives timingSafeEqual equal-length inputs. */
 const digest = (value: string) => createHash("sha256").update(value).digest();
 const safeEqual = (a: string, b: string) => timingSafeEqual(digest(a), digest(b));
 

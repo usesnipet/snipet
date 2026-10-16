@@ -71,8 +71,10 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
-// issueToken emits an end-user token for the API key's app. API key only: no
-// bearer token, and a 401 (bad key) mustn't log the dashboard user out.
+/**
+ * Issues an end-user token for the API key's app. API key only: no
+ * bearer token, and a 401 (bad key) mustn't log the dashboard user out.
+ */
 const issueToken = async (
   apiKey: string,
   body: IssueAppToken,

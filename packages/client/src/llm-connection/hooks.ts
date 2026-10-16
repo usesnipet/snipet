@@ -115,7 +115,7 @@ export const useDeleteLlmConnection = (
   });
 };
 
-// Synced models change too, so everything under the connection is refetched.
+/** Re-syncs a connection's models; everything cached under the connection is refetched. */
 export const useSyncLlmConnection = (
   opts?: ServicePostOptions<void, void>,
 ): UseMutationResult<void, Error, string> => {
@@ -158,10 +158,12 @@ export type UseExecuteLlmStreamResult = {
   cancel: () => void;
 };
 
-// useExecuteLlmStream drives POST /execute/stream: `execute` opens the SSE
-// connection and accumulates text_delta/tool_call events as they arrive,
-// `cancel` aborts an in-flight run. Not react-query — there is no cached
-// value to key on, only a live event stream.
+/**
+ * Drives POST /execute/stream: `execute` opens the SSE
+ * connection and accumulates text_delta/tool_call events as they arrive,
+ * `cancel` aborts an in-flight run. Not react-query — there is no cached
+ * value to key on, only a live event stream.
+ */
 export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
   const [status, setStatus] = useState<LlmStreamStatus>("idle");
   const [events, setEvents] = useState<LlmStreamEvent[]>([]);
