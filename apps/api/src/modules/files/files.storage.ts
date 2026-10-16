@@ -18,8 +18,10 @@ export class FilesStorage {
     return this.storage.delete(PREFIX, key);
   }
 
-  // Stores a base64 image data URL under a fresh key in dir and returns the
-  // key. Fresh keys let the files be cached forever.
+  /**
+   * Stores a base64 image data URL under a fresh key in dir and returns the
+   * key. Fresh keys let the files be cached forever.
+   */
   async putDataUrl(dir: string, dataUrl: string): Promise<string> {
     const re = /^data:image\/(png|jpeg|webp);base64,(.*)$/;
     const match = re.exec(dataUrl);

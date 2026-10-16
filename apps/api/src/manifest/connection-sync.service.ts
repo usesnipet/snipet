@@ -17,12 +17,14 @@ export type SyncedConnectionEntity = ConnectionEntity & {
   lastSyncedError: string | null;
 };
 
-// Keeps a connection's items (plugin actions, llm models) in line with what
-// its driver lists: health check first, then the items are replaced, matched
-// by `itemKeyField`. Runs on boot, every hour and on demand.
-// - keyField: the connection column naming the manifest, e.g. "pluginKey"
-// - connectionField: the item column pointing at the connection
-// - itemKeyField: the item column that identifies it within a connection
+/**
+ * Keeps a connection's items (plugin actions, llm models) in line with what
+ * its driver lists: health check first, then the items are replaced, matched
+ * by `itemKeyField`. Runs on boot, every hour and on demand.
+ * - keyField: the connection column naming the manifest, e.g. "pluginKey"
+ * - connectionField: the item column pointing at the connection
+ * - itemKeyField: the item column that identifies it within a connection
+ */
 export abstract class ConnectionSyncService<
   E extends SyncedConnectionEntity,
   M extends BaseManifest,
@@ -41,16 +43,21 @@ export abstract class ConnectionSyncService<
     private readonly itemTarget: EntityTarget<I>,
   ) {}
 
-  // The connection's items as the driver lists them, or undefined when the
-  // manifest doesn't have that capability (the stored items are kept).
+  /**
+   * The connection's items as the driver lists them, or undefined when the
+   * manifest doesn't have that capability (the stored items are kept).
+   */
   protected abstract list(conn: E, manifest: M): Promise<DeepPartial<I>[] | undefined>;
 
   onApplicationBootstrap() {
     void this.syncAll();
   }
 
-  // Never throws: the error is recorded on the connection, and the previous
-  // items are kept. Deleted connections are skipped.
+  /**
+   * Health-checks one connection and refreshes its items. Never throws: the
+   * error is recorded on the connection and the previous items are kept.
+   * Deleted connections are skipped.
+   */
   async sync(id: string): Promise<void> {
     const conn = await this.connections.findOneBy({ id } as FindOptionsWhere<E>);
     if (!conn) return;

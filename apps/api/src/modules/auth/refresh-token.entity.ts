@@ -2,8 +2,10 @@ import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedCol
 
 import { User } from "../user/user.entity.js";
 
-// Opaque refresh tokens, stored as SHA-256 hashes. Single use: refreshing
-// revokes the token it was given.
+/**
+ * Opaque refresh tokens, stored as SHA-256 hashes. Single use: refreshing
+ * revokes the token it was given.
+ */
 @Entity("refresh_tokens")
 export class RefreshToken {
   @PrimaryGeneratedColumn("uuid")

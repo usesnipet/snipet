@@ -84,8 +84,10 @@ export function fromCompletion(completion: ChatCompletion): LlmResponse {
   };
 }
 
-// Text deltas pass through; tool call fragments are accumulated per index and
-// emitted whole when the model finishes calling tools (or the stream ends).
+/**
+ * Text deltas pass through; tool call fragments are accumulated per index and
+ * emitted whole when the model finishes calling tools (or the stream ends).
+ */
 export async function* toStreamEvents(chunks: AsyncIterable<ChatCompletionChunk>): AsyncGenerator<ChatStreamEvent> {
   const pending = new Map<number, { id: string; name: string; args: string }>();
   function* flush(): Generator<ChatStreamEvent> {
@@ -120,7 +122,7 @@ function finishReason(raw: string | null, hasToolCalls: boolean): LlmFinishReaso
   return "stop";
 }
 
-// Tool arguments arrive as a JSON string; keep the raw string if it isn't valid JSON.
+/** Tool arguments arrive as a JSON string; keep the raw string if it isn't valid JSON. */
 function parseArguments(raw: string): unknown {
   try {
     return JSON.parse(raw);
@@ -129,7 +131,7 @@ function parseArguments(raw: string): unknown {
   }
 }
 
-// http(s) and data: URIs pass through; bare base64 is wrapped in a data URI.
+/** http(s) and data: URIs pass through; bare base64 is wrapped in a data URI. */
 function imageUrl(source: string, mimeType: string): string {
   const s = source.trim();
   if (/^(https?:|data:)/.test(s)) return s;

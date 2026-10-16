@@ -4,8 +4,8 @@ export type DebugWriter = (file: string, json: string) => Promise<void>;
 export type Timed<T> = { result: T; startedAt: string; durationMs: number };
 
 /**
- * Serialized now, so later mutations of the caller's objects (a history that
- * keeps growing) don't leak in.
+ * Pretty JSON of value, serialized now so later mutations of the caller's
+ * objects (a history that keeps growing) don't leak in.
  */
 function toJson(value: unknown): string {
   try {

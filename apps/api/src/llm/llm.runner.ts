@@ -20,8 +20,10 @@ export interface RunInput {
   signal?: AbortSignal;
 }
 
-// Runs a conversation against an ordered list of targets, failing over to
-// the next one on rate limit / auth / unavailable errors.
+/**
+ * Runs a conversation against an ordered list of targets, failing over to
+ * the next one on rate limit / auth / unavailable errors.
+ */
 @Injectable()
 export class LLMRunner {
   constructor(
@@ -45,9 +47,11 @@ export class LLMRunner {
     throw new FailoverError(attempts);
   }
 
-  // Yields llm_skipped per target skipped, llm_started once one is chosen,
-  // its events, then the assembled message. Failover only happens before a
-  // target's first event; after that errors propagate.
+  /**
+   * Yields llm_skipped per target skipped, llm_started once one is chosen,
+   * its events, then the assembled message. Failover only happens before a
+   * target's first event; after that errors propagate.
+   */
   async *stream({ targets, messages, tools, signal }: RunInput): AsyncGenerator<LlmStreamEvent> {
     if (targets.length === 0) throw new LlmError("bad_request", "no targets");
     const attempts: FailoverError["attempts"] = [];
@@ -82,8 +86,10 @@ export class LLMRunner {
     throw new FailoverError(attempts);
   }
 
-  // The target's chat driver with its options. Bad input is fatal, never a
-  // failover.
+  /**
+   * The target's chat driver with its options. Bad input is fatal, never a
+   * failover.
+   */
   private resolve(target: LlmTarget, messages: LlmMessage[], tools: LlmTool[] | undefined, signal?: AbortSignal) {
     const [llmKey, model] = splitModelRef(target.model);
     const chat = this.drivers.resolve(this.llms.get(llmKey), "chat", target.connection);

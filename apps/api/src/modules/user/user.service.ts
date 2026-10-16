@@ -20,7 +20,7 @@ export class UserService extends CrudService<User> implements OnApplicationBoots
     super(repo);
   }
 
-  // Includes the password hash, which is never selected otherwise.
+  /** Includes the password hash, which is never selected otherwise. */
   findByUsernameWithPassword(username: string): Promise<User | null> {
     return this.repo
       .createQueryBuilder("user")
@@ -48,7 +48,7 @@ export class UserService extends CrudService<User> implements OnApplicationBoots
     return this.updateById(id, { password });
   }
 
-  // Provisions the first admin on an empty users table.
+  /** Provisions the first admin on an empty users table. */
   async onApplicationBootstrap(): Promise<void> {
     if ((await this.repo.count()) > 0) return;
 

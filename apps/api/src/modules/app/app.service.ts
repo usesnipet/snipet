@@ -14,8 +14,10 @@ import type { z } from "zod";
 
 export const APP_TOKEN_AUDIENCE = "app";
 
-// Own key, derived from JWT_SECRET: the global AuthGuard verifies with
-// JWT_SECRET, so an app token can never pass as a dashboard access token.
+/**
+ * Own key, derived from JWT_SECRET: the global AuthGuard verifies with
+ * JWT_SECRET, so an app token can never pass as a dashboard access token.
+ */
 export const APP_TOKEN_SECRET = createHmac("sha256", env.JWT_SECRET).update("app-token").digest("hex");
 
 @Injectable()
@@ -27,7 +29,7 @@ export class AppService extends CrudService<App> {
     super(repo);
   }
 
-  // Signs a token for one of the API key's app's end users.
+  /** Signs a token for one of the API key's app's end users. */
   async issueToken(appId: string, dto: z.output<typeof issueAppTokenSchema>): Promise<AppTokenResponse> {
     if (dto.appId && dto.appId !== appId) throw new ForbiddenException("API key does not belong to this app");
     const app = await this.findById(appId);

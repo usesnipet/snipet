@@ -3,7 +3,7 @@ export function isGranted(str: string, { allow, deny }: { allow?: string[]; deny
   return (!allow?.length || allow.some(matches)) && !deny?.some(matches);
 }
 
-// Only "*" is special: any run of characters.
+/** Only "*" is special: any run of characters. */
 const globToRegExp = (glob: string) =>
   new RegExp(
     `^${glob

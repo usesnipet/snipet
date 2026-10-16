@@ -3,8 +3,10 @@ import z from "zod";
 
 import { LlmError, llmErrorFromStatus } from "../../errors.js";
 
-// Options shared by the openai drivers. Any OpenAI-compatible service (Groq,
-// Together, OpenRouter, Ollama, ...) works with its own baseUrl.
+/**
+ * Options shared by the openai drivers. Any OpenAI-compatible service (Groq,
+ * Together, OpenRouter, Ollama, ...) works with its own baseUrl.
+ */
 export const openAiOptionsSchema = z.strictObject({
   baseUrl: z.url(), // SDK base, e.g. https://api.openai.com/v1
   apiKey: z.string().default(""),

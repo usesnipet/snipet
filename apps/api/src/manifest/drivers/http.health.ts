@@ -12,7 +12,7 @@ const optionsSchema = z.strictObject({
 
 type HttpHealthOptions = z.infer<typeof optionsSchema>;
 
-// Healthy when the url answers with a 2xx status.
+/** Healthy when the url answers with a 2xx status. */
 export class HttpHealthCheckDriver extends Driver(optionsSchema) implements HealthCheckDriver<HttpHealthOptions> {
   readonly key = "http";
 

@@ -21,7 +21,7 @@ import {
 import { LlmConnection } from "../llm-connection/llm-connection.entity.js";
 import { PluginConnection } from "../plugin-connection/plugin-connection.entity.js";
 
-// Column holding a file path: reads as the public URL, writes back as the path.
+/** Column holding a file path: reads as the public URL, writes back as the path. */
 export const storagePathTransformer: ValueTransformer = {
   from: (path: string | null) => path && toStorageUrl(path),
   to: (url: string | null | undefined) => url && fromStorageUrl(url),
@@ -35,7 +35,7 @@ export class Agent extends BaseEntity implements AgentContract {
   @Column({ type: "text", default: "" })
   description: string;
 
-  // Stored as the file's path, read as its public URL.
+  /** Stored as the file's path, read as its public URL. */
   @Column({ type: "text", nullable: true, transformer: storagePathTransformer })
   avatar: string | null;
 
@@ -54,7 +54,7 @@ export class Agent extends BaseEntity implements AgentContract {
   @OneToMany(() => AgentPluginConnection, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
   pluginConnections: AgentPluginConnection[];
 
-  // Eager relations come unordered.
+  /** Puts llms in the order the runner tries them; eager relations load unordered. */
   @AfterLoad()
   sortLlms() {
     this.llms?.sort((a, b) => a.order - b.order);
@@ -79,7 +79,7 @@ export class AgentLlm implements AgentLlmContract {
   @Column({ length: 255 })
   model: string;
 
-  // A deleted connection falls back to the llm's default one.
+  /** A deleted connection falls back to the llm's default one. */
   @Column({ type: "uuid", nullable: true })
   connectionId: string | null;
 

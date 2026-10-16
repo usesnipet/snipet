@@ -20,7 +20,7 @@ export class ApiKey extends BaseEntity implements ApiKeyContract {
   @Column({ unique: true })
   keyId: string;
 
-  // SHA-256 of the key. select: false keeps it out of every query unless asked for.
+  /** SHA-256 of the key. select: false keeps it out of every query unless asked for. */
   @Column({ unique: true, select: false })
   hash?: string;
 

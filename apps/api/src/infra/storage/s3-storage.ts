@@ -15,7 +15,7 @@ import { assertKey, storagePath } from "./utils.js";
 import type { Readable } from "node:stream";
 import type { StoredFile } from "./storage.js";
 
-// Objects under STORAGE_S3_PREFIX + <prefix>/ of one bucket.
+/** Objects under STORAGE_S3_PREFIX + <prefix>/ of one bucket. */
 @Injectable()
 export class S3Storage extends Storage {
   private readonly client = new S3Client({
@@ -71,7 +71,7 @@ export class S3Storage extends Storage {
     return names;
   }
 
-  // Lists and deletes a page (up to 1000 keys) at a time until nothing is left.
+  /** Lists and deletes a page (up to 1000 keys) at a time until nothing is left. */
   async deleteDir(prefix: string, dir: string): Promise<void> {
     assertKey(dir); // an empty dir would wipe the whole prefix
     const base = `${this.key(prefix, dir)}/`;

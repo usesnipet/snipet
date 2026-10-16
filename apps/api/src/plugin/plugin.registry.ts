@@ -4,6 +4,7 @@ import { ManifestRegistry } from "#src/manifest/manifest.registry.js";
 import type { PluginManifest } from "@snipet/shared";
 import type { PluginDrivers } from "./driver.js";
 
-// Named subclasses so Nest can inject them by class.
+/** Plugin drivers per capability; a named subclass so Nest can inject it by class. */
 export class PluginDriverRegistry extends DriverRegistry<PluginDrivers> {}
+/** Plugin manifests loaded at startup; a named subclass so Nest can inject it by class. */
 export class PluginRegistry extends ManifestRegistry<PluginManifest, PluginDrivers> {}

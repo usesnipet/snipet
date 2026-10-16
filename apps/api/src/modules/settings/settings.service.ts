@@ -16,12 +16,12 @@ const entries = (settings: UpdateSettings) => Object.entries(settings).map(([key
 export class SettingsService implements OnApplicationBootstrap {
   constructor(@InjectRepository(Setting) private readonly repo: Repository<Setting>) {}
 
-  // Saves the default of every setting not stored yet; stored values are kept.
+  /** Saves the default of every setting not stored yet; stored values are kept. */
   async onApplicationBootstrap(): Promise<void> {
     await this.repo.createQueryBuilder().insert().values(entries(DEFAULTS)).orIgnore().execute();
   }
 
-  // Rows of settings no longer in DEFAULTS are left out.
+  /** Every setting, stored value or default; rows of settings no longer in DEFAULTS are ignored. */
   async get(): Promise<Settings> {
     const settings: Record<string, unknown> = { ...DEFAULTS };
     for (const { key, value } of await this.repo.find()) if (key in DEFAULTS) settings[key] = value;

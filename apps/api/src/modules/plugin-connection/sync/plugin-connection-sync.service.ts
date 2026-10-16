@@ -11,7 +11,7 @@ import { PluginConnection } from "../plugin-connection.entity.js";
 import type { PluginDrivers } from "#src/plugin/driver.js";
 import type { PluginManifest } from "@snipet/shared";
 
-// Keeps plugin_actions in line with what each connection's action driver lists.
+/** Keeps plugin_actions in line with what each connection's action driver lists. */
 @Injectable()
 export class PluginConnectionSyncService extends ConnectionSyncService<
   PluginConnection,

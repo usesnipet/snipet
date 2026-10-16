@@ -25,8 +25,10 @@ export class AuthController {
     return this.service.login(dto);
   }
 
-  // refresh/logout take the refresh token as proof of identity: the access
-  // token may already be expired, which is exactly when refresh is called.
+  /**
+   * refresh/logout take the refresh token as proof of identity: the access
+   * token may already be expired, which is exactly when refresh is called.
+   */
   @Public()
   @Post("refresh")
   @HttpCode(200)

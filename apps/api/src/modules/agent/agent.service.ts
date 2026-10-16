@@ -79,14 +79,16 @@ export class AgentService extends CrudService<Agent> {
     if (agent?.avatar) await this.removeFile(agent.avatar);
   }
 
-  // A data URL is uploaded and becomes its stored path, null clears the
-  // avatar, and anything else (the current avatar's URL) leaves it as is.
+  /**
+   * A data URL is uploaded and becomes its stored path, null clears the
+   * avatar, and anything else (the current avatar's URL) leaves it as is.
+   */
   private async storeAvatar(avatar: string | null | undefined): Promise<string | null | undefined> {
     if (avatar?.startsWith("data:")) return this.files.putDataUrl("agents", avatar);
     return avatar === null ? null : undefined;
   }
 
-  // An orphaned file is harmless; a failed cleanup must not fail the request.
+  /** An orphaned file is harmless; a failed cleanup must not fail the request. */
   private async removeFile(pathOrUrl: string) {
     await this.files.delete(storageKeyOf(pathOrUrl)).catch((error: unknown) => {
       this.logger.warn(`Could not delete ${pathOrUrl}: ${String(error)}`);

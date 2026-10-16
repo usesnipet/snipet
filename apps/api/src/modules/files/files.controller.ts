@@ -7,7 +7,7 @@ import { pipeline } from "node:stream/promises";
 import { FilesStorage } from "./files.storage.js";
 
 import type { Response } from "express";
-// Public so <img> tags can load them; keys are random UUIDs.
+/** Public so <img> tags can load them; keys are random UUIDs. */
 @Public()
 @Controller("files")
 export class FilesController {

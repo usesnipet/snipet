@@ -10,7 +10,7 @@ import { LlmModel } from "../llm-model.entity.js";
 import type { LLMDrivers } from "#src/llm/driver.js";
 import type { LlmManifest } from "@snipet/shared";
 
-// Keeps llm_models in line with what each connection's models driver lists.
+/** Keeps llm_models in line with what each connection's models driver lists. */
 @Injectable()
 export class LlmConnectionSyncService extends ConnectionSyncService<LlmConnection, LlmManifest, LLMDrivers, LlmModel> {
   protected readonly keyField = "llmKey";

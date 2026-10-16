@@ -4,14 +4,18 @@ import { requestAuth } from "./auth.decorator.js";
 
 import type { Request } from "express";
 
-// Who a session belongs to: the logged-in user, or an app, optionally on
-// behalf of one of its end users (the app token's, or the API key's pick).
+/**
+ * Who a session belongs to: the logged-in user, or an app, optionally on
+ * behalf of one of its end users (the app token's, or the API key's pick).
+ */
 export type Owner =
   | { userId: string; appId: null; externalUserId: null }
   | { userId: null; appId: string; externalUserId: string | null };
 
-// The API key holder is the app's backend, so it's trusted to say which of
-// its users it acts for.
+/**
+ * The API key holder is the app's backend, so it's trusted to say which of
+ * its users it acts for.
+ */
 const EXTERNAL_USER_HEADER = "x-external-user-id";
 
 export const CurrentOwner = createParamDecorator((_: unknown, ctx: ExecutionContext): Owner => {
