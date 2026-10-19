@@ -71,41 +71,6 @@ const envSchema = z
     STORAGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
     STORAGE_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
 
-    // Knowledge source: an S3 or S3-compatible bucket (MinIO, R2, ...). Without
-    // a bucket or PGVECTOR_URL the knowledge pipeline stays off.
-    KNOWLEDGE_S3_ENDPOINT: z.string().optional(), // empty means AWS S3
-    KNOWLEDGE_S3_REGION: z.string().default("us-east-1"),
-    KNOWLEDGE_S3_BUCKET: z.string().optional(),
-    KNOWLEDGE_S3_PREFIX: z.string().default(""),
-    KNOWLEDGE_S3_ACCESS_KEY_ID: z.string().optional(),
-    KNOWLEDGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
-    KNOWLEDGE_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
-
-    KNOWLEDGE_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(300).default(300), // Seconds between knowledge source syncs
-    KNOWLEDGE_INDEX_CONCURRENCY: z.coerce.number().int().min(1).default(2),
-    KNOWLEDGE_INDEX_ERRORS: z.stringbool().default(false),
-    KNOWLEDGE_INDEX_RESET: z.stringbool().default(false),
-    CHUNK_MAX_CHARACTERS: z.coerce.number().int().positive().default(2000),
-    CHUNK_OVERLAP: z.coerce.number().int().min(0).default(200),
-
-    // Postgres holding the chunks and their embeddings.
-    PGVECTOR_URL: z.url().optional(),
-
-    // Postgres text search config for keyword search. Part of the chunks schema,
-    // like EMBEDDING_DIMENSIONS: changing either needs knowledge_chunks dropped
-    // and everything reindexed.
-    FTS_LANGUAGE: z
-      .string()
-      .regex(/^[a-z_]+$/)
-      .default("simple"),
-
-    // Any OpenAI-compatible embeddings API.
-    EMBEDDING_BASE_URL: z.string().default("https://api.openai.com/v1"),
-    EMBEDDING_API_KEY: z.string().optional(),
-    EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
-    EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().max(2000).default(1536), // HNSW limit
-    EMBEDDING_BATCH_SIZE: z.coerce.number().int().positive().default(100),
-
     // Origins allowed to call the API from a browser (the widget's host pages),
     // comma-separated; "*" allows any. Unset disables CORS.
     CORS_ORIGINS: z
