@@ -5,6 +5,8 @@ export type Size = "sm" | "md" | "lg";
 
 export type WidgetConfig = {
   apiUrl: string;
+  /** App with allowAnonymous on: without a token, the widget signs in its own anonymous end user. */
+  appId?: string;
   /** Agent the widget chats with. */
   agentId?: string;
   /** End-user app token, from POST /apps/issue-token on the host's backend. */
@@ -48,6 +50,7 @@ const number = (value: string | undefined, fallback: number) => {
 export function parseConfig(data: DOMStringMap): WidgetConfig {
   return {
     apiUrl: data.apiUrl ?? "",
+    appId: data.appId,
     agentId: data.agentId,
     token: data.token,
     theme: oneOf(data.theme, THEMES, "light"),

@@ -2,6 +2,7 @@ import { configureHttp } from "@snipet/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 
+import { anonymousToken } from "./anonymous";
 import { applyHostStyle, parseConfig, tokenOwner, useWidgetConfig, widgetStore } from "./config";
 import css from "./index.css?inline";
 import { Widget } from "./widget";
@@ -33,6 +34,23 @@ if (!document.querySelector(HOST_TAG)) {
   widgetStore.set(parseConfig((script as HTMLScriptElement | null)?.dataset ?? {}));
   window.SnipetWidget = api;
 
+  // Anonymous mode: an appId and no token from the host. The last anonymous token
+  // tells a 401 on it (renew it here) from one on the host's token (ask the host).
+  let anonymous: string | undefined;
+  let anonymousFor: string | undefined;
+  const signInAnonymously = (renew = false) =>
+    anonymousToken(widgetStore.get().appId!, renew).then((token) => {
+      anonymous = token;
+      widgetStore.set({ token });
+      return true;
+    });
+  const startAnonymous = () => {
+    const { appId, token, getToken } = widgetStore.get();
+    if (!appId || token || getToken || anonymousFor === appId) return;
+    anonymousFor = appId;
+    signInAnonymously().catch(() => {}); // Stays signed out: the panel says so.
+  };
+
   // Getters: apiUrl and token can change after load through configure().
   configureHttp({
     get baseUrl() {
@@ -40,7 +58,9 @@ if (!document.querySelector(HOST_TAG)) {
     },
     getAccessToken: () => widgetStore.get().token,
     refreshToken: async () => {
-      const token = await widgetStore.get().getToken?.();
+      const { appId, token: current, getToken } = widgetStore.get();
+      if (appId && current && current === anonymous) return signInAnonymously(true).catch(() => false);
+      const token = await getToken?.();
       if (!token) return false;
       widgetStore.set({ token });
       return true;
@@ -57,6 +77,8 @@ if (!document.querySelector(HOST_TAG)) {
     owner = next;
   });
   const Root = () => <Widget key={tokenOwner(useWidgetConfig().token)} />;
+  widgetStore.subscribe(startAnonymous);
+  startAnonymous();
 
   // A custom tag (not a <div>) so the host page's element selectors don't match it;
   // inline `all: initial` beats its universal (`*`) rules.

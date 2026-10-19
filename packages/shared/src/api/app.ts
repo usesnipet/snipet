@@ -20,11 +20,20 @@ export type App = z.infer<typeof appSchema>;
 
 export const paginatedAppSchema = paginatedSchema(appSchema);
 
-export const createAppSchema = z.object({
-  name: z.string().min(1).max(255),
-  allowedOrigins: z.array(originSchema).optional(),
-  allowAnonymous: z.boolean().optional(),
-});
+/** What GET /apps/:id/public shows anyone: only apps with allowAnonymous on. */
+export const publicAppSchema = appSchema.pick({ id: true, name: true });
+export type PublicApp = z.infer<typeof publicAppSchema>;
+
+export const createAppSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    allowedOrigins: z.array(originSchema).optional(),
+    allowAnonymous: z.boolean().optional(),
+  })
+  .refine((app) => !app.allowAnonymous || (app.allowedOrigins?.length ?? 0) > 0, {
+    message: "Add at least one origin to allow anonymous users",
+    path: ["allowedOrigins"],
+  });
 export type CreateApp = z.infer<typeof createAppSchema>;
 
 export const updateAppSchema = createAppSchema.partial();
@@ -61,6 +70,21 @@ export const appTokenResponseSchema = z.object({
   expiresAt: z.coerce.date(),
 });
 export type AppTokenResponse = z.infer<typeof appTokenResponseSchema>;
+
+/**
+ * Body of POST /apps/:id/anonymous-token. Without a refresh token a new anonymous
+ * end user is created; with one, the same end user gets fresh tokens.
+ */
+export const issueAnonymousTokenSchema = z.object({
+  refreshToken: z.string().optional(),
+});
+export type IssueAnonymousToken = z.infer<typeof issueAnonymousTokenSchema>;
+
+export const anonymousTokenResponseSchema = appTokenResponseSchema.extend({
+  /** Long-lived; only trades for new tokens at POST /apps/:id/anonymous-token. */
+  refreshToken: z.string(),
+});
+export type AnonymousTokenResponse = z.infer<typeof anonymousTokenResponseSchema>;
 
 /** What the signed token carries. */
 export type AppTokenPayload = {

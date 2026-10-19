@@ -3,17 +3,21 @@ import { FormSwitch } from "@/components/form/switch";
 import { FormTextarea } from "@/components/form/textarea";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useCreateApp, useUpdateApp } from "@snipet/client";
+import { createAppSchema } from "@snipet/shared";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
-import { useCreateApp, useUpdateApp } from "@snipet/client";
-import { createAppSchema } from "@snipet/shared";
 
 import type { App, CreateApp } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";

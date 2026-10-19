@@ -1,8 +1,8 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post } from "@nestjs/common";
 import { CrudController, ZodPipe } from "@snipet/server-common";
-import { issueAppTokenSchema, Role } from "@snipet/shared";
+import { issueAnonymousTokenSchema, issueAppTokenSchema, Role } from "@snipet/shared";
 
-import { ApiKeyAuth, CurrentApiKey, Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
+import { ApiKeyAuth, CurrentApiKey, Private, Public, UserAuth } from "#src/common/decorators/auth.decorator.js";
 
 import { createAppSchema, findAppsSchema, updateAppSchema } from "./app.dto.js";
 import { App } from "./app.entity.js";
@@ -29,5 +29,24 @@ export class AppController extends CrudController<App>({
     @Body(new ZodPipe(issueAppTokenSchema)) dto: z.output<typeof issueAppTokenSchema>,
   ) {
     return this.service.issueToken(apiKey.appId, dto);
+  }
+
+  /** Name and such for the widget, before any token exists. */
+  @Public()
+  @Get(":id/public")
+  async findPublic(@Param("id", ParseUUIDPipe) id: string, @Headers("origin") origin?: string) {
+    const app = await this.service.findPublic(id, origin);
+    return { id: app.id, name: app.name };
+  }
+
+  /** The widget's own login for apps with allowAnonymous on; no host backend involved. */
+  @Public()
+  @Post(":id/anonymous-token")
+  issueAnonymousToken(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Headers("origin") origin: string | undefined,
+    @Body(new ZodPipe(issueAnonymousTokenSchema)) dto: z.output<typeof issueAnonymousTokenSchema>,
+  ) {
+    return this.service.issueAnonymousToken(id, origin, dto.refreshToken);
   }
 }
