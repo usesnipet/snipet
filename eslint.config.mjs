@@ -17,7 +17,7 @@ export default defineConfig([
 
   // Node side: type-checked rules and prettier.
   {
-    files: ["apps/api/**/*.ts", "apps/knowledge/**/*.ts", "packages/shared/**/*.ts", "packages/server-common/**/*.ts"],
+    files: ["apps/api/**/*.ts", "packages/shared/**/*.ts", "packages/server-common/**/*.ts"],
     extends: [tseslint.configs.recommendedTypeChecked, eslintPluginPrettierRecommended],
     languageOptions: {
       globals: globals.node,

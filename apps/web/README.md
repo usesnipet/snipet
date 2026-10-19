@@ -1,6 +1,6 @@
 # @snipet/web
 
-The Snipet admin UI: agents, playground, connections, knowledge, apps and API keys.
+The Snipet admin UI: agents, playground, connections, apps and API keys.
 Vite + React 19 + TanStack Query + Zod, styled with shadcn/Radix + Tailwind v4.
 
 ```bash
