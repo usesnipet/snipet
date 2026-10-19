@@ -4,6 +4,7 @@ import { Role } from "@snipet/shared";
 
 import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
 import { CurrentOwner } from "#src/common/decorators/owner.decorator.js";
+import { RateLimit } from "#src/common/rate-limit/rate-limit.js";
 
 import { findAgentRunsParamsSchema, startAgentRunSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
@@ -31,6 +32,7 @@ export class AgentRunController {
   }
 
   @Post()
+  @RateLimit("agent-run")
   start(@Body(new ZodPipe(startAgentRunSchema)) dto: StartAgentRun, @CurrentOwner() owner: Owner) {
     return this.service.start(dto, owner);
   }

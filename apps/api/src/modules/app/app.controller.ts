@@ -3,6 +3,7 @@ import { CrudController, ZodPipe } from "@snipet/server-common";
 import { issueAnonymousTokenSchema, issueAppTokenSchema, Role } from "@snipet/shared";
 
 import { ApiKeyAuth, CurrentApiKey, Private, Public, UserAuth } from "#src/common/decorators/auth.decorator.js";
+import { RateLimit } from "#src/common/rate-limit/rate-limit.js";
 
 import { createAppSchema, findAppsSchema, updateAppSchema } from "./app.dto.js";
 import { App } from "./app.entity.js";
@@ -42,6 +43,7 @@ export class AppController extends CrudController<App>({
   /** The widget's own login for apps with allowAnonymous on; no host backend involved. */
   @Public()
   @Post(":id/anonymous-token")
+  @RateLimit("anonymous-signup")
   issueAnonymousToken(
     @Param("id", ParseUUIDPipe) id: string,
     @Headers("origin") origin: string | undefined,

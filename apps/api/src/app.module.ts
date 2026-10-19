@@ -2,8 +2,10 @@ import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { ThrottlerGuard } from "@nestjs/throttler";
 import { ensureDatabase } from "@snipet/server-common";
 import { AuthGuard } from "#src/common/guards/auth.guard.js";
+import { RateLimitModule } from "#src/common/rate-limit/rate-limit.js";
 import { env } from "#src/env.js";
 import { dataSourceOptions } from "#src/infra/database/data-source.js";
 import { AgentRunModule } from "#src/modules/agent-run/agent-run.module.js";
@@ -22,6 +24,7 @@ import { UserModule } from "#src/modules/user/user.module.js";
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    RateLimitModule,
     TypeOrmModule.forRootAsync({
       useFactory: async () => {
         await ensureDatabase(env.DATABASE_URL);
@@ -41,6 +44,10 @@ import { UserModule } from "#src/modules/user/user.module.js";
     SystemModule,
     UserModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
+  // In this order: some throttlers track the caller AuthGuard sets.
+  providers: [
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}
