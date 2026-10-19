@@ -1,5 +1,5 @@
 import { JwtService } from "@nestjs/jwt";
-import { issueAppTokenSchema } from "@snipet/shared";
+import { createAppSchema, issueAppTokenSchema } from "@snipet/shared";
 
 import { env } from "#src/env.js";
 
@@ -132,11 +132,24 @@ describe("AppService.issueAnonymousToken", () => {
 });
 
 describe("AppService allowAnonymous rule", () => {
-  it("requires allowedOrigins on create and on update", async () => {
-    const { service } = setup();
-    service.findById = (id: string) => Promise.resolve({ id, name: "Shop", allowedOrigins: [] } as unknown as App);
+  const origin = "https://shop.com";
 
-    expect(() => service.create({ name: "Shop", allowAnonymous: true })).toThrow("allowedOrigins is required");
+  it("requires allowedOrigins on create", () => {
+    expect(createAppSchema.safeParse({ name: "Shop", allowAnonymous: true }).success).toBe(false);
+    expect(createAppSchema.safeParse({ name: "Shop", allowAnonymous: true, allowedOrigins: [origin] }).success).toBe(
+      true,
+    );
+  });
+
+  it("checks an update against the stored origins", async () => {
+    const { service } = setup();
+    const stored = { allowedOrigins: [] as string[] };
+    service.findById = (id: string) => Promise.resolve({ id, name: "Shop", ...stored } as unknown as App);
+    // Stand-in for the repository write, which the rule must reach only when it passes.
+    Object.assign(service, { repo: { update: () => Promise.resolve({ affected: 1 }) } });
+
     await expect(service.updateById(appId, { allowAnonymous: true })).rejects.toThrow("allowedOrigins is required");
+    stored.allowedOrigins = [origin];
+    await expect(service.updateById(appId, { allowAnonymous: true })).resolves.toBeUndefined();
   });
 });

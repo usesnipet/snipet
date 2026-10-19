@@ -24,19 +24,27 @@ export const paginatedAppSchema = paginatedSchema(appSchema);
 export const publicAppSchema = appSchema.pick({ id: true, name: true });
 export type PublicApp = z.infer<typeof publicAppSchema>;
 
-export const createAppSchema = z
-  .object({
-    name: z.string().min(1).max(255),
-    allowedOrigins: z.array(originSchema).optional(),
-    allowAnonymous: z.boolean().optional(),
-  })
-  .refine((app) => !app.allowAnonymous || (app.allowedOrigins?.length ?? 0) > 0, {
-    message: "Add at least one origin to allow anonymous users",
-    path: ["allowedOrigins"],
-  });
+/** Create/update fields, without the cross-field rule (zod forbids .partial() and .extend() after .refine()). */
+export const appBodySchema = z.object({
+  name: z.string().min(1).max(255),
+  allowedOrigins: z.array(originSchema).optional(),
+  allowAnonymous: z.boolean().optional(),
+});
+
+/** Anonymous access is checked by Origin, so an app allowing it must list its origins. */
+export const anonymousHasOrigins = (app: { allowAnonymous?: boolean; allowedOrigins?: string[] }) =>
+  !app.allowAnonymous || !!app.allowedOrigins?.length;
+
+export const anonymousHasOriginsError = {
+  message: "Add at least one origin to allow anonymous users",
+  path: ["allowedOrigins"],
+};
+
+export const createAppSchema = appBodySchema.refine(anonymousHasOrigins, anonymousHasOriginsError);
 export type CreateApp = z.infer<typeof createAppSchema>;
 
-export const updateAppSchema = createAppSchema.partial();
+/** Partial, so the rule needs the stored app: the API checks it on update. */
+export const updateAppSchema = appBodySchema.partial();
 export type UpdateApp = z.infer<typeof updateAppSchema>;
 
 export const findAppsParamsSchema = paginationParamsSchema.extend({

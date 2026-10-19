@@ -1,13 +1,28 @@
 import { env } from "#src/env.js";
-import { ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { CrudService } from "@snipet/server-common";
-import { AnonymousTokenResponse, AppTokenPayload, AppTokenResponse, UpdateApp, updateAppSchema } from "@snipet/shared";
+import { anonymousHasOrigins } from "@snipet/shared";
 import { createHmac, randomUUID } from "node:crypto";
 import { Repository } from "typeorm";
 
 import { App } from "./app.entity.js";
+
+import type {
+  AnonymousTokenResponse,
+  AppTokenPayload,
+  AppTokenResponse,
+  issueAppTokenSchema,
+  UpdateApp,
+} from "@snipet/shared";
+import type { z } from "zod";
 
 export const APP_TOKEN_AUDIENCE = "app";
 
@@ -37,11 +52,25 @@ export class AppService extends CrudService<App> {
 
   override async updateById(id: string, dto: UpdateApp): Promise<void> {
     // Either field alone can break the rule, so check against the stored app.
-    if (dto.allowAnonymous !== undefined || dto.allowedOrigins !== undefined) {
-      updateAppSchema.parse({ ...(await this.findById(id)), ...dto });
+    if (
+      (dto.allowAnonymous !== undefined || dto.allowedOrigins !== undefined) &&
+      !anonymousHasOrigins({ ...(await this.findById(id)), ...dto })
+    ) {
+      throw new BadRequestException("allowedOrigins is required when allowAnonymous is on");
     }
     return super.updateById(id, dto);
   }
+
+  /** Signs a token for one of the API key's app's end users. */
+  async issueToken(appId: string, dto: z.output<typeof issueAppTokenSchema>): Promise<AppTokenResponse> {
+    if (dto.appId && dto.appId !== appId) throw new ForbiddenException("API key does not belong to this app");
+    const app = await this.findById(appId);
+    return this.signAppToken(
+      { sub: dto.externalUserId, user: { name: dto.name, email: dto.email, metadata: dto.metadata }, app },
+      dto.expiresInSeconds,
+    );
+  }
+
   /**
    * An app with allowAnonymous on, called from one of its allowed origins.
    * Any other app is a 404, so private apps can't be probed.

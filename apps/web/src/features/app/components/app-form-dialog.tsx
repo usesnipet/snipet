@@ -14,7 +14,7 @@ import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateApp, useUpdateApp } from "@snipet/client";
-import { createAppSchema } from "@snipet/shared";
+import { anonymousHasOrigins, anonymousHasOriginsError, appBodySchema } from "@snipet/shared";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -28,12 +28,14 @@ type AppFormDialogProps = DialogInstanceProps<{
 }>;
 
 /** App form schema: origins are typed one per line, then validated with the shared schema. */
-const appFormSchema = createAppSchema.extend({
-  allowedOrigins: z
-    .string()
-    .transform((value) => value.split("\n").map((line) => line.trim()).filter(Boolean))
-    .pipe(createAppSchema.shape.allowedOrigins.unwrap()),
-});
+const appFormSchema = appBodySchema
+  .extend({
+    allowedOrigins: z
+      .string()
+      .transform((value) => value.split("\n").map((line) => line.trim()).filter(Boolean))
+      .pipe(appBodySchema.shape.allowedOrigins.unwrap()),
+  })
+  .refine(anonymousHasOrigins, anonymousHasOriginsError);
 type AppFormInput = z.input<typeof appFormSchema>;
 
 export function AppFormDialog({ app, close }: AppFormDialogProps) {
