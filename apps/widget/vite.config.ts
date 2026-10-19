@@ -27,6 +27,9 @@ export default defineConfig(({ mode }) =>
             "react/jsx-dev-runtime": "preact/jsx-runtime",
             react: "preact/compat",
           },
+          // The aliased imports in @snipet/client must find the widget's preact: with pnpm's
+          // isolated node_modules (CI), it isn't reachable from packages/client.
+          dedupe: ["preact"],
         },
         define: { "process.env.NODE_ENV": JSON.stringify("production") },
         build: {
