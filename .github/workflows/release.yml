@@ -57,8 +57,13 @@ jobs:
       - run: pnpm -r exec npm pkg set version="${GITHUB_REF_NAME#v}"
       - run: pnpm turbo run build --filter=@snipet/widget --filter=@snipet/react-widget --filter=@snipet/angular-widget
       # pnpm pack rewrites workspace:* versions; trusted publishing needs npm >= 11.5.1.
+      # Skips versions already on npm (they can never be republished), so a failed run can be re-run.
       - run: |
           for pkg in widget react-widget angular-widget; do
+            if npm view "@snipet/$pkg@${GITHUB_REF_NAME#v}" version >/dev/null 2>&1; then
+              echo "@snipet/$pkg@${GITHUB_REF_NAME#v} already published, skipping"
+              continue
+            fi
             pnpm --filter "@snipet/$pkg" pack --pack-destination "$RUNNER_TEMP"
             npx -y npm@11 publish "$RUNNER_TEMP"/snipet-$pkg-*.tgz
           done
