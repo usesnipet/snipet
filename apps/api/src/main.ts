@@ -14,6 +14,7 @@ async function bootstrap() {
   const webDir = env.WEB_DIR;
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix("api");
+  if (env.TRUST_PROXY !== undefined) app.set("trust proxy", env.TRUST_PROXY);
   if (env.CORS_ORIGINS) app.enableCors({ origin: env.CORS_ORIGINS });
   if (existsSync(join(webDir, "index.html"))) {
     app.useStaticAssets(join(webDir, "assets"), {

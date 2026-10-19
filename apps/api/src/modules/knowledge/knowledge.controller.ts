@@ -12,7 +12,7 @@ import type { FilterQuery } from "@snipet/server-common";
 
 import type { KnowledgeItem } from "./knowledge-item.entity.js";
 import type { KnowledgeSearchParams } from "@snipet/shared";
-// Read-only: items come from the source sync.
+/** Read-only: items come from the source sync. */
 @Private(UserAuth())
 @Controller()
 export class KnowledgeController {
@@ -31,7 +31,7 @@ export class KnowledgeController {
     return this.items.findById(id);
   }
 
-  // Starts a source sync now; it runs in the background.
+  /** Starts a source sync now; it runs in the background. */
   @Private(UserAuth(Role.Admin))
   @Post("knowledge-items/sync")
   @HttpCode(202)

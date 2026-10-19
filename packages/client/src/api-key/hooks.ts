@@ -61,7 +61,7 @@ export const useFindByIdApiKey = (
   })
 }
 
-// invalidateApiKey refreshes every cached view of one key after a write.
+/** Refreshes every cached view of one key after a write. */
 const invalidateApiKey = (queryClient: QueryClient, id: string) => {
   queryClient.invalidateQueries({ queryKey: listApiKeyQueryKey() });
   queryClient.invalidateQueries({ queryKey: meApiKeyQueryKey() });

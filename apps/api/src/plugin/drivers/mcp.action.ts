@@ -13,7 +13,7 @@ const optionsSchema = z.strictObject({
 });
 type McpActionOptions = z.infer<typeof optionsSchema>;
 
-// Actions are the tools of a remote MCP server. Only the http transport is supported.
+/** Actions are the tools of a remote MCP server. Only the http transport is supported. */
 export class McpActionDriver extends Driver(optionsSchema) implements ActionDriver<McpActionOptions> {
   readonly key = "mcp";
 

@@ -9,7 +9,8 @@ export const ROUTES = {
   plugins: "/plugins",
   apps: "/apps",
   users: "/users",
-  apiKey: "/api-keys"
+  apiKey: "/api-keys",
+  settings: "/settings"
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

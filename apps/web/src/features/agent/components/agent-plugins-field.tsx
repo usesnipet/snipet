@@ -8,8 +8,7 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 
 import type { AgentFormInput } from "../schemas";
 
-// Plugin connections granted to the agent, each with allow/deny globs on the
-// action name.
+/** Plugin connections granted to the agent, each with allow/deny globs on the action name. */
 export function AgentPluginsField() {
   const form = useFormContext<AgentFormInput>();
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "pluginConnections" });

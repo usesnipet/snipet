@@ -3,21 +3,24 @@ import { DeleteDialog } from "@/components/confirm-dialog";
 import { LoadingFallback } from "@/components/loading-fallback";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InputSearch } from "@/components/ui/input-search";
+import { useClipboard } from "@/hooks/use-clipboard";
 import { useDialog } from "@/lib/dialog";
-import { AppWindow, KeyRound, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useDeleteApp, useListApps } from "@snipet/client";
+import { AppWindow, Copy, KeyRound, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import stc from "string-to-color";
-
-import { useDeleteApp, useListApps } from "@snipet/client";
 
 import { AppFormDialog } from "./app-form-dialog";
 import { AppTokenDialog } from "./app-token-dialog";
 
 import type { App } from "@snipet/shared";
-
 export function AppCatalog() {
   const appsQuery = useListApps({ searchParams: { take: 500 } });
   const [search, setSearch] = useState("");
@@ -54,6 +57,7 @@ export function AppCatalog() {
 function AppCard({ app }: { app: App }) {
   const { openDialog } = useDialog();
   const { mutateAsync: deleteApp } = useDeleteApp();
+  const { copy } = useClipboard();
 
   const openDelete = () => openDialog({
     component: DeleteDialog,
@@ -86,29 +90,40 @@ function AppCard({ app }: { app: App }) {
       updatedAt={app.updatedAt.toISOString()}
       meta={origins ? `${origins} allowed origin${origins === 1 ? "" : "s"}` : "Any origin"}
       headerActions={
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => openDialog({ component: AppFormDialog, props: { app } })}>
-              <Pencil />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => openDialog({ component: AppTokenDialog, props: { app } })}>
-              <KeyRound />
-              Generate token
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={openDelete}>
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Copy agent ID"
+            title="Copy agent ID"
+            onClick={() => copy(app.id, { successTitle: "App ID copied", errorTitle: "Failed to copy app ID" })}
+          >
+            <Copy />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreHorizontal />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => openDialog({ component: AppFormDialog, props: { app } })}>
+                <Pencil />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openDialog({ component: AppTokenDialog, props: { app } })}>
+                <KeyRound />
+                Generate token
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={openDelete}>
+                <Trash2 />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
       }
     />
   );

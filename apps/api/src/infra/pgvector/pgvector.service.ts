@@ -7,9 +7,9 @@ import { env } from "#src/env.js";
 
 import type { KnowledgeSearchResult } from "@snipet/shared";
 
-// Dampens rank differences in Reciprocal Rank Fusion; 60 is the usual constant.
+/** Dampens rank differences in Reciprocal Rank Fusion; 60 is the usual constant. */
 const RRF_K = 60;
-// Keeps each insert well under Postgres' 65535 bind parameter limit.
+/** Keeps each insert well under Postgres' 65535 bind parameter limit. */
 const INSERT_BATCH = 500;
 
 const tsvector = `to_tsvector('${env.FTS_LANGUAGE}'::regconfig, content)`;
@@ -21,11 +21,13 @@ export interface ChunkInput {
   embedding: number[];
 }
 
-// pgvector reads a vector from its text form, which is a JSON array.
+/** pgvector reads a vector from its text form, which is a JSON array. */
 const toVector = (v: number[]) => JSON.stringify(v);
 
-// Knowledge chunks and their embeddings, in a Postgres apart from the main
-// database (PGVECTOR_URL). Searches by vector similarity and full-text rank.
+/**
+ * Knowledge chunks and their embeddings, in a Postgres apart from the main
+ * database (PGVECTOR_URL). Searches by vector similarity and full-text rank.
+ */
 @Injectable()
 export class PgvectorService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PgvectorService.name);
@@ -63,7 +65,7 @@ export class PgvectorService implements OnModuleInit, OnModuleDestroy {
     this.logger.log("pgvector schema applied");
   }
 
-  // Swaps every chunk of the item for the given ones, atomically.
+  /** Swaps every chunk of the item for the given ones, atomically. */
   async replaceChunks(knowledgeItemId: string, chunks: ChunkInput[]): Promise<void> {
     const client = await this.db().connect();
     try {
@@ -96,8 +98,10 @@ export class PgvectorService implements OnModuleInit, OnModuleDestroy {
     await this.db().query("DELETE FROM knowledge_chunks WHERE knowledge_item_id = ANY($1)", [ids]);
   }
 
-  // Ranks chunks by cosine similarity to the query embedding and by full-text
-  // rank, then merges both lists with Reciprocal Rank Fusion.
+  /**
+   * Ranks chunks by cosine similarity to the query embedding and by full-text
+   * rank, then merges both lists with Reciprocal Rank Fusion.
+   */
   async search(query: string, embedding: number[], limit: number): Promise<KnowledgeSearchResult[]> {
     const { rows } = await this.db().query<KnowledgeSearchResult>(
       `WITH vec AS (

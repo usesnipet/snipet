@@ -7,8 +7,10 @@ import type { LlmResponse } from "@snipet/shared";
 import type { ChatDriver, ChatRequest, ChatStreamEvent } from "../../driver.js";
 import type { OpenAiOptions } from "./openai.client.js";
 
-// Chat Completions via the official SDK. extraOptions (temperature, ...) are
-// passed through to the request as is.
+/**
+ * Chat Completions via the official SDK. extraOptions (temperature, ...) are
+ * passed through to the request as is.
+ */
 export class OpenAiChatDriver extends Driver(openAiOptionsSchema) implements ChatDriver<OpenAiOptions> {
   readonly key = "openai";
 

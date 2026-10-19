@@ -1,40 +1,54 @@
 import { env } from "#src/env.js";
 import { Injectable } from "@nestjs/common";
-import { mkdir, open, rm, writeFile } from "node:fs/promises";
+import { mkdir, open, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { Storage } from "./storage.js";
-import { assertKey } from "./utils.js";
+import { assertKey, storagePath } from "./utils.js";
 
 import type { StoredFile } from "./storage.js";
 
-// Files under STORAGE_FS_DIR, one per key.
+const isMissing = (error: unknown) => (error as NodeJS.ErrnoException).code === "ENOENT";
+
 @Injectable()
 export class FsStorage extends Storage {
   protected root = env.STORAGE_FS_DIR;
 
-  private path(key: string) {
-    assertKey(key);
-    return join(this.root, key);
+  private path(prefix: string, key?: string) {
+    return join(this.root, storagePath(prefix, key));
   }
 
-  async put(key: string, body: Buffer): Promise<void> {
-    const path = this.path(key);
+  async put(prefix: string, key: string, body: Buffer): Promise<void> {
+    const path = this.path(prefix, key);
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, body);
   }
 
-  async get(key: string): Promise<StoredFile | null> {
+  async get(prefix: string, key: string): Promise<StoredFile | null> {
     try {
-      const handle = await open(this.path(key));
+      const handle = await open(this.path(prefix, key));
       return { body: handle.createReadStream() };
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+      if (isMissing(error)) return null;
       throw error;
     }
   }
 
-  async delete(key: string): Promise<void> {
-    await rm(this.path(key), { force: true });
+  async delete(prefix: string, key: string): Promise<void> {
+    await rm(this.path(prefix, key), { force: true });
+  }
+
+  async list(prefix: string, dir?: string): Promise<string[]> {
+    try {
+      return await readdir(this.path(prefix, dir));
+    } catch (error) {
+      if (isMissing(error)) return [];
+      throw error;
+    }
+  }
+
+  async deleteDir(prefix: string, dir: string): Promise<void> {
+    assertKey(dir); // an empty dir would wipe the whole prefix
+    await rm(this.path(prefix, dir), { recursive: true, force: true });
   }
 }

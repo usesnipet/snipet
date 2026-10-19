@@ -6,13 +6,13 @@ import { env } from "#src/env.js";
 export interface SourceObject {
   key: string;
   name: string;
-  // The ETag, which changes whenever the content does.
+  /** The ETag, which changes whenever the content does. */
   hash: string;
   size: number;
   lastModified: Date | null;
 }
 
-// Lists and reads the objects of the knowledge bucket (KNOWLEDGE_S3_*).
+/** Lists and reads the objects of the knowledge bucket (KNOWLEDGE_S3_*). */
 @Injectable()
 export class S3Source {
   private readonly client = new S3Client({

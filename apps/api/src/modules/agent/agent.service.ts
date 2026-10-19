@@ -1,20 +1,22 @@
-import { Storage } from "#src/infra/storage/storage.js";
 import { storageKeyOf } from "#src/infra/storage/utils.js";
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { CrudService } from "@snipet/server-common";
 import { QueryDeepPartialEntity, Repository } from "typeorm";
 
+import { FilesStorage } from "../files/files.storage.js";
+
 import { Agent, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
 
 import type { CreateAgent, UpdateAgent } from "@snipet/shared";
+
 @Injectable()
 export class AgentService extends CrudService<Agent> {
   private readonly logger = new Logger(AgentService.name);
 
   constructor(
     @InjectRepository(Agent) repo: Repository<Agent>,
-    private readonly storage: Storage,
+    private readonly files: FilesStorage,
   ) {
     super(repo);
   }
@@ -77,16 +79,18 @@ export class AgentService extends CrudService<Agent> {
     if (agent?.avatar) await this.removeFile(agent.avatar);
   }
 
-  // A data URL is uploaded and becomes its stored path, null clears the
-  // avatar, and anything else (the current avatar's URL) leaves it as is.
+  /**
+   * A data URL is uploaded and becomes its stored path, null clears the
+   * avatar, and anything else (the current avatar's URL) leaves it as is.
+   */
   private async storeAvatar(avatar: string | null | undefined): Promise<string | null | undefined> {
-    if (avatar?.startsWith("data:")) return this.storage.putDataUrl("agents", avatar);
+    if (avatar?.startsWith("data:")) return this.files.putDataUrl("agents", avatar);
     return avatar === null ? null : undefined;
   }
 
-  // An orphaned file is harmless; a failed cleanup must not fail the request.
+  /** An orphaned file is harmless; a failed cleanup must not fail the request. */
   private async removeFile(pathOrUrl: string) {
-    await this.storage.delete(storageKeyOf(pathOrUrl)).catch((error: unknown) => {
+    await this.files.delete(storageKeyOf(pathOrUrl)).catch((error: unknown) => {
       this.logger.warn(`Could not delete ${pathOrUrl}: ${String(error)}`);
     });
   }

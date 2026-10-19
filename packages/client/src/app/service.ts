@@ -1,16 +1,30 @@
 import {
+  anonymousTokenResponseSchema,
   appSchema,
   appTokenResponseSchema,
   createAppSchema,
   findAppsParamsSchema,
+  issueAnonymousTokenSchema,
   issueAppTokenSchema,
   paginatedAppSchema,
+  publicAppSchema,
   updateAppSchema,
 } from "@snipet/shared";
 
 import http from "../http";
 
-import type { App, AppTokenResponse, CreateApp, FindAppsParams, IssueAppToken, Paginated, UpdateApp } from "@snipet/shared";
+import type {
+  AnonymousTokenResponse,
+  App,
+  AppTokenResponse,
+  CreateApp,
+  FindAppsParams,
+  IssueAnonymousToken,
+  IssueAppToken,
+  Paginated,
+  PublicApp,
+  UpdateApp,
+} from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -71,8 +85,10 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
-// issueToken emits an end-user token for the API key's app. API key only: no
-// bearer token, and a 401 (bad key) mustn't log the dashboard user out.
+/**
+ * Issues an end-user token for the API key's app. API key only: no
+ * bearer token, and a 401 (bad key) mustn't log the dashboard user out.
+ */
 const issueToken = async (
   apiKey: string,
   body: IssueAppToken,
@@ -87,6 +103,34 @@ const issueToken = async (
     ...opts,
   });
 
+/** Public info of an app with allowAnonymous on; the browser's Origin must be allowed. */
+const findPublic = async (id: string, opts: ServiceGetOptions<PublicApp> = {}): Promise<PublicApp> =>
+  http.get({
+    url: `${APP_URL}/{id}/public`,
+    params: { id },
+    skipAuth: true,
+    schemas: { response: publicAppSchema },
+    ...opts,
+  });
+
+/**
+ * Anonymous end-user tokens, from the browser (Origin-checked). No bearer
+ * token: a 401 means the refresh token is bad, not the session.
+ */
+const issueAnonymousToken = async (
+  id: string,
+  body: IssueAnonymousToken,
+  opts: ServicePostOptions<IssueAnonymousToken, AnonymousTokenResponse> = {},
+): Promise<AnonymousTokenResponse> =>
+  http.post({
+    url: `${APP_URL}/{id}/anonymous-token`,
+    params: { id },
+    body,
+    skipAuth: true,
+    schemas: { body: issueAnonymousTokenSchema, response: anonymousTokenResponseSchema },
+    ...opts,
+  });
+
 export const appService = {
   list,
   findById,
@@ -94,4 +138,6 @@ export const appService = {
   update,
   delete: remove,
   issueToken,
+  findPublic,
+  issueAnonymousToken,
 };

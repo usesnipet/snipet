@@ -4,11 +4,13 @@ import { resolveOptions } from "./options.js";
 import type { BaseManifest, JsonObject } from "@snipet/shared";
 import type { BaseDriver } from "./driver.js";
 
-// Driver interface per capability; the keys are the manifest fields that
-// hold a driver, e.g. { actions: ActionDriver; healthCheck: HealthCheckDriver }.
+/**
+ * Driver interface per capability; the keys are the manifest fields that
+ * hold a driver, e.g. { actions: ActionDriver; healthCheck: HealthCheckDriver }.
+ */
 export type DriverTypes = Record<string, BaseDriver>;
 
-// Catalog of drivers per capability, fixed at startup.
+/** Catalog of drivers per capability, fixed at startup. */
 export class DriverRegistry<D extends DriverTypes> {
   private readonly maps = new Map<keyof D, Map<string, BaseDriver>>();
 
@@ -23,7 +25,7 @@ export class DriverRegistry<D extends DriverTypes> {
     }
   }
 
-  // The capabilities this registry has drivers for.
+  /** The capabilities this registry has drivers for. */
   types(): (keyof D)[] {
     return [...this.maps.keys()];
   }
@@ -38,8 +40,10 @@ export class DriverRegistry<D extends DriverTypes> {
     return d as D[K];
   }
 
-  // The manifest's driver for `type` with its options resolved against the
-  // connection, or undefined when the manifest doesn't have that capability.
+  /**
+   * The manifest's driver for `type` with its options resolved against the
+   * connection, or undefined when the manifest doesn't have that capability.
+   */
   resolve<K extends keyof D>(
     manifest: BaseManifest,
     type: K,

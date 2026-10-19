@@ -15,8 +15,10 @@ import { BaseExceptionFilter } from "@nestjs/core";
 
 import { attemptReason, FailoverError, LlmError, LlmErrorKind } from "#src/llm/errors.js";
 
-// Client-safe responses: never the raw provider message for upstream
-// failures, which may carry hosts or credentials details.
+/**
+ * Client-safe responses: never the raw provider message for upstream
+ * failures, which may carry hosts or credentials details.
+ */
 const BY_KIND: Record<LlmErrorKind, (e: LlmError) => HttpException> = {
   llm_not_found: () => new NotFoundException("llm not found"),
   model_not_found: () => new NotFoundException("llm model not found"),

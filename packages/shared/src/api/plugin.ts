@@ -5,14 +5,14 @@ import { baseManifestSchema, driverSchema } from "../schemas/manifest.js";
 
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// The JSON manifest of a plugin (see plan/plugin.md).
+/** The JSON manifest of a plugin. */
 export const pluginManifestSchema = baseManifestSchema.extend({
   actions: driverSchema.optional(),
   healthCheck: driverSchema.optional(),
 });
 export type PluginManifest = z.infer<typeof pluginManifestSchema>;
 
-// An authenticated instance of a plugin.
+/** An authenticated instance of a plugin. */
 export const pluginConnectionSchema = z.object({
   id: z.uuid(),
   name: z.string(),
@@ -29,7 +29,7 @@ export type PluginConnection = z.infer<typeof pluginConnectionSchema>;
 
 export const paginatedPluginConnectionSchema = paginatedSchema(pluginConnectionSchema);
 
-// config is checked against the manifest's `connection` schema by the API.
+/** config is checked against the manifest's `connection` schema by the API. */
 export const createPluginConnectionSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),

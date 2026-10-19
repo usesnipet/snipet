@@ -16,9 +16,11 @@ export interface AccessTokenPayload {
   role: Role;
 }
 
-// Global: @Public() routes pass; @Private(...) routes need a credential for one
-// of their strategies, tried in order (sets request.auth); anything else is
-// denied, so a forgotten decorator fails closed.
+/**
+ * Global: @Public() routes pass; @Private(...) routes need a credential for one
+ * of their strategies, tried in order (sets request.auth); anything else is
+ * denied, so a forgotten decorator fails closed.
+ */
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(

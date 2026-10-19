@@ -36,8 +36,10 @@ export function toLlmModel(name: string, show: OllamaShow): LlmModel {
   };
 }
 
-// Lists models through Ollama's native api, which unlike /v1/models reports
-// capabilities and context length. Chat goes through the openai driver.
+/**
+ * Lists models through Ollama's native api, which unlike /v1/models reports
+ * capabilities and context length. Chat goes through the openai driver.
+ */
 export class OllamaModelDriver extends Driver(optionsSchema) implements ModelDriver<OllamaOptions> {
   readonly key = "ollama";
 

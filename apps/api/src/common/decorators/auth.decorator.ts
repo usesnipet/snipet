@@ -3,49 +3,51 @@ import { createParamDecorator, ExecutionContext, InternalServerErrorException, S
 import type { AppTokenPayload, Role } from "@snipet/shared";
 import type { ApiKey } from "#src/modules/api-key/api-key.entity.js";
 
-// Who made the request, set by AuthGuard from the access token.
+/** Who made the request, set by AuthGuard from the access token. */
 export interface AuthUser {
   id: string;
   role: Role;
 }
 
-// One way a route accepts being called. A user must also hold one of `roles`
-// (none = any role).
+/**
+ * One way a route accepts being called. A user must also hold one of `roles`
+ * (none = any role).
+ */
 export type AuthStrategy = { type: "user"; roles: Role[] } | { type: "apiKey" } | { type: "appToken" };
 
 export const AUTH = "auth";
 
-// `Authorization: Bearer <access token>`, optionally limited to these roles.
+/** `Authorization: Bearer <access token>`, optionally limited to these roles. */
 export const UserAuth = (...roles: Role[]): AuthStrategy => ({ type: "user", roles });
 
-// `X-API-Key: <key>`.
+/** `X-API-Key: <key>`. */
 export const ApiKeyAuth = (): AuthStrategy => ({ type: "apiKey" });
 
-// `Authorization: Bearer <app token>`: an app's end user, e.g. from the widget.
+/** `Authorization: Bearer <app token>`: an app's end user, e.g. from the widget. */
 export const AppTokenAuth = (): AuthStrategy => ({ type: "appToken" });
 
-// On a class or method; the method's wins. Routes with neither are denied.
+/** On a class or method; the method's wins. Routes with neither are denied. */
 export const Private = (...strategies: AuthStrategy[]) => SetMetadata(AUTH, strategies);
 export const Public = () => SetMetadata(AUTH, []);
 
-// How the request authenticated, set by AuthGuard on @Private routes.
+/** How the request authenticated, set by AuthGuard on @Private routes. */
 export type RequestAuth =
   { type: "user"; user: AuthUser } | { type: "apiKey"; apiKey: ApiKey } | { type: "appToken"; token: AppTokenPayload };
 
-// Throws when the route isn't @Private: reading the caller there is a bug.
+/** Throws when the route isn't @Private: reading the caller there is a bug. */
 export function requestAuth(ctx: ExecutionContext): RequestAuth {
   const auth = ctx.switchToHttp().getRequest<{ auth?: RequestAuth }>().auth;
   if (!auth) throw new InternalServerErrorException("route reads the caller but isn't @Private");
   return auth;
 }
 
-// The logged-in user; undefined when the request used another credential.
+/** The logged-in user; undefined when the request used another credential. */
 export const CurrentUser = createParamDecorator((_: unknown, ctx: ExecutionContext) => {
   const auth = requestAuth(ctx);
   return auth.type === "user" ? auth.user : undefined;
 });
 
-// The key that authenticated the request; undefined when something else did.
+/** The key that authenticated the request; undefined when something else did. */
 export const CurrentApiKey = createParamDecorator((_: unknown, ctx: ExecutionContext) => {
   const auth = requestAuth(ctx);
   return auth.type === "apiKey" ? auth.apiKey : undefined;

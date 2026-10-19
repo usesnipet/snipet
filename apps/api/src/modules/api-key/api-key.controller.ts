@@ -25,7 +25,7 @@ export class ApiKeyController extends CrudController<ApiKey>({
   }
 }
 
-// Called WITH an API key: introspects whichever key authenticated the request.
+/** Called WITH an API key: introspects whichever key authenticated the request. */
 @Private(ApiKeyAuth())
 @Controller("api-key")
 export class ApiKeyMeController {

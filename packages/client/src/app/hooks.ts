@@ -4,7 +4,7 @@ import { listApiKeyQueryKey } from "../api-key/hooks";
 
 import { appService } from "./service";
 
-import type { App, AppTokenResponse, CreateApp, FindAppsParams, IssueAppToken, Paginated, UpdateApp } from "@snipet/shared";
+import type { App, AppTokenResponse, CreateApp, FindAppsParams, IssueAppToken, Paginated, PublicApp, UpdateApp } from "@snipet/shared";
 import type {
   ServiceDeleteOptions,
   ServiceGetOptions,
@@ -29,6 +29,14 @@ export const useApp = (id: string, opts?: ServiceGetOptions<App>): UseQueryResul
   useQuery({
     queryKey: appQueryKey(id),
     queryFn: () => appService.findById(id, opts),
+    enabled: !!id,
+  });
+
+export const publicAppQueryKey = (id: string) => [BASE_QUERY_KEY, id, "public"] as const;
+export const usePublicApp = (id: string | undefined): UseQueryResult<PublicApp, Error> =>
+  useQuery({
+    queryKey: publicAppQueryKey(id ?? ""),
+    queryFn: () => appService.findPublic(id!),
     enabled: !!id,
   });
 
@@ -58,7 +66,7 @@ export const useUpdateApp = (
   });
 };
 
-// Deleting an app also deletes its API keys (and sessions) on the server.
+/** Deletes an app; the server also deletes its API keys (and sessions) on the server. */
 export const useDeleteApp = (
   opts?: ServiceDeleteOptions<void>,
 ): UseMutationResult<void, Error, string> => {

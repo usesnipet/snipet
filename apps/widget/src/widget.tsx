@@ -1,3 +1,4 @@
+import { usePublicApp } from "@snipet/client";
 import { useState } from "react";
 
 import { Chat } from "./components/chat";
@@ -18,6 +19,7 @@ export function Widget() {
   const [view, setView] = useState<View>("chat");
   const [sessionId, setSessionId] = useState<string>();
   const ready = !!config.token && !!config.agentId;
+  const { data: app } = usePublicApp(config.appId);
 
   return (
     <>
@@ -31,6 +33,7 @@ export function Widget() {
             <div className="sw-panel" part="panel">
               <Header
                 view={view}
+                title={app?.name}
                 ready={ready}
                 onToggleHistory={() => setView(view === "sessions" ? "chat" : "sessions")}
                 onNewChat={() => {

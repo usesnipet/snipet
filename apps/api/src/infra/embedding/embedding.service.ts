@@ -10,7 +10,7 @@ export class EmbeddingService {
     apiKey: env.EMBEDDING_API_KEY || "none",
   });
 
-  // One vector per text, in order, EMBEDDING_BATCH_SIZE texts per request.
+  /** One vector per text, in order, EMBEDDING_BATCH_SIZE texts per request. */
   async embed(texts: string[]): Promise<number[][]> {
     const vectors: number[][] = [];
     for (let start = 0; start < texts.length; start += env.EMBEDDING_BATCH_SIZE) {

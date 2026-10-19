@@ -1,12 +1,14 @@
-// `{{ path.to.value }}` or `{{ path.to.value || "default" }}`
+/** `{{ path.to.value }}` or `{{ path.to.value || "default" }}` */
 const PLACEHOLDER = /\{\{\s*([\w.]+)\s*(?:\|\|\s*"([^"]*)"\s*)?\}\}/g;
 const WHOLE = new RegExp(`^${PLACEHOLDER.source}$`);
 
-// Fills `{{path.to.value}}` placeholders in every string of `value` (nested
-// objects and arrays included) from `vars`. Only values are rendered, never
-// keys. A string that is exactly one placeholder takes the variable as is,
-// so numbers and booleans keep their type. A missing (or null/empty) variable
-// falls back to its `|| "default"`, or to an empty string.
+/**
+ * Fills `{{path.to.value}}` placeholders in every string of `value` (nested
+ * objects and arrays included) from `vars`. Only values are rendered, never
+ * keys. A string that is exactly one placeholder takes the variable as is,
+ * so numbers and booleans keep their type. A missing (or null/empty) variable
+ * falls back to its `|| "default"`, or to an empty string.
+ */
 export function render<T>(value: T, vars: Record<string, unknown>): T {
   if (typeof value === "string") return renderString(value, vars) as T;
   if (Array.isArray(value)) return value.map((v: unknown) => render(v, vars)) as T;

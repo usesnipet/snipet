@@ -44,7 +44,7 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
     return this.syncer.sync(id);
   }
 
-  // Synced actions of the enabled connections among connectionIds.
+  /** Synced actions of the enabled connections among connectionIds. */
   findActions(connectionIds: string[]): Promise<PluginAction[]> {
     if (!connectionIds.length) return Promise.resolve([]);
     return this.actions.find({
@@ -53,8 +53,10 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
     });
   }
 
-  // Failures the model can act on (bad arguments, unreachable service) come
-  // back as an isError result.
+  /**
+   * Runs a synced action through its connection's driver. Failures the model
+   * can act on (bad arguments, unreachable service) come back as an isError result.
+   */
   async executeAction(actionId: string, args: Record<string, unknown> = {}): Promise<ActionResult> {
     const action = await this.actions.findOneByOrFail({ id: actionId });
     const conn = await this.findById(action.pluginConnectionId);

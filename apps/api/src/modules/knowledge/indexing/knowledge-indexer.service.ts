@@ -15,25 +15,27 @@ import { KnowledgeItem } from "../knowledge-item.entity.js";
 import type { ExtractedDocument, ExtractionResult } from "@xberg-io/xberg";
 import type { QueryDeepPartialEntity } from "typeorm";
 
-// xberg's error for a format it has no extractor for; retrying won't help.
+/** xberg's error for a format it has no extractor for; retrying won't help. */
 class UnsupportedFormatError extends Error {}
 
-// Pause when the embedding API rate limits without a Retry-After.
+/** Pause when the embedding API rate limits without a Retry-After. */
 const RATE_LIMIT_FALLBACK_MS = 60_000;
 
-// Indexes pending items in the background, up to KNOWLEDGE_INDEX_CONCURRENCY
-// at a time: each worker claims a pending item (pending -> indexing), extracts
-// it with xberg, embeds its chunks and stores them in pgvector, until none is
-// left. The item status is the queue; wake() starts workers after a sync.
+/**
+ * Indexes pending items in the background, up to KNOWLEDGE_INDEX_CONCURRENCY
+ * at a time: each worker claims a pending item (pending -> indexing), extracts
+ * it with xberg, embeds its chunks and stores them in pgvector, until none is
+ * left. The item status is the queue; wake() starts workers after a sync.
+ */
 @Injectable()
 export class KnowledgeIndexerService implements OnModuleDestroy {
   private readonly logger = new Logger(KnowledgeIndexerService.name);
   private workers = 0;
-  // Set by wake() so a worker that just found nothing looks once more.
+  /** Set by wake() so a worker that just found nothing looks once more. */
   private woken = false;
   private stopped = false;
   private pausedUntil = 0;
-  // Never claimed twice at once, even when a sync makes it pending again mid-index.
+  /** Never claimed twice at once, even when a sync makes it pending again mid-index. */
   private readonly active = new Set<string>();
 
   constructor(
@@ -84,8 +86,10 @@ export class KnowledgeIndexerService implements OnModuleDestroy {
     }
   }
 
-  // Takes the oldest pending item. The conditional update makes it safe
-  // against another worker (or instance) claiming the same one.
+  /**
+   * Takes the oldest pending item. The conditional update makes it safe
+   * against another worker (or instance) claiming the same one.
+   */
   private async claim(): Promise<KnowledgeItem | null> {
     for (;;) {
       const item = await this.items.findOne({
@@ -101,8 +105,10 @@ export class KnowledgeIndexerService implements OnModuleDestroy {
     }
   }
 
-  // Replaces the item's chunks with the ones extracted from its current
-  // content and records the outcome on the item.
+  /**
+   * Replaces the item's chunks with the ones extracted from its current
+   * content and records the outcome on the item.
+   */
   async index(item: KnowledgeItem): Promise<void> {
     let kind: KnowledgeItemKind;
     try {
@@ -153,14 +159,16 @@ export class KnowledgeIndexerService implements OnModuleDestroy {
     await this.finish(item, { status: KnowledgeItemStatus.INDEXED, kind, indexedAt: new Date() });
   }
 
-  // Only while the item still has the content that was indexed: a newer sync
-  // has set it back to pending for the workers to pick up again.
+  /**
+   * Records the indexing outcome, but only while the item still has the content
+   * that was indexed: otherwise a newer sync set it back to pending.
+   */
   private finish(item: KnowledgeItem, update: QueryDeepPartialEntity<KnowledgeItem>) {
     return this.items.update({ id: item.id, hash: item.hash }, { reason: null, lastError: null, ...update });
   }
 }
 
-// Loaded on first use, so the native binding is only needed with knowledge on.
+/** Loaded on first use, so the native binding is only needed with knowledge on. */
 async function extract(filename: string, bytes: Uint8Array): Promise<ExtractedDocument> {
   let result: ExtractionResult;
   try {
@@ -189,7 +197,7 @@ async function extract(filename: string, bytes: Uint8Array): Promise<ExtractedDo
   return doc;
 }
 
-// Retry-After is in seconds or an HTTP date.
+/** Retry-After is in seconds or an HTTP date. */
 function retryAfterMs(headers: Headers): number | undefined {
   const value = headers.get("retry-after");
   if (!value) return undefined;
@@ -197,7 +205,7 @@ function retryAfterMs(headers: Headers): number | undefined {
   return Number.isFinite(ms) && ms > 0 ? ms : undefined;
 }
 
-// Thrown as "Unsupported format: <mime>" or reported as errorType unsupported_format.
+/** Thrown as "Unsupported format: <mime>" or reported as errorType unsupported_format. */
 function isUnsupported(err: unknown): boolean {
   const e = err as { errorType?: string; message?: string };
   return e.errorType === "unsupported_format" || /^unsupported format/i.test(e.message ?? "");

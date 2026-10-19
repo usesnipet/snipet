@@ -52,11 +52,6 @@ export function DataTable<T>({
   const rows = query.data?.data ?? []
   const total = query.data?.total ?? 0
   const loading = query.isLoading || query.isFetching
-    // const lastPage = Math.max(0, Math.ceil(total / pageSize) - 1)
-
-    // if (query.data && page > lastPage) {
-    //   setPage(lastPage)
-    // }
 
   const from = total === 0 ? 0 : pagination.skip + 1
   const to = Math.min(pagination.skip + rows.length, total)

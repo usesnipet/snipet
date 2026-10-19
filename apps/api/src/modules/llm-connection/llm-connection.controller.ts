@@ -27,8 +27,10 @@ import { LlmConnectionService } from "./llm-connection.service.js";
 
 import type { ExecuteLlm, ListLLMModelsParams, LlmStreamEvent } from "@snipet/shared";
 import type { Response } from "express";
-// CRUD is admin only and never returns credentials: secret config fields
-// come back as placeholders. Running models is open to any user and API keys.
+/**
+ * CRUD is admin only and never returns credentials: secret config fields
+ * come back as placeholders. Running models is open to any user and API keys.
+ */
 @Private(UserAuth(Role.Admin))
 @UseFilters(LlmErrorFilter)
 @Controller("llm-connections")
@@ -77,8 +79,10 @@ export class LlmConnectionController extends CrudController<LlmConnection>({
     return this.service.generate(dto);
   }
 
-  // Server-Sent Events. Errors before the first event (bad input, unknown
-  // model...) are plain HTTP errors; after that they arrive as an "error" event.
+  /**
+   * Server-Sent Events. Errors before the first event (bad input, unknown
+   * model...) are plain HTTP errors; after that they arrive as an "error" event.
+   */
   @Private(UserAuth(), ApiKeyAuth())
   @Post("execute/stream")
   async executeStream(@Body(new ZodPipe(executeLlmSchema)) dto: ExecuteLlm, @Res() res: Response) {

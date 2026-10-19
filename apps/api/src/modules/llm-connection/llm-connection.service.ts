@@ -74,12 +74,12 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
     return this.syncer.sync(id);
   }
 
-  // The connection's models as last synced.
+  /** The connection's models as last synced. */
   findModels(connectionId: string): Promise<LlmModel[]> {
     return this.models.find({ where: { llmConnectionId: connectionId }, order: { key: "ASC" } });
   }
 
-  // Models of connectionId, else of the llm's default connection.
+  /** Models of connectionId, else of the llm's default connection. */
   async listLLMModels(llmKey: string, connectionId?: string): Promise<LlmModel[]> {
     return this.findModels((await this.connectionFor(llmKey, connectionId)).id);
   }
@@ -92,8 +92,10 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
     yield* this.runner.stream({ ...dto, targets: await this.resolveTargets(dto.targets), signal });
   }
 
-  // Each target with its connection's config, once its model is known to be
-  // among the connection's synced models.
+  /**
+   * Each target with its connection's config, once its model is known to be
+   * among the connection's synced models.
+   */
   async resolveTargets(targets: ExecuteLlmTarget[]): Promise<LlmTarget[]> {
     return Promise.all(
       targets.map(async (t) => {

@@ -1,14 +1,14 @@
 import type { BaseDriver } from "#src/manifest/driver.js";
 import type { HealthCheckDriver } from "#src/manifest/health-check.js";
 
-// An action as listed by a driver.
+/** An action as listed by a driver. */
 export interface Action {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
 }
 
-// The outcome of an action call, flattened to text.
+/** The outcome of an action call, flattened to text. */
 export interface ActionResult {
   content: string;
   isError: boolean;
@@ -24,7 +24,7 @@ export interface ActionDriver<Opts = unknown> extends BaseDriver<Opts> {
   ): Promise<ActionResult>;
 }
 
-// Driver per capability, keyed by the manifest field that names it.
+/** Driver per capability, keyed by the manifest field that names it. */
 export type PluginDrivers = {
   actions: ActionDriver;
   healthCheck: HealthCheckDriver;

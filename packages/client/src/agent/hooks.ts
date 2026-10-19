@@ -17,7 +17,7 @@ export const useListAgents = (
     queryFn: () => agentService.list(opts),
   });
 
-// useAgentMutation wraps an agent write with outcome messages and a list refresh.
+/** Wraps an agent write with outcome messages and a list refresh. */
 const useAgentMutation = <TVariables, TData>(
   fn: (vars: TVariables) => Promise<TData>,
   successMessage: string,

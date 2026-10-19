@@ -6,15 +6,13 @@ import type {
   LlmPart,
   LlmRole,
 } from "@snipet/shared";
+import { BaseEntity } from "@snipet/server-common";
 import { Check, Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-import { BaseEntity } from "@snipet/server-common";
 import { Agent } from "../agent/agent.entity.js";
 import { App } from "../app/app.entity.js";
 import { User } from "../user/user.entity.js";
 
-// Exactly one of userId / appId is set: whoever started the session.
-// externalUserId is only set with appId.
 @Entity("agent_sessions")
 @Index(["appId", "externalUserId"])
 @Check("CHK_agent_sessions_owner", `("userId" IS NULL) <> ("appId" IS NULL)`)
@@ -51,7 +49,6 @@ export class AgentSession extends BaseEntity implements AgentSessionContract {
 }
 
 @Entity("agent_runs")
-// One running run per session at a time.
 @Index(["sessionId"], { unique: true, where: `"status" = 'running'` })
 export class AgentRun extends BaseEntity implements AgentRunContract {
   @Index()
@@ -74,6 +71,9 @@ export class AgentRun extends BaseEntity implements AgentRunContract {
 
   @Column({ type: "timestamptz", nullable: true })
   finishedAt: Date | null;
+
+  @Column({ default: false })
+  debugged: boolean;
 }
 
 @Entity("agent_messages")

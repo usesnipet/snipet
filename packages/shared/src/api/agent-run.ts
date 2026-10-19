@@ -3,8 +3,10 @@ import { z } from "zod";
 import { llmPartSchema, llmRoleSchema } from "./llm.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// A conversation with one agent, owned by a user of this system or by an
-// app. externalUserId is the app's own id for its end user (null = the app itself).
+/**
+ * A conversation with one agent, owned by a user of this system or by an
+ * app. externalUserId is the app's own id for its end user (null = the app itself).
+ */
 export const agentSessionSchema = z.object({
   id: z.uuid(),
   agentId: z.uuid(),
@@ -29,12 +31,12 @@ export enum AgentRunStatus {
   COMPLETED = "completed",
   FAILED = "failed",
   CANCELLED = "cancelled",
-  // The agent was still calling tools when it ran out of turns.
+  /** The agent was still calling tools when it ran out of turns. */
   MAX_TURNS = "max_turns",
 }
 export const agentRunStatusSchema = z.enum(AgentRunStatus);
 
-// One user message and the loop that answers it. A turn is one LLM call.
+/** One user message and the loop that answers it. A turn is one LLM call. */
 export const agentRunSchema = z.object({
   id: z.uuid(),
   sessionId: z.uuid(),
@@ -42,6 +44,7 @@ export const agentRunSchema = z.object({
   error: z.string().nullable(),
   turns: z.number().int(),
   finishedAt: z.coerce.date().nullable(),
+  debugged: z.boolean(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -54,7 +57,7 @@ export const findAgentRunsParamsSchema = paginationParamsSchema.extend({
 });
 export type FindAgentRunsParams = z.infer<typeof findAgentRunsParamsSchema>;
 
-// No sessionId starts a new session.
+/** No sessionId starts a new session. */
 export const startAgentRunSchema = z.object({
   agentId: z.uuid(),
   sessionId: z.uuid().optional(),
@@ -62,8 +65,10 @@ export const startAgentRunSchema = z.object({
 });
 export type StartAgentRun = z.infer<typeof startAgentRunSchema>;
 
-// One LlmMessage of a session; id orders the conversation. model is the
-// "llm/model" that wrote an assistant message.
+/**
+ * One LlmMessage of a session; id orders the conversation. model is the
+ * "llm/model" that wrote an assistant message.
+ */
 export const agentMessageSchema = z.object({
   id: z.number().int(),
   sessionId: z.uuid(),
@@ -77,15 +82,17 @@ export type AgentMessage = z.infer<typeof agentMessageSchema>;
 
 export const paginatedAgentMessageSchema = paginatedSchema(agentMessageSchema);
 
-// Newest first; before is a message id, for paging back.
+/** Newest first; before is a message id, for paging back. */
 export const findAgentMessagesParamsSchema = z.object({
   take: z.coerce.number().int().min(1).max(500).default(100),
   before: z.coerce.number().int().min(1).optional(),
 });
 export type FindAgentMessagesParams = z.infer<typeof findAgentMessagesParamsSchema>;
 
-// SSE events of GET /agent-runs/:id/events. message events carry the
-// message id as the SSE id, so a client resumes with Last-Event-ID.
+/**
+ * SSE events of GET /agent-runs/:id/events. message events carry the
+ * message id as the SSE id, so a client resumes with Last-Event-ID.
+ */
 export type AgentRunEvent =
   | { event: "text_delta"; data: { text: string } }
   | { event: "message"; data: AgentMessage }

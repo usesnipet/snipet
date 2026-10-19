@@ -4,12 +4,15 @@ export type View = "chat" | "sessions";
 
 export function Header({
   view,
+  title,
   ready,
   onToggleHistory,
   onNewChat,
   onClose,
 }: {
   view: View;
+  /** Shown on the chat view; defaults to "Chat". */
+  title?: string;
   /** Token and agent are set: history and new chat are usable. */
   ready: boolean;
   onToggleHistory: () => void;
@@ -18,7 +21,7 @@ export function Header({
 }) {
   return (
     <header className="sw-header" part="header">
-      <span className="sw-title">{view === "sessions" ? "Chats" : "Chat"}</span>
+      <span className="sw-title">{view === "sessions" ? "Chats" : (title ?? "Chat")}</span>
       <div className="sw-actions">
         {ready && (
           <>

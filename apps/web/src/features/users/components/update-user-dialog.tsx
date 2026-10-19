@@ -22,8 +22,7 @@ type UpdateUserDialogProps = DialogInstanceProps<{
   user: User;
 }>;
 
-// Password is optional on update — blank keeps the current password, so an
-// empty string must skip the min-length check that applies when it's set.
+/** Update form schema: a blank password keeps the current one, so it skips the min-length check. */
 const updateUserFormSchema = updateUserSchema.extend({
   password: z
     .string()

@@ -21,7 +21,7 @@ export interface ChatDriver<Opts = unknown> extends BaseDriver<Opts> {
   stream(req: ChatRequest, options: Opts): AsyncGenerator<ChatStreamEvent>;
 }
 
-// Driver per capability, keyed by the manifest field that names it.
+/** Driver per capability, keyed by the manifest field that names it. */
 export type LLMDrivers = {
   models: ModelDriver;
   chat: ChatDriver;

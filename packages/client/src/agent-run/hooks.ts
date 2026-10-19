@@ -8,7 +8,7 @@ import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
 const BASE_QUERY_KEY = "agent-session";
 
-// Only the newest sessions and messages are loaded.
+/** Page sizes: only the newest sessions and messages are loaded. */
 const SESSIONS_TAKE = 100;
 const MESSAGES_TAKE = 100;
 
@@ -27,7 +27,7 @@ export const useSession = (id: string | undefined): UseQueryResult<AgentSession,
     enabled: !!id,
   });
 
-// useSessionMessages returns a session's latest messages, oldest first.
+/** A session's latest messages, oldest first. */
 export const sessionMessagesQueryKey = (id: string) => [BASE_QUERY_KEY, id, "messages"] as const;
 export const useSessionMessages = (id: string | undefined): UseQueryResult<AgentMessage[], Error> =>
   useQuery({
@@ -39,7 +39,7 @@ export const useSessionMessages = (id: string | undefined): UseQueryResult<Agent
     enabled: !!id,
   });
 
-// useLatestRun returns the session's newest run, or null when it has none.
+/** The session's newest run, or null when it has none. */
 export const latestRunQueryKey = (sessionId: string) => [BASE_QUERY_KEY, sessionId, "latest-run"] as const;
 export const useLatestRun = (sessionId: string | undefined): UseQueryResult<AgentRun | null, Error> =>
   useQuery({
@@ -51,8 +51,10 @@ export const useLatestRun = (sessionId: string | undefined): UseQueryResult<Agen
     enabled: !!sessionId,
   });
 
-// useStartRun starts a run and seeds the session's latest run with it, which
-// is what useRunStream's caller follows.
+/**
+ * Starts a run and seeds the session's latest run with it, which is what
+ * useRunStream's caller follows.
+ */
 export const useStartRun = (): UseMutationResult<AgentRun, Error, StartAgentRun> => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -94,9 +96,11 @@ type UseRunStreamResult = {
   reset: () => void;
 };
 
-// useRunStream follows one run's SSE events. On run_finished it refreshes the
-// session's cached messages and latest run, so the stream's messages can be
-// merged with the history by id.
+/**
+ * Follows one run's SSE events. On run_finished it refreshes the
+ * session's cached messages and latest run, so the stream's messages can be
+ * merged with the history by id.
+ */
 export const useRunStream = (): UseRunStreamResult => {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<RunStreamStatus>("idle");

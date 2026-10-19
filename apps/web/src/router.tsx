@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import { LoadingFallback } from "./components/loading-fallback";
 import { RequireAuth } from "./components/require-auth";
 import { RequireRole } from "./components/require-role";
+import { SettingsProvider } from "./context/settings-provider";
 import { ROUTES } from "./routes";
 
 import type { RoutePath } from "./routes";
@@ -28,6 +29,8 @@ const AppsPage = lazy(() =>
   import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
 const UsersPage = lazy(() =>
   import("./routes/users/page").then((m) => ({ default: m.UsersPage })));
+const SettingsPage = lazy(() =>
+  import("./routes/settings/page").then((m) => ({ default: m.SettingsPage })));
 const ApiKeysPage = lazy(() =>
   import("./routes/api-keys/page").then((m) => ({ default: m.ApiKeysPage })));
 
@@ -42,20 +45,23 @@ export const Router = () => {
         <Routes>
           <Route path={toReactRouterPath(ROUTES.login)} element={<LoginPage />} />
           <Route element={<RequireAuth />}>
-            <Route element={<RequireRole role={Role.Admin} />}>
-              {/* One optional-param route, so starting a chat doesn't remount the page. */}
-              <Route path={`${toReactRouterPath(ROUTES.agentPlaygroundSession)}?`} element={<AgentPlaygroundPage />} />
-            </Route>
-            <Route element={<Layout />}>
-              <Route path={toReactRouterPath(ROUTES.home)} element={<HomePage />} />
-              <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
-              <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
+            <Route element={<SettingsProvider />}>
               <Route element={<RequireRole role={Role.Admin} />}>
-                <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
-                <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
-                <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
-                <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
-                <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
+                {/* One optional-param route, so starting a chat doesn't remount the page. */}
+                <Route path={`${toReactRouterPath(ROUTES.agentPlaygroundSession)}?`} element={<AgentPlaygroundPage />} />
+              </Route>
+              <Route element={<Layout />}>
+                <Route path={toReactRouterPath(ROUTES.home)} element={<HomePage />} />
+                <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
+                <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
+                <Route element={<RequireRole role={Role.Admin} />}>
+                  <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
+                  <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
+                  <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
+                  <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
+                  <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
+                  <Route path={toReactRouterPath(ROUTES.settings)} element={<SettingsPage />} />
+                </Route>
               </Route>
             </Route>
           </Route>

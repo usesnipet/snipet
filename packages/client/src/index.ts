@@ -15,6 +15,8 @@ export * from "./llm-connection/service";
 export * from "./plugin-connection/hooks";
 export * from "./plugin-connection/service";
 export * from "./plugin-connection/utils";
+export * from "./settings/hooks";
+export * from "./settings/service";
 export * from "./system/hooks";
 export * from "./system/service";
 export * from "./users/hooks";

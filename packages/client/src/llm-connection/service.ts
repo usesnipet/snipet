@@ -100,7 +100,7 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
     ...opts,
   });
 
-// The connection's models as last synced.
+/** The connection's models as last synced. */
 const findModels = async (id: string, opts: ServiceGetOptions<LlmModel[]> = {}): Promise<LlmModel[]> =>
   http.get({
     url: `${LLM_CONNECTION_URL}/{id}/models`,
@@ -116,8 +116,10 @@ const sync = async (id: string, opts: ServicePostOptions<void, void> = {}): Prom
     ...opts,
   });
 
-// listLLMModels returns the synced models of searchParams.connectionId
-// when given, else of llmKey's default connection (backend-resolved).
+/**
+ * The synced models of searchParams.connectionId when given, else of llmKey's
+ * default connection (resolved by the backend).
+ */
 const listLLMModels = async (
   llmKey: string,
   opts: ServiceGetOptions<LlmModel[], ListLLMModelsParams> = {},
@@ -143,8 +145,10 @@ const execute = async (
     ...opts,
   });
 
-// executeStream runs the streamed variant, invoking onEvent with each typed
-// SSE event (llm_started, text_delta, tool_call, llm_skipped, message, error, done).
+/**
+ * Runs the streamed variant of execute, invoking onEvent with each typed
+ * SSE event (llm_started, text_delta, tool_call, llm_skipped, message, error, done).
+ */
 const executeStream = async (
   body: ExecuteLlm,
   onEvent: (event: LlmStreamEvent) => void,

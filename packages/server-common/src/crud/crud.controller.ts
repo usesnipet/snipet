@@ -13,22 +13,25 @@ interface CrudSchemas {
   create: z.ZodType;
   update: z.ZodType;
   filter?: z.ZodType;
-  // Shapes each entity a route returns, e.g. to mask secrets.
+  /** Shapes each entity a route returns, e.g. to mask secrets. */
   serialize?: (entity: never) => unknown;
 }
 
-// Returns a base class with the 5 CRUD routes. Usage:
-//   @Controller("widget")
-//   export class WidgetController extends CrudController<Widget>(schemas) {
-//     constructor(service: WidgetService) { super(service); }
-//   }
+/**
+ * Returns a base class with the 5 CRUD routes.
+ * @example
+ * @Controller("widget")
+ * export class WidgetController extends CrudController<Widget>(schemas) {
+ *   constructor(service: WidgetService) { super(service); }
+ * }
+ */
 export function CrudController<T extends BaseEntity>(schemas: CrudSchemas) {
   const serialize = (schemas.serialize ?? ((entity: T) => entity)) as (entity: T) => unknown;
 
   abstract class Base {
     constructor(readonly service: CrudService<T>) {}
 
-    // Shapes each entity a route returns; override to use the service.
+    /** Shapes each entity a route returns; override to use the service. */
     serialize(entity: T): unknown {
       return serialize(entity);
     }

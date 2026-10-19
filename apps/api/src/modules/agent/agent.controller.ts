@@ -8,7 +8,7 @@ import { createAgentSchema, findAgentsSchema, updateAgentSchema } from "./agent.
 import { Agent } from "./agent.entity.js";
 import { AgentService } from "./agent.service.js";
 
-// Admin only: agents run actions, which act on the host.
+/** Admin only: agents run actions, which act on the host. */
 @Private(UserAuth(Role.Admin))
 @Controller("agents")
 export class AgentController extends CrudController<Agent>({

@@ -35,8 +35,10 @@ const listRuns = async (
     ...opts,
   });
 
-// events follows a run over SSE: stored messages after lastId, then live
-// events until run_finished. Resolves when the stream ends.
+/**
+ * Follows a run over SSE: stored messages after lastId, then live
+ * events until run_finished. Resolves when the stream ends.
+ */
 const events = async (
   id: string,
   lastId: number,
@@ -71,7 +73,7 @@ const findSession = async (id: string, opts: ServiceGetOptions<AgentSession> = {
 const deleteSession = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promise<void> =>
   http.delete({ url: `${SESSION_URL}/{id}`, params: { id }, ...opts });
 
-// listMessages returns a session's messages newest first.
+/** A session's messages, newest first. */
 const listMessages = async (
   id: string,
   opts: ServiceGetOptions<Paginated<AgentMessage>, Partial<FindAgentMessagesParams>> = {},

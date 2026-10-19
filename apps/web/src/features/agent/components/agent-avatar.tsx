@@ -20,7 +20,7 @@ export function AgentAvatar({ avatar, className }: { avatar?: string | null; cla
   );
 }
 
-// Center-crops the image to a square and shrinks it to a small data URL.
+/** Center-crops the image to a square and shrinks it to a small data URL. */
 async function toAvatarDataUrl(file: File): Promise<string> {
   const bitmap = await createImageBitmap(file);
   const side = Math.min(bitmap.width, bitmap.height);

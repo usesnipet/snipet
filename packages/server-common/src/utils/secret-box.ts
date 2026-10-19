@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
-// AES-256-GCM. Sealed format: "v1:<iv>:<tag>:<ciphertext>", each part base64url.
+/** AES-256-GCM. Sealed format: "v1:<iv>:<tag>:<ciphertext>", each part base64url. */
 const PREFIX = "v1";
 
 export function seal(plaintext: string, key: Buffer): string {
@@ -24,16 +24,20 @@ export function isSealed(value: unknown): value is string {
   return typeof value === "string" && value.startsWith(`${PREFIX}:`);
 }
 
-// Secrets are write-only over the API: responses carry this placeholder in
-// place of each value, and a request that sends it back keeps the stored one.
+/**
+ * Secrets are write-only over the API: responses carry this placeholder in
+ * place of each value, and a request that sends it back keeps the stored one.
+ */
 export const SECRET_PLACEHOLDER = "__secret__";
 
 export function maskSecrets(secrets: Record<string, unknown>): Record<string, string> {
   return Object.fromEntries(Object.keys(secrets).map((key) => [key, SECRET_PLACEHOLDER]));
 }
 
-// Swaps placeholders in `incoming` for the `stored` values; a placeholder with
-// nothing stored under its key is dropped.
+/**
+ * Swaps placeholders in `incoming` for the `stored` values; a placeholder with
+ * nothing stored under its key is dropped.
+ */
 export function restoreSecrets<T extends Record<string, unknown>>(
   incoming: T,
   stored: Record<string, unknown> | null | undefined,

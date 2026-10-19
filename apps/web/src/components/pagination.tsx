@@ -18,7 +18,7 @@ type PaginationProps = {
 
 type PageSlot = number | "ellipsis-start" | "ellipsis-end";
 
-// Always shows the first, last and the current page's neighbours, collapsing the rest.
+/** Page buttons to show: first, last and the current page's neighbours, with the rest collapsed. */
 function pageSlots(page: number, pageCount: number): PageSlot[] {
   if (pageCount <= 7) return Array.from({ length: pageCount }, (_, i) => i + 1);
 

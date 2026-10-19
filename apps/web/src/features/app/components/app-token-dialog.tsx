@@ -43,8 +43,7 @@ type FormOutput = z.output<typeof formSchema>;
 
 type AppTokenDialogProps = DialogInstanceProps<{ app: App }>;
 
-// Issues an end-user token with one of the app's API keys, the same call the
-// app's backend makes in production.
+/** Issues an end-user token with one of the app's API keys, the same call the app's backend makes in production. */
 export function AppTokenDialog({ app, close }: AppTokenDialogProps) {
   const { openDialog } = useDialog();
   const form = useForm<FormInput, unknown, FormOutput>({

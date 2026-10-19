@@ -1,18 +1,23 @@
 import { FormInput } from "@/components/form/input";
+import { FormSwitch } from "@/components/form/switch";
 import { FormTextarea } from "@/components/form/textarea";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useCreateApp, useUpdateApp } from "@snipet/client";
+import { anonymousHasOrigins, anonymousHasOriginsError, appBodySchema } from "@snipet/shared";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
-import { useCreateApp, useUpdateApp } from "@snipet/client";
-import { createAppSchema } from "@snipet/shared";
 
 import type { App, CreateApp } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
@@ -22,13 +27,15 @@ type AppFormDialogProps = DialogInstanceProps<{
   app?: App;
 }>;
 
-// Origins are typed one per line, then validated with the shared schema.
-const appFormSchema = createAppSchema.extend({
-  allowedOrigins: z
-    .string()
-    .transform((value) => value.split("\n").map((line) => line.trim()).filter(Boolean))
-    .pipe(createAppSchema.shape.allowedOrigins.unwrap()),
-});
+/** App form schema: origins are typed one per line, then validated with the shared schema. */
+const appFormSchema = appBodySchema
+  .extend({
+    allowedOrigins: z
+      .string()
+      .transform((value) => value.split("\n").map((line) => line.trim()).filter(Boolean))
+      .pipe(appBodySchema.shape.allowedOrigins.unwrap()),
+  })
+  .refine(anonymousHasOrigins, anonymousHasOriginsError);
 type AppFormInput = z.input<typeof appFormSchema>;
 
 export function AppFormDialog({ app, close }: AppFormDialogProps) {
@@ -37,7 +44,11 @@ export function AppFormDialog({ app, close }: AppFormDialogProps) {
 
   const form = useForm<AppFormInput, unknown, CreateApp>({
     resolver: zodResolver(appFormSchema),
-    defaultValues: { name: app?.name ?? "", allowedOrigins: app?.allowedOrigins.join("\n") ?? "" },
+    defaultValues: {
+      name: app?.name ?? "",
+      allowedOrigins: app?.allowedOrigins.join("\n") ?? "",
+      allowAnonymous: app?.allowAnonymous ?? false,
+    },
   });
 
   const { mutateAsync: create, isPending: isCreating } = useCreateApp();
@@ -69,6 +80,7 @@ export function AppFormDialog({ app, close }: AppFormDialogProps) {
             placeholder={"https://app.example.com\nhttps://staging.example.com"}
             rows={4}
           />
+          <FormSwitch name="allowAnonymous" label="Allow anonymous users" />
         </form>
       </Form>
       <DialogFooter>

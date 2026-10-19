@@ -4,6 +4,7 @@ import { Role } from "@snipet/shared";
 
 import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
 import { CurrentOwner } from "#src/common/decorators/owner.decorator.js";
+import { RateLimit } from "#src/common/rate-limit/rate-limit.js";
 
 import { findAgentRunsParamsSchema, startAgentRunSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
@@ -11,8 +12,10 @@ import { AgentRunService } from "./agent-run.service.js";
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { FindAgentRunsParams, StartAgentRun } from "@snipet/shared";
 import type { Response } from "express";
-// Admins, API keys, or app end users (scoped to their own sessions by
-// CurrentOwner). Running an agent runs its actions on the host.
+/**
+ * Admins, API keys, or app end users (scoped to their own sessions by
+ * CurrentOwner). Running an agent runs its actions on the host.
+ */
 @Private(UserAuth(Role.Admin), ApiKeyAuth(), AppTokenAuth())
 @Controller("agent-runs")
 export class AgentRunController {
@@ -29,6 +32,7 @@ export class AgentRunController {
   }
 
   @Post()
+  @RateLimit("agent-run")
   start(@Body(new ZodPipe(startAgentRunSchema)) dto: StartAgentRun, @CurrentOwner() owner: Owner) {
     return this.service.start(dto, owner);
   }
@@ -39,8 +43,10 @@ export class AgentRunController {
     return this.service.cancel(id, owner);
   }
 
-  // Server-Sent Events: the run's messages after Last-Event-ID, then its live
-  // events until run_finished. message events carry the message id as SSE id.
+  /**
+   * Server-Sent Events: the run's messages after Last-Event-ID, then its live
+   * events until run_finished. message events carry the message id as SSE id.
+   */
   @Get(":id/events")
   async events(
     @Param("id", ParseUUIDPipe) id: string,

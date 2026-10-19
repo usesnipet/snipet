@@ -21,10 +21,12 @@ export interface SyncResult {
   deleted: number;
 }
 
-// Keeps knowledge_items in line with the source bucket, on boot, every
-// KNOWLEDGE_SYNC_INTERVAL_SECONDS and on demand: new or changed objects (by
-// ETag) become pending, removed ones are deleted with their chunks. Then
-// wakes the indexer, which picks up pending items.
+/**
+ * Keeps knowledge_items in line with the source bucket, on boot, every
+ * KNOWLEDGE_SYNC_INTERVAL_SECONDS and on demand: new or changed objects (by
+ * ETag) become pending, removed ones are deleted with their chunks. Then
+ * wakes the indexer, which picks up pending items.
+ */
 @Injectable()
 export class KnowledgeSyncService implements OnApplicationBootstrap {
   private readonly logger = new Logger(KnowledgeSyncService.name);
@@ -54,8 +56,10 @@ export class KnowledgeSyncService implements OnApplicationBootstrap {
     void this.syncRecursive();
   }
 
-  // Starts a sync in the background unless one is running. Never throws: a
-  // failed sync is caught up by the next one.
+  /**
+   * Starts a sync in the background unless one is running. Never throws: a
+   * failed sync is caught up by the next one.
+   */
   async syncRecursive(): Promise<void> {
     const sync = async () => {
       try {
@@ -70,7 +74,7 @@ export class KnowledgeSyncService implements OnApplicationBootstrap {
     }
   }
 
-  // At most one at a time: a call while one runs gets that one's result.
+  /** At most one at a time: a call while one runs gets that one's result. */
   sync(): Promise<SyncResult> {
     this.running ??= this.run().finally(() => (this.running = undefined));
     return this.running;

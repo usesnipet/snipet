@@ -15,8 +15,7 @@ type Props = {
   allowedModelCapabilities?: LlmCapability[];
 };
 
-// splitModelRef mirrors the backend's splitModelRef: "llm-key/model"
-// split on the first "/". Either side empty (or no "/" at all) reads as "".
+/** Splits "llm-key/model" on the first "/", like the backend; a missing side reads as "". */
 function splitModelRef(ref: string): [llmKey: string, modelKey: string] {
   const i = ref.indexOf("/");
   if (i <= 0) return ["", ""];
@@ -24,8 +23,9 @@ function splitModelRef(ref: string): [llmKey: string, modelKey: string] {
 }
 
 /**
- * Renders the top-to-bottom, drag-to-reorder list of LLM targets for a
- * generate/stream call: connection (grouped by llm) and model. Backed by `useFieldArray` at `name`, so the parent form owns the data.
+ * Drag-to-reorder list of LLM targets (connection + model) tried in order by a
+ * generate/stream call. Backed by `useFieldArray` at `name`, so the parent form
+ * owns the data.
  */
 export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
   const form = useFormContext();

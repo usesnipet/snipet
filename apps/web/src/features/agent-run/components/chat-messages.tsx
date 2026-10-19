@@ -1,8 +1,6 @@
 import { JsonViewer } from "@/components/json-viewer";
 import { Button } from "@/components/ui/button";
-import {
-  ChatContainerContent, ChatContainerRoot, ChatContainerScrollAnchor
-} from "@/components/ui/chat-container";
+import { ChatContainerContent, ChatContainerRoot, ChatContainerScrollAnchor } from "@/components/ui/chat-container";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Loader } from "@/components/ui/loader";
 import { Markdown } from "@/components/ui/markdown";
@@ -34,7 +32,7 @@ const RUN_NOTICES: Partial<Record<AgentRun["status"], string>> = {
   max_turns: "The agent hit its turn limit before finishing",
 };
 
-// No typography plugin is installed, so markdown elements are styled here.
+/** Markdown element styles, since no typography plugin is installed. */
 const MARKDOWN_CLASS = cn(
   "space-y-3 leading-7 break-words",
   "[&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold",
@@ -82,6 +80,7 @@ export function ChatMessages({ messages, pendingInput, draft, streaming, run, er
             {run?.error ? `: ${run.error}` : "."}
           </Notice>
         )}
+        {run?.debugged && <Notice muted>This conversation is being debugged and is not private.</Notice>}
         {error && <Notice>{error.message}</Notice>}
         <ChatContainerScrollAnchor />
       </ChatContainerContent>
@@ -186,7 +185,7 @@ function ToolCall({ call, result, running }: ToolCallProps) {
   );
 }
 
-// parseContent shows JSON results as a tree and anything else as a string.
+/** Parses JSON tool results so they render as a tree; anything else stays a string. */
 function parseContent(content: string): unknown {
   try {
     return JSON.parse(content);

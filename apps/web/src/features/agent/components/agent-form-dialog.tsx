@@ -30,7 +30,7 @@ type AgentFormDialogProps = DialogInstanceProps<{
   agent?: Agent;
 }>;
 
-// The API returns llms already ordered.
+/** Maps an agent to form values (empty when creating); the API already returns llms in order. */
 const toForm = (agent?: Agent): AgentFormInput => ({
   name: agent?.name ?? "",
   description: agent?.description ?? "",

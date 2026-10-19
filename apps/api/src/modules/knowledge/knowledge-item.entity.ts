@@ -5,11 +5,13 @@ import { BaseEntity } from "@snipet/server-common";
 
 import type { KnowledgeItemKind, KnowledgeItem as KnowledgeItemContract } from "@snipet/shared";
 
-// One object of the knowledge source. Its chunks live in the pgvector
-// database, keyed by this id.
+/**
+ * One object of the knowledge source. Its chunks live in the pgvector
+ * database, keyed by this id.
+ */
 @Entity("knowledge_items")
 export class KnowledgeItem extends BaseEntity implements KnowledgeItemContract {
-  // The object's key in the source.
+  /** The object's key in the source. */
   @Index({ unique: true })
   @Column({ length: 1024 })
   externalId: string;
@@ -17,7 +19,7 @@ export class KnowledgeItem extends BaseEntity implements KnowledgeItemContract {
   @Column({ type: "text" })
   name: string;
 
-  // Changes whenever the content does (the S3 ETag).
+  /** Changes whenever the content does (the S3 ETag). */
   @Column({ length: 128 })
   hash: string;
 
@@ -31,7 +33,7 @@ export class KnowledgeItem extends BaseEntity implements KnowledgeItemContract {
   @Column({ type: "varchar", length: 20, default: KnowledgeItemStatus.PENDING })
   status: KnowledgeItemStatus;
 
-  // Why the item was skipped.
+  /** Why the item was skipped. */
   @Column({ type: "text", nullable: true })
   reason: string | null;
 
@@ -41,7 +43,7 @@ export class KnowledgeItem extends BaseEntity implements KnowledgeItemContract {
   @Column({ type: "timestamptz", nullable: true })
   indexedAt: Date | null;
 
-  // When the object last changed in the source.
+  /** When the object last changed in the source. */
   @Column({ type: "timestamptz", nullable: true })
   lastModified: Date | null;
 }

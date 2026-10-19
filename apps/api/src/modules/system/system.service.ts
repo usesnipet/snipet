@@ -5,7 +5,7 @@ import { env } from "#src/env.js";
 
 import type { SystemInfo } from "@snipet/shared";
 
-// APP_VERSION on release builds, else the short commit hash, else "dev".
+/** APP_VERSION on release builds, else the short commit hash, else "dev". */
 function resolveVersion(): string {
   if (env.APP_VERSION) return env.APP_VERSION;
   try {

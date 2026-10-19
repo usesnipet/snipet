@@ -1,0 +1,38 @@
+{
+  "name": "@snipet/react-widget",
+  "version": "0.0.0",
+  "description": "React bindings for the Snipet chat widget.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usesnipet/snipet.git",
+    "directory": "packages/react-widget"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@snipet/widget": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
+    "typescript": "~6.0.3"
+  }
+}

@@ -10,4 +10,7 @@ export class App extends BaseEntity implements AppContract {
 
   @Column({ type: "text", array: true, default: [] })
   allowedOrigins: string[];
+
+  @Column({ default: false })
+  allowAnonymous: boolean;
 }

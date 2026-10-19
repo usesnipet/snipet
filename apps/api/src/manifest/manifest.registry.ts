@@ -7,9 +7,11 @@ import type { BaseManifest, ManifestDriver } from "@snipet/shared";
 import type { z } from "zod";
 import type { DriverRegistry, DriverTypes } from "./driver.registry.js";
 
-// Catalog of manifests: every *.json in `dir`, loaded and checked at startup.
-// A manifest that fails to parse, repeats a key, names an unknown driver or
-// has an invalid connection schema is logged and skipped.
+/**
+ * Catalog of manifests: every *.json in `dir`, loaded and checked at startup.
+ * A manifest that fails to parse, repeats a key, names an unknown driver or
+ * has an invalid connection schema is logged and skipped.
+ */
 export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
   private readonly logger: Logger;
   private readonly manifests: Map<string, M>;
@@ -49,7 +51,7 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
     return m;
   }
 
-  // Adds the manifest at `where` to `manifests`, or returns why it can't.
+  /** Adds the manifest at `where` to `manifests`, or returns why it can't. */
   private load(where: string, schema: z.ZodType<M>, drivers: DriverRegistry<D>, manifests: Map<string, M>) {
     let raw: unknown;
     try {
@@ -71,12 +73,12 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
   }
 }
 
-// The manifest's driver for a capability, if it has one.
+/** The manifest's driver for a capability, if it has one. */
 export function driverOf(manifest: BaseManifest, type: PropertyKey): ManifestDriver | undefined {
   return (manifest as unknown as Record<PropertyKey, ManifestDriver | undefined>)[type];
 }
 
-// Names of the `connection` properties marked `secret: true`.
+/** Names of the `connection` properties marked `secret: true`. */
 export function secretFields(manifest: BaseManifest): string[] {
   const properties = (manifest.connection.properties ?? {}) as Record<string, { secret?: boolean }>;
   return Object.keys(properties).filter((k) => properties[k]?.secret === true);

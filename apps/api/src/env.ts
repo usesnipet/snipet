@@ -3,8 +3,10 @@ import { resolve } from "node:path";
 import { parseEnv } from "node:util";
 import z from "zod";
 
-// Monorepo root .env (same depth from src/ and dist/). Vars already set in
-// the environment win; the file is optional (e.g. in production).
+/**
+ * Monorepo root .env (same depth from src/ and dist/). Vars already set in
+ * the environment win; the file is optional (e.g. in production).
+ */
 const rootEnvFile = resolve(import.meta.dirname, "../../../.env");
 if (existsSync(rootEnvFile)) {
   // Not process.loadEnvFile: it writes the real process.env, which jest sandboxes.
@@ -117,6 +119,19 @@ const envSchema = z
               .map((o) => o.trim())
               .filter(Boolean),
       ),
+
+    // Express "trust proxy": set behind a reverse proxy so the client IP (used by
+    // rate limits) comes from X-Forwarded-For. A hop count, "true", or a list of
+    // proxy addresses/subnets. Unset trusts none.
+    TRUST_PROXY: z
+      .string()
+      .optional()
+      .transform((v) => (v === "true" ? true : v === "false" ? false : v && /^\d+$/.test(v) ? Number(v) : v)),
+
+    // New anonymous end users one IP can create per hour (refreshes don't count).
+    ANONYMOUS_SIGNUPS_PER_IP_PER_HOUR: z.coerce.number().int().positive().default(30),
+    // Agent runs one app end user (app token) can start per minute.
+    AGENT_RUNS_PER_END_USER_PER_MINUTE: z.coerce.number().int().positive().default(10),
 
     // Set on release builds.
     APP_VERSION: z.string().default("dev"),

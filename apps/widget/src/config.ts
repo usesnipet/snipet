@@ -1,75 +1,34 @@
 import { useSyncExternalStore } from "react";
 
-export type Theme = "light" | "dark" | "auto";
-export type Size = "sm" | "md" | "lg";
+import type { Size, WidgetConfig } from "./types";
 
-export type WidgetConfig = {
-  apiUrl: string;
-  /** Agent the widget chats with. */
-  agentId?: string;
-  /** End-user app token, from POST /apps/issue-token on the host's backend. */
-  token?: string;
-  /** Called when the token is rejected (e.g. expired); resolve a fresh one, or null to give up. */
-  getToken?: () => Promise<string | null | undefined>;
-  theme: Theme;
-  size: Size;
-  /** Corner radius of the panel, in px. */
-  radius: number;
-  /** Any CSS color. Unset keeps the theme's default. */
-  primaryColor?: string;
-  backgroundColor?: string;
-  textColor?: string;
-  /** Stylesheet loaded inside the shadow root, after the base styles. */
-  cssUrl?: string;
-  /** Raw CSS injected inside the shadow root, after the base styles. */
-  css?: string;
-  open: boolean;
-  enabled: boolean;
-};
-
-const THEMES: Theme[] = ["light", "dark", "auto"];
-const SIZES: Size[] = ["sm", "md", "lg"];
+export type { WidgetConfig } from "./types";
 
 const SIZE_SCALE: Record<Size, number> = { sm: 0.875, md: 1, lg: 1.125 };
 
-const oneOf = <T extends string>(value: string | undefined, options: T[], fallback: T): T =>
-  options.includes(value as T) ? (value as T) : fallback;
-
-// `data-open` and `data-open="true"` both mean true; only "false" turns it off.
-const bool = (value: string | undefined, fallback: boolean) =>
-  value === undefined ? fallback : value !== "false";
-
-const number = (value: string | undefined, fallback: number) => {
-  const parsed = Number(value);
-  return value !== undefined && value !== "" && Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+export const DEFAULTS: WidgetConfig = {
+  apiUrl: "",
+  theme: "light",
+  size: "md",
+  radius: 16,
+  open: false,
+  enabled: true,
 };
 
-/** Reads the options from the embedding <script>'s data-* attributes. */
-export function parseConfig(data: DOMStringMap): WidgetConfig {
-  return {
-    apiUrl: data.apiUrl ?? "",
-    agentId: data.agentId,
-    token: data.token,
-    theme: oneOf(data.theme, THEMES, "light"),
-    size: oneOf(data.size, SIZES, "md"),
-    radius: number(data.radius, 16),
-    primaryColor: data.primaryColor,
-    backgroundColor: data.backgroundColor,
-    textColor: data.textColor,
-    cssUrl: data.cssUrl,
-    open: bool(data.open, false),
-    enabled: bool(data.enabled, true),
-  };
-}
-
-let state: WidgetConfig = parseConfig({});
+let state = DEFAULTS;
 const listeners = new Set<() => void>();
 
 export const widgetStore = {
   get: () => state,
   set: (patch: Partial<WidgetConfig>) => {
+    // Wrappers re-apply their whole config on every render; skip the no-ops.
+    if (Object.entries(patch).every(([key, value]) => state[key as keyof WidgetConfig] === value)) return;
     state = { ...state, ...patch };
     listeners.forEach((listener) => listener());
+  },
+  /** Back to DEFAULTS without notifying: only for destroy(), once nothing listens. */
+  reset: () => {
+    state = DEFAULTS;
   },
   subscribe: (listener: () => void) => {
     listeners.add(listener);

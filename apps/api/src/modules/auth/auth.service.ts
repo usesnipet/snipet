@@ -15,8 +15,10 @@ import { RefreshToken } from "./refresh-token.entity.js";
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
-// Compared against when the user doesn't exist, so a missing username takes
-// as long as a wrong password.
+/**
+ * Compared against when the user doesn't exist, so a missing username takes
+ * as long as a wrong password.
+ */
 const DUMMY_HASH = "$2b$10$iAUNUSSZXAaWjiua2JVePebu/Y89bK0ftvKbhFFWk/jjafAjD5.ee";
 
 @Injectable()
@@ -34,7 +36,7 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
-  // Trades a valid refresh token for a new pair and revokes the old one.
+  /** Trades a valid refresh token for a new pair and revokes the old one. */
   async refresh(token: string): Promise<AuthResponse> {
     const record = await this.refreshTokens.findOneBy({ hash: hashToken(token), revokedAt: IsNull() });
     if (!record || record.expiresAt < new Date()) throw new UnauthorizedException("invalid refresh token");
@@ -49,7 +51,7 @@ export class AuthService {
     return this.issueTokens(await this.users.findById(record.userId));
   }
 
-  // Idempotent: an unknown or already revoked token is not an error.
+  /** Revokes the refresh token. Idempotent: an unknown or already revoked token is not an error. */
   async logout(token: string): Promise<void> {
     await this.refreshTokens.update({ hash: hashToken(token), revokedAt: IsNull() }, { revokedAt: new Date() });
   }
@@ -58,8 +60,10 @@ export class AuthService {
     return this.users.findById(userId);
   }
 
-  // Needs the current password, and revokes every refresh token so sessions
-  // opened before the change don't outlive it.
+  /**
+   * Changes the user's own password after checking the current one, and revokes
+   * every refresh token so sessions opened before the change don't outlive it.
+   */
   async changeOwnPassword(userId: string, dto: ChangeOwnPassword): Promise<void> {
     const user = await this.users.findByIdWithPassword(userId);
     if (!user || !(await compare(dto.currentPassword, user.password))) {

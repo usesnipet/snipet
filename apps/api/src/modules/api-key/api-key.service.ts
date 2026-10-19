@@ -11,7 +11,7 @@ import type { ApiKeyWithSecret } from "@snipet/shared";
 
 const hashKey = (key: string) => createHash("sha256").update(key).digest("hex");
 
-// "sn_" + 32 random bytes. The key has full entropy, so a fast hash is enough.
+/** "sn_" + 32 random bytes. The key has full entropy, so a fast hash is enough. */
 function generateKey() {
   const key = `sn_${randomBytes(32).toString("base64url")}`;
   return { key, keyId: key.slice(0, 10), hash: hashKey(key) };
@@ -30,7 +30,7 @@ export class ApiKeyService extends CrudService<ApiKey> {
     return { ...apiKey, key };
   }
 
-  // Swaps in a new key; the previous one stops working immediately.
+  /** Swaps in a new key; the previous one stops working immediately. */
   async roll(id: string): Promise<ApiKeyWithSecret> {
     const { key, ...generated } = generateKey();
     await super.updateById(id, generated);

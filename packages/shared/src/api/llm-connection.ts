@@ -4,15 +4,17 @@ import { jsonObjectSchema } from "../schemas/json.js";
 
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-// A named, configured connection to an LLM.
+/** A named, configured connection to an LLM. */
 export const llmConnectionSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   llmKey: z.string(),
   config: jsonObjectSchema,
   enabled: z.boolean(),
-  // The connection used for its llm when a call names none. Every llm
-  // with connections has exactly one default.
+  /**
+   * The connection used for its llm when a call names none. Every llm
+   * with connections has exactly one default.
+   */
   default: z.boolean(),
   lastSyncedAt: z.coerce.date().nullable(),
   lastSyncedError: z.string().nullable(),
