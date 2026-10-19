@@ -1,4 +1,5 @@
 import { FormInput } from "@/components/form/input";
+import { FormSwitch } from "@/components/form/switch";
 import { FormTextarea } from "@/components/form/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +38,11 @@ export function AppFormDialog({ app, close }: AppFormDialogProps) {
 
   const form = useForm<AppFormInput, unknown, CreateApp>({
     resolver: zodResolver(appFormSchema),
-    defaultValues: { name: app?.name ?? "", allowedOrigins: app?.allowedOrigins.join("\n") ?? "" },
+    defaultValues: {
+      name: app?.name ?? "",
+      allowedOrigins: app?.allowedOrigins.join("\n") ?? "",
+      allowAnonymous: app?.allowAnonymous ?? false,
+    },
   });
 
   const { mutateAsync: create, isPending: isCreating } = useCreateApp();
@@ -69,6 +74,7 @@ export function AppFormDialog({ app, close }: AppFormDialogProps) {
             placeholder={"https://app.example.com\nhttps://staging.example.com"}
             rows={4}
           />
+          <FormSwitch name="allowAnonymous" label="Allow anonymous users" />
         </form>
       </Form>
       <DialogFooter>

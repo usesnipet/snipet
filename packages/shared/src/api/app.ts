@@ -11,6 +11,8 @@ export const appSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   allowedOrigins: z.array(z.string()),
+  /** Lets end users start sessions without an app-issued token. */
+  allowAnonymous: z.boolean(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -21,6 +23,7 @@ export const paginatedAppSchema = paginatedSchema(appSchema);
 export const createAppSchema = z.object({
   name: z.string().min(1).max(255),
   allowedOrigins: z.array(originSchema).optional(),
+  allowAnonymous: z.boolean().optional(),
 });
 export type CreateApp = z.infer<typeof createAppSchema>;
 
