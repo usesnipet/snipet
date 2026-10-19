@@ -51,7 +51,6 @@ if (!document.querySelector(HOST_TAG)) {
     signInAnonymously().catch(() => {}); // Stays signed out: the panel says so.
   };
 
-  // Getters: apiUrl and token can change after load through configure().
   configureHttp({
     get baseUrl() {
       return widgetStore.get().apiUrl;

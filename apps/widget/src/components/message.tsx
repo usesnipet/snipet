@@ -8,6 +8,7 @@ import type { Components } from "react-markdown";
 // (no rehype-raw), and links open outside the host page.
 const remarkPlugins = [remarkGfm, remarkBreaks];
 const components: Components = {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   a: ({ node: _, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
 };
 
