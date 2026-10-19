@@ -53,9 +53,12 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo run build --filter=@snipet/widget
-      - run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
-        working-directory: apps/widget
+      # Before the build: the loader bakes its version into the widget's CDN URL.
+      - run: pnpm -r exec npm pkg set version="${GITHUB_REF_NAME#v}"
+      - run: pnpm turbo run build --filter=@snipet/widget --filter=@snipet/react --filter=@snipet/angular
       # pnpm pack rewrites workspace:* versions; trusted publishing needs npm >= 11.5.1.
-      - run: pnpm --filter @snipet/widget pack --pack-destination "$RUNNER_TEMP"
-      - run: npx -y npm@11 publish "$RUNNER_TEMP"/snipet-widget-*.tgz
+      - run: |
+          for pkg in widget react angular; do
+            pnpm --filter "@snipet/$pkg" pack --pack-destination "$RUNNER_TEMP"
+            npx -y npm@11 publish "$RUNNER_TEMP"/snipet-$pkg-*.tgz
+          done
