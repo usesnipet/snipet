@@ -4,7 +4,7 @@
  *
  * 1. CSS variables, from the host page:   snipet-widget { --sw-accent: tomato; }
  * 2. ::part(), from the host page:        snipet-widget::part(launcher) { ... }
- * 3. Custom CSS inside the shadow root (data-css-url or SnipetWidget.configure({ css })),
+ * 3. Custom CSS inside the shadow root (cssUrl or css in SnipetWidget.init/configure),
  *    which loads after this file and can restyle any .sw-* class.
  *
  * Sizes are px * --sw-scale, never rem: rem resolves against the host page's
@@ -17,7 +17,7 @@
   --sw-radius: 16px;
   --sw-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  /* light-dark() picks a side from color-scheme, set by data-theme. */
+  /* light-dark() picks a side from color-scheme, set by the theme option. */
   --sw-surface: light-dark(oklch(0.959 0.007 115.707), oklch(0.208 0.009 255.618));
   --sw-text: light-dark(oklch(0.208 0.009 255.618), oklch(0.959 0.007 115.707));
   --sw-muted: color-mix(in oklab, var(--sw-text) 55%, transparent);

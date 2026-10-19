@@ -1,39 +1,23 @@
 import { configureHttp } from "@snipet/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 
 import { anonymousToken } from "./anonymous";
-import { applyHostStyle, parseConfig, tokenOwner, useWidgetConfig, widgetStore } from "./config";
+import { applyHostStyle, tokenOwner, useWidgetConfig, widgetStore } from "./config";
+import { emit, on } from "./events";
 import css from "./index.css?inline";
 import { Widget } from "./widget";
 
-import type { WidgetConfig } from "./config";
+import type { WidgetApi, WidgetInit } from "./types";
 
 const HOST_TAG = "snipet-widget";
 
-const api = {
-  open: () => widgetStore.set({ open: true }),
-  close: () => widgetStore.set({ open: false }),
-  toggle: () => widgetStore.set({ open: !widgetStore.get().open }),
-  enable: () => widgetStore.set({ enabled: true }),
-  disable: () => widgetStore.set({ enabled: false, open: false }),
-  configure: (patch: Partial<WidgetConfig>) => widgetStore.set(patch),
-  setToken: (token: string | null) => widgetStore.set({ token: token ?? undefined }),
-};
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-declare global {
-  interface Window {
-    SnipetWidget?: typeof api;
-  }
-}
+/** Undoes the current init(); undefined while the widget isn't mounted. */
+let teardown: (() => void) | undefined;
 
-// Guard against the script being included twice on the same page.
-if (!document.querySelector(HOST_TAG)) {
-  // currentScript is the embed tag; module scripts (the dev page) don't get one, so they mark it instead.
-  const script = document.currentScript ?? document.querySelector<HTMLScriptElement>("script[data-snipet-widget]");
-  widgetStore.set(parseConfig((script as HTMLScriptElement | null)?.dataset ?? {}));
-  window.SnipetWidget = api;
-
+function mount() {
   // Anonymous mode: an appId and no token from the host. The last anonymous token
   // tells a 401 on it (renew it here) from one on the host's token (ask the host).
   let anonymous: string | undefined;
@@ -48,7 +32,8 @@ if (!document.querySelector(HOST_TAG)) {
     const { appId, token, getToken } = widgetStore.get();
     if (!appId || token || getToken || anonymousFor === appId) return;
     anonymousFor = appId;
-    signInAnonymously().catch(() => {}); // Stays signed out: the panel says so.
+    // Stays signed out: the panel says so.
+    signInAnonymously().catch((error) => emit("error", { message: errorMessage(error) }));
   };
 
   configureHttp({
@@ -66,17 +51,32 @@ if (!document.querySelector(HOST_TAG)) {
     },
   });
 
+  // Every failed request reaches the host as an "error" event; the stream's errors come from Chat.
+  const onError = (error: unknown) => emit("error", { message: errorMessage(error) });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+    queryCache: new QueryCache({ onError }),
+    mutationCache: new MutationCache({ onError }),
+  });
+
   // Another end user's token: drop what the last one loaded (before React
   // re-renders, as this listener subscribed first) and remount the chat.
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   let owner = tokenOwner(widgetStore.get().token);
-  widgetStore.subscribe(() => {
-    const next = tokenOwner(widgetStore.get().token);
-    if (next !== owner) queryClient.clear();
-    owner = next;
-  });
+  let open = widgetStore.get().open;
+  const unsubscribe = [
+    widgetStore.subscribe(() => {
+      const next = tokenOwner(widgetStore.get().token);
+      if (next !== owner) queryClient.clear();
+      owner = next;
+    }),
+    widgetStore.subscribe(() => {
+      if (widgetStore.get().open === open) return;
+      open = widgetStore.get().open;
+      emit(open ? "open" : "close");
+    }),
+    widgetStore.subscribe(startAnonymous),
+  ];
   const Root = () => <Widget key={tokenOwner(useWidgetConfig().token)} />;
-  widgetStore.subscribe(startAnonymous);
   startAnonymous();
 
   // A custom tag (not a <div>) so the host page's element selectors don't match it;
@@ -84,7 +84,7 @@ if (!document.querySelector(HOST_TAG)) {
   const host = document.createElement(HOST_TAG);
   host.style.all = "initial";
   applyHostStyle(host, widgetStore.get());
-  widgetStore.subscribe(() => applyHostStyle(host, widgetStore.get()));
+  unsubscribe.push(widgetStore.subscribe(() => applyHostStyle(host, widgetStore.get())));
   document.body.appendChild(host);
 
   // Shadow DOM isolates the widget's styles from the host page, in both directions.
@@ -94,9 +94,42 @@ if (!document.querySelector(HOST_TAG)) {
   const container = document.createElement("div");
   shadow.append(style, container);
 
-  createRoot(container).render(
+  const root = createRoot(container);
+  root.render(
     <QueryClientProvider client={queryClient}>
       <Root />
     </QueryClientProvider>,
   );
+
+  return () => {
+    unsubscribe.forEach((off) => off());
+    root.unmount();
+    queryClient.clear();
+    host.remove();
+  };
 }
+
+const api: WidgetApi = {
+  init: (config: WidgetInit) => {
+    if (!config?.apiUrl) throw new Error("SnipetWidget.init: apiUrl is required");
+    widgetStore.set(config);
+    teardown ??= mount();
+  },
+  destroy: () => {
+    teardown?.();
+    teardown = undefined;
+    widgetStore.reset();
+  },
+  open: () => widgetStore.set({ open: true }),
+  close: () => widgetStore.set({ open: false }),
+  toggle: () => widgetStore.set({ open: !widgetStore.get().open }),
+  enable: () => widgetStore.set({ enabled: true }),
+  disable: () => widgetStore.set({ enabled: false, open: false }),
+  configure: (patch) => widgetStore.set(patch),
+  setToken: (token) => widgetStore.set({ token: token ?? undefined }),
+  on,
+};
+
+// Loading the script only exposes the API; nothing mounts until init().
+// A second copy of the script keeps the first one's API (and its mounted widget).
+window.SnipetWidget ??= api;

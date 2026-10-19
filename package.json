@@ -11,7 +11,8 @@
     "migration:create": "pnpm --filter @snipet/api migration:create",
     "migration:run": "pnpm --filter @snipet/api migration:run",
     "migration:revert": "pnpm --filter @snipet/api migration:revert",
-    "migration:show": "pnpm --filter @snipet/api migration:show"
+    "migration:show": "pnpm --filter @snipet/api migration:show",
+    "release": "turbo run build --filter=@snipet/widget --filter=@snipet/react --filter=@snipet/angular && pnpm -r publish"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

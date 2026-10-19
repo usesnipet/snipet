@@ -1,6 +1,7 @@
 import { useLatestRun, useRunStream, useSessionMessages, useStartRun } from "@snipet/client";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { emit } from "../events";
 import { Composer } from "./composer";
 import { Message } from "./message";
 
@@ -25,6 +26,7 @@ export function Chat({
   const start = useStartRun();
   const [pending, setPending] = useState<PendingInput | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const emitted = useRef(new Set<number>());
 
   const { reset, follow } = stream;
   useEffect(() => reset(), [sessionId, reset]);
@@ -35,6 +37,21 @@ export function Chat({
     if (!run || run.status !== "running" || stream.runId === run.id || !history.data) return;
     follow(run, history.data.at(-1)?.id ?? 0);
   }, [run, stream.runId, history.data, follow]);
+
+  // Stream messages are the live ones (history is already known): each reaches the host once.
+  useEffect(() => {
+    for (const message of stream.messages) {
+      if (emitted.current.has(message.id) || (message.role !== "user" && message.role !== "assistant")) continue;
+      emitted.current.add(message.id);
+      const text = textOf(message);
+      if (text) emit("message", { role: message.role, text, sessionId: message.sessionId });
+    }
+  }, [stream.messages]);
+
+  // Request errors are emitted by the QueryClient's caches (see main.tsx).
+  useEffect(() => {
+    if (stream.error) emit("error", { message: stream.error.message });
+  }, [stream.error]);
 
   const messages = useMemo(() => {
     const byId = new Map<number, AgentMessage>();

@@ -14,6 +14,8 @@
       <button onclick="SnipetWidget.configure({ theme: 'light' })">Light</button>
       <button onclick="SnipetWidget.disable()">Disable</button>
       <button onclick="SnipetWidget.enable()">Enable</button>
+      <button onclick="SnipetWidget.destroy()">Destroy</button>
+      <button onclick="SnipetWidget.init({ apiUrl: 'http://localhost:8852' })">Init</button>
     </p>
     <form id="auth" style="margin-top: 20px;">
       <input name="appId" placeholder="App id" size="36" />
@@ -21,18 +23,14 @@
       <input name="agentId" placeholder="Agent id" size="36" />
       <button type="submit">Apply</button>
     </form>
-    <!-- data-snipet-widget marks the tag for dev only; the real embed is found via document.currentScript. -->
-    <script
-      type="module"
-      src="/src/main.tsx"
-      data-snipet-widget
-      data-api-url="http://localhost:8852"
-      data-theme="auto"
-      data-size="lg"
-      data-radius="16"
-    ></script>
+    <script type="module" src="/src/main.tsx"></script>
     <!-- After the widget (module scripts run in order), so SnipetWidget exists. -->
     <script type="module">
+      SnipetWidget.init({ apiUrl: "http://localhost:8852", theme: "auto", size: "lg", radius: 16 });
+      for (const event of ["open", "close", "message", "error"]) {
+        SnipetWidget.on(event, (payload) => console.log("[snipet]", event, payload));
+      }
+
       const TOKEN_KEY = "@snipet/access-token";
       const APP_ID_KEY = "@snipet/app-id";
       const AGENT_KEY = "@snipet/agent-id";

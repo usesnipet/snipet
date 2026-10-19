@@ -1,7 +1,7 @@
 {
   "name": "@snipet/widget",
   "version": "0.0.0",
-  "description": "Snipet chat widget, one script tag on any site.",
+  "description": "Snipet chat widget: a script tag on any site, or the loader for framework wrappers.",
   "type": "module",
   "repository": {
     "type": "git",
@@ -11,14 +11,24 @@
   "files": [
     "dist"
   ],
+  "main": "dist/loader.js",
+  "types": "dist/loader.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/loader.d.ts",
+      "default": "./dist/loader.js"
+    },
+    "./widget.js": "./dist/widget.js"
+  },
   "unpkg": "dist/widget.js",
+  "sideEffects": false,
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc -b",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --mode loader && tsc -p tsconfig.lib.json",
     "preview": "vite preview"
   },
   "devDependencies": {
@@ -27,13 +37,12 @@
     "@tanstack/react-query": "^5.104.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
+    "dompurify": "^3.4.17",
     "lucide-react": "^1.26.0",
+    "marked": "^18.0.14",
+    "preact": "^11.0.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-markdown": "^10.1.0",
-    "remark-breaks": "^4.0.0",
-    "remark-gfm": "^4.0.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "zod": "^4.6.5"

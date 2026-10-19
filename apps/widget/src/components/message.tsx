@@ -1,28 +1,36 @@
-import Markdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
-import remarkGfm from "remark-gfm";
+import DOMPurify from "dompurify";
+import { Marked } from "marked";
+import { useMemo } from "react";
 
-import type { Components } from "react-markdown";
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-// Same plugins as the web app's markdown. Raw HTML in model output stays text
-// (no rehype-raw), and links open outside the host page.
-const remarkPlugins = [remarkGfm, remarkBreaks];
-const components: Components = {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  a: ({ node: _, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
-};
+// GFM + single newlines as <br>, like the web app's markdown. Raw HTML in model output stays text.
+const marked = new Marked({
+  gfm: true,
+  breaks: true,
+  async: false,
+  renderer: { html: ({ text }) => escapeHtml(text) },
+});
+
+// Links in model output open outside the host page.
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  if (node.tagName !== "A") return;
+  node.setAttribute("target", "_blank");
+  node.setAttribute("rel", "noopener noreferrer");
+});
+
+// Model output is untrusted: DOMPurify also catches what escaping doesn't, like javascript: link URLs.
+const toHtml = (markdown: string) => DOMPurify.sanitize(marked.parse(markdown) as string);
 
 // Assistant replies render as markdown; user input stays plain text.
 export function Message({ role, children }: { role: "user" | "assistant"; children: string }) {
-  return (
+  const html = useMemo(() => (role === "assistant" ? toHtml(children) : ""), [role, children]);
+  return role === "assistant" ? (
+    <div className={`sw-message sw-${role}`} part={`message ${role}`} dangerouslySetInnerHTML={{ __html: html }} />
+  ) : (
     <div className={`sw-message sw-${role}`} part={`message ${role}`}>
-      {role === "assistant" ? (
-        <Markdown remarkPlugins={remarkPlugins} components={components}>
-          {children}
-        </Markdown>
-      ) : (
-        children
-      )}
+      {children}
     </div>
   );
 }
