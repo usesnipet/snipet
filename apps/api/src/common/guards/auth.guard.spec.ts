@@ -18,7 +18,7 @@ import type { AppService } from "#src/modules/app/app.service.js";
 const jwt = new JwtService({ secret: "test" });
 const apiKeys = { verify: (key: string) => Promise.resolve({ id: key, appId: "app-1" }) } as unknown as ApiKeyService;
 const allowedOrigins = ["https://shop.com"];
-const apps = { findById: () => Promise.resolve({ id: "app-1", allowedOrigins }) } as unknown as AppService;
+const apps = { findAllowedOrigins: () => Promise.resolve(allowedOrigins) } as unknown as AppService;
 const guard = new AuthGuard(
   new Reflector(),
   new UserStrategy(jwt),

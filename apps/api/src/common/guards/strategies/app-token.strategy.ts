@@ -32,12 +32,10 @@ export class AppTokenStrategy implements AuthStrategyHandler<"appToken"> {
 
     const origin = request.headers.origin;
     if (origin) {
-      // ponytail: one DB read per browser request, cache allowedOrigins by app id if it shows up in latency
-      const app = await this.apps.findById(payload.app.id).catch(() => null);
-      if (!app) throw new UnauthorizedException("app no longer exists");
-      if (app.allowedOrigins.length && !app.allowedOrigins.includes(origin)) {
-        throw new ForbiddenException("origin not allowed");
-      }
+      // Caught outside the cache, so a failed lookup (deleted app, DB down) is never cached.
+      const allowed = await this.apps.findAllowedOrigins(payload.app.id).catch(() => null);
+      if (!allowed) throw new UnauthorizedException("app no longer exists");
+      if (allowed.length && !allowed.includes(origin)) throw new ForbiddenException("origin not allowed");
     }
     return { type: "appToken", token: payload };
   }

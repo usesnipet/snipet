@@ -13,6 +13,8 @@ import { anonymousHasOrigins } from "@snipet/shared";
 import { createHmac, randomUUID } from "node:crypto";
 import { Repository } from "typeorm";
 
+import { LayeredCache } from "#src/infra/cache/layered-cache.service.js";
+
 import { App } from "./app.entity.js";
 
 import type {
@@ -38,6 +40,9 @@ export const APP_TOKEN_SECRET = createHmac("sha256", env.JWT_SECRET).update("app
 const ANONYMOUS_TOKEN_TTL_SECONDS = 60 * 60; // 1 hour
 const ANONYMOUS_REFRESH_TTL_SECONDS = 90 * 24 * 60 * 60; // 90 days, renewed on every refresh
 
+/** Cache key of an app's allowedOrigins, cleared whenever the app changes. */
+const originsKey = (id: string) => `app:${id}:origins`;
+
 /** What an anonymous refresh token carries. */
 type AnonymousRefreshPayload = { sub: string; app: { id: string } };
 
@@ -46,8 +51,19 @@ export class AppService extends CrudService<App> {
   constructor(
     @InjectRepository(App) repo: Repository<App>,
     private readonly jwt: JwtService,
+    private readonly cache: LayeredCache,
   ) {
     super(repo);
+  }
+
+  /** The app's allowedOrigins, cached: checked on every browser request with an app token. */
+  findAllowedOrigins(id: string): Promise<string[]> {
+    return this.cache.run(originsKey(id), async () => (await this.findById(id)).allowedOrigins);
+  }
+
+  override async deleteById(id: string): Promise<void> {
+    await super.deleteById(id);
+    await this.cache.del(originsKey(id));
   }
 
   override async updateById(id: string, dto: UpdateApp): Promise<void> {
@@ -58,7 +74,8 @@ export class AppService extends CrudService<App> {
     ) {
       throw new BadRequestException("allowedOrigins is required when allowAnonymous is on");
     }
-    return super.updateById(id, dto);
+    await super.updateById(id, dto);
+    await this.cache.del(originsKey(id));
   }
 
   /** Signs a token for one of the API key's app's end users. */

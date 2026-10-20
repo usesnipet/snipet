@@ -2,6 +2,7 @@ import { JwtService } from "@nestjs/jwt";
 import { createAppSchema, issueAppTokenSchema } from "@snipet/shared";
 
 import { env } from "#src/env.js";
+import { LayeredCache, MemoryStore } from "#src/infra/cache/index.js";
 
 import { ANONYMOUS_REFRESH_AUDIENCE, APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET, AppService } from "./app.service.js";
 
@@ -9,10 +10,13 @@ import type { AppTokenPayload } from "@snipet/shared";
 import type { Repository } from "typeorm";
 import type { App } from "./app.entity.js";
 
+/** A real in-memory cache, fresh per service so tests don't share entries. */
+const memoryCache = () => new LayeredCache([new MemoryStore({ sweepMs: 0 })]);
+
 function setup() {
   // Same registration as AuthModule, so the access-token secret is the default.
   const jwt = new JwtService({ secret: env.JWT_SECRET });
-  const service = new AppService({} as Repository<App>, jwt);
+  const service = new AppService({} as Repository<App>, jwt, memoryCache());
   service.findById = (id: string) => Promise.resolve({ id, name: "Shop" } as App);
   return { jwt, service };
 }
@@ -75,7 +79,7 @@ describe("AppService.issueAnonymousToken", () => {
       findOneBy: ({ id, allowAnonymous }: Partial<App>) =>
         Promise.resolve(id === stored.id && allowAnonymous === stored.allowAnonymous ? stored : null),
     } as unknown as Repository<App>;
-    return { jwt, service: new AppService(repo, jwt) };
+    return { jwt, service: new AppService(repo, jwt, memoryCache()) };
   }
 
   const verifyAccess = (jwt: JwtService, token: string) =>
@@ -151,5 +155,39 @@ describe("AppService allowAnonymous rule", () => {
     await expect(service.updateById(appId, { allowAnonymous: true })).rejects.toThrow("allowedOrigins is required");
     stored.allowedOrigins = [origin];
     await expect(service.updateById(appId, { allowAnonymous: true })).resolves.toBeUndefined();
+  });
+});
+
+describe("AppService.findAllowedOrigins", () => {
+  it("caches the origins until the app is updated", async () => {
+    const { service } = setup();
+    let origins = ["https://shop.com"];
+    let reads = 0;
+    service.findById = (id: string) => {
+      reads++;
+      return Promise.resolve({ id, name: "Shop", allowedOrigins: origins } as App);
+    };
+    Object.assign(service, { repo: { update: () => Promise.resolve({ affected: 1 }) } });
+
+    expect(await service.findAllowedOrigins(appId)).toEqual(["https://shop.com"]);
+    expect(await service.findAllowedOrigins(appId)).toEqual(["https://shop.com"]);
+    expect(reads).toBe(1);
+
+    origins = ["https://new.shop.com"];
+    await service.updateById(appId, { allowedOrigins: origins });
+    expect(await service.findAllowedOrigins(appId)).toEqual(["https://new.shop.com"]);
+  });
+
+  it("doesn't cache a failed lookup", async () => {
+    const { service } = setup();
+    let fail = true;
+    service.findById = (id: string) =>
+      fail
+        ? Promise.reject(new Error("db down"))
+        : Promise.resolve({ id, allowedOrigins: ["https://shop.com"] } as App);
+
+    await expect(service.findAllowedOrigins(appId)).rejects.toThrow("db down");
+    fail = false;
+    expect(await service.findAllowedOrigins(appId)).toEqual(["https://shop.com"]);
   });
 });
