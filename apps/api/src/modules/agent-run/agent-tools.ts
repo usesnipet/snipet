@@ -14,6 +14,8 @@ export type DeniedAction = { action: string; pluginConnectionId: string };
 export type AgentToolSet = {
   tools?: LlmTool[];
   denied: DeniedAction[];
+  /** Instructions of the plugin connections with at least one granted action. */
+  instructions: { name: string; text: string }[];
   has(name: string): boolean;
   /** Never throws: an unknown tool or a failed action is an error result. */
   call(call: LlmToolCallPart): Promise<ActionResult>;
@@ -41,17 +43,20 @@ export class AgentTools {
     };
 
     const pluginGrants = new Map((agent.pluginConnections ?? []).map((g) => [g.pluginConnectionId, g]));
+    const used = new Set<string>();
     for (const action of await this.plugins.findActions([...pluginGrants.keys()])) {
       if (!isGranted(action.name, pluginGrants.get(action.pluginConnectionId)!)) {
         denied.push({ action: action.name, pluginConnectionId: action.pluginConnectionId });
         continue;
       }
+      used.add(action.pluginConnectionId);
       add(action.name, action.description, action.inputSchema, (args) => this.plugins.executeAction(action.id, args));
     }
 
     return {
       tools: tools.length ? tools : undefined,
       denied,
+      instructions: await this.plugins.findInstructions([...used]),
       has: (name) => executors.has(name),
       call: async (call) => {
         const execute = executors.get(call.name);

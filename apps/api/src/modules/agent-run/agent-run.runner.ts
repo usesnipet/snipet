@@ -100,6 +100,9 @@ export class AgentRunner {
       if (agent.systemPrompt) system.push({ role: "system", parts: [{ type: "text", text: agent.systemPrompt }] });
       const toolSet = await this.agentTools.resolve(agent);
       const { tools } = toolSet;
+      for (const { name, text } of toolSet.instructions) {
+        system.push({ role: "system", parts: [{ type: "text", text: `<plugin name="${name}">\n${text}\n</plugin>` }] });
+      }
       const targets = agent.llms.map((llm) => ({
         model: llm.model,
         connectionId: llm.connectionId ?? undefined,
@@ -113,7 +116,7 @@ export class AgentRunner {
         llms: targets,
         pluginGrants: agent.pluginConnections,
       });
-      d.update("tools", { available: tools ?? [], denied: toolSet.denied });
+      d.update("tools", { available: tools ?? [], denied: toolSet.denied, instructions: toolSet.instructions });
 
       while (turns < agent.maxTurns) {
         turns++;

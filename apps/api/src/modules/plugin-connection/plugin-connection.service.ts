@@ -54,6 +54,23 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   /**
+   * The instructions of the enabled connections among connectionIds, the
+   * user's custom ones over the driver's, ordered by id so prompts stay cacheable.
+   */
+  async findInstructions(connectionIds: string[]): Promise<{ name: string; text: string }[]> {
+    if (!connectionIds.length) return [];
+    const conns = await this.repo.find({
+      select: { id: true, name: true, instructions: true, customInstructions: true },
+      where: { id: In(connectionIds), enabled: true },
+      order: { id: "ASC" },
+    });
+    return conns.flatMap(({ name, customInstructions, instructions }) => {
+      const text = customInstructions?.trim() || instructions;
+      return text ? [{ name, text }] : [];
+    });
+  }
+
+  /**
    * Runs a synced action through its connection's driver. Failures the model
    * can act on (bad arguments, unreachable service) come back as an isError result.
    */

@@ -61,6 +61,7 @@ function setup(replies: (LlmMessage | Error)[]) {
       { id: "a2", name: "read_wiki", description: "", inputSchema: {}, pluginConnectionId: "p1" },
     ]),
     executeAction: jest.fn<Fn>().mockResolvedValue({ content: "answer", isError: false }),
+    findInstructions: jest.fn<Fn>().mockResolvedValue([]),
   };
 
   // The debug files written, by path.
@@ -107,6 +108,19 @@ describe("AgentRunner.run", () => {
     // read_wiki isn't in the plugin grant's allow.
     expect(tools.map((t) => t.name)).toEqual(["ask_question"]);
     expect(plugins.findActions).toHaveBeenCalledWith(["p1"]);
+  });
+
+  it("adds the instructions of the plugins with granted actions after the system prompt", async () => {
+    const { runner, llm, plugins } = setup([answer]);
+    plugins.findInstructions.mockResolvedValue([{ name: "Wiki", text: "search first" }]);
+    await runner.run(agent, run);
+
+    expect(plugins.findInstructions).toHaveBeenCalledWith(["p1"]);
+    const [{ messages }] = llm.stream.mock.calls[0] as unknown as [{ messages: LlmMessage[] }];
+    expect(messages.slice(1, 3).map((m) => m.parts)).toEqual([
+      [{ type: "text", text: "be brief" }],
+      [{ type: "text", text: '<plugin name="Wiki">\nsearch first\n</plugin>' }],
+    ]);
   });
 
   it("records the run in its debug files", async () => {

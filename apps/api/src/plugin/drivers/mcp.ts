@@ -5,19 +5,25 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import z from "zod";
 
 import type { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol";
-import type { Action, ActionDriver, ActionResult } from "../driver.js";
+import type { Action, ActionDriver, ActionResult, InstructionsDriver } from "../driver.js";
 const optionsSchema = z.strictObject({
   url: z.url({ protocol: /^https?$/ }),
   headers: z.record(z.string(), z.string()).optional(),
   timeout: z.number().int().min(1).default(10),
 });
-type McpActionOptions = z.infer<typeof optionsSchema>;
+type McpOptions = z.infer<typeof optionsSchema>;
 
-/** Actions are the tools of a remote MCP server. Only the http transport is supported. */
-export class McpActionDriver extends Driver(optionsSchema) implements ActionDriver<McpActionOptions> {
+/**
+ * Actions are the tools of a remote MCP server and instructions the ones it
+ * sends on initialize. Only the http transport is supported.
+ */
+export class McpDriver
+  extends Driver(optionsSchema)
+  implements ActionDriver<McpOptions>, InstructionsDriver<McpOptions>
+{
   readonly key = "mcp";
 
-  async listActions(_connectionId: string, options: McpActionOptions): Promise<Action[]> {
+  async listActions(_connectionId: string, options: McpOptions): Promise<Action[]> {
     return this.withSession(options, async (client, opts) => {
       const actions: Action[] = [];
       let cursor: string | undefined;
@@ -40,7 +46,7 @@ export class McpActionDriver extends Driver(optionsSchema) implements ActionDriv
     _connectionId: string,
     name: string,
     parameters: Record<string, unknown>,
-    options: McpActionOptions,
+    options: McpOptions,
   ): Promise<ActionResult> {
     return this.withSession(options, async (client, opts) => {
       const result = await client.callTool(
@@ -58,8 +64,12 @@ export class McpActionDriver extends Driver(optionsSchema) implements ActionDriv
     });
   }
 
+  getInstructions(_connectionId: string, options: McpOptions): Promise<string | undefined> {
+    return this.withSession(options, (client) => Promise.resolve(client.getInstructions()));
+  }
+
   private async withSession<T>(
-    options: McpActionOptions,
+    options: McpOptions,
     fn: (client: Client, opts: RequestOptions) => Promise<T>,
   ): Promise<T> {
     const transport = new StreamableHTTPClientTransport(new URL(options.url), {

@@ -8,5 +8,9 @@
   "actions": {
     "driver": "mcp",
     "options": { "url": "https://gitmcp.io/docs" }
+  },
+  "instructions": {
+    "driver": "mcp",
+    "options": { "url": "https://gitmcp.io/docs" }
   }
 }

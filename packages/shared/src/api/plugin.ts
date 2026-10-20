@@ -5,9 +5,14 @@ import { baseManifestSchema, driverSchema } from "../schemas/manifest.js";
 
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
+/** Longest plugin instructions put in a run's context, from the driver or the user. */
+export const MAX_PLUGIN_INSTRUCTIONS = 8000;
+
 /** The JSON manifest of a plugin. */
 export const pluginManifestSchema = baseManifestSchema.extend({
   actions: driverSchema.optional(),
+  /** How the agent should use the plugin, added to the system prompt of agents granted it. */
+  instructions: driverSchema.optional(),
   healthCheck: driverSchema.optional(),
 });
 export type PluginManifest = z.infer<typeof pluginManifestSchema>;
@@ -20,6 +25,10 @@ export const pluginConnectionSchema = z.object({
   pluginKey: z.string(),
   config: jsonObjectSchema,
   enabled: z.boolean(),
+  /** What the instructions driver returned on the last sync. */
+  instructions: z.string().nullable(),
+  /** Replaces `instructions` when set. */
+  customInstructions: z.string().nullable(),
   lastSyncedAt: z.coerce.date().nullable(),
   lastSyncedError: z.string().nullable(),
   createdAt: z.coerce.date(),
@@ -36,6 +45,7 @@ export const createPluginConnectionSchema = z.object({
   pluginKey: z.string().min(1).max(255),
   config: jsonObjectSchema,
   enabled: z.boolean().optional(),
+  customInstructions: z.string().max(MAX_PLUGIN_INSTRUCTIONS).nullable().optional(),
 });
 export type CreatePluginConnection = z.infer<typeof createPluginConnectionSchema>;
 

@@ -32,6 +32,14 @@ export class PluginConnection extends BaseEntity implements PluginConnectionCont
   @Column({ default: true })
   enabled: boolean;
 
+  /** What the instructions driver returned on the last sync. */
+  @Column({ type: "text", nullable: true })
+  instructions: string | null;
+
+  /** Replaces `instructions` when set. */
+  @Column({ type: "text", nullable: true })
+  customInstructions: string | null;
+
   @Column({ type: "timestamptz", nullable: true })
   lastSyncedAt: Date | null;
 

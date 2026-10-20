@@ -23,5 +23,11 @@
     "options": {
       "url": "https://mcp.firecrawl.dev/{{ connection.apiKey }}/v2/mcp"
     }
+  },
+  "instructions": {
+    "driver": "mcp",
+    "options": {
+      "url": "https://mcp.firecrawl.dev/{{ connection.apiKey }}/v2/mcp"
+    }
   }
 }

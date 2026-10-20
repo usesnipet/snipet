@@ -9,6 +9,7 @@ import {
 import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
@@ -41,6 +42,7 @@ export function PluginConnectionFormDialog({ plugin, connection, close }: Plugin
       pluginKey: plugin.key,
       config: connection?.config ?? {},
       enabled: connection?.enabled ?? true,
+      customInstructions: connection?.customInstructions ?? "",
     },
   });
 
@@ -52,13 +54,15 @@ export function PluginConnectionFormDialog({ plugin, connection, close }: Plugin
   const hasConfig = Object.keys(schema.properties ?? {}).length > 0;
 
   const onSubmit = form.handleSubmit(async (values) => {
+    // An emptied textarea goes back to the plugin's own instructions.
+    values = { ...values, customInstructions: values.customInstructions?.trim() || null };
     if (connection) await update({ id: connection.id, data: values });
     else await create({ data: values });
     close();
   });
 
   return (
-    <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+    <DialogContent className={cn("max-h-[90vh] overflow-y-auto", hasConfig ? "sm:max-w-4xl" : "sm:max-w-lg")}>
       <DialogHeader>
         <DialogTitle>{isEditing ? "Edit connection" : `Connect ${plugin.name}`}</DialogTitle>
         <DialogDescription>
@@ -68,24 +72,32 @@ export function PluginConnectionFormDialog({ plugin, connection, close }: Plugin
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form id={formId} onSubmit={onSubmit}>
+        <form id={formId} onSubmit={onSubmit} className={cn(hasConfig && "grid gap-6 md:grid-cols-2")}>
           <FieldGroup>
             <FormInput name="name" label="Name" required />
             <FormTextarea name="description" label="Description" />
-            {hasConfig ? (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Configuration</p>
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <SchemaFormFields
-                    schema={schema}
-                    defaultData={form.getValues("config")}
-                    onChange={(data) => form.setValue("config", data, { shouldDirty: true })}
-                  />
-                </div>
-              </div>
-            ) : null}
+            <FormTextarea
+              name="customInstructions"
+              label="Instructions"
+              rows={4}
+              placeholder={
+                connection?.instructions ?? "How agents should use this plugin. Replaces the plugin's own instructions."
+              }
+            />
             <FormSwitch name="enabled" label="Enabled" />
           </FieldGroup>
+          {hasConfig ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Configuration</p>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <SchemaFormFields
+                  schema={schema}
+                  defaultData={form.getValues("config")}
+                  onChange={(data) => form.setValue("config", data, { shouldDirty: true })}
+                />
+              </div>
+            </div>
+          ) : null}
         </form>
       </Form>
       <DialogFooter>

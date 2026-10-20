@@ -8,5 +8,9 @@
   "actions": {
     "driver": "mcp",
     "options": { "url": "https://huggingface.co/mcp" }
+  },
+  "instructions": {
+    "driver": "mcp",
+    "options": { "url": "https://huggingface.co/mcp" }
   }
 }
