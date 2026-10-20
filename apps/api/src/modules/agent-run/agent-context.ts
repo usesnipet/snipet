@@ -5,13 +5,15 @@ import { Injectable } from "@nestjs/common";
 import { Agent } from "../agent/agent.entity.js";
 import { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 
-import type { LlmTool, LlmToolCallPart } from "@snipet/shared";
+import type { LlmMessage, LlmTool, LlmToolCallPart } from "@snipet/shared";
 
 type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;
 export type DeniedAction = { action: string; pluginConnectionId: string };
 
-/** The tools of one run: what the models are offered, and how to run their calls. */
-export type AgentToolSet = {
+/** What one run gives the models: system messages and tools, and how to run their calls. */
+export type RunContext = {
+  /** The agent's name and prompt, then the instructions of its plugins. */
+  system: LlmMessage[];
   tools?: LlmTool[];
   denied: DeniedAction[];
   /** Instructions of the plugin connections with at least one granted action. */
@@ -21,8 +23,15 @@ export type AgentToolSet = {
   call(call: LlmToolCallPart): Promise<ActionResult>;
 };
 
+/** Keeps a connection name from closing the attribute or tag it is put in. */
+const escapeAttr = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const systemText = (text: string): LlmMessage => ({ role: "system", parts: [{ type: "text", text }] });
+
+/** Builds a run's context from the agent and its plugin connections; plugin actions become LLM tools. */
 @Injectable()
-export class AgentTools {
+export class AgentContext {
   constructor(private readonly plugins: PluginConnectionService) {}
 
   /**
@@ -30,7 +39,7 @@ export class AgentTools {
    * grant's allow/deny; the others are returned as denied. Names are made
    * unique and provider-safe; executors maps them back.
    */
-  async resolve(agent: Agent): Promise<AgentToolSet> {
+  async build(agent: Agent): Promise<RunContext> {
     const denied: DeniedAction[] = [];
     const executors = new Map<string, Executor>();
     const tools: LlmTool[] = [];
@@ -50,13 +59,22 @@ export class AgentTools {
         continue;
       }
       used.add(action.pluginConnectionId);
-      add(action.name, action.description, action.inputSchema, (args) => this.plugins.executeAction(action.id, args));
+      const description = `[${action.pluginConnection!.name}] ${action.description}`.trim();
+      add(action.name, description, action.inputSchema, (args) => this.plugins.executeAction(action.id, args));
+    }
+
+    const instructions = await this.plugins.findInstructions([...used]);
+    const system = [systemText(`Your name is ${agent.name}`)];
+    if (agent.systemPrompt) system.push(systemText(agent.systemPrompt));
+    for (const { name, text } of instructions) {
+      system.push(systemText(`<plugin name="${escapeAttr(name)}">\n${text}\n</plugin>`));
     }
 
     return {
+      system,
       tools: tools.length ? tools : undefined,
       denied,
-      instructions: await this.plugins.findInstructions([...used]),
+      instructions,
       has: (name) => executors.has(name),
       call: async (call) => {
         const execute = executors.get(call.name);

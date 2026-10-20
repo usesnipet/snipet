@@ -44,12 +44,25 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
     return this.syncer.sync(id);
   }
 
-  /** Synced actions of the enabled connections among connectionIds. */
+  /**
+   * Synced actions of the enabled connections among connectionIds, with the
+   * connection's name.
+   */
   findActions(connectionIds: string[]): Promise<PluginAction[]> {
     if (!connectionIds.length) return Promise.resolve([]);
     return this.actions.find({
+      // No config: it would be decrypted once per action.
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        inputSchema: true,
+        pluginConnectionId: true,
+        pluginConnection: { id: true, name: true },
+      },
+      relations: { pluginConnection: true },
       where: { pluginConnectionId: In(connectionIds), pluginConnection: { enabled: true } },
-      order: { name: "ASC" },
+      order: { name: "ASC", pluginConnectionId: "ASC" },
     });
   }
 
