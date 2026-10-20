@@ -24,6 +24,7 @@ const envSchema = z
       .url()
       .optional()
       .transform((v) => v?.replace(/\/+$/, "")),
+
     // The built web app, served when it holds an index.html. Defaults to
     // apps/web/dist (same depth from src/ and dist/).
     WEB_DIR: z.string().default(resolve(import.meta.dirname, "../../web/dist")),
@@ -32,16 +33,8 @@ const envSchema = z
     DB_AUTO_MIGRATE: z.stringbool().default(true),
 
     JWT_SECRET: z.string().min(32).default("change-me"),
-    JWT_EXPIRES_IN_SECONDS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(15 * 60), // 15 minutes
-    REFRESH_TOKEN_EXPIRES_IN_SECONDS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(30 * 24 * 60 * 60), // 30 days
+    JWT_EXPIRES_IN_SECONDS: z.coerce.number().int().positive().default(900), // 15 minutes
+    REFRESH_TOKEN_EXPIRES_IN_SECONDS: z.coerce.number().int().positive().default(2_592_000), // 30 days
 
     ENCRYPTION_KEY: z
       .string()
@@ -57,6 +50,16 @@ const envSchema = z
     // Plugin manifests (*.json). Defaults to apps/api/plugins (same depth from src/ and dist/).
     PLUGINS_DIR: z.string().default(resolve(import.meta.dirname, "../plugins")),
     LLMS_DIR: z.string().default(resolve(import.meta.dirname, "../llms")),
+
+    // CACHE
+    CACHE_TTL_MS: z.coerce.number().int().positive().default(60_000), // 1 minute
+
+    CACHE_REDIS_ENABLED: z.stringbool().default(false),
+    CACHE_REDIS_URL: z.url().optional(),
+
+    CACHE_MEMORY_ENABLED: z.stringbool().default(true),
+    CACHE_MEMORY_LRU_SIZE: z.coerce.number().int().positive().default(5000),
+    CACHE_MEMORY_SWEEP_MS: z.coerce.number().int().positive().default(300_000), // 5 minutes
 
     // Where uploaded files (e.g. agent avatars) live: the local filesystem or an
     // S3 / S3-compatible bucket.
@@ -104,6 +107,10 @@ const envSchema = z
   .refine((e) => e.STORAGE_DRIVER !== "s3" || e.STORAGE_S3_BUCKET, {
     message: "STORAGE_S3_BUCKET is required when STORAGE_DRIVER=s3",
     path: ["STORAGE_S3_BUCKET"],
+  })
+  .refine((e) => !e.CACHE_REDIS_ENABLED || e.CACHE_REDIS_URL, {
+    message: "CACHE_REDIS_URL is required when CACHE_REDIS_ENABLED=true",
+    path: ["CACHE_REDIS_URL"],
   })
   .transform((e) => ({ ...e, PUBLIC_URL: e.PUBLIC_URL ?? `http://localhost:${e.PORT}` }));
 

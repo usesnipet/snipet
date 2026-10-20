@@ -45,6 +45,7 @@
     "@snipet/server-common": "workspace:*",
     "@snipet/shared": "workspace:*",
     "bcryptjs": "^3.0.3",
+    "ioredis": "^6.0.0",
     "moment": "^2.31.0",
     "ollama": "^0.6.4",
     "openai": "^7.25.0",
