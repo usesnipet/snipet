@@ -7,7 +7,7 @@ import type { AuthResponse, ChangeOwnPassword, Login } from "@snipet/shared";
 import { compare } from "bcryptjs";
 import { IsNull, Repository } from "typeorm";
 
-import type { AccessTokenPayload } from "#src/common/guards/auth.guard.js";
+import type { AccessTokenPayload } from "#src/common/guards/strategies/user.strategy.js";
 import { env } from "#src/env.js";
 import { User } from "../user/user.entity.js";
 import { UserService } from "../user/user.service.js";

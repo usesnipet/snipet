@@ -5,6 +5,9 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import { ensureDatabase } from "@snipet/server-common";
 import { AuthGuard } from "#src/common/guards/auth.guard.js";
+import { ApiKeyStrategy } from "#src/common/guards/strategies/api-key.strategy.js";
+import { AppTokenStrategy } from "#src/common/guards/strategies/app-token.strategy.js";
+import { UserStrategy } from "#src/common/guards/strategies/user.strategy.js";
 import { RateLimitModule } from "#src/common/rate-limit/rate-limit.js";
 import { env } from "#src/env.js";
 import { dataSourceOptions } from "#src/infra/database/data-source.js";
@@ -44,6 +47,9 @@ import { UserModule } from "#src/modules/user/user.module.js";
   ],
   // In this order: some throttlers track the caller AuthGuard sets.
   providers: [
+    UserStrategy,
+    ApiKeyStrategy,
+    AppTokenStrategy,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
