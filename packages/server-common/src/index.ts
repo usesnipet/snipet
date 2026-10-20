@@ -3,7 +3,6 @@ export * from "./database/ensure-database.js";
 export * from "./crud/crud.controller.js";
 export * from "./crud/crud.service.js";
 export * from "./filter/db-error.filter.js";
-export * from "./middleware/basic-auth.middleware.js";
 export * from "./pagination/filter.js";
 export * from "./pipes/zod.pipe.js";
 export * from "./utils/json-schema/json-schema.js";
