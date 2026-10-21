@@ -29,6 +29,22 @@ describe("openai mapper", () => {
     ]);
   });
 
+  it("emits usage from the final chunk", async () => {
+    const events = [];
+    for await (const e of toStreamEvents(
+      from([
+        chunk({ content: "Hi" }, "stop"),
+        { choices: [], usage: { prompt_tokens: 12, completion_tokens: 3 } } as unknown as ChatCompletionChunk,
+      ]),
+    )) {
+      events.push(e);
+    }
+    expect(events).toEqual([
+      { event: "text_delta", data: { text: "Hi" } },
+      { event: "usage", data: { inputTokens: 12, outputTokens: 3 } },
+    ]);
+  });
+
   it("maps tool calls and results to API messages", () => {
     expect(
       toOpenAiMessages([

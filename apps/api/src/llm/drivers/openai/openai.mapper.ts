@@ -101,6 +101,14 @@ export async function* toStreamEvents(chunks: AsyncIterable<ChatCompletionChunk>
   }
 
   for await (const chunk of chunks) {
+    // With include_usage the last chunk carries the totals and no choices.
+    if (chunk.usage) {
+      yield* flush();
+      yield {
+        event: "usage",
+        data: { inputTokens: chunk.usage.prompt_tokens, outputTokens: chunk.usage.completion_tokens },
+      };
+    }
     for (const choice of chunk.choices) {
       if (choice.delta.content) yield { event: "text_delta", data: { text: choice.delta.content } };
       for (const delta of choice.delta.tool_calls ?? []) {
