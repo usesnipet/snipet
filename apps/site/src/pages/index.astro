@@ -1,0 +1,262 @@
+---
+import "../styles/landing.css";
+
+/** Catalog entry as read from the API's plugin and LLM manifests. */
+type Manifest = { key: string; name: string; icon: string; description: string };
+
+/** GitHub milestone fields the roadmap uses. */
+type Milestone = { title: string; description: string | null; state: "open" | "closed"; due_on: string | null };
+
+/** Closed milestones shown before the open ones. */
+const SHIPPED_COUNT = 4;
+
+// Read the API's manifests so the landing lists exactly what the server ships.
+const manifests = (glob: Record<string, { default: Manifest }>) =>
+  Object.values(glob).map((m) => m.default);
+const models = manifests(import.meta.glob("../../../api/src/llm/manifests/*.json", { eager: true }));
+const plugins = manifests(import.meta.glob("../../../api/src/plugin/manifests/*.json", { eager: true })).filter(
+  (p) => p.key !== "mcp",
+);
+
+/** Roadmap from the repo milestones, fetched at build time; empty when GitHub is unreachable. */
+async function loadRoadmap(): Promise<Milestone[]> {
+  try {
+    const res = await fetch("https://api.github.com/repos/usesnipet/snipet/milestones?state=all&per_page=100");
+    if (!res.ok) return [];
+    const all = ((await res.json()) as Milestone[])
+      // Patch releases (x.y.1+) are fixes, too small for the roadmap.
+      .filter((m) => !/^\d+\.\d+\.[1-9]/.test(m.title))
+      .sort((a, b) => (a.due_on ?? "").localeCompare(b.due_on ?? ""));
+    const closed = all.filter((m) => m.state === "closed").slice(-SHIPPED_COUNT);
+    return [...closed, ...all.filter((m) => m.state === "open")];
+  } catch {
+    return [];
+  }
+}
+const roadmap = await loadRoadmap();
+
+const formatDate = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "";
+
+const steps = [
+  { title: "Connect a model", text: "Add a provider: OpenAI, Gemini, Mistral, Groq, OpenRouter, or run models locally with Ollama and LM Studio." },
+  { title: "Enable plugins", text: "Turn on integrations from the catalog or point to any MCP server. Credentials are stored encrypted." },
+  { title: "Create an agent", text: "Give it a prompt, pick its model and choose which plugins it may use." },
+  { title: "Use it anywhere", text: "Call it through the API or drop the chat widget into your app. External channels are next." },
+];
+
+const scriptSnippet = `<script src="https://unpkg.com/@snipet/widget/dist/widget.js"></script>
+<script>
+  SnipetWidget.init({
+    apiUrl: "https://snipet.example.com",
+    appId: "<your app id>",
+    agentId: "<your agent id>",
+  });
+</script>`;
+
+const reactSnippet = `import { SnipetWidget } from "@snipet/react-widget";
+
+<SnipetWidget
+  apiUrl="https://snipet.example.com"
+  appId="<your app id>"
+  agentId="<your agent id>"
+/>`;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snipet</title>
+    <meta
+      name="description"
+      content="Open-source platform to build AI agents that connect to your tools and can be called from anywhere."
+    />
+  </head>
+  <body class="min-h-screen bg-white text-gray-900 antialiased">
+    <main>
+      <!-- Hero -->
+      <section class="mx-auto flex max-w-3xl flex-col items-center gap-6 px-4 pt-24 pb-20 text-center">
+        <span class="rounded-full border px-3 py-1 text-sm text-gray-600">
+          Open source · Self-hosted · Cloud coming soon
+        </span>
+        <h1 class="text-4xl font-bold tracking-tight sm:text-6xl">Build AI agents that work across all your apps.</h1>
+        <p class="text-lg text-gray-600">
+          Connect agents to the tools you already use and call them from anywhere: your product, your backend, and
+          soon the channels your users live in.
+        </p>
+        <div class="flex flex-wrap justify-center gap-3">
+          <a href="/docs/guides/local-setup/" class="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white">
+            Get started
+          </a>
+          <a href="https://github.com/usesnipet/snipet" class="rounded-lg border px-5 py-2.5 font-medium">
+            Star on GitHub
+          </a>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section class="border-t bg-gray-50">
+        <div class="mx-auto max-w-5xl px-4 py-20">
+          <h2 class="text-center text-3xl font-bold tracking-tight">How it works</h2>
+          <ol class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {
+              steps.map((step, i) => (
+                <li class="rounded-xl border bg-white p-6">
+                  <span class="text-sm font-semibold text-gray-400">0{i + 1}</span>
+                  <h3 class="mt-2 font-semibold">{step.title}</h3>
+                  <p class="mt-2 text-sm text-gray-600">{step.text}</p>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </section>
+
+      <!-- Models -->
+      <section class="mx-auto max-w-5xl px-4 py-20 text-center">
+        <h2 class="text-3xl font-bold tracking-tight">Any model, no lock-in</h2>
+        <p class="mt-3 text-gray-600">Cloud providers or models running on your own hardware. Switch without rewriting the agent.</p>
+        <ul class="mt-10 flex flex-wrap justify-center gap-3">
+          {
+            models.map((m) => (
+              <li class="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+                {m.icon && <img src={m.icon} alt="" width="20" height="20" class="size-5 rounded" loading="lazy" />}
+                {m.name}
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <!-- Plugins -->
+      <section class="border-t bg-gray-50">
+        <div class="mx-auto max-w-5xl px-4 py-20 text-center">
+          <h2 class="text-3xl font-bold tracking-tight">Plugins your agents can use</h2>
+          <p class="mt-3 text-gray-600">
+            Start from the catalog or connect any MCP server. More integrations are on the roadmap.
+          </p>
+          <ul class="mt-10 grid gap-3 text-left sm:grid-cols-2 lg:grid-cols-3">
+            {
+              plugins.map((p) => (
+                <li class="flex gap-3 rounded-xl border bg-white p-4">
+                  {p.icon && <img src={p.icon} alt="" width="32" height="32" class="size-8 rounded" loading="lazy" />}
+                  <div>
+                    <h3 class="font-medium">{p.name}</h3>
+                    <p class="text-sm text-gray-600">{p.description}</p>
+                  </div>
+                </li>
+              ))
+            }
+            <li class="flex items-center gap-3 rounded-xl border border-dashed bg-white p-4">
+              <div>
+                <h3 class="font-medium">Any MCP server</h3>
+                <p class="text-sm text-gray-600">Bring your own server by URL.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Channels -->
+      <section class="mx-auto max-w-5xl px-4 py-20">
+        <div class="text-center">
+          <h2 class="text-3xl font-bold tracking-tight">Call your agents from anywhere</h2>
+          <p class="mt-3 text-gray-600">
+            Today: the API and an embeddable chat widget for any site, React or Angular. Next: external channels like
+            WhatsApp, Telegram, Slack, Discord and more. The widget is just the first one.
+          </p>
+        </div>
+        <div class="mt-10 grid gap-4 lg:grid-cols-2">
+          <figure>
+            <figcaption class="mb-2 text-sm font-medium text-gray-500">Script tag</figcaption>
+            <pre class="overflow-x-auto rounded-xl bg-gray-900 p-4 text-sm text-gray-100"><code>{scriptSnippet}</code></pre>
+          </figure>
+          <figure>
+            <figcaption class="mb-2 text-sm font-medium text-gray-500">React</figcaption>
+            <pre class="overflow-x-auto rounded-xl bg-gray-900 p-4 text-sm text-gray-100"><code>{reactSnippet}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- Roadmap -->
+      {
+        roadmap.length > 0 && (
+          <section class="border-t bg-gray-50">
+            <div class="mx-auto max-w-3xl px-4 py-20">
+              <h2 class="text-center text-3xl font-bold tracking-tight">Roadmap</h2>
+              <p class="mt-3 text-center text-gray-600">What shipped recently and what is coming next.</p>
+              <ol class="mt-12 border-l pl-6">
+                {roadmap.map((m) => (
+                  <li class="relative pb-10 last:pb-0">
+                    <span
+                      class:list={[
+                        "absolute top-1.5 -left-7.75 size-3 rounded-full border-2",
+                        m.state === "closed" ? "border-gray-900 bg-gray-900" : "border-gray-400 bg-white",
+                      ]}
+                    />
+                    <div class="flex flex-wrap items-baseline gap-x-3">
+                      <h3 class="font-semibold">{m.title}</h3>
+                      <span class="text-sm text-gray-500">
+                        {m.state === "closed" ? "Shipped" : "Planned"} · {formatDate(m.due_on)}
+                      </span>
+                    </div>
+                    {m.description && <p class="mt-1 text-gray-600">{m.description}</p>}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        )
+      }
+
+      <!-- Open source -->
+      <section class="mx-auto max-w-3xl px-4 py-20 text-center">
+        <h2 class="text-3xl font-bold tracking-tight">Open source, on your servers</h2>
+        <p class="mt-3 text-gray-600">
+          Self-host Snipet with just Postgres. Your keys, your data, your infrastructure.
+        </p>
+        <a href="https://github.com/usesnipet/snipet" class="mt-6 inline-block rounded-lg border px-5 py-2.5 font-medium">
+          View on GitHub
+        </a>
+      </section>
+
+      <!-- Cloud waitlist -->
+      <section class="border-t bg-gray-900 text-white">
+        <div class="mx-auto max-w-xl px-4 py-20 text-center">
+          <h2 class="text-3xl font-bold tracking-tight">Snipet Cloud is coming</h2>
+          <p class="mt-3 text-gray-300">Don't want to host it yourself? Join the waitlist and we'll let you know.</p>
+          <form action="https://api.web3forms.com/submit" method="POST" class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <input type="hidden" name="access_key" value="deea7df5-158e-4655-a8d7-56f405258874" />
+            <input type="hidden" name="subject" value="Snipet Cloud waitlist" />
+            <!-- Web3Forms needs an absolute URL; without JS it falls back to its own success page. -->
+            <input type="hidden" name="redirect" id="waitlist-redirect" />
+            <script is:inline>
+              document.getElementById("waitlist-redirect").value = location.origin + "/waitlist/";
+            </script>
+            <!-- Web3Forms honeypot: bots fill it, the submission is dropped. -->
+            <input type="checkbox" name="botcheck" class="hidden" tabindex="-1" autocomplete="off" />
+            <label for="waitlist-email" class="sr-only">Email</label>
+            <input
+              id="waitlist-email"
+              type="email"
+              name="email"
+              required
+              placeholder="you@company.com"
+              class="flex-1 rounded-lg bg-white px-4 py-2.5 text-gray-900"
+            />
+            <button type="submit" class="rounded-lg bg-white px-5 py-2.5 font-medium text-gray-900">Join waitlist</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="mx-auto flex max-w-5xl flex-wrap justify-between gap-4 px-4 py-8 text-sm text-gray-500">
+      <span>Snipet</span>
+      <nav class="flex gap-4">
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/usesnipet/snipet">GitHub</a>
+      </nav>
+    </footer>
+  </body>
+</html>
