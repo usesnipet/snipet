@@ -35,7 +35,7 @@ export function HowItWorks() {
           {steps.map((step, i) => (
             <li
               key={step.title}
-              className="relative pl-12 after:absolute after:top-10 after:-bottom-8 after:left-4 after:w-px after:bg-border last:after:hidden lg:pt-12 lg:pl-0 lg:after:top-4 lg:after:right-[-2rem] lg:after:bottom-auto lg:after:left-10 lg:after:h-px lg:after:w-auto"
+              className="relative pl-12 after:absolute after:top-10 after:-bottom-8 after:left-4 after:w-px after:bg-border last:after:hidden lg:pt-12 lg:pl-0 lg:after:top-4 lg:after:-right-8 lg:after:bottom-auto lg:after:left-10 lg:after:h-px lg:after:w-auto"
             >
               <span className="absolute top-0 left-0 flex size-8 items-center justify-center rounded-full border bg-background text-sm font-semibold">
                 {i + 1}
