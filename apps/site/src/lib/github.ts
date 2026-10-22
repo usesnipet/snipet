@@ -2,13 +2,13 @@
 const REPO = "https://api.github.com/repos/usesnipet/snipet";
 
 /** Closed milestones shown before the open ones. */
-const SHIPPED_COUNT = 4;
+const SHIPPED_COUNT = 2;
 
 /** Catalog entry as read from the API's plugin and LLM manifests. */
 export type Manifest = { key: string; name: string; icon: string; description: string };
 
 /** GitHub milestone fields the roadmap uses. */
-export type Milestone = { title: string; description: string | null; state: "open" | "closed"; due_on: string | null };
+export type Milestone = { title: string; description: string[]; state: "open" | "closed"; due_on: string | null };
 
 /** The API's manifests in `dir` on the default branch. */
 export async function loadManifests(dir: "llm" | "plugin"): Promise<Manifest[]> {
@@ -25,6 +25,13 @@ export async function loadRoadmap(): Promise<Milestone[]> {
   const res = await fetch(`${REPO}/milestones?state=all&per_page=100`);
   if (!res.ok) throw new Error(`Loading milestones from GitHub failed: ${res.status}`);
   const all = ((await res.json()) as Milestone[])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((m: any) => ({
+      title: m.title,
+      description: m.description?.split("\n") ?? [],
+      state: m.state,
+      due_on: m.due_on,
+    } as Milestone))
     // Patch releases (x.y.1+) are fixes, too small for the roadmap.
     .filter((m) => !/^\d+\.\d+\.[1-9]/.test(m.title))
     .sort((a, b) => (a.due_on ?? "").localeCompare(b.due_on ?? ""));

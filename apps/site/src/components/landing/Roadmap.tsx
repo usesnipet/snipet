@@ -24,7 +24,9 @@ export function Roadmap({ roadmap }: { roadmap: Milestone[] }) {
                   {m.state === "closed" ? "Shipped" : "Planned"} · {formatDate(m.due_on)}
                 </span>
               </div>
-              {m.description && <p className="mt-1 text-muted-foreground">{m.description}</p>}
+              {m.description.map((d) => (
+                <p key={d} className="mt-1 text-muted-foreground">{d}</p>
+              ))}
             </li>
           ))}
         </ol>
