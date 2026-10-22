@@ -1,12 +1,12 @@
 {
-  "name": "@snipet/react",
+  "name": "@snipet/react-widget",
   "version": "0.0.0",
   "description": "React bindings for the Snipet chat widget.",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/usesnipet/snipet.git",
-    "directory": "packages/react"
+    "directory": "packages/react-widget"
   },
   "files": [
     "dist"

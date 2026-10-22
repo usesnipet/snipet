@@ -323,7 +323,7 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
 
-  packages/angular:
+  packages/angular-widget:
     dependencies:
       '@snipet/widget':
         specifier: workspace:*
@@ -364,7 +364,7 @@ importers:
         specifier: ^4.4.3
         version: 4.6.5
 
-  packages/react:
+  packages/react-widget:
     dependencies:
       '@snipet/widget':
         specifier: workspace:*
