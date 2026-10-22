@@ -1,0 +1,28 @@
+---
+title: Apps
+description: Where your users meet your agents.
+---
+
+An app is a place where your agents are used: your website, your product, a customer portal. It decides who can chat and from where. Every conversation of an end user belongs to an app.
+
+Create apps in **Apps**.
+
+![App form](/images/docs/apps-form.png)
+
+## Allowed origins
+
+The sites that may use the app from a browser, like `https://app.example.com`. Requests from other origins are rejected. Leave it empty if the app is only called from servers.
+
+## Anonymous users
+
+Turn on **Allow anonymous** to let visitors chat without signing in. The [chat widget](/docs/widget/) then creates an anonymous user per browser on its own. Anonymous access needs at least one allowed origin. See [anonymous users](/docs/auth/anonymous/).
+
+## API keys
+
+Your backend uses an app's API key to [issue tokens](/docs/auth/issue-tokens/) for your signed-in users. Create keys in **Api Key** and keep them on your servers.
+
+![API keys page](/images/docs/api-keys.png)
+
+## One app or several
+
+Use one app per product or site. Separate apps keep their users, conversations and keys apart, so a key leaked from one can't act on another.

@@ -1,0 +1,81 @@
+---
+title: Control and events
+description: Open the widget from your own buttons and react to what happens in it.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+## Methods
+
+| Method | |
+| --- | --- |
+| `init(config)` | Mounts the widget. On a mounted widget, same as `configure()`. |
+| `configure(patch)` | Changes any [option](/docs/widget/configuration/). |
+| `open()`, `close()`, `toggle()` | Opens or closes the panel. |
+| `enable()`, `disable()` | Shows or hides the whole widget. |
+| `setToken(token)` | Signs a user in, e.g. after they log in to your site. `null` signs them out. |
+| `destroy()` | Unmounts the widget and resets its options. Event handlers stay subscribed. |
+| `on(event, handler)` | Subscribes to an event. Returns the function that unsubscribes. |
+
+## Events
+
+| Event | Payload |
+| --- | --- |
+| `open` | |
+| `close` | |
+| `message` | `{ role: "user" \| "assistant", text, sessionId }`, once per new message |
+| `error` | `{ message }`: a failed request, stream or sign-in |
+
+## Examples
+
+<Tabs>
+  <TabItem label="Script tag">
+    ```js
+    document.querySelector("#help").addEventListener("click", () => SnipetWidget.open());
+
+    const off = SnipetWidget.on("message", (message) => {
+      analytics.track("chat_message", { role: message.role });
+    });
+    ```
+  </TabItem>
+  <TabItem label="React">
+    ```tsx
+    import { SnipetWidget, useSnipet } from "@snipet/react-widget";
+
+    <SnipetWidget
+      apiUrl={apiUrl}
+      appId={appId}
+      agentId={agentId}
+      onMessage={(message) => console.log(message.role, message.text)}
+    />;
+
+    function HelpButton() {
+      const snipet = useSnipet();
+      return <button onClick={() => snipet.open()}>Help</button>;
+    }
+    ```
+
+    Props `onOpen`, `onClose`, `onMessage` and `onError` take the events. `useSnipet()` returns the methods; calls made before the script loads are queued.
+  </TabItem>
+  <TabItem label="Angular">
+    ```ts
+    import { DestroyRef, inject } from "@angular/core";
+    import { SNIPET } from "@snipet/angular-widget";
+
+    export class HelpButtonComponent {
+      private snipet = inject(SNIPET);
+
+      constructor() {
+        const off = this.snipet.on("message", (message) => console.log(message.role, message.text));
+        inject(DestroyRef).onDestroy(off);
+      }
+
+      open() {
+        this.snipet.open();
+      }
+    }
+    ```
+
+    The `SNIPET` token has the methods; calls made before the script loads are queued.
+  </TabItem>
+</Tabs>

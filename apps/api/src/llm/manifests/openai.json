@@ -6,11 +6,6 @@
   "connection": {
     "type": "object",
     "properties": {
-      "baseUrl": {
-        "type": "string",
-        "title": "Base URL",
-        "description": "OpenAI base URL, from openai.com/api-keys."
-      },
       "apiKey": {
         "type": "string",
         "secret": true,
@@ -24,12 +19,12 @@
         "description": "OpenAI organization, from openai.com/api-keys."
       }
     },
-    "required": ["baseUrl"]
+    "required": ["apiKey"]
   },
   "models": {
     "driver": "openai",
     "options": {
-      "baseUrl": "{{ connection.baseUrl }}/v1",
+      "baseUrl": "https://api.openai.com/v1",
       "apiKey": "{{ connection.apiKey }}",
       "organization": "{{ connection.organization }}"
     }
@@ -37,7 +32,7 @@
   "chat": {
     "driver": "openai",
     "options": {
-      "baseUrl": "{{ connection.baseUrl }}/v1",
+      "baseUrl": "https://api.openai.com/v1",
       "apiKey": "{{ connection.apiKey }}",
       "organization": "{{ connection.organization }}"
     }
@@ -45,7 +40,7 @@
   "healthCheck": {
     "driver": "http",
     "options": {
-      "url": "{{ connection.baseUrl }}/v1/models",
+      "url": "https://api.openai.com/v1/models",
       "headers": {
         "Authorization": "Bearer {{ connection.apiKey }}",
         "OpenAI-Organization": "{{ connection.organization }}"

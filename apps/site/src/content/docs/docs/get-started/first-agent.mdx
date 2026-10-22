@@ -1,0 +1,37 @@
+---
+title: Your first agent
+description: Connect a model and a plugin, create an agent and chat with it.
+---
+
+import { Steps } from "@astrojs/starlight/components";
+
+In a few minutes you'll have an agent that can read your GitHub repositories. You need Snipet [running](/docs/get-started/install/) and an API key from any supported model provider, or a local model in Ollama or LM Studio.
+
+<Steps>
+
+1. **Connect a model.** Go to **LLMs > Connections**, pick a provider and paste its API key.
+
+   ![New model connection form](/images/docs/models-connection-form.png)
+
+2. **Enable a plugin.** Go to **Plugins**, open GitHub from the catalog and add a connection with a GitHub token. Snipet loads the plugin's actions once the connection is saved.
+
+   ![Plugin catalog](/images/docs/plugins-catalog.png)
+
+3. **Create the agent.** Go to **Agents > Browse** and create one:
+
+   - **System prompt**: what it's for, e.g. "You help the team triage GitHub issues."
+   - **Models**: the connection from step 1.
+   - **Plugins**: the GitHub connection from step 2.
+
+   ![Agent form](/images/docs/agents-form.png)
+
+4. **Try it.** Open **Agents > Playground**, pick the agent and ask "What are the open issues labeled bug?". You'll see each plugin call as it happens, then the answer.
+
+   ![Agent playground with a tool call](/images/docs/agents-playground.png)
+
+</Steps>
+
+## Next
+
+- Learn what else [agents](/docs/concepts/agents/) can do.
+- Put the agent on your site with the [chat widget](/docs/widget/).

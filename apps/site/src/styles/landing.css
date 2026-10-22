@@ -1,0 +1,56 @@
+@import "tailwindcss";
+@import "@snipet/ui/theme.css";
+
+/* Entrance for each new line of the hero's agent run. */
+.hero-in {
+  animation: hero-in 260ms ease-out both;
+}
+
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-in {
+    animation: none;
+  }
+}
+
+/* The hero's one load sequence: copy, then the panel, then the plugin ring dot by dot (delays set inline). */
+.hero-enter {
+  animation: hero-in 600ms ease-out both;
+}
+
+.hero-dot {
+  animation: hero-dot 400ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+@keyframes hero-dot {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+}
+
+/* Draws the line from a plugin to its call; pathLength=1 makes the dash the whole line. */
+.hero-wire {
+  stroke-dasharray: 1;
+  animation: hero-wire 350ms ease-out both;
+}
+
+@keyframes hero-wire {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-enter,
+  .hero-dot,
+  .hero-wire {
+    animation: none;
+  }
+}
