@@ -1,2 +1,20 @@
 @import "tailwindcss";
 @import "@snipet/ui/theme.css";
+
+/* Entrance for each new line of the hero's agent run. */
+.hero-in {
+  animation: hero-in 260ms ease-out both;
+}
+
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-in {
+    animation: none;
+  }
+}

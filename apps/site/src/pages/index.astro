@@ -1,14 +1,14 @@
 ---
 import "../styles/landing.css";
-import { Channels } from "../components/landing/Channels";
-import { Footer } from "../components/landing/Footer";
-import { Hero } from "../components/landing/Hero";
-import { HowItWorks } from "../components/landing/HowItWorks";
-import { Models } from "../components/landing/Models";
-import { OpenSource } from "../components/landing/OpenSource";
-import { Plugins } from "../components/landing/Plugins";
-import { Roadmap } from "../components/landing/Roadmap";
-import { Waitlist } from "../components/landing/Waitlist";
+import Channels from "../components/landing/channel/channels.astro";
+import { Footer } from "../components/landing/footer";
+import { Hero } from "../components/landing/hero";
+import { HowItWorks } from "../components/landing/how-it-works";
+import { Models } from "../components/landing/models";
+import { OpenSource } from "../components/landing/open-source";
+import { Plugins } from "../components/landing/plugins";
+import { Roadmap } from "../components/landing/roadmap";
+import { Waitlist } from "../components/landing/waitlist";
 import { loadManifests, loadRoadmap } from "../lib/github";
 
 // Rendered on the server so roadmap edits show up without a rebuild; the route cache keeps GitHub calls to one
@@ -34,7 +34,7 @@ const plugins = allPlugins.filter((p) => p.key !== "mcp");
   </head>
   <body class="min-h-screen antialiased">
     <main>
-      <Hero />
+      <Hero client:load />
       <HowItWorks />
       <Models models={models} />
       <Plugins plugins={plugins} />

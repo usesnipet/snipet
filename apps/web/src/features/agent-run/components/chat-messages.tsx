@@ -169,13 +169,14 @@ function ToolCall({ call, result, running }: ToolCallProps) {
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors [&_svg]:size-3.5">
-        <Wrench />
-        <span>
-          {pending ? "Using" : "Used"} <code className="font-mono text-xs">{call.name}</code>
-        </span>
+      <CollapsibleTrigger
+        aria-label={`${pending ? "Using" : "Used"} ${call.name}`}
+        className="bg-background hover:bg-accent flex w-fit max-w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors [&_svg]:size-4 [&_svg]:shrink-0"
+      >
+        <Wrench className="text-muted-foreground" />
+        <code className="min-w-0 truncate font-mono text-[0.8125rem]">{call.name}</code>
         {icon}
-        <ChevronRight className={cn("transition-transform", open && "rotate-90")} />
+        <ChevronRight className={cn("text-muted-foreground transition-transform", open && "rotate-90")} />
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-2 space-y-2 border-l pl-4">
         <JsonViewer title="Arguments" value={call.arguments} />

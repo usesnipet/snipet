@@ -1,0 +1,35 @@
+---
+import { createHighlighter } from "shiki";
+import { snippets } from "./channel-snippets";
+import { CopyButton } from "../copy-button";
+
+// Highlighted on the server so shiki's engine and grammars stay out of the client bundle.
+const highlighter = await createHighlighter({ themes: ["github-dark"], langs: ["html", "jsx", "typescript"] });
+---
+
+<section class="mx-auto max-w-6xl px-4 py-20">
+  <div class="text-center">
+    <h2 class="text-3xl font-bold tracking-tight">Call your agents from anywhere</h2>
+    <p class="mt-3 text-muted-foreground">
+      Today: the API and an embeddable chat widget for any site, React or Angular. Next: external channels like
+      WhatsApp, Telegram, Slack, Discord and more. The widget is just the first one.
+    </p>
+  </div>
+  <!-- flex-1 on the code block and its pre stretch it to the row height, so shorter samples match their neighbor. -->
+  <div class="mt-10 grid gap-4 lg:grid-cols-2">
+    {
+      snippets.map((s) => (
+        <figure class:list={["flex min-w-0 flex-col", s.wide && "lg:col-span-2"]}>
+          <div class="mb-2 flex items-baseline justify-between">
+            <figcaption class="text-sm font-medium text-muted-foreground">{s.caption}</figcaption>
+            <CopyButton code={s.code} client:visible />
+          </div>
+          <div
+            class="flex flex-1 flex-col [&_pre]:flex-1 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:text-sm"
+            set:html={highlighter.codeToHtml(s.code, { lang: s.lang, theme: "github-dark" })}
+          />
+        </figure>
+      ))
+    }
+  </div>
+</section>
