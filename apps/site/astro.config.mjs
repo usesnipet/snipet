@@ -1,10 +1,14 @@
 // @ts-check
+import node from "@astrojs/node";
 import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "astro/config";
+import { defineConfig, memoryCache } from "astro/config";
 
 export default defineConfig({
+  // Pages stay prerendered; only routes with `prerender = false` (the landing) run on this server.
+  adapter: node({ mode: "standalone" }),
+  cache: { provider: memoryCache() },
   integrations: [
     react(),
     starlight({

@@ -10,12 +10,18 @@ import { Plugins } from "../components/landing/Plugins";
 import { Roadmap, type Milestone } from "../components/landing/Roadmap";
 import { Waitlist } from "../components/landing/Waitlist";
 
+// Rendered on the server so roadmap edits show up without a rebuild; the route cache keeps GitHub calls to one
+// render per maxAge (3 API calls, well under the 60/h unauthenticated limit).
+export const prerender = false;
+// swr serves the cached page while revalidating, and keeps serving it if a refresh fails.
+Astro.cache.set({ maxAge: 15 * 60, swr: 24 * 60 * 60 });
+
 /** Closed milestones shown before the open ones. */
 const SHIPPED_COUNT = 4;
 
 /**
- * The API's manifests in `dir` on GitHub's default branch, so the site builds without the API sources (e.g. in Docker).
- * Throws instead of degrading like the roadmap: a landing without the catalog shouldn't ship silently.
+ * The API's manifests in `dir` on GitHub's default branch, so the site runs without the API sources (e.g. in Docker).
+ * Throws on failure: the error response isn't cached, so the last good page keeps serving.
  */
 async function loadManifests(dir: string): Promise<Manifest[]> {
   const res = await fetch(`https://api.github.com/repos/usesnipet/snipet/contents/apps/api/src/${dir}/manifests`);
@@ -28,20 +34,19 @@ async function loadManifests(dir: string): Promise<Manifest[]> {
 const [models, allPlugins] = await Promise.all([loadManifests("llm"), loadManifests("plugin")]);
 const plugins = allPlugins.filter((p) => p.key !== "mcp");
 
-/** Roadmap from the repo milestones, fetched at build time; empty when GitHub is unreachable. */
+/**
+ * Roadmap from the repo milestones. Throws like the manifests: an empty roadmap would be cached over the last good
+ * page, while an error keeps serving it.
+ */
 async function loadRoadmap(): Promise<Milestone[]> {
-  try {
-    const res = await fetch("https://api.github.com/repos/usesnipet/snipet/milestones?state=all&per_page=100");
-    if (!res.ok) return [];
-    const all = ((await res.json()) as Milestone[])
-      // Patch releases (x.y.1+) are fixes, too small for the roadmap.
-      .filter((m) => !/^\d+\.\d+\.[1-9]/.test(m.title))
-      .sort((a, b) => (a.due_on ?? "").localeCompare(b.due_on ?? ""));
-    const closed = all.filter((m) => m.state === "closed").slice(-SHIPPED_COUNT);
-    return [...closed, ...all.filter((m) => m.state === "open")];
-  } catch {
-    return [];
-  }
+  const res = await fetch("https://api.github.com/repos/usesnipet/snipet/milestones?state=all&per_page=100");
+  if (!res.ok) throw new Error(`Loading milestones from GitHub failed: ${res.status}`);
+  const all = ((await res.json()) as Milestone[])
+    // Patch releases (x.y.1+) are fixes, too small for the roadmap.
+    .filter((m) => !/^\d+\.\d+\.[1-9]/.test(m.title))
+    .sort((a, b) => (a.due_on ?? "").localeCompare(b.due_on ?? ""));
+  const closed = all.filter((m) => m.state === "closed").slice(-SHIPPED_COUNT);
+  return [...closed, ...all.filter((m) => m.state === "open")];
 }
 const roadmap = await loadRoadmap();
 ---
