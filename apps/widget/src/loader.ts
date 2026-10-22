@@ -1,5 +1,5 @@
 // npm entry of @snipet/widget: loads the widget script from the CDN and queues
-// calls until it is there. The framework wrappers (@snipet/react, @snipet/angular) build on it.
+// calls until it is there. The framework wrappers (@snipet/react-widget, @snipet/angular-widget) build on it.
 
 import type { WidgetApi, WidgetInit } from "./types";
 

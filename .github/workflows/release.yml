@@ -55,10 +55,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Before the build: the loader bakes its version into the widget's CDN URL.
       - run: pnpm -r exec npm pkg set version="${GITHUB_REF_NAME#v}"
-      - run: pnpm turbo run build --filter=@snipet/widget --filter=@snipet/react --filter=@snipet/angular
+      - run: pnpm turbo run build --filter=@snipet/widget --filter=@snipet/react-widget --filter=@snipet/angular-widget
       # pnpm pack rewrites workspace:* versions; trusted publishing needs npm >= 11.5.1.
       - run: |
-          for pkg in widget react angular; do
+          for pkg in widget react-widget angular-widget; do
             pnpm --filter "@snipet/$pkg" pack --pack-destination "$RUNNER_TEMP"
             npx -y npm@11 publish "$RUNNER_TEMP"/snipet-$pkg-*.tgz
           done

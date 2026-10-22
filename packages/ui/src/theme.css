@@ -1,0 +1,111 @@
+/*
+ * Snipet's design tokens. Import after "tailwindcss".
+ *
+ * Each color is light-dark(light, dark): the page follows the system theme, and a .light or .dark class on an
+ * ancestor (the web app's theme toggle) pins it.
+ */
+@import "@fontsource-variable/inter";
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Inter Variable', sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    color-scheme: light dark;
+    --radius: 0.625rem;
+
+    /* light | dark */
+    --background: light-dark(oklch(0.959 0.007 115.707), oklch(0.204 0.009 264.367));   /* paper #F1F2ED | #15171B */
+    --foreground: light-dark(oklch(0.208 0.009 255.618), oklch(0.944 0.008 114.224));   /* ink #15181C | #ECEDE7 */
+    --card: light-dark(oklch(0.959 0.007 115.707), oklch(0.242 0.007 248.129));         /* paper #F1F2ED | surface #1D2023 */
+    --card-foreground: light-dark(oklch(0.208 0.009 255.618), oklch(0.944 0.008 114.224));
+    --popover: light-dark(oklch(0.959 0.007 115.707), oklch(0.242 0.007 248.129));
+    --popover-foreground: light-dark(oklch(0.208 0.009 255.618), oklch(0.944 0.008 114.224));
+    --primary: light-dark(oklch(0.616 0.117 76.014), oklch(0.766 0.134 85.744));        /* accent gold #AD7A22 | #D9AC3F */
+    --primary-foreground: light-dark(oklch(0.215 0.006 236.851), oklch(0.204 0.009 264.367)); /* accent-ink #171A1C | #15171B */
+    --secondary: light-dark(oklch(0.928 0.009 113.169), oklch(0.282 0.008 240.134));    /* surface #E7E8E1 | surface-strong #262A2D */
+    --secondary-foreground: light-dark(oklch(0.208 0.009 255.618), oklch(0.944 0.008 114.224));
+    --muted: light-dark(oklch(0.928 0.009 113.169), oklch(0.282 0.008 240.134));        /* surface #E7E8E1 | surface-strong #262A2D */
+    --muted-foreground: light-dark(oklch(0.459 0.010 253.926), oklch(0.761 0.015 124.623)); /* ink-soft #54585D | #AFB3A9 */
+    --accent: light-dark(oklch(0.894 0.012 111.779), oklch(0.303 0.009 248.130));       /* surface-strong #DCDDD4 | elevated hover #2B2F33 */
+    --accent-foreground: light-dark(oklch(0.208 0.009 255.618), oklch(0.944 0.008 114.224));
+    --destructive: light-dark(oklch(0.577 0.245 27.325), oklch(0.704 0.191 22.216));
+    --border: light-dark(oklch(0.867 0.012 111.789), oklch(1 0 0 / 10%));               /* line #D3D4CB */
+    --input: light-dark(oklch(0.867 0.012 111.789), oklch(1 0 0 / 15%));
+    --ring: light-dark(oklch(0.616 0.117 76.014), oklch(0.766 0.134 85.744));           /* accent gold, branded focus ring */
+    --chart-1: oklch(0.839 0.127 85.918);                                               /* bright gold */
+    --chart-2: oklch(0.681 0.069 174.857);                                              /* mid teal */
+    --chart-3: oklch(0.616 0.117 76.014);                                               /* gold */
+    --chart-4: oklch(0.447 0.057 175.602);                                              /* deep teal */
+    --chart-5: light-dark(oklch(0.459 0.010 253.926), oklch(0.761 0.015 124.623));      /* neutral, light enough for dark bg */
+    --sidebar: light-dark(oklch(0.928 0.009 113.169), oklch(0.172 0.006 264.367));      /* surface #E7E8E1 | deep shell */
+    --sidebar-foreground: light-dark(oklch(0.208 0.009 255.618), oklch(0.944 0.008 114.224));
+    --sidebar-primary: light-dark(oklch(0.616 0.117 76.014), oklch(0.766 0.134 85.744));
+    --sidebar-primary-foreground: light-dark(oklch(0.215 0.006 236.851), oklch(0.204 0.009 264.367));
+    --sidebar-accent: light-dark(oklch(0.894 0.012 111.779), oklch(0.272 0.008 248.130));
+    --sidebar-accent-foreground: light-dark(oklch(0.208 0.009 255.618), oklch(0.944 0.008 114.224));
+    --sidebar-border: light-dark(oklch(0.867 0.012 111.789), oklch(1 0 0 / 8%));
+    --sidebar-ring: light-dark(oklch(0.616 0.117 76.014), oklch(0.766 0.134 85.744));
+}
+
+.light {
+    color-scheme: light;
+}
+
+.dark {
+    color-scheme: dark;
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    html {
+        @apply font-sans;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+    button:not(:disabled), [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+}
