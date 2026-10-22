@@ -1,4 +1,4 @@
-import type { Manifest } from "./Models";
+import type { Manifest } from "../../lib/github";
 
 export function Plugins({ plugins }: { plugins: Manifest[] }) {
   return (

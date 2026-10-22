@@ -1,5 +1,4 @@
-/** Catalog entry as read from the API's plugin and LLM manifests. */
-export type Manifest = { key: string; name: string; icon: string; description: string };
+import type { Manifest } from "../../lib/github";
 
 export function Models({ models }: { models: Manifest[] }) {
   return (

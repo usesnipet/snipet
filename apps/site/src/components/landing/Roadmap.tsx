@@ -1,5 +1,4 @@
-/** GitHub milestone fields the roadmap uses. */
-export type Milestone = { title: string; description: string | null; state: "open" | "closed"; due_on: string | null };
+import type { Milestone } from "../../lib/github";
 
 const formatDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "";
