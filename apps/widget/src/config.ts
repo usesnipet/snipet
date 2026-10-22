@@ -4,7 +4,7 @@ import type { Size, WidgetConfig } from "./types";
 
 export type { WidgetConfig } from "./types";
 
-const SIZE_SCALE: Record<Size, number> = { sm: 0.875, md: 1, lg: 1.125 };
+const SIZE_SCALE: Record<Size, number> = { sm: 0.875, md: 1, lg: 1.125, full: 1 };
 
 export const DEFAULTS: WidgetConfig = {
   apiUrl: "",

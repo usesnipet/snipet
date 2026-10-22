@@ -91,6 +91,26 @@ button {
   }
 }
 
+/* size "full": a near-fullscreen panel over a backdrop that closes it on click. */
+.sw-full .sw-panel {
+  position: fixed;
+  inset: 64px;
+  width: auto;
+  height: auto;
+}
+
+@media (max-width: 639px) {
+  .sw-full .sw-panel {
+    inset: 16px;
+  }
+}
+
+.sw-backdrop {
+  position: fixed;
+  inset: 0;
+  background: oklch(0 0 0 / 0.2);
+}
+
 .sw-header {
   display: flex;
   align-items: center;
