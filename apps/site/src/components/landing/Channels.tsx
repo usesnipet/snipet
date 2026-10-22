@@ -44,7 +44,7 @@ type Props = {
 function Snippet({ caption, code, lang, className }: Props) {
   return (
     <figure className={`flex flex-col ${className ?? ""}`}>
-      <figcaption className="mb-2 text-sm font-medium text-gray-500">{caption}</figcaption>
+      <figcaption className="mb-2 text-sm font-medium text-muted-foreground">{caption}</figcaption>
       <div
         // flex-1 + pre flex-1 stretch the block to the row height, so shorter samples match their neighbor.
         className="flex flex-1 flex-col [&_pre]:flex-1 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:text-sm"
@@ -59,7 +59,7 @@ export function Channels() {
     <section className="mx-auto max-w-6xl px-4 py-20">
       <div className="text-center">
         <h2 className="text-3xl font-bold tracking-tight">Call your agents from anywhere</h2>
-        <p className="mt-3 text-gray-600">
+        <p className="mt-3 text-muted-foreground">
           Today: the API and an embeddable chat widget for any site, React or Angular. Next: external channels like
           WhatsApp, Telegram, Slack, Discord and more. The widget is just the first one.
         </p>

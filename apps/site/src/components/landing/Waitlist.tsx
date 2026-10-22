@@ -6,10 +6,10 @@ export function Waitlist() {
   useEffect(() => setRedirect(`${location.origin}/waitlist/`), []);
 
   return (
-    <section className="border-t bg-gray-900 text-white">
+    <section className="border-t bg-muted">
       <div className="mx-auto max-w-xl px-4 py-20 text-center">
         <h2 className="text-3xl font-bold tracking-tight">Snipet Cloud is coming</h2>
-        <p className="mt-3 text-gray-300">Don't want to host it yourself? Join the waitlist and we'll let you know.</p>
+        <p className="mt-3 text-muted-foreground">Don't want to host it yourself? Join the waitlist and we'll let you know.</p>
         <form action="https://api.web3forms.com/submit" method="POST" className="mt-8 flex flex-col gap-3 sm:flex-row">
           <input type="hidden" name="access_key" value="deea7df5-158e-4655-a8d7-56f405258874" />
           <input type="hidden" name="subject" value="Snipet Cloud waitlist" />
@@ -26,9 +26,9 @@ export function Waitlist() {
             name="email"
             required
             placeholder="you@company.com"
-            className="flex-1 rounded-lg bg-white px-4 py-2.5 text-gray-900"
+            className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5"
           />
-          <button type="submit" className="rounded-lg bg-white px-5 py-2.5 font-medium text-gray-900">
+          <button type="submit" className="rounded-lg bg-primary px-5 py-2.5 font-medium text-primary-foreground">
             Join waitlist
           </button>
         </form>

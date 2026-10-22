@@ -6,25 +6,25 @@ const formatDate = (iso: string | null) =>
 export function Roadmap({ roadmap }: { roadmap: Milestone[] }) {
   if (roadmap.length === 0) return null;
   return (
-    <section className="border-t bg-gray-50">
+    <section className="border-t bg-muted">
       <div className="mx-auto max-w-3xl px-4 py-20">
         <h2 className="text-center text-3xl font-bold tracking-tight">Roadmap</h2>
-        <p className="mt-3 text-center text-gray-600">What shipped recently and what is coming next.</p>
+        <p className="mt-3 text-center text-muted-foreground">What shipped recently and what is coming next.</p>
         <ol className="mt-12 border-l pl-6">
           {roadmap.map((m) => (
             <li key={m.title} className="relative pb-10 last:pb-0">
               <span
                 className={`absolute top-1.5 -left-7.75 size-3 rounded-full border-2 ${
-                  m.state === "closed" ? "border-gray-900 bg-gray-900" : "border-gray-400 bg-white"
+                  m.state === "closed" ? "border-primary bg-primary" : "border-muted-foreground bg-background"
                 }`}
               />
               <div className="flex flex-wrap items-baseline gap-x-3">
                 <h3 className="font-semibold">{m.title}</h3>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   {m.state === "closed" ? "Shipped" : "Planned"} · {formatDate(m.due_on)}
                 </span>
               </div>
-              {m.description && <p className="mt-1 text-gray-600">{m.description}</p>}
+              {m.description && <p className="mt-1 text-muted-foreground">{m.description}</p>}
             </li>
           ))}
         </ol>
