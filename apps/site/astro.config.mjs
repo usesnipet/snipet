@@ -13,6 +13,13 @@ export default defineConfig({
     react(),
     starlight({
       title: "Snipet",
+      logo: { src: "./src/assets/logo.svg" },
+      favicon: "/favicon.svg",
+      // Dark code in both themes, like the landing's samples; rounded and flat like its code panels.
+      expressiveCode: {
+        themes: ["github-dark"],
+        styleOverrides: { borderRadius: "0.75rem", frames: { frameBoxShadowCssValue: "none" } },
+      },
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/usesnipet/snipet" }],
       customCss: ["./src/styles/global.css"],
       // The landing page owns "/"; docs live under /docs.
