@@ -1,10 +1,12 @@
 // @ts-check
+import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
   integrations: [
+    react(),
     starlight({
       title: "Snipet",
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/usesnipet/snipet" }],
