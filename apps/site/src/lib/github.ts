@@ -5,7 +5,7 @@ const REPO = "https://api.github.com/repos/usesnipet/snipet";
 const SHIPPED_COUNT = 2;
 
 /** Catalog entry as read from the API's plugin and LLM manifests. */
-export type Manifest = { key: string; name: string; icon: string; description: string };
+export type Manifest = { key: string; name: string; icon: string; description: string; tags?: string[] };
 
 /** GitHub milestone fields the roadmap uses. */
 export type Milestone = { title: string; description: string[]; state: "open" | "closed"; due_on: string | null };
@@ -18,6 +18,13 @@ export async function loadManifests(dir: "llm" | "plugin"): Promise<Manifest[]> 
   return Promise.all(
     files.filter((f) => f.name.endsWith(".json")).map(async (f) => (await fetch(f.download_url)).json() as Promise<Manifest>),
   );
+}
+
+/** The repo's star count, or null when GitHub can't be reached; the header just leaves it out. */
+export async function loadStars(): Promise<number | null> {
+  const res = await fetch(REPO).catch(() => null);
+  if (!res?.ok) return null;
+  return ((await res.json()) as { stargazers_count: number }).stargazers_count;
 }
 
 /** The latest shipped milestones followed by the open ones, by due date. */

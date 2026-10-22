@@ -2,23 +2,31 @@
 import "../styles/landing.css";
 import Channels from "../components/landing/channel/channels.astro";
 import { Footer } from "../components/landing/footer";
+import { GetStarted } from "../components/landing/get-started";
+import { Header } from "../components/landing/header";
 import { Hero } from "../components/landing/hero";
 import { HowItWorks } from "../components/landing/how-it-works";
 import { Models } from "../components/landing/models";
-import { OpenSource } from "../components/landing/open-source";
 import { Plugins } from "../components/landing/plugins";
 import { Roadmap } from "../components/landing/roadmap";
-import { Waitlist } from "../components/landing/waitlist";
-import { loadManifests, loadRoadmap } from "../lib/github";
+import { loadManifests, loadRoadmap, loadStars } from "../lib/github";
 
 // Rendered on the server so roadmap edits show up without a rebuild; the route cache keeps GitHub calls to one
-// render per maxAge (3 API calls, well under the 60/h unauthenticated limit).
+// render per maxAge (4 API calls, well under the 60/h unauthenticated limit).
 export const prerender = false;
 // swr serves the cached page while revalidating, and keeps serving it if a refresh fails.
 Astro.cache.set({ maxAge: 15 * 60, swr: 24 * 60 * 60 });
 
-const [models, allPlugins, roadmap] = await Promise.all([loadManifests("llm"), loadManifests("plugin"), loadRoadmap()]);
-const plugins = allPlugins.filter((p) => p.key !== "mcp");
+const [models, allPlugins, roadmap, stars] = await Promise.all([
+  loadManifests("llm"),
+  loadManifests("plugin"),
+  loadRoadmap(),
+  loadStars(),
+]);
+// Only the fields the list shows: Plugins hydrates on the client, so its props are serialized into the page.
+const plugins = allPlugins
+  .filter((p) => p.key !== "mcp")
+  .map(({ key, name, icon, description, tags }) => ({ key, name, icon, description, tags }));
 ---
 
 <html lang="en">
@@ -33,15 +41,15 @@ const plugins = allPlugins.filter((p) => p.key !== "mcp");
     <link rel="icon" href="/favicon.svg" />
   </head>
   <body class="min-h-screen antialiased">
+    <Header stars={stars} showRoadmap={roadmap.length > 0} />
     <main>
       <Hero client:load />
       <HowItWorks />
       <Models models={models} />
-      <Plugins plugins={plugins} />
+      <Plugins plugins={plugins} client:visible />
       <Channels />
       <Roadmap roadmap={roadmap} />
-      <OpenSource />
-      <Waitlist client:visible />
+      <GetStarted client:visible />
     </main>
     <Footer />
   </body>

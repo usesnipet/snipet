@@ -31,9 +31,9 @@ export const appConfig: ApplicationConfig = {
   ],
 };`;
 
-/** The samples shown, in grid order; `wide` spans both columns. */
+/** The samples shown, one tab each, in tab order. */
 export const snippets = [
-  { caption: "Script tag", code: scriptSnippet, lang: "html" as const, wide: true },
+  { caption: "Script tag", code: scriptSnippet, lang: "html" as const },
   { caption: "React", code: reactSnippet, lang: "jsx" as const },
   { caption: "Angular", code: angularSnippet, lang: "typescript" as const },
 ];

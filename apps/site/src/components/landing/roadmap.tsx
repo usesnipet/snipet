@@ -6,7 +6,7 @@ const formatDate = (iso: string | null) =>
 export function Roadmap({ roadmap }: { roadmap: Milestone[] }) {
   if (roadmap.length === 0) return null;
   return (
-    <section className="border-t bg-muted">
+    <section id="roadmap" className="scroll-mt-14 border-t bg-muted">
       <div className="mx-auto max-w-3xl px-4 py-20">
         <h2 className="text-center text-3xl font-bold tracking-tight">Roadmap</h2>
         <p className="mt-3 text-center text-muted-foreground">What shipped recently and what is coming next.</p>

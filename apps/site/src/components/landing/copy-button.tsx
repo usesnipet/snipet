@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 /** Copies `code` to the clipboard and confirms for a moment. */
-export function CopyButton({ code }: { code: string }) {
+export function CopyButton({ code, className }: { code: string; className?: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     await navigator.clipboard.writeText(code);
@@ -12,7 +12,7 @@ export function CopyButton({ code }: { code: string }) {
     <button
       type="button"
       onClick={copy}
-      className="rounded-md px-2 py-0.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      className={`rounded-md px-2 py-0.5 text-sm transition-colors ${className ?? "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
     >
       {copied ? "Copied" : "Copy"}
     </button>

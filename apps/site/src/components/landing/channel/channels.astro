@@ -1,35 +1,31 @@
 ---
 import { createHighlighter } from "shiki";
 import { snippets } from "./channel-snippets";
-import { CopyButton } from "../copy-button";
+import { SnippetTabs } from "./snippet-tabs";
 
 // Highlighted on the server so shiki's engine and grammars stay out of the client bundle.
 const highlighter = await createHighlighter({ themes: ["github-dark"], langs: ["html", "jsx", "typescript"] });
+const highlighted = snippets.map((s) => ({ ...s, html: highlighter.codeToHtml(s.code, { lang: s.lang, theme: "github-dark" }) }));
+
+/** Channels on the roadmap, shown as coming next. */
+const next = ["WhatsApp", "Telegram", "Slack", "Discord"];
 ---
 
-<section class="mx-auto max-w-6xl px-4 py-20">
-  <div class="text-center">
+<section class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 lg:grid-cols-[1fr_1.3fr]">
+  <div>
     <h2 class="text-3xl font-bold tracking-tight">Call your agents from anywhere</h2>
     <p class="mt-3 text-muted-foreground">
-      Today: the API and an embeddable chat widget for any site, React or Angular. Next: external channels like
-      WhatsApp, Telegram, Slack, Discord and more. The widget is just the first one.
+      Today: the API and an embeddable chat widget for any site, React or Angular. The widget is just the first channel.
     </p>
+    <p class="mt-8 text-sm font-medium">Available now</p>
+    <ul class="mt-2 flex flex-wrap gap-2 text-sm">
+      <li class="rounded-full border border-primary px-3 py-1">API</li>
+      <li class="rounded-full border border-primary px-3 py-1">Chat widget</li>
+    </ul>
+    <p class="mt-5 text-sm font-medium">Coming next</p>
+    <ul class="mt-2 flex flex-wrap gap-2 text-sm text-muted-foreground">
+      {next.map((name) => <li class="rounded-full border border-dashed px-3 py-1">{name}</li>)}
+    </ul>
   </div>
-  <!-- flex-1 on the code block and its pre stretch it to the row height, so shorter samples match their neighbor. -->
-  <div class="mt-10 grid gap-4 lg:grid-cols-2">
-    {
-      snippets.map((s) => (
-        <figure class:list={["flex min-w-0 flex-col", s.wide && "lg:col-span-2"]}>
-          <div class="mb-2 flex items-baseline justify-between">
-            <figcaption class="text-sm font-medium text-muted-foreground">{s.caption}</figcaption>
-            <CopyButton code={s.code} client:visible />
-          </div>
-          <div
-            class="flex flex-1 flex-col [&_pre]:flex-1 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:text-sm"
-            set:html={highlighter.codeToHtml(s.code, { lang: s.lang, theme: "github-dark" })}
-          />
-        </figure>
-      ))
-    }
-  </div>
+  <SnippetTabs snippets={highlighted} client:visible />
 </section>
