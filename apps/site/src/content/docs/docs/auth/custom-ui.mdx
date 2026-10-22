@@ -1,0 +1,121 @@
+---
+title: Build your own UI
+description: Chat with an agent from your own interface, through the API.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+The widget is built on the same API you can call yourself. With an end-user [token](/docs/auth/issue-tokens/), send it as `Authorization: Bearer <token>`. From a backend you can also call these endpoints with the app's `X-API-Key`; the conversations then belong to the app itself rather than to one user.
+
+## Send a message
+
+`POST /api/agent-runs` starts a run: the agent answering one message.
+
+| Field | |
+| --- | --- |
+| `agentId` | The agent to talk to. |
+| `input` | The user's message. |
+| `sessionId` | Continue a conversation. Leave it out to start a new one. |
+
+It returns the run right away, with its `id` and `sessionId`. Keep the `sessionId` for the next message.
+
+## Stream the answer
+
+`GET /api/agent-runs/:id/events` is a [Server-Sent Events](https://developer.mozilla.org/docs/Web/API/Server-sent_events) stream until the run ends:
+
+| Event | Data |
+| --- | --- |
+| `text_delta` | `{ text }`: the next piece of the answer as it's written. |
+| `message` | A complete message: the assistant's reply, a plugin call or a plugin result. Its SSE `id` is the message id. |
+| `run_finished` | The run, with its final `status`: `completed`, `failed`, `cancelled` or `max_turns`. |
+
+If the connection drops, reconnect with the `Last-Event-ID` header set to the last message id you got; the stream resumes after it.
+
+## Examples
+
+<Tabs syncKey="lang">
+  <TabItem label="curl">
+    ```sh
+    curl -X POST https://snipet.example.com/api/agent-runs \
+      -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+      -d '{ "agentId": "<agent id>", "input": "Where is my order?" }'
+    # { "id": "<run id>", "sessionId": "<session id>", "status": "running", ... }
+
+    curl -N https://snipet.example.com/api/agent-runs/<run id>/events \
+      -H "Authorization: Bearer $TOKEN"
+    ```
+  </TabItem>
+  <TabItem label="JavaScript">
+    ```js
+    // Browser or Node 18+. EventSource can't send an Authorization header, so this reads the stream with fetch.
+    const api = "https://snipet.example.com/api";
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+    async function ask(agentId, input, sessionId, onText) {
+      const run = await fetch(`${api}/agent-runs`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ agentId, input, sessionId }),
+      }).then((r) => r.json());
+
+      const res = await fetch(`${api}/agent-runs/${run.id}/events`, { headers });
+      const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+      let buffer = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += value;
+        // SSE events are separated by a blank line.
+        const events = buffer.split("\n\n");
+        buffer = events.pop();
+        for (const raw of events) {
+          const event = raw.match(/^event: (.*)$/m)?.[1];
+          const data = JSON.parse(raw.match(/^data: (.*)$/m)?.[1] ?? "null");
+          if (event === "text_delta") onText(data.text);
+          if (event === "run_finished") return { sessionId: run.sessionId, status: data.status };
+        }
+      }
+    }
+    ```
+  </TabItem>
+  <TabItem label="Python">
+    ```python
+    import json
+    import requests
+
+    API = "https://snipet.example.com/api"
+
+    def ask(token, agent_id, text, session_id=None):
+        headers = {"Authorization": f"Bearer {token}"}
+        run = requests.post(
+            f"{API}/agent-runs",
+            headers=headers,
+            json={"agentId": agent_id, "input": text, "sessionId": session_id},
+            timeout=10,
+        ).json()
+
+        event = None
+        with requests.get(f"{API}/agent-runs/{run['id']}/events", headers=headers, stream=True) as stream:
+            for line in stream.iter_lines(decode_unicode=True):
+                if line.startswith("event: "):
+                    event = line[7:]
+                elif line.startswith("data: "):
+                    data = json.loads(line[6:])
+                    if event == "text_delta":
+                        print(data["text"], end="", flush=True)
+                    elif event == "run_finished":
+                        return run["sessionId"], data["status"]
+    ```
+  </TabItem>
+</Tabs>
+
+## Conversations
+
+| Endpoint | |
+| --- | --- |
+| `GET /api/agent-sessions` | The user's conversations. Filter by `agentId`. |
+| `GET /api/agent-sessions/:id/messages` | A conversation's messages, newest first. Page back with `before=<message id>`. |
+| `DELETE /api/agent-sessions/:id` | Deletes a conversation. |
+| `POST /api/agent-runs/:id/cancel` | Stops a run that's still going. |
+
+A conversation runs one message at a time: starting a run while another is still going in the same session fails with `409`.

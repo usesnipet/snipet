@@ -24,7 +24,28 @@ export default defineConfig({
       customCss: ["./src/styles/global.css"],
       // The landing page owns "/"; docs live under /docs.
       sidebar: [
-        { label: "Getting started", items: [{ slug: "docs" }, { slug: "docs/guides/local-setup" }] },
+        {
+          label: "Get started",
+          items: [{ slug: "docs" }, { slug: "docs/get-started/install" }, { slug: "docs/get-started/first-agent" }],
+        },
+        {
+          label: "Concepts",
+          items: ["models", "plugins", "agents", "apps"].map((page) => ({ slug: `docs/concepts/${page}` })),
+        },
+        {
+          label: "Chat widget",
+          items: [
+            { slug: "docs/widget", label: "Overview" },
+            ...["install", "configuration", "styling", "api"].map((page) => ({ slug: `docs/widget/${page}` })),
+          ],
+        },
+        {
+          label: "Identify your users",
+          items: [
+            { slug: "docs/auth", label: "How it works" },
+            ...["anonymous", "issue-tokens", "use-token", "custom-ui"].map((page) => ({ slug: `docs/auth/${page}` })),
+          ],
+        },
       ],
     }),
   ],

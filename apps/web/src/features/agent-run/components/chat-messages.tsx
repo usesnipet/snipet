@@ -98,7 +98,7 @@ function hasOpenCalls(message: AgentMessage, results: Map<string, ToolResultPart
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
-      <div className="bg-muted max-w-[80%] rounded-3xl px-5 py-2.5 whitespace-pre-wrap break-words">{text}</div>
+      <div className="bg-muted max-w-[80%] rounded-3xl px-5 py-2.5 whitespace-pre-wrap wrap-break-word">{text}</div>
     </div>
   );
 }

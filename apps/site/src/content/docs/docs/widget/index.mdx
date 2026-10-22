@@ -1,0 +1,25 @@
+---
+title: Chat widget
+description: A chat with your agent, in the corner of any website.
+---
+
+The widget adds a chat launcher and panel to your site, connected to one of your agents. It renders inside a Shadow DOM, so your page's CSS and the widget's never clash.
+
+![Chat widget open on a page](/images/docs/widget-open.png)
+
+## Before you start
+
+- An [agent](/docs/concepts/agents/) to chat with.
+- An [app](/docs/concepts/apps/) with your site in its allowed origins.
+- Your site's origin in the server's `CORS_ORIGINS`.
+
+## Who is chatting
+
+The widget always chats as an end user of your app. Choose how it gets one:
+
+- **Anonymous**: visitors chat without signing in. The widget handles it; you pass only the app id. See [anonymous users](/docs/auth/anonymous/).
+- **Your users**: your backend issues a token for the signed-in user and you pass it to the widget. See [identify your users](/docs/auth/).
+
+## Next
+
+[Install the widget](/docs/widget/install/).

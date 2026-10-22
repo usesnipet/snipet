@@ -1,0 +1,52 @@
+---
+title: Styling
+description: Match the widget to your site, from colors to any detail.
+---
+
+Start with the lightest option that does the job.
+
+![Chat widget with custom colors](/images/docs/widget-styled.png)
+
+## Options
+
+`theme`, `size`, `radius`, `primaryColor`, `backgroundColor` and `textColor` cover most sites:
+
+```js
+SnipetWidget.init({
+  apiUrl,
+  appId,
+  agentId,
+  theme: "auto",
+  primaryColor: "#0f766e",
+  radius: 8,
+});
+```
+
+## CSS variables
+
+Set them on `snipet-widget` from your own stylesheet:
+
+```css
+snipet-widget {
+  --sw-accent: #0f766e;
+  --sw-font: "Inter", sans-serif;
+}
+```
+
+Variables: `--sw-accent`, `--sw-accent-text`, `--sw-surface`, `--sw-text`, `--sw-muted`, `--sw-border`, `--sw-header`, `--sw-header-text`, `--sw-input`, `--sw-shadow`, `--sw-font`, `--sw-radius`, `--sw-scale`.
+
+## Parts
+
+Style specific pieces with `::part()`, for example to move the launcher above a cookie banner:
+
+```css
+snipet-widget::part(launcher) {
+  bottom: 80px;
+}
+```
+
+Parts: `root`, `panel`, `header`, `body`, `message`, `user`, `assistant`, `composer`, `input`, `send`, `launcher`, `sessions`, `session`.
+
+## Custom CSS
+
+For anything else, the `css` and `cssUrl` options load CSS inside the widget's Shadow DOM, where it can restyle any `.sw-*` class. These classes can change between versions, so prefer the options above when they're enough.

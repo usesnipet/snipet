@@ -1,0 +1,73 @@
+---
+title: Run Snipet
+description: Start Snipet with Docker, or from the source code.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+Snipet is one server plus a Postgres database. Pick how you want to run it.
+
+<Tabs>
+  <TabItem label="Docker">
+    You need [Docker](https://docs.docker.com/get-docker/) with Compose.
+
+    ```sh
+    curl -O https://raw.githubusercontent.com/usesnipet/snipet/main/docker-compose.yml
+    docker compose up -d
+    ```
+
+    Open [localhost:8852](http://localhost:8852).
+  </TabItem>
+  <TabItem label="From source">
+    You need Node.js 22 or later, [pnpm](https://pnpm.io) and Postgres. The repo's `docker-compose.dev.yml` can run Postgres for you.
+
+    ```sh
+    git clone https://github.com/usesnipet/snipet.git
+    cd snipet
+    cp .env.example .env
+    pnpm install
+    pnpm dev
+    ```
+
+    Edit `.env` first if your Postgres isn't at the default `DATABASE_URL`. The web app opens at [localhost:5173](http://localhost:5173).
+  </TabItem>
+</Tabs>
+
+## Sign in
+
+On first boot Snipet creates an admin from `ROOT_USERNAME` and `ROOT_PASSWORD` (`admin` by default). Without a password set, a random one is generated and printed once in the server logs.
+
+## Configuration
+
+Set these as environment variables, or in a `.env` file at the repo root when running from source.
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `PORT` | `8852` | Port the server listens on. |
+| `DATABASE_URL` | local Postgres | Postgres connection string. |
+| `JWT_SECRET` | insecure default | Signs sign-in and app tokens. At least 32 characters. |
+| `ENCRYPTION_KEY` | insecure default | Encrypts model and plugin credentials: 32 bytes, base64. Changing it makes stored credentials unreadable. |
+| `ROOT_USERNAME`, `ROOT_PASSWORD` | `admin` | First admin, created when there are no users. |
+| `CORS_ORIGINS` | unset | Sites allowed to call the API from a browser, comma-separated. Needed for the [chat widget](/docs/widget/). |
+| `PUBLIC_URL` | `http://localhost:$PORT` | URL the server is reached at, used in links to uploaded files. |
+| `PLUGINS_DIR` | built-in | Folder with your own [plugin manifests](/docs/concepts/plugins/#your-own-plugins). |
+| `STORAGE_DRIVER` | `fs` | Where uploads and debug logs go: `fs` (a local folder) or `s3`. |
+
+:::caution
+Set your own `JWT_SECRET` and `ENCRYPTION_KEY` before putting Snipet on a network. The defaults are public.
+
+Generate them with:
+
+```sh
+node -e 'console.log(require("crypto").randomBytes(48).toString("base64url"))'  # JWT_SECRET
+node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'     # ENCRYPTION_KEY
+```
+:::
+
+## Next
+
+[Build your first agent](/docs/get-started/first-agent/).
+
+:::tip[Rather not host it?]
+Snipet Cloud is coming. [Join the waitlist](/#cloud).
+:::

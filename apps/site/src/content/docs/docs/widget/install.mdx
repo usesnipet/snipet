@@ -1,0 +1,83 @@
+---
+title: Install the widget
+description: Add the widget with a script tag, npm, React or Angular.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+Use the widget version that matches your Snipet server: widget `x.y.z` for server `x.y.z`.
+
+<Tabs>
+  <TabItem label="Script tag">
+    ```html
+    <script src="https://unpkg.com/@snipet/widget@x.y.z/dist/widget.js"></script>
+    <script>
+      SnipetWidget.init({
+        apiUrl: "https://snipet.example.com",
+        appId: "<your app id>",
+        agentId: "<your agent id>",
+      });
+    </script>
+    ```
+
+    Loading the script only defines `window.SnipetWidget`. Nothing shows up until `init()`.
+  </TabItem>
+  <TabItem label="npm">
+    ```sh
+    npm install @snipet/widget
+    ```
+
+    ```ts
+    import { snipet } from "@snipet/widget";
+
+    snipet.init({ apiUrl: "https://snipet.example.com", appId: "<your app id>", agentId: "<your agent id>" });
+    ```
+
+    The package is a small loader: it fetches `widget.js` from unpkg and queues calls until it's ready, so `snipet.*` is safe to call right away. Hosting the script yourself? Pass its URL: `snipet.init(config, "/assets/widget.js")`.
+  </TabItem>
+  <TabItem label="React">
+    ```sh
+    npm install @snipet/react-widget
+    ```
+
+    ```tsx
+    import { SnipetWidget } from "@snipet/react-widget";
+
+    export function App() {
+      return (
+        <SnipetWidget
+          apiUrl="https://snipet.example.com"
+          appId="<your app id>"
+          agentId="<your agent id>"
+        />
+      );
+    }
+    ```
+
+    Render `<SnipetWidget />` once, anywhere. Props are the widget's [options](/docs/widget/configuration/) and changing one updates the widget. Unmounting it removes the widget. Works with Next.js and Remix: it only touches the DOM in effects.
+  </TabItem>
+  <TabItem label="Angular">
+    ```sh
+    npm install @snipet/angular-widget
+    ```
+
+    ```ts
+    // app.config.ts
+    import { provideSnipet } from "@snipet/angular-widget";
+
+    export const appConfig: ApplicationConfig = {
+      providers: [
+        provideSnipet({
+          apiUrl: "https://snipet.example.com",
+          appId: "<your app id>",
+          agentId: "<your agent id>",
+        }),
+      ],
+    };
+    ```
+
+    Angular 19 or later. The config takes the widget's [options](/docs/widget/configuration/). On the server the widget doesn't mount, so it's safe with SSR.
+  </TabItem>
+</Tabs>
+
+`appId` alone works for apps that [allow anonymous users](/docs/auth/anonymous/). To chat as your signed-in users, [pass a token](/docs/auth/use-token/) instead.

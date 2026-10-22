@@ -13,7 +13,7 @@ export function GetStarted() {
   useEffect(() => setRedirect(`${location.origin}/waitlist/`), []);
 
   return (
-    <section className="border-t">
+    <section id="cloud" className="scroll-mt-14 border-t">
       <div className="mx-auto grid max-w-6xl gap-12 px-4 py-20 lg:grid-cols-2 lg:gap-16">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Run it on your servers</h2>
@@ -30,8 +30,8 @@ export function GetStarted() {
             </pre>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            Then open localhost:8080. Prefer to build from source?{" "}
-            <a href="/docs/guides/local-setup/" className="text-foreground underline underline-offset-4">
+            Then open localhost:8852. Prefer to build from source?{" "}
+            <a href="/docs/get-started/install/" className="text-foreground underline underline-offset-4">
               Follow the setup guide
             </a>
             .

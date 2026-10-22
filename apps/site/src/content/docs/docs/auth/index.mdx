@@ -1,0 +1,31 @@
+---
+title: Identify your users
+description: How end users of your app sign in to chat with your agents.
+---
+
+Everyone who chats through an [app](/docs/concepts/apps/) is an end user of that app. Their conversations are theirs: one user never sees another's. Snipet doesn't keep its own accounts for them; it trusts the app to say who they are.
+
+## Two ways in
+
+**Anonymous users.** Visitors chat without signing in. The widget creates a user per browser and keeps it, so a returning visitor gets their chats back. Good for public help on a marketing site. See [anonymous users](/docs/auth/anonymous/).
+
+**Your users.** Your backend vouches for the signed-in user by issuing a token with the app's API key. The user keeps the same conversations on any device. Good for anything behind a login.
+
+## How tokens work
+
+```
+Browser ──▶ your backend ──▶ POST /api/apps/issue-token   (X-API-Key: app key)
+   ▲               │
+   └── token ◀─────┘
+   │
+   └──▶ Snipet widget or your own UI   (Authorization: Bearer <token>)
+```
+
+1. Your user signs in to your product as usual.
+2. Your frontend asks your backend for a Snipet token.
+3. Your backend calls Snipet with the app's API key and the user's id, and returns the token. See [issue tokens](/docs/auth/issue-tokens/).
+4. Your frontend hands the token to the widget, or uses it to call the API directly. See [use the token](/docs/auth/use-token/) and [build your own UI](/docs/auth/custom-ui/).
+
+:::danger
+The API key stays on your servers. Anyone holding it can issue tokens for any user of the app.
+:::
