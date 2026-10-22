@@ -43,8 +43,17 @@ type Props = {
 /** A captioned code sample. */
 function Snippet({ caption, code, lang, className }: Props) {
   return (
-    <figure className={`flex flex-col ${className ?? ""}`}>
-      <figcaption className="mb-2 text-sm font-medium text-muted-foreground">{caption}</figcaption>
+    <figure className={`flex min-w-0 flex-col ${className ?? ""}`}>
+      <div className="mb-2 flex items-baseline justify-between">
+        <figcaption className="text-sm font-medium text-muted-foreground">{caption}</figcaption>
+        <button
+          type="button"
+          data-copy
+          className="rounded-md px-2 py-0.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          Copy
+        </button>
+      </div>
       <div
         // flex-1 + pre flex-1 stretch the block to the row height, so shorter samples match their neighbor.
         className="flex flex-1 flex-col [&_pre]:flex-1 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:text-sm"
