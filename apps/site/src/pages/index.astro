@@ -13,13 +13,20 @@ import { Waitlist } from "../components/landing/Waitlist";
 /** Closed milestones shown before the open ones. */
 const SHIPPED_COUNT = 4;
 
-// Read the API's manifests so the landing lists exactly what the server ships.
-const manifests = (glob: Record<string, { default: Manifest }>) =>
-  Object.values(glob).map((m) => m.default);
-const models = manifests(import.meta.glob("../../../api/src/llm/manifests/*.json", { eager: true }));
-const plugins = manifests(import.meta.glob("../../../api/src/plugin/manifests/*.json", { eager: true })).filter(
-  (p) => p.key !== "mcp",
-);
+/**
+ * The API's manifests in `dir` on GitHub's default branch, so the site builds without the API sources (e.g. in Docker).
+ * Throws instead of degrading like the roadmap: a landing without the catalog shouldn't ship silently.
+ */
+async function loadManifests(dir: string): Promise<Manifest[]> {
+  const res = await fetch(`https://api.github.com/repos/usesnipet/snipet/contents/apps/api/src/${dir}/manifests`);
+  if (!res.ok) throw new Error(`Listing ${dir} manifests on GitHub failed: ${res.status}`);
+  const files = (await res.json()) as { name: string; download_url: string }[];
+  return Promise.all(
+    files.filter((f) => f.name.endsWith(".json")).map(async (f) => (await fetch(f.download_url)).json() as Promise<Manifest>),
+  );
+}
+const [models, allPlugins] = await Promise.all([loadManifests("llm"), loadManifests("plugin")]);
+const plugins = allPlugins.filter((p) => p.key !== "mcp");
 
 /** Roadmap from the repo milestones, fetched at build time; empty when GitHub is unreachable. */
 async function loadRoadmap(): Promise<Milestone[]> {
