@@ -6,9 +6,15 @@ import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, envField, memoryCache } from "astro/config";
 
+/**
+ * Public origin of the site. Read at build time, since the docs, sitemap and llms.txt are prerendered; the
+ * `PUBLIC_` prefix is what makes Turborepo pass it through to the build.
+ */
+const site = process.env.PUBLIC_SITE_URL || "https://snipet.dev";
+
 export default defineConfig({
   // Canonical links, og:url and the sitemap are only generated when this is set.
-  site: "https://snipet.dev",
+  site,
   // Pages stay prerendered; only routes with `prerender = false` (the landing) run on this server.
   adapter: node({ mode: "standalone" }),
   cache: { provider: memoryCache() },
@@ -27,7 +33,7 @@ export default defineConfig({
       title: "Snipet",
       logo: { src: "./src/assets/logo.svg" },
       favicon: "/favicon.svg",
-      head: [{ tag: "meta", attrs: { property: "og:image", content: "https://snipet.dev/og.png" } }],
+      head: [{ tag: "meta", attrs: { property: "og:image", content: new URL("/og.png", site).href } }],
       // Dark code in both themes, like the landing's samples; rounded and flat like its code panels.
       expressiveCode: {
         themes: ["github-dark"],
