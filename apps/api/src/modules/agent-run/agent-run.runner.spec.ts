@@ -8,6 +8,7 @@ import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
 import { AgentContext } from "./agent-context.js";
 
+import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { Agent } from "../agent/agent.entity.js";
 import type { DebugService } from "../debug/debug.service.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
@@ -33,6 +34,8 @@ const agent = {
   pluginConnections: [{ pluginConnectionId: "p1", allow: ["ask_*"], deny: [] }],
 } as unknown as Agent;
 const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z"), debugged: true } as AgentRun;
+
+const owner: Owner = { userId: "u1", appId: null, externalUserId: null, name: null };
 
 const wiki = { pluginConnectionId: "p1", pluginConnection: { name: "Wiki" } };
 
@@ -96,7 +99,7 @@ const finishedWith = (runs: { update: jest.Mock<Fn> }) => runs.update.mock.calls
 describe("AgentRunner.run", () => {
   it("runs the granted plugin actions the model calls and feeds the results back", async () => {
     const { runner, runs, llm, plugins, saved } = setup([callTool, answer]);
-    await runner.run(agent, run);
+    await runner.run(agent, run, owner);
 
     expect(plugins.executeAction).toHaveBeenCalledWith("a1", { q: "x" });
     expect(saved.map((m) => m.role)).toEqual(["assistant", "tool", "assistant"]);
@@ -115,7 +118,7 @@ describe("AgentRunner.run", () => {
   it("adds the instructions of the plugins with granted actions after the system prompt", async () => {
     const { runner, llm, plugins } = setup([answer]);
     plugins.findInstructions.mockResolvedValue([{ name: 'Wiki "docs"', text: "search first" }]);
-    await runner.run(agent, run);
+    await runner.run(agent, run, owner);
 
     expect(plugins.findInstructions).toHaveBeenCalledWith(["p1"]);
     const [{ messages }] = llm.stream.mock.calls[0] as unknown as [{ messages: LlmMessage[] }];
@@ -125,9 +128,21 @@ describe("AgentRunner.run", () => {
     ]);
   });
 
+  it("tells the model the owner's name, when known, before the system prompt", async () => {
+    const { runner, llm } = setup([answer]);
+    await runner.run(agent, run, { ...owner, name: "Maria" });
+
+    const [{ messages }] = llm.stream.mock.calls[0] as unknown as [{ messages: LlmMessage[] }];
+    expect(messages.slice(0, 3).map((m) => m.parts)).toEqual([
+      [{ type: "text", text: "Your name is Suporte Técnico" }],
+      [{ type: "text", text: "The user's name is Maria" }],
+      [{ type: "text", text: "be brief" }],
+    ]);
+  });
+
   it("records the run in its debug files", async () => {
     const { runner, debugFiles } = setup([callTool, answer]);
-    await runner.run(agent, run);
+    await runner.run(agent, run, owner);
 
     const dir = "2026-10-16/suporte-tecnico_ag1/s1/14-32-05_r1/";
     const file = (name: string) => debugFiles.get(dir + name);
@@ -163,21 +178,21 @@ describe("AgentRunner.run", () => {
 
   it("stops at maxTurns while the model keeps calling tools", async () => {
     const { runner, runs } = setup([callTool, callTool]);
-    await runner.run({ ...agent, maxTurns: 2 } as Agent, run);
+    await runner.run({ ...agent, maxTurns: 2 } as Agent, run, owner);
 
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.MAX_TURNS, turns: 2 });
   });
 
   it("fails with a client-safe message on llm errors", async () => {
     const { runner, runs } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
-    await runner.run(agent, run);
+    await runner.run(agent, run, owner);
 
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "llm provider unavailable" });
   });
 
   it("keeps the raw error, hidden from the client, in the debug files", async () => {
     const { runner, debugFiles } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
-    await runner.run(agent, run);
+    await runner.run(agent, run, owner);
 
     const dir = "2026-10-16/suporte-tecnico_ag1/s1/14-32-05_r1/";
     expect(debugFiles.get(`${dir}error.json`)).toMatchObject({ message: "connect ECONNREFUSED 10.0.0.1" });

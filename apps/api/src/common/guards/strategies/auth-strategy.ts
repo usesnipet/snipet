@@ -15,6 +15,7 @@ export type AuthStrategy = { type: "user"; roles: Role[] } | { type: "apiKey" } 
 export interface AuthUser {
   id: string;
   role: Role;
+  name: string | null;
 }
 
 /** How the request authenticated, set by AuthGuard on @Private routes. */
