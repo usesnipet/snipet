@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
 
@@ -26,7 +27,7 @@ export const useDialogStore = create<DialogStore>((set, get) => ({
   stack: [],
 
   openDialog: (opts) => {
-    const id = crypto.randomUUID();
+    const id = uuid();
     setTimeout(() => {
       set((s) => ({
         stack: [
