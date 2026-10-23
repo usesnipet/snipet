@@ -1,11 +1,14 @@
 // @ts-check
 import node from "@astrojs/node";
 import react from "@astrojs/react";
+import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, envField, memoryCache } from "astro/config";
 
 export default defineConfig({
+  // Canonical links, og:url and the sitemap are only generated when this is set.
+  site: "https://snipet.dev",
   // Pages stay prerendered; only routes with `prerender = false` (the landing) run on this server.
   adapter: node({ mode: "standalone" }),
   cache: { provider: memoryCache() },
@@ -18,10 +21,13 @@ export default defineConfig({
   },
   integrations: [
     react(),
+    // Replaces the sitemap Starlight adds on its own, to keep the noindex confirmation page out of it.
+    sitemap({ filter: (page) => !page.includes("/waitlist") }),
     starlight({
       title: "Snipet",
       logo: { src: "./src/assets/logo.svg" },
       favicon: "/favicon.svg",
+      head: [{ tag: "meta", attrs: { property: "og:image", content: "https://snipet.dev/og.png" } }],
       // Dark code in both themes, like the landing's samples; rounded and flat like its code panels.
       expressiveCode: {
         themes: ["github-dark"],
