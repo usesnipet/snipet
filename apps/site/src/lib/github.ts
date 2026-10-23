@@ -10,14 +10,19 @@ export type Manifest = { key: string; name: string; icon: string; description: s
 /** GitHub milestone fields the roadmap uses. */
 export type Milestone = { title: string; description: string[]; state: "open" | "closed"; due_on: string | null };
 
-/** The API's manifests in `dir` on the default branch. */
-export async function loadManifests(dir: "llm" | "plugin"): Promise<Manifest[]> {
-  const res = await fetch(`${REPO}/contents/apps/api/src/${dir}/manifests`);
-  if (!res.ok) throw new Error(`Listing ${dir} manifests on GitHub failed: ${res.status}`);
-  const files = (await res.json()) as { name: string; download_url: string }[];
-  return Promise.all(
-    files.filter((f) => f.name.endsWith(".json")).map(async (f) => (await fetch(f.download_url)).json() as Promise<Manifest>),
-  );
+/** The API's manifests in `dir` on the default branch, or null when GitHub can't be reached. */
+export async function loadManifests(dir: "llm" | "plugin"): Promise<Manifest[] | null> {
+  try {
+    const res = await fetch(`${REPO}/contents/apps/api/src/${dir}/manifests`);
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const files = (await res.json()) as { name: string; download_url: string }[];
+    return await Promise.all(
+      files.filter((f) => f.name.endsWith(".json")).map(async (f) => (await fetch(f.download_url)).json() as Promise<Manifest>),
+    );
+  } catch (error) {
+    console.warn(`Loading ${dir} manifests from GitHub failed:`, error);
+    return null;
+  }
 }
 
 /** The repo's star count, or null when GitHub can't be reached; the header just leaves it out. */
@@ -27,10 +32,13 @@ export async function loadStars(): Promise<number | null> {
   return ((await res.json()) as { stargazers_count: number }).stargazers_count;
 }
 
-/** The latest shipped milestones followed by the open ones, by due date. */
-export async function loadRoadmap(): Promise<Milestone[]> {
-  const res = await fetch(`${REPO}/milestones?state=all&per_page=100`);
-  if (!res.ok) throw new Error(`Loading milestones from GitHub failed: ${res.status}`);
+/** The latest shipped milestones followed by the open ones, by due date, or null when GitHub can't be reached. */
+export async function loadRoadmap(): Promise<Milestone[] | null> {
+  const res = await fetch(`${REPO}/milestones?state=all&per_page=100`).catch(() => null);
+  if (!res?.ok) {
+    console.warn(`Loading milestones from GitHub failed: ${res?.status ?? "unreachable"}`);
+    return null;
+  }
   const all = ((await res.json()) as Milestone[])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((m: any) => ({
