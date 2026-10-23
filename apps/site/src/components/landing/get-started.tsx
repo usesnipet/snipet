@@ -6,8 +6,11 @@ import { CopyButton } from "./copy-button";
 const selfHostCommand = `curl -O https://raw.githubusercontent.com/usesnipet/snipet/main/docker-compose.yml
 docker compose up -d`;
 
-/** The two ways to run Snipet, side by side: self-host today or join the Cloud waitlist. */
-export function GetStarted() {
+/**
+ * The two ways to run Snipet, side by side: self-host today or join the Cloud waitlist.
+ * `waitlistKey` is the Web3Forms access key the waitlist form submits with.
+ */
+export function GetStarted({ waitlistKey }: { waitlistKey: string }) {
   // Set after hydration: `location` doesn't exist during server rendering.
   const [redirect, setRedirect] = useState("");
   useEffect(() => setRedirect(`${location.origin}/waitlist/`), []);
@@ -44,7 +47,7 @@ export function GetStarted() {
             Snipet Cloud is coming. Join the waitlist and we'll email you when it opens.
           </p>
           <form action="https://api.web3forms.com/submit" method="POST" className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <input type="hidden" name="access_key" value="deea7df5-158e-4655-a8d7-56f405258874" />
+            <input type="hidden" name="access_key" value={waitlistKey} />
             <input type="hidden" name="subject" value="Snipet Cloud waitlist" />
             {/* Web3Forms needs an absolute URL; without JS it falls back to its own success page. */}
             <input type="hidden" name="redirect" value={redirect} />

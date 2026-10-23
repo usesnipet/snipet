@@ -3,12 +3,19 @@ import node from "@astrojs/node";
 import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig, memoryCache } from "astro/config";
+import { defineConfig, envField, memoryCache } from "astro/config";
 
 export default defineConfig({
   // Pages stay prerendered; only routes with `prerender = false` (the landing) run on this server.
   adapter: node({ mode: "standalone" }),
   cache: { provider: memoryCache() },
+  env: {
+    schema: {
+      // Public by design (it ends up in the page), but "secret" is what makes Astro read it at runtime
+      // instead of inlining it at build time, so one image serves any key.
+      WEB3FORMS_ACCESS_KEY: envField.string({ context: "server", access: "secret" }),
+    },
+  },
   integrations: [
     react(),
     starlight({
