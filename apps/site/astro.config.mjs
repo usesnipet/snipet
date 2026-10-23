@@ -68,5 +68,10 @@ export default defineConfig({
       ],
     }),
   ],
-  vite: { plugins: [tailwindcss()] },
+  vite: {
+    plugins: [tailwindcss()],
+    // `astro build` fills the dep cache with production React, whose jsx-dev-runtime has no jsxDEV, and
+    // `astro dev` reuses that cache ("_jsxDEV is not a function"). A separate dir keeps them apart.
+    cacheDir: process.env.NODE_ENV === "production" ? "node_modules/.vite-build" : undefined,
+  },
 });
