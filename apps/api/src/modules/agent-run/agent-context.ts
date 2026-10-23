@@ -1,3 +1,4 @@
+import { Owner } from "#src/common/decorators/owner.decorator.js";
 import { ActionResult } from "#src/plugin/driver.js";
 import { isGranted } from "#src/utils/grant/grant.js";
 import { Injectable } from "@nestjs/common";
@@ -39,7 +40,7 @@ export class AgentContext {
    * grant's allow/deny; the others are returned as denied. Names are made
    * unique and provider-safe; executors maps them back.
    */
-  async build(agent: Agent): Promise<RunContext> {
+  async build(agent: Agent, owner: Owner): Promise<RunContext> {
     const denied: DeniedAction[] = [];
     const executors = new Map<string, Executor>();
     const tools: LlmTool[] = [];
@@ -65,6 +66,7 @@ export class AgentContext {
 
     const instructions = await this.plugins.findInstructions([...used]);
     const system = [systemText(`Your name is ${agent.name}`)];
+    if (owner.name) system.push(systemText(`The user's name is ${owner.name}`));
     if (agent.systemPrompt) system.push(systemText(agent.systemPrompt));
     for (const { name, text } of instructions) {
       system.push(systemText(`<plugin name="${escapeAttr(name)}">\n${text}\n</plugin>`));

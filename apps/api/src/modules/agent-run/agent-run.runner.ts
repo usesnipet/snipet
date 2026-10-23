@@ -1,3 +1,4 @@
+import { Owner } from "#src/common/decorators/owner.decorator.js";
 import { toHttpException } from "#src/common/filter/llm-error.filter.js";
 import { FailoverError, LlmError } from "#src/llm/errors.js";
 import { ActionResult } from "#src/plugin/driver.js";
@@ -13,9 +14,9 @@ import { DebugService } from "../debug/debug.service.js";
 import { Debugger, describeError } from "../debug/debugger.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 
+import { AgentContext } from "./agent-context.js";
 import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
-import { AgentContext } from "./agent-context.js";
 
 import type { LlmMessage, LlmPart, LlmToolCallPart } from "@snipet/shared";
 const HISTORY_LIMIT = 20;
@@ -81,22 +82,22 @@ export class AgentRunner {
    * Answers the session's history, which ends with the run's user message.
    * Never throws: the outcome is written to the run.
    */
-  async run(agent: Agent, run: AgentRun): Promise<void> {
+  async run(agent: Agent, run: AgentRun, owner: Owner): Promise<void> {
     // Opened before the first await, so a cancel right after start lands.
     const signal = this.events.open(run.id);
     await this.debugs.debug(AgentRunner.debugPath(agent, run), run.debugged, (d) =>
-      this.execute(agent, run, signal, d),
+      this.execute(agent, run, owner, signal, d),
     );
   }
 
-  private async execute(agent: Agent, run: AgentRun, signal: AbortSignal, d: Debugger): Promise<void> {
+  private async execute(agent: Agent, run: AgentRun, owner: Owner, signal: AbortSignal, d: Debugger): Promise<void> {
     let status = AgentRunStatus.MAX_TURNS;
     let error: string | null = null;
     let turns = 0;
 
     try {
       const history = await this.getHistory(run.sessionId);
-      const context = await this.agentContext.build(agent);
+      const context = await this.agentContext.build(agent, owner);
       const { system, tools } = context;
       const targets = agent.llms.map((llm) => ({
         model: llm.model,

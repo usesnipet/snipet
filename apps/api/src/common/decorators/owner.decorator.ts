@@ -9,8 +9,8 @@ import type { Request } from "express";
  * behalf of one of its end users (the app token's, or the API key's pick).
  */
 export type Owner =
-  | { userId: string; appId: null; externalUserId: null }
-  | { userId: null; appId: string; externalUserId: string | null };
+  | { userId: string; appId: null; externalUserId: null; name: string | null }
+  | { userId: null; appId: string; externalUserId: string | null; name: string | null };
 
 /**
  * The API key holder is the app's backend, so it's trusted to say which of
@@ -20,8 +20,22 @@ const EXTERNAL_USER_HEADER = "x-external-user-id";
 
 export const CurrentOwner = createParamDecorator((_: unknown, ctx: ExecutionContext): Owner => {
   const auth = requestAuth(ctx);
-  if (auth.type === "user") return { userId: auth.user.id, appId: null, externalUserId: null };
-  if (auth.type === "appToken") return { userId: null, appId: auth.token.app.id, externalUserId: auth.token.sub };
+  if (auth.type === "user") {
+    return {
+      userId: auth.user.id,
+      appId: null,
+      externalUserId: null,
+      name: auth.user.name,
+    };
+  }
+  if (auth.type === "appToken") {
+    return {
+      userId: null,
+      appId: auth.token.app.id,
+      externalUserId: auth.token.sub,
+      name: auth.token.user.name ?? null,
+    };
+  }
 
   const externalUserId = ctx.switchToHttp().getRequest<Request>().headers[EXTERNAL_USER_HEADER];
   if (
@@ -30,5 +44,10 @@ export const CurrentOwner = createParamDecorator((_: unknown, ctx: ExecutionCont
   ) {
     throw new BadRequestException("X-External-User-Id must be a single value of 1 to 255 characters");
   }
-  return { userId: null, appId: auth.apiKey.appId, externalUserId: externalUserId ?? null };
+  return {
+    userId: null,
+    appId: auth.apiKey.appId,
+    externalUserId: externalUserId ?? null,
+    name: null,
+  };
 });

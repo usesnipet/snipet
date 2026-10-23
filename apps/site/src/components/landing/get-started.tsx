@@ -17,7 +17,7 @@ export function GetStarted({ waitlistKey }: { waitlistKey: string }) {
 
   return (
     <section id="cloud" className="scroll-mt-14 border-t">
-      <div className="mx-auto grid max-w-6xl gap-12 px-4 py-20 lg:grid-cols-2 lg:gap-16">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 py-20 lg:grid-cols-2 lg:gap-16">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Run it on your servers</h2>
           <p className="mt-3 text-muted-foreground">

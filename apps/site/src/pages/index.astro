@@ -2,6 +2,7 @@
 import { WEB3FORMS_ACCESS_KEY } from "astro:env/server";
 import "../styles/landing.css";
 import Channels from "../components/landing/channel/channels.astro";
+import { Faq, faqs } from "../components/landing/faq";
 import { Footer } from "../components/landing/footer";
 import { GetStarted } from "../components/landing/get-started";
 import { Header } from "../components/landing/header";
@@ -29,18 +30,61 @@ if (models && allPlugins && roadmap && stars !== null) Astro.cache.set({ maxAge:
 const plugins = (allPlugins ?? [])
   .filter((p) => p.key !== "mcp")
   .map(({ key, name, icon, description, tags }) => ({ key, name, icon, description, tags }));
+
+const title = "Snipet: open-source platform to build AI agents";
+const description =
+  "Open-source, self-hosted platform to build AI agents that connect to your tools through MCP and can be called from your API or a chat widget.";
+const canonical = new URL("/", Astro.site).href;
+const ogImage = new URL("/og.png", Astro.site).href;
+/** Lets search and AI engines identify the product and its publisher as entities. */
+const jsonLd = JSON.stringify([
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Snipet",
+    url: canonical,
+    description,
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Docker",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    codeRepository: "https://github.com/usesnipet/snipet",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Snipet",
+    url: canonical,
+    logo: new URL("/favicon.svg", Astro.site).href,
+    sameAs: ["https://github.com/usesnipet", "https://www.npmjs.com/package/@snipet/widget"],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  },
+]);
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Snipet</title>
-    <meta
-      name="description"
-      content="Open-source platform to build AI agents that connect to your tools and can be called from anywhere."
-    />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Snipet" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={jsonLd} />
   </head>
   <body class="min-h-screen antialiased">
     <Header stars={stars} showRoadmap={!!roadmap?.length} />
@@ -52,6 +96,7 @@ const plugins = (allPlugins ?? [])
       <Channels />
       <Roadmap roadmap={roadmap ?? []} />
       <GetStarted waitlistKey={WEB3FORMS_ACCESS_KEY} client:visible />
+      <Faq />
     </main>
     <Footer />
   </body>

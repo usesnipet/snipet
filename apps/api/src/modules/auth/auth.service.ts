@@ -74,7 +74,7 @@ export class AuthService {
   }
 
   private async issueTokens(user: User): Promise<AuthResponse> {
-    const payload: AccessTokenPayload = { sub: user.id, role: user.role };
+    const payload: AccessTokenPayload = { sub: user.id, role: user.role, name: user.name };
     const accessToken = await this.jwt.signAsync(payload, { expiresIn: env.JWT_EXPIRES_IN_SECONDS });
 
     const refreshToken = randomBytes(32).toString("base64url");

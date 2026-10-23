@@ -12,6 +12,8 @@ import type { AuthStrategyHandler, RequestAuth, StrategyOptions } from "./auth-s
 export interface AccessTokenPayload {
   sub: string;
   role: Role;
+  /** Absent on tokens issued before it was added. */
+  name?: string;
 }
 
 /** Dashboard users: a Bearer access token signed with JWT_SECRET. */
@@ -25,6 +27,6 @@ export class UserStrategy implements AuthStrategyHandler<"user"> {
     const payload = await this.jwt.verifyAsync<AccessTokenPayload>(token).catch(() => null);
     if (!payload) return null;
     if (!hasRole(payload.role, roles)) throw new ForbiddenException("insufficient role");
-    return { type: "user", user: { id: payload.sub, role: payload.role } };
+    return { type: "user", user: { id: payload.sub, role: payload.role, name: payload.name ?? null } };
   }
 }

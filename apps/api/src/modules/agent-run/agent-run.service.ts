@@ -148,7 +148,7 @@ export class AgentRunService implements OnApplicationBootstrap {
       return m.getRepository(AgentRun).findOneByOrFail({ id: run.id });
     });
 
-    void this.runner.run(agent, run);
+    void this.runner.run(agent, run, owner);
     return run;
   }
 

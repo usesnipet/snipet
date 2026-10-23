@@ -16,6 +16,8 @@ FROM base AS build
 COPY --from=prune /app/out/json/ .
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY --from=prune /app/out/full/ .
+# Baked into canonical links, the sitemap and llms.txt: docker build --build-arg PUBLIC_SITE_URL=https://example.com
+ARG PUBLIC_SITE_URL
 RUN pnpm turbo run build --filter @snipet/site
 # Production dependencies only; the server bundle still imports some at runtime (sharp, react).
 RUN pnpm --filter @snipet/site deploy --prod --legacy /out/site && cp -r apps/site/dist /out/site/dist
