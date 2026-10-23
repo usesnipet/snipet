@@ -1,13 +1,12 @@
+import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "#src/modules/app/app.service.js";
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Role } from "@snipet/shared";
 
-import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "#src/modules/app/app.service.js";
 import { ApiKeyAuth, AppTokenAuth, Private, Public, UserAuth } from "../decorators/auth.decorator.js";
 
 import { AuthGuard } from "./auth.guard.js";
-
 import { ApiKeyStrategy } from "./strategies/api-key.strategy.js";
 import { AppTokenStrategy } from "./strategies/app-token.strategy.js";
 import { UserStrategy } from "./strategies/user.strategy.js";
@@ -68,7 +67,7 @@ describe("AuthGuard", () => {
   it("accepts a user with an allowed role", async () => {
     await expect(run({ cls: Private(UserAuth(Role.Admin)) }, bearer(Role.Admin))).resolves.toEqual({
       type: "user",
-      user: { id: "u-1", role: Role.Admin },
+      user: { id: "u-1", role: Role.Admin, name: null },
     });
   });
 
