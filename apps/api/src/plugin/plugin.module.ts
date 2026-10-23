@@ -4,15 +4,22 @@ import { Module } from "@nestjs/common";
 import { pluginManifestSchema } from "@snipet/shared";
 import { resolve } from "node:path";
 
-import { McpActionDriver } from "./drivers/mcp.action.js";
+import { McpDriver } from "./drivers/mcp.js";
+import { StaticInstructionsDriver } from "./drivers/static.instructions.js";
 import { PluginDriverRegistry, PluginRegistry } from "./plugin.registry.js";
 
 @Module({
   providers: [
     {
       provide: PluginDriverRegistry,
-      useFactory: () =>
-        new PluginDriverRegistry({ actions: [new McpActionDriver()], healthCheck: [new HttpHealthCheckDriver()] }),
+      useFactory: () => {
+        const mcp = new McpDriver();
+        return new PluginDriverRegistry({
+          actions: [mcp],
+          instructions: [mcp, new StaticInstructionsDriver()],
+          healthCheck: [new HttpHealthCheckDriver()],
+        });
+      },
     },
     {
       provide: PluginRegistry,

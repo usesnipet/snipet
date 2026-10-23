@@ -123,6 +123,8 @@ export const llmStreamEventSchema = z.discriminatedUnion("event", [
   // A target skipped during failover (rate limit, auth, unavailable).
   z.object({ event: z.literal("llm_skipped"), data: z.object({ llm: z.string(), error: z.string() }) }),
   z.object({ event: z.literal("text_delta"), data: z.object({ text: z.string() }) }),
+  // Token counts, near the end; providers that don't report usage never send it.
+  z.object({ event: z.literal("usage"), data: llmUsageSchema }),
   z.object({
     event: z.literal("tool_call"),
     data: z.object({ id: z.string(), name: z.string(), arguments: z.unknown() }),

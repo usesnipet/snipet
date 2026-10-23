@@ -8,11 +8,23 @@ import { ApiKeyAuth, AppTokenAuth, Private, Public, UserAuth } from "../decorato
 
 import { AuthGuard } from "./auth.guard.js";
 
+import { ApiKeyStrategy } from "./strategies/api-key.strategy.js";
+import { AppTokenStrategy } from "./strategies/app-token.strategy.js";
+import { UserStrategy } from "./strategies/user.strategy.js";
+
 import type { ApiKeyService } from "#src/modules/api-key/api-key.service.js";
+import type { AppService } from "#src/modules/app/app.service.js";
 
 const jwt = new JwtService({ secret: "test" });
 const apiKeys = { verify: (key: string) => Promise.resolve({ id: key, appId: "app-1" }) } as unknown as ApiKeyService;
-const guard = new AuthGuard(jwt, new Reflector(), apiKeys);
+const allowedOrigins = ["https://shop.com"];
+const apps = { findAllowedOrigins: () => Promise.resolve(allowedOrigins) } as unknown as AppService;
+const guard = new AuthGuard(
+  new Reflector(),
+  new UserStrategy(jwt),
+  new ApiKeyStrategy(apiKeys),
+  new AppTokenStrategy(jwt, apps),
+);
 
 // Builds a route from class/method decorators and runs the guard with headers.
 function run(
@@ -97,5 +109,13 @@ describe("AuthGuard", () => {
     await expect(run({ cls: Private(AppTokenAuth()) }, bearer(Role.Admin))).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  it("checks a browser's Origin against the app's allowedOrigins", async () => {
+    const route = { cls: Private(AppTokenAuth()) };
+    await expect(run(route, { ...appToken, origin: "https://shop.com" })).resolves.toMatchObject({ type: "appToken" });
+    await expect(run(route, { ...appToken, origin: "https://evil.com" })).rejects.toBeInstanceOf(ForbiddenException);
+    // Servers send no Origin.
+    await expect(run(route, appToken)).resolves.toMatchObject({ type: "appToken" });
   });
 });

@@ -44,12 +44,42 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
     return this.syncer.sync(id);
   }
 
-  /** Synced actions of the enabled connections among connectionIds. */
+  /**
+   * Synced actions of the enabled connections among connectionIds, with the
+   * connection's name.
+   */
   findActions(connectionIds: string[]): Promise<PluginAction[]> {
     if (!connectionIds.length) return Promise.resolve([]);
     return this.actions.find({
+      // No config: it would be decrypted once per action.
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        inputSchema: true,
+        pluginConnectionId: true,
+        pluginConnection: { id: true, name: true },
+      },
+      relations: { pluginConnection: true },
       where: { pluginConnectionId: In(connectionIds), pluginConnection: { enabled: true } },
-      order: { name: "ASC" },
+      order: { name: "ASC", pluginConnectionId: "ASC" },
+    });
+  }
+
+  /**
+   * The instructions of the enabled connections among connectionIds, the
+   * user's custom ones over the driver's, ordered by id so prompts stay cacheable.
+   */
+  async findInstructions(connectionIds: string[]): Promise<{ name: string; text: string }[]> {
+    if (!connectionIds.length) return [];
+    const conns = await this.repo.find({
+      select: { id: true, name: true, instructions: true, customInstructions: true },
+      where: { id: In(connectionIds), enabled: true },
+      order: { id: "ASC" },
+    });
+    return conns.flatMap(({ name, customInstructions, instructions }) => {
+      const text = customInstructions?.trim() || instructions;
+      return text ? [{ name, text }] : [];
     });
   }
 

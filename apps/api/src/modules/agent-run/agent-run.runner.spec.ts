@@ -6,7 +6,7 @@ import { Debugger } from "../debug/debugger.js";
 
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
-import { AgentTools } from "./agent-tools.js";
+import { AgentContext } from "./agent-context.js";
 
 import type { Agent } from "../agent/agent.entity.js";
 import type { DebugService } from "../debug/debug.service.js";
@@ -34,6 +34,8 @@ const agent = {
 } as unknown as Agent;
 const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z"), debugged: true } as AgentRun;
 
+const wiki = { pluginConnectionId: "p1", pluginConnection: { name: "Wiki" } };
+
 /** replies: what the model answers on each turn; an Error is thrown instead. */
 function setup(replies: (LlmMessage | Error)[]) {
   let nextId = 1;
@@ -57,10 +59,11 @@ function setup(replies: (LlmMessage | Error)[]) {
   };
   const plugins = {
     findActions: jest.fn<Fn>().mockResolvedValue([
-      { id: "a1", name: "ask_question", description: "", inputSchema: {}, pluginConnectionId: "p1" },
-      { id: "a2", name: "read_wiki", description: "", inputSchema: {}, pluginConnectionId: "p1" },
+      { id: "a1", name: "ask_question", description: "Asks", inputSchema: {}, ...wiki },
+      { id: "a2", name: "read_wiki", description: "", inputSchema: {}, ...wiki },
     ]),
     executeAction: jest.fn<Fn>().mockResolvedValue({ content: "answer", isError: false }),
+    findInstructions: jest.fn<Fn>().mockResolvedValue([]),
   };
 
   // The debug files written, by path.
@@ -82,7 +85,7 @@ function setup(replies: (LlmMessage | Error)[]) {
     messages as unknown as Repository<never>,
     llm as unknown as LlmConnectionService,
     new AgentRunEvents(),
-    new AgentTools(plugins as unknown as PluginConnectionService),
+    new AgentContext(plugins as unknown as PluginConnectionService),
     debugs as unknown as DebugService,
   );
   return { runner, runs, llm, plugins, saved, debugFiles };
@@ -101,12 +104,25 @@ describe("AgentRunner.run", () => {
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.COMPLETED, turns: 2, error: null });
 
     const [{ messages, tools }] = llm.stream.mock.calls[1] as unknown as [
-      { messages: LlmMessage[]; tools: { name: string }[] },
+      { messages: LlmMessage[]; tools: { name: string; description: string }[] },
     ];
     expect(messages.map((m) => m.role)).toEqual(["system", "system", "user", "assistant", "tool"]);
     // read_wiki isn't in the plugin grant's allow.
-    expect(tools.map((t) => t.name)).toEqual(["ask_question"]);
+    expect(tools.map((t) => [t.name, t.description])).toEqual([["ask_question", "[Wiki] Asks"]]);
     expect(plugins.findActions).toHaveBeenCalledWith(["p1"]);
+  });
+
+  it("adds the instructions of the plugins with granted actions after the system prompt", async () => {
+    const { runner, llm, plugins } = setup([answer]);
+    plugins.findInstructions.mockResolvedValue([{ name: 'Wiki "docs"', text: "search first" }]);
+    await runner.run(agent, run);
+
+    expect(plugins.findInstructions).toHaveBeenCalledWith(["p1"]);
+    const [{ messages }] = llm.stream.mock.calls[0] as unknown as [{ messages: LlmMessage[] }];
+    expect(messages.slice(1, 3).map((m) => m.parts)).toEqual([
+      [{ type: "text", text: "be brief" }],
+      [{ type: "text", text: '<plugin name="Wiki &quot;docs&quot;">\nsearch first\n</plugin>' }],
+    ]);
   });
 
   it("records the run in its debug files", async () => {

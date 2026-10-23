@@ -2,12 +2,18 @@ services:
   app:
     image: snipet/snipet:0.2.1
     ports:
-      - "8080:8080"
+      - "8852:8852"
     environment:
-      PORT: 8080
       DATABASE_URL: postgresql://postgres:postgres@db/snipet
       PLUGINS_DIR: "/app/plugins"
     restart: unless-stopped
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8852/system/health || exit 1"]
+      interval: 5s
+      retries: 10
+      timeout: 5s
     volumes:
       - ./plugins:/app/plugins
 
@@ -24,3 +30,6 @@ services:
       interval: 5s
       retries: 10
     restart: unless-stopped
+
+volumes:
+  db:

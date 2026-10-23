@@ -8,7 +8,7 @@ import { DriverRegistry } from "./driver.registry.js";
 
 import type { BaseEntity } from "@snipet/server-common";
 import type { PluginManifest } from "@snipet/shared";
-import type { Repository } from "typeorm";
+import type { QueryDeepPartialEntity, Repository } from "typeorm";
 import type { SyncedConnectionEntity } from "./connection-sync.service.js";
 import type { HealthCheckDriver, HealthCheckResult } from "./health-check.js";
 import type { ManifestRegistry } from "./manifest.registry.js";
@@ -36,10 +36,15 @@ class TestSync extends ConnectionSyncService<Conn, PluginManifest, Drivers, Item
   protected readonly connectionField = "connId";
   protected readonly itemKeyField = "name";
   listed: { name: string; v: number }[] | undefined | Error = [];
+  refreshed: QueryDeepPartialEntity<Conn> = {};
 
   protected list() {
     if (this.listed instanceof Error) return Promise.reject(this.listed);
     return Promise.resolve(this.listed);
+  }
+
+  protected override fields() {
+    return Promise.resolve(this.refreshed);
   }
 }
 
@@ -53,11 +58,16 @@ function setup({ healthy = true, withHealth = true } = {}) {
     save: jest.fn<Fn>(),
     delete: jest.fn<Fn>(),
   };
+  const connRepo = { update: jest.fn<Fn>() };
   const connections = {
+    target: "conns",
     findOneBy: jest.fn<Fn>().mockResolvedValue(conn),
     find: jest.fn<Fn>().mockResolvedValue([{ id: "c1" }, { id: "c2" }]),
     update: jest.fn<Fn>(),
-    manager: { transaction: (cb: (m: unknown) => Promise<unknown>) => cb({ getRepository: () => items }) },
+    manager: {
+      transaction: (cb: (m: unknown) => Promise<unknown>) =>
+        cb({ getRepository: (target: unknown) => (target === "conns" ? connRepo : items) }),
+    },
   };
   const manifest = pluginManifestSchema.parse({
     key: "alpha",
@@ -71,7 +81,7 @@ function setup({ healthy = true, withHealth = true } = {}) {
     new DriverRegistry<Drivers>({ actions: [new Lister()], healthCheck: [new Health()] }),
     "items",
   );
-  return { service, connections, items };
+  return { service, connections, connRepo, items };
 }
 
 describe("ConnectionSyncService.sync", () => {
@@ -114,6 +124,23 @@ describe("ConnectionSyncService.sync", () => {
     const { service, items } = setup();
     service.listed = undefined;
     await service.sync("c1");
+    expect(items.findBy).not.toHaveBeenCalled();
+  });
+
+  it("refreshes the connection fields in the items' transaction", async () => {
+    const { service, connRepo, items } = setup();
+    service.refreshed = { name: "renamed" };
+    await service.sync("c1");
+    expect(connRepo.update).toHaveBeenCalledWith("c1", { name: "renamed" });
+    expect(items.delete).toHaveBeenCalledWith(["i1", "i2"]);
+  });
+
+  it("refreshes the connection fields when the manifest lacks the items' capability", async () => {
+    const { service, connRepo, items } = setup();
+    service.listed = undefined;
+    service.refreshed = { name: "renamed" };
+    await service.sync("c1");
+    expect(connRepo.update).toHaveBeenCalledWith("c1", { name: "renamed" });
     expect(items.findBy).not.toHaveBeenCalled();
   });
 

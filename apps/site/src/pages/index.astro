@@ -1,0 +1,57 @@
+---
+import "../styles/landing.css";
+import Channels from "../components/landing/channel/channels.astro";
+import { Footer } from "../components/landing/footer";
+import { GetStarted } from "../components/landing/get-started";
+import { Header } from "../components/landing/header";
+import { Hero } from "../components/landing/hero";
+import { HowItWorks } from "../components/landing/how-it-works";
+import { Models } from "../components/landing/models";
+import { Plugins } from "../components/landing/plugins";
+import { Roadmap } from "../components/landing/roadmap";
+import { loadManifests, loadRoadmap, loadStars } from "../lib/github";
+
+// Rendered on the server so roadmap edits show up without a rebuild; the route cache keeps GitHub calls to one
+// render per maxAge (4 API calls, well under the 60/h unauthenticated limit).
+export const prerender = false;
+
+const [models, allPlugins, roadmap, stars] = await Promise.all([
+  loadManifests("llm"),
+  loadManifests("plugin"),
+  loadRoadmap(),
+  loadStars(),
+]);
+// A section GitHub couldn't fill is left out. Such a page isn't cached, so the next request retries; during swr
+// revalidation the last complete page keeps being served.
+if (models && allPlugins && roadmap && stars !== null) Astro.cache.set({ maxAge: 15 * 60, swr: 24 * 60 * 60 });
+// Only the fields the list shows: Plugins hydrates on the client, so its props are serialized into the page.
+const plugins = (allPlugins ?? [])
+  .filter((p) => p.key !== "mcp")
+  .map(({ key, name, icon, description, tags }) => ({ key, name, icon, description, tags }));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snipet</title>
+    <meta
+      name="description"
+      content="Open-source platform to build AI agents that connect to your tools and can be called from anywhere."
+    />
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body class="min-h-screen antialiased">
+    <Header stars={stars} showRoadmap={!!roadmap?.length} />
+    <main>
+      <Hero client:load />
+      <HowItWorks />
+      {!!models?.length && <Models models={models} />}
+      {plugins.length > 0 && <Plugins plugins={plugins} client:visible />}
+      <Channels />
+      <Roadmap roadmap={roadmap ?? []} />
+      <GetStarted client:visible />
+    </main>
+    <Footer />
+  </body>
+</html>

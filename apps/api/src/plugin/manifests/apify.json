@@ -26,5 +26,14 @@
         "Authorization": "Bearer {{ connection.apiKey }}"
       }
     }
+  },
+  "instructions": {
+    "driver": "mcp",
+    "options": {
+      "url": "https://mcp.apify.com",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      }
+    }
   }
 }

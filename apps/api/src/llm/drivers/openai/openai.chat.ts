@@ -29,7 +29,7 @@ export class OpenAiChatDriver extends Driver(openAiOptionsSchema) implements Cha
   async *stream(req: ChatRequest, options: OpenAiOptions): AsyncGenerator<ChatStreamEvent> {
     try {
       const chunks = await openAiClient(options).chat.completions.create(
-        { ...req.extraOptions, ...body(req), stream: true },
+        { ...req.extraOptions, ...body(req), stream: true, stream_options: { include_usage: true } },
         { signal: req.signal },
       );
       yield* toStreamEvents(chunks);

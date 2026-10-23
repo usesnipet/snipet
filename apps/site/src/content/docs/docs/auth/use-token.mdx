@@ -1,0 +1,71 @@
+---
+title: Use the token
+description: Sign your users in to the widget, and keep them signed in.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+Pass the token from [your backend](/docs/auth/issue-tokens/) as `token`, and a `getToken` function that fetches a fresh one. The widget calls `getToken` when the token expires or is rejected; return `null` to sign the user out.
+
+<Tabs>
+  <TabItem label="Script tag">
+    ```js
+    const fetchToken = () =>
+      fetch("/snipet-token")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((r) => r?.token ?? null);
+
+    SnipetWidget.init({
+      apiUrl: "https://snipet.example.com",
+      agentId: "<your agent id>",
+      token: await fetchToken(),
+      getToken: fetchToken,
+    });
+    ```
+  </TabItem>
+  <TabItem label="React">
+    ```tsx
+    import { SnipetWidget } from "@snipet/react-widget";
+
+    // Defined outside the component, so the widget isn't reconfigured on every render.
+    const fetchToken = () =>
+      fetch("/snipet-token")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((r) => r?.token ?? null);
+
+    export function Chat({ token }: { token: string | null }) {
+      return <SnipetWidget apiUrl={apiUrl} agentId={agentId} token={token ?? undefined} getToken={fetchToken} />;
+    }
+    ```
+  </TabItem>
+  <TabItem label="Angular">
+    ```ts
+    import { inject } from "@angular/core";
+    import { firstValueFrom } from "rxjs";
+    import { SNIPET } from "@snipet/angular-widget";
+
+    export class SessionService {
+      private snipet = inject(SNIPET);
+      private api = inject(ApiService);
+
+      async signedIn() {
+        const { token } = await firstValueFrom(this.api.snipetToken());
+        this.snipet.setToken(token);
+        this.snipet.configure({ getToken: () => firstValueFrom(this.api.snipetToken()).then((r) => r.token) });
+      }
+
+      signedOut() {
+        this.snipet.setToken(null);
+      }
+    }
+    ```
+  </TabItem>
+</Tabs>
+
+## Sign in and out
+
+When your user signs in after the page has loaded, call `setToken(token)`. When they sign out, call `setToken(null)` so the next person on the same browser doesn't see their conversations.
+
+## Allowed origins
+
+A token used from a browser is only accepted from the app's [allowed origins](/docs/concepts/apps/#allowed-origins), when the app lists any. Requests from servers carry no origin and aren't checked.

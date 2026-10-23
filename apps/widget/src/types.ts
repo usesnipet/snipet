@@ -2,7 +2,7 @@
 // Kept free of runtime imports so it compiles into the loader's .d.ts on its own.
 
 export type Theme = "light" | "dark" | "auto";
-export type Size = "sm" | "md" | "lg";
+export type Size = "sm" | "md" | "lg" | "full";
 
 export type WidgetConfig = {
   /** Snipet API base URL. */

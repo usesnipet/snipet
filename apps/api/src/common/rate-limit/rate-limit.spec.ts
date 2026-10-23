@@ -65,6 +65,7 @@ describe("RateLimit", () => {
     for (let i = 0; i < env.ANONYMOUS_SIGNUPS_PER_IP_PER_HOUR; i++) await post("/signup").expect(200);
 
     await post("/signup").expect(429);
+    // Without @RateLimit, no throttler counts (Nest's default would apply them all).
     for (let i = 0; i <= env.AGENT_RUNS_PER_END_USER_PER_MINUTE; i++) await post("/open", {}, "anon:a").expect(200);
   });
 

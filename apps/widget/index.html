@@ -26,7 +26,7 @@
     <script type="module" src="/src/main.tsx"></script>
     <!-- After the widget (module scripts run in order), so SnipetWidget exists. -->
     <script type="module">
-      SnipetWidget.init({ apiUrl: "http://localhost:8852", theme: "auto", size: "lg", radius: 16 });
+      SnipetWidget.init({ apiUrl: "http://localhost:8852", theme: "auto", size: "full", radius: 16 });
       for (const event of ["open", "close", "message", "error"]) {
         SnipetWidget.on(event, (payload) => console.log("[snipet]", event, payload));
       }

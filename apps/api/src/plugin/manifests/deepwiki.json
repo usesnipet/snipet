@@ -6,5 +6,9 @@
   "actions": {
     "driver": "mcp",
     "options": { "url": "https://mcp.deepwiki.com/mcp" }
+  },
+  "instructions": {
+    "driver": "mcp",
+    "options": { "url": "https://mcp.deepwiki.com/mcp" }
   }
 }

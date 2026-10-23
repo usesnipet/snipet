@@ -38,5 +38,15 @@
         "Authorization": "{{ connection.Authorization }}"
       }
     }
+  },
+  "instructions": {
+    "driver": "mcp",
+    "options": {
+      "url": "{{ connection.url }}",
+      "timeout": "{{ connection.timeout }}",
+      "headers": {
+        "Authorization": "{{ connection.Authorization }}"
+      }
+    }
   }
 }

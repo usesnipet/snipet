@@ -14,6 +14,7 @@ import type { View } from "./components/header";
 export function Widget() {
   const config = useWidgetConfig();
   const { open } = config;
+  const full = config.size === "full";
   const setOpen = (value: boolean) => widgetStore.set({ open: value });
 
   const [view, setView] = useState<View>("chat");
@@ -28,7 +29,10 @@ export function Widget() {
       {config.css && <style>{config.css}</style>}
 
       {config.enabled && (
-        <div className="sw-root" part="root">
+        <div className={full ? "sw-root sw-full" : "sw-root"} part="root">
+          {/* Before the panel so the panel paints on top of it. */}
+          {open && full && <div className="sw-backdrop" part="backdrop" onClick={() => setOpen(false)} />}
+
           {open && (
             <div className="sw-panel" part="panel">
               <Header
@@ -61,7 +65,7 @@ export function Widget() {
             </div>
           )}
 
-          <Launcher open={open} onToggle={() => setOpen(!open)} />
+          {!(open && full) && <Launcher open={open} onToggle={() => setOpen(!open)} />}
         </div>
       )}
     </>

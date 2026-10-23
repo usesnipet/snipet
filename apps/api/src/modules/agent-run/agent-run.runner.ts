@@ -15,7 +15,7 @@ import { LlmConnectionService } from "../llm-connection/llm-connection.service.j
 
 import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
-import { AgentTools } from "./agent-tools.js";
+import { AgentContext } from "./agent-context.js";
 
 import type { LlmMessage, LlmPart, LlmToolCallPart } from "@snipet/shared";
 const HISTORY_LIMIT = 20;
@@ -44,7 +44,7 @@ export class AgentRunner {
     @InjectRepository(AgentMessage) private readonly messages: Repository<AgentMessage>,
     private readonly llm: LlmConnectionService,
     private readonly events: AgentRunEvents,
-    private readonly agentTools: AgentTools,
+    private readonly agentContext: AgentContext,
     private readonly debugs: DebugService,
   ) {}
 
@@ -96,10 +96,8 @@ export class AgentRunner {
 
     try {
       const history = await this.getHistory(run.sessionId);
-      const system: LlmMessage[] = [{ role: "system", parts: [{ type: "text", text: `Your name is ${agent.name}` }] }];
-      if (agent.systemPrompt) system.push({ role: "system", parts: [{ type: "text", text: agent.systemPrompt }] });
-      const toolSet = await this.agentTools.resolve(agent);
-      const { tools } = toolSet;
+      const context = await this.agentContext.build(agent);
+      const { system, tools } = context;
       const targets = agent.llms.map((llm) => ({
         model: llm.model,
         connectionId: llm.connectionId ?? undefined,
@@ -113,7 +111,7 @@ export class AgentRunner {
         llms: targets,
         pluginGrants: agent.pluginConnections,
       });
-      d.update("tools", { available: tools ?? [], denied: toolSet.denied });
+      d.update("tools", { available: tools ?? [], denied: context.denied, instructions: context.instructions });
 
       while (turns < agent.maxTurns) {
         turns++;
@@ -144,9 +142,9 @@ export class AgentRunner {
           const { result, startedAt, durationMs } = await d.time(() =>
             signal.aborted
               ? Promise.resolve<ActionResult>({ content: "cancelled", isError: true })
-              : toolSet.call(call),
+              : context.call(call),
           );
-          d.append("toolCalls", { turn: turns, ...call, known: toolSet.has(call.name), startedAt, durationMs, result });
+          d.append("toolCalls", { turn: turns, ...call, known: context.has(call.name), startedAt, durationMs, result });
           const parts = [{ type: "tool_result" as const, toolCallId: call.id, ...result }];
           history.push(await this.save(run, { role: "tool", parts }, null));
         }

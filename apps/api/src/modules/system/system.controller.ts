@@ -1,10 +1,9 @@
+import { Public } from "#src/common/decorators/auth.decorator.js";
 import { Controller, Get } from "@nestjs/common";
 
 import { SystemService } from "./system.service.js";
 
 import type { SystemInfo } from "@snipet/shared";
-import { Public } from "#src/common/decorators/auth.decorator.js";
-
 @Public()
 @Controller("system")
 export class SystemController {
@@ -13,5 +12,10 @@ export class SystemController {
   @Get("info")
   info(): SystemInfo {
     return this.service.info();
+  }
+
+  @Get("health")
+  health(): string {
+    return "OK";
   }
 }

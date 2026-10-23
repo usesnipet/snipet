@@ -24,8 +24,14 @@ export interface ActionDriver<Opts = unknown> extends BaseDriver<Opts> {
   ): Promise<ActionResult>;
 }
 
+export interface InstructionsDriver<Opts = unknown> extends BaseDriver<Opts> {
+  /** How to use the plugin, or undefined when it has none. */
+  getInstructions(connectionId: string, options: Opts): Promise<string | undefined>;
+}
+
 /** Driver per capability, keyed by the manifest field that names it. */
 export type PluginDrivers = {
   actions: ActionDriver;
+  instructions: InstructionsDriver;
   healthCheck: HealthCheckDriver;
 };

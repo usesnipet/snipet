@@ -8,5 +8,9 @@
   "actions": {
     "driver": "mcp",
     "options": { "url": "https://knowledge-mcp.global.api.aws" }
+  },
+  "instructions": {
+    "driver": "mcp",
+    "options": { "url": "https://knowledge-mcp.global.api.aws" }
   }
 }

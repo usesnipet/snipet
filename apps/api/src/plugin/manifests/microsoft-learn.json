@@ -8,5 +8,9 @@
   "actions": {
     "driver": "mcp",
     "options": { "url": "https://learn.microsoft.com/api/mcp" }
+  },
+  "instructions": {
+    "driver": "mcp",
+    "options": { "url": "https://learn.microsoft.com/api/mcp" }
   }
 }

@@ -14,7 +14,7 @@ export interface ChatRequest {
   signal?: AbortSignal;
 }
 
-export type ChatStreamEvent = Extract<LlmStreamEvent, { event: "text_delta" | "tool_call" }>;
+export type ChatStreamEvent = Extract<LlmStreamEvent, { event: "text_delta" | "tool_call" | "usage" }>;
 
 export interface ChatDriver<Opts = unknown> extends BaseDriver<Opts> {
   generate(req: ChatRequest, options: Opts): Promise<LlmResponse>;

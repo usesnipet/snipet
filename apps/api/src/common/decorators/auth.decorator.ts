@@ -1,21 +1,9 @@
 import { createParamDecorator, ExecutionContext, InternalServerErrorException, SetMetadata } from "@nestjs/common";
 
-import type { AppTokenPayload, Role } from "@snipet/shared";
-import type { ApiKey } from "#src/modules/api-key/api-key.entity.js";
+import { AUTH } from "../guards/strategies/auth-strategy.js";
 
-/** Who made the request, set by AuthGuard from the access token. */
-export interface AuthUser {
-  id: string;
-  role: Role;
-}
-
-/**
- * One way a route accepts being called. A user must also hold one of `roles`
- * (none = any role).
- */
-export type AuthStrategy = { type: "user"; roles: Role[] } | { type: "apiKey" } | { type: "appToken" };
-
-export const AUTH = "auth";
+import type { Role } from "@snipet/shared";
+import type { AuthStrategy, RequestAuth } from "../guards/strategies/auth-strategy.js";
 
 /** `Authorization: Bearer <access token>`, optionally limited to these roles. */
 export const UserAuth = (...roles: Role[]): AuthStrategy => ({ type: "user", roles });
@@ -29,10 +17,6 @@ export const AppTokenAuth = (): AuthStrategy => ({ type: "appToken" });
 /** On a class or method; the method's wins. Routes with neither are denied. */
 export const Private = (...strategies: AuthStrategy[]) => SetMetadata(AUTH, strategies);
 export const Public = () => SetMetadata(AUTH, []);
-
-/** How the request authenticated, set by AuthGuard on @Private routes. */
-export type RequestAuth =
-  { type: "user"; user: AuthUser } | { type: "apiKey"; apiKey: ApiKey } | { type: "appToken"; token: AppTokenPayload };
 
 /** Throws when the route isn't @Private: reading the caller there is a bug. */
 export function requestAuth(ctx: ExecutionContext): RequestAuth {

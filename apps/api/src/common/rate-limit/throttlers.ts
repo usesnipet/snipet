@@ -3,7 +3,7 @@ import { Request } from "express";
 
 import type { ExecutionContext } from "@nestjs/common";
 import type { ThrottlerOptions } from "@nestjs/throttler";
-import type { RequestAuth } from "../decorators/auth.decorator.js";
+import type { RequestAuth } from "../guards/strategies/auth-strategy.js";
 /** A named limit: applies where @RateLimit lists it, or on every route when `global`. */
 export type ThrottlerConfig = Omit<ThrottlerOptions, "name"> & { global?: boolean };
 

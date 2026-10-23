@@ -8,5 +8,9 @@
   "actions": {
     "driver": "mcp",
     "options": { "url": "https://mcp.context7.com/mcp" }
+  },
+  "instructions": {
+    "driver": "mcp",
+    "options": { "url": "https://mcp.context7.com/mcp" }
   }
 }

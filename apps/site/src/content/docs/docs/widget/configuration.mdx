@@ -1,0 +1,22 @@
+---
+title: Configuration
+description: Every option the widget takes.
+---
+
+Pass options to `init()`, as React props, or to `provideSnipet()`. Change them later with `configure()`.
+
+| Option | Type | Default | |
+| --- | --- | --- | --- |
+| `apiUrl` | `string` | required | Your Snipet server's URL. |
+| `appId` | `string` | | The app. Without a `token`, the widget signs in an [anonymous user](/docs/auth/anonymous/). |
+| `agentId` | `string` | | The agent to chat with. |
+| `token` | `string` | | An end-user token from your backend. See [identify your users](/docs/auth/). |
+| `getToken` | `() => Promise<string \| null>` | | Called when the token is rejected: return a fresh one, or `null` to sign out. |
+| `theme` | `"light" \| "dark" \| "auto"` | `"light"` | `auto` follows the visitor's system. |
+| `size` | `"sm" \| "md" \| "lg"` | `"md"` | Overall scale. |
+| `radius` | `number` | `16` | Panel corner radius, in px. |
+| `primaryColor`, `backgroundColor`, `textColor` | `string` | | Any CSS color. See [styling](/docs/widget/styling/). |
+| `css` | `string` | | CSS added inside the widget. |
+| `cssUrl` | `string` | | Stylesheet loaded inside the widget. |
+| `open` | `boolean` | `false` | Start with the panel open. |
+| `enabled` | `boolean` | `true` | Show the widget at all. |
