@@ -72,14 +72,20 @@ export class LLMRunner {
 
       yield { event: "llm_started", data: { llm: target.model } };
       let text = "";
+      let thinking = "";
       const toolCalls: LlmPart[] = [];
       for (let result = first; !result.done; result = await iterator.next()) {
         const event = result.value;
         if (event.event === "text_delta") text += event.data.text;
+        if (event.event === "thinking_delta") thinking += event.data.text;
         if (event.event === "tool_call") toolCalls.push({ type: "tool_call", ...event.data });
         yield event;
       }
-      const parts: LlmPart[] = text ? [{ type: "text", text }, ...toolCalls] : toolCalls;
+      const parts: LlmPart[] = [
+        ...(thinking ? [{ type: "thinking" as const, text: thinking }] : []),
+        ...(text ? [{ type: "text" as const, text }] : []),
+        ...toolCalls,
+      ];
       yield { event: "message", data: { message: { role: "assistant", parts } } };
       return;
     }

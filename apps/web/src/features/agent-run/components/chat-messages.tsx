@@ -7,7 +7,7 @@ import { Markdown } from "@/components/ui/markdown";
 import { MessageAction, MessageActions } from "@/components/ui/message";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { cn } from "@/lib/utils";
-import { Check, ChevronRight, CircleAlert, Copy, Wrench, X } from "lucide-react";
+import { Brain, Check, ChevronRight, CircleAlert, Copy, Wrench, X } from "lucide-react";
 import { useState } from "react";
 
 import type { AgentMessage, AgentRun, LlmPart } from "@snipet/shared";
@@ -58,7 +58,8 @@ export function ChatMessages({ messages, pendingInput, draft, streaming, run, er
   }
 
   const last = messages.at(-1);
-  const waiting = streaming && !draft && (pendingInput !== null || last?.role !== "assistant" || hasOpenCalls(last, results));
+  const waiting =
+    streaming && !draft && (pendingInput !== null || last?.role !== "assistant" || hasOpenCalls(last, results));
   const notice = !streaming && run ? RUN_NOTICES[run.status] : undefined;
 
   return (
@@ -121,6 +122,7 @@ function AssistantMessage({ message, results, streaming }: AssistantMessageProps
             </Markdown>
           );
         }
+        if (part.type === "thinking" && part.text) return <Thinking key={i} text={part.text} />;
         if (part.type === "tool_call") {
           return <ToolCall key={part.id} call={part} result={results.get(part.id)} running={streaming} />;
         }
@@ -148,6 +150,23 @@ function CopyButton({ text }: { text: string }) {
         {copied ? <Check /> : <Copy />}
       </Button>
     </MessageAction>
+  );
+}
+
+/** The model's reasoning, collapsed since it's rarely what the user came for. */
+function Thinking({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors [&_svg]:size-4 [&_svg]:shrink-0">
+        <Brain />
+        Thinking
+        <ChevronRight className={cn("transition-transform", open && "rotate-90")} />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="text-muted-foreground mt-2 border-l pl-4 text-sm whitespace-pre-wrap">
+        {text}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -197,7 +216,12 @@ function parseContent(content: string): unknown {
 
 function Notice({ muted, children }: { muted?: boolean; children: React.ReactNode }) {
   return (
-    <div className={cn(muted ? "text-muted-foreground" : "text-destructive", "flex items-start gap-2 text-sm [&_svg]:mt-0.5 [&_svg]:size-4 [&_svg]:shrink-0")}>
+    <div
+      className={cn(
+        muted ? "text-muted-foreground" : "text-destructive",
+        "flex items-start gap-2 text-sm [&_svg]:mt-0.5 [&_svg]:size-4 [&_svg]:shrink-0",
+      )}
+    >
       <CircleAlert />
       <p>{children}</p>
     </div>

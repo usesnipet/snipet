@@ -9,6 +9,8 @@ export const llmRoleSchema = z.enum(["system", "user", "assistant", "tool"]);
 export type LlmRole = z.infer<typeof llmRoleSchema>;
 
 export const llmTextPartSchema = z.object({ type: z.literal("text"), text: z.string() });
+/** The model's reasoning before its answer, from models that expose it. */
+export const llmThinkingPartSchema = z.object({ type: z.literal("thinking"), text: z.string() });
 /** source: http(s) URL, data URI or bare base64. */
 export const llmImagePartSchema = z.object({ type: z.literal("image"), source: z.string(), mimeType: z.string() });
 export const llmToolCallPartSchema = z.object({
@@ -25,6 +27,7 @@ export const llmToolResultPartSchema = z.object({
 });
 export const llmPartSchema = z.discriminatedUnion("type", [
   llmTextPartSchema,
+  llmThinkingPartSchema,
   llmImagePartSchema,
   llmToolCallPartSchema,
   llmToolResultPartSchema,
@@ -123,6 +126,7 @@ export const llmStreamEventSchema = z.discriminatedUnion("event", [
   // A target skipped during failover (rate limit, auth, unavailable).
   z.object({ event: z.literal("llm_skipped"), data: z.object({ llm: z.string(), error: z.string() }) }),
   z.object({ event: z.literal("text_delta"), data: z.object({ text: z.string() }) }),
+  z.object({ event: z.literal("thinking_delta"), data: z.object({ text: z.string() }) }),
   // Token counts, near the end; providers that don't report usage never send it.
   z.object({ event: z.literal("usage"), data: llmUsageSchema }),
   z.object({

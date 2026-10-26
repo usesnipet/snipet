@@ -4,8 +4,9 @@ import { Module } from "@nestjs/common";
 import { llmManifestSchema } from "@snipet/shared";
 import { resolve } from "node:path";
 
-import { OpenAiChatDriver } from "./drivers/openai/openai.chat.js";
+import { OllamaChatDriver } from "./drivers/ollama/ollama.chat.js";
 import { OllamaModelDriver } from "./drivers/ollama/ollama.model.js";
+import { OpenAiChatDriver } from "./drivers/openai/openai.chat.js";
 import { OpenAiModelDriver } from "./drivers/openai/openai.model.js";
 import { StaticModelDriver } from "./drivers/static.model.js";
 import { LLMDriverRegistry, LLMRegistry } from "./llm.registry.js";
@@ -17,7 +18,7 @@ import { LLMRunner } from "./llm.runner.js";
       provide: LLMDriverRegistry,
       useFactory: () =>
         new LLMDriverRegistry({
-          chat: [new OpenAiChatDriver()],
+          chat: [new OpenAiChatDriver(), new OllamaChatDriver()],
           models: [new StaticModelDriver(), new OpenAiModelDriver(), new OllamaModelDriver()],
           healthCheck: [new HttpHealthCheckDriver()],
         }),
