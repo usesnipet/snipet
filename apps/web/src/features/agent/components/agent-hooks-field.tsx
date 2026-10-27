@@ -3,7 +3,11 @@ import { FormSelect } from "@/components/form/select";
 import { FormSwitch } from "@/components/form/switch";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
@@ -126,7 +130,7 @@ function HookEventsSelect({ name }: { name: `hooks.${number}.hooks` }) {
           field.onChange(hookNameSchema.options.filter((h) => (h === hook ? on : selected.has(h))));
         return (
           <FormItem>
-            <DropdownMenu modal={false}>
+            <DropdownMenu >
               <FormControl>
                 <DropdownMenuTrigger asChild>
                   <Button type="button" variant="outline" className="w-full justify-between font-normal">

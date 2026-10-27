@@ -1,7 +1,6 @@
 import { useSettings } from "@snipet/client";
 import { Outlet } from "react-router";
 
-import { DebugModeBadge } from "@/components/debug-mode-badge";
 import { ErrorFallback } from "@/components/error-fallback";
 import { LoadingFallback } from "@/components/loading-fallback";
 
@@ -17,7 +16,6 @@ export function SettingsProvider() {
   return (
     <SettingsContext.Provider value={data}>
       <Outlet />
-      <DebugModeBadge />
     </SettingsContext.Provider>
   );
 }

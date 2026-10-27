@@ -1,10 +1,7 @@
 import { z } from "zod";
 
 /** Every system setting, by key. The API returns all of them, defaults filled in. */
-export const settingsSchema = z.object({
-  /** Saves what goes in and out of each agent run, for debugging. */
-  agentDebugEnabled: z.boolean(),
-});
+export const settingsSchema = z.object({});
 export type Settings = z.infer<typeof settingsSchema>;
 export type SettingKey = keyof Settings;
 

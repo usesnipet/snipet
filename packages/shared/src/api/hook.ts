@@ -63,7 +63,7 @@ export const hookEventSchema = z.object({
     userId: z.uuid().nullable(),
     appId: z.uuid().nullable(),
     externalUserId: z.string().nullable(),
-    name: z.string().optional(),
+    name: z.string().nullable(),
   }),
   /** Shared by the hooks of one run, e.g. a trace id set at run.start. */
   metadata: jsonObjectSchema,

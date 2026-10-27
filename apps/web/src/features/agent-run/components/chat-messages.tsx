@@ -81,7 +81,6 @@ export function ChatMessages({ messages, pendingInput, draft, streaming, run, er
             {run?.error ? `: ${run.error}` : "."}
           </Notice>
         )}
-        {run?.debugged && <Notice muted>This conversation is being debugged and is not private.</Notice>}
         {error && <Notice>{error.message}</Notice>}
         <ChatContainerScrollAnchor />
       </ChatContainerContent>
