@@ -4,7 +4,7 @@ import { Role } from "@snipet/shared";
 
 import { Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
 
-import { AgentHook } from "./agent-hook.entity.js";
+import { AgentHook } from "../agent/agent.entity.js";
 import {
   createAgentHookSchema,
   createHookConnectionSchema,

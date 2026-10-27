@@ -18,6 +18,7 @@ import { useCreateAgent, useUpdateAgent } from "@snipet/client";
 import { agentFormSchema } from "../schemas";
 
 import { AgentAvatarField } from "./agent-avatar";
+import { AgentHooksField } from "./agent-hooks-field";
 import { AgentPluginsField } from "./agent-plugins-field";
 
 import type { AgentForm, AgentFormInput } from "../schemas";
@@ -46,6 +47,9 @@ const toForm = (agent?: Agent): AgentFormInput => ({
   pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, allow, deny }) => ({
     pluginConnectionId, allow, deny,
   })),
+  hooks: (agent?.hooks ?? []).map(({ hookConnectionId, hooks, timeoutMs, onError, async, enabled }) => ({
+    hookConnectionId, hooks, timeoutMs, onError, async, enabled,
+  })),
 });
 
 export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
@@ -66,17 +70,17 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
   });
 
   return (
-    <DialogContent className="sm:max-w-2xl">
+    <DialogContent className="sm:max-w-7xl">
       <DialogHeader>
         <DialogTitle>{agent ? "Edit agent" : "New agent"}</DialogTitle>
         <DialogDescription>
-          An agent loops between its models and plugin actions until the task is done or it runs out of turns.
+          An agent loops between its models and plugin actions until the task is done or it runs out of turns. Hooks run on loop events.
         </DialogDescription>
       </DialogHeader>
 
       <ScrollArea className="max-h-[calc(100vh-250px)]">
         <Form {...form}>
-          <form id={formId} onSubmit={onSubmit} className="p-1 pr-3">
+          <form id={formId} onSubmit={onSubmit} className="grid gap-6 p-1 pr-3 lg:grid-cols-3">
             <FieldGroup>
               <AgentAvatarField name="avatar" />
               <FormInput name="name" label="Name" placeholder="e.g. Support triage" required />
@@ -86,8 +90,13 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
                 <FormInput name="maxTurns" label="Max turns" inputMode="numeric" fieldclassname="max-w-32" />
                 <FormSwitch name="enabled" label="Enabled" fieldclassname="pb-2" />
               </div>
+            </FieldGroup>
+            <div>
               <LlmModelsField name="llms" allowedModelCapabilities={[LlmCapability.TEXT]} />
+            </div>
+            <FieldGroup>
               <AgentPluginsField />
+              <AgentHooksField />
             </FieldGroup>
           </form>
         </Form>
