@@ -1,0 +1,43 @@
+{
+  "key": "webhook",
+  "name": "Webhook",
+  "description": "Sends the hook event to a URL and uses its JSON reply.",
+  "icon": "",
+  "tags": ["webhook", "http", "official"],
+  "auth": { "type": "none" },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "title": "URL",
+        "description": "Where the hook event is POSTed"
+      },
+      "Authorization": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "Authorization",
+        "description": "Sent as the Authorization header, e.g. \"Bearer <token>\"."
+      },
+      "secret": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "Signing secret",
+        "description": "Signs each request in the X-Snipet-Signature header (HMAC-SHA256)."
+      }
+    },
+    "required": ["url"]
+  },
+  "handle": {
+    "driver": "webhook",
+    "options": {
+      "url": "{{ connection.url }}",
+      "headers": {
+        "Authorization": "{{ connection.Authorization }}"
+      },
+      "signingSecret": "{{ connection.secret }}"
+    }
+  }
+}
