@@ -31,7 +31,11 @@ describe("WebhookDriver", () => {
     expect(headers.Authorization).toBeUndefined();
     expect(headers["X-Snipet-Event-Id"]).toBe("e1");
     const [, t, v1] = /^t=(\d+),v1=(\w+)$/.exec(headers["X-Snipet-Signature"])!;
-    expect(v1).toBe(createHmac("sha256", "s").update(`${t}.${String(init.body)}`).digest("hex"));
+    expect(v1).toBe(
+      createHmac("sha256", "s")
+        .update(`${t}.${init.body as string}`)
+        .digest("hex"),
+    );
   });
 
   it("returns a valid reply and rejects bad ones", async () => {
