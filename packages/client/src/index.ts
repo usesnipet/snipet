@@ -10,6 +10,8 @@ export * from "./api-key/service";
 export * from "./app/hooks";
 export * from "./app/service";
 export * from "./auth/service";
+export * from "./hook-connection/hooks";
+export * from "./hook-connection/service";
 export * from "./llm-connection/hooks";
 export * from "./llm-connection/service";
 export * from "./plugin-connection/hooks";
