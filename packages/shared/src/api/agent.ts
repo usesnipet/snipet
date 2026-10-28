@@ -42,7 +42,7 @@ export const agentSchema = z.object({
   enabled: z.boolean(),
   llms: z.array(agentLlmSchema),
   pluginConnections: z.array(agentPluginConnectionSchema),
-  /** The agent's own hooks, in the order they run. */
+  /** The agent's own hooks, by position. */
   hooks: z.array(agentHookSchema),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -55,7 +55,7 @@ export const paginatedAgentSchema = paginatedSchema(agentSchema);
 const patternsSchema = z.array(z.string().trim()).transform((patterns) => patterns.filter(Boolean));
 
 /**
- * The position in llms and hooks is the order. llms, pluginConnections and
+ * The position in llms is the order, in hooks the tie-break within a stage. llms, pluginConnections and
  * hooks replace the whole list when sent.
  */
 export const createAgentSchema = z.object({
@@ -91,7 +91,7 @@ export const createAgentSchema = z.object({
       }),
     )
     .optional(),
-  hooks: z.array(createAgentHookSchema.omit({ agentId: true, order: true, match: true })).optional(),
+  hooks: z.array(createAgentHookSchema.omit({ agentId: true, position: true })).optional(),
 });
 export type CreateAgent = z.infer<typeof createAgentSchema>;
 

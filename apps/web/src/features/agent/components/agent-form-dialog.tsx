@@ -3,7 +3,12 @@ import { FormSwitch } from "@/components/form/switch";
 import { FormTextarea } from "@/components/form/textarea";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
@@ -11,10 +16,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { LlmModelsField } from "@/features/llm-connection/components/llm-models-field";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useCreateAgent, useUpdateAgent } from "@snipet/client";
+import { LlmCapability } from "@snipet/shared";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 
-import { useCreateAgent, useUpdateAgent } from "@snipet/client";
 import { agentFormSchema } from "../schemas";
 
 import { AgentAvatarField } from "./agent-avatar";
@@ -22,7 +28,6 @@ import { AgentHooksField } from "./agent-hooks-field";
 import { AgentPluginsField } from "./agent-plugins-field";
 
 import type { AgentForm, AgentFormInput } from "../schemas";
-import { LlmCapability } from "@snipet/shared";
 import type { Agent } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
@@ -47,8 +52,8 @@ const toForm = (agent?: Agent): AgentFormInput => ({
   pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, allow, deny }) => ({
     pluginConnectionId, allow, deny,
   })),
-  hooks: (agent?.hooks ?? []).map(({ hookConnectionId, hooks, timeoutMs, onError, async, enabled }) => ({
-    hookConnectionId, hooks, timeoutMs, onError, async, enabled,
+  hooks: (agent?.hooks ?? []).map(({ event, hookConnectionId, stage, match, timeoutMs, onError, async, enabled }) => ({
+    event, hookConnectionId, stage, match: match ?? {}, timeoutMs, onError, async, enabled,
   })),
 });
 
@@ -80,8 +85,8 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
 
       <ScrollArea className="max-h-[calc(100vh-250px)]">
         <Form {...form}>
-          <form id={formId} onSubmit={onSubmit} className="grid gap-6 p-1 pr-3 lg:grid-cols-3">
-            <FieldGroup>
+          <form id={formId} onSubmit={onSubmit} className="grid p-1 pr-3 lg:grid-cols-3 divide-x">
+            <FieldGroup className="pr-4">
               <AgentAvatarField name="avatar" />
               <FormInput name="name" label="Name" placeholder="e.g. Support triage" required />
               <FormInput name="description" label="Description" placeholder="What this agent is for" />
@@ -91,11 +96,11 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
                 <FormSwitch name="enabled" label="Enabled" fieldclassname="pb-2" />
               </div>
             </FieldGroup>
-            <div>
+            <div className="space-y-2 px-4">
               <LlmModelsField name="llms" allowedModelCapabilities={[LlmCapability.TEXT]} />
-            </div>
-            <FieldGroup>
               <AgentPluginsField />
+            </div>
+            <FieldGroup className="pl-4">
               <AgentHooksField />
             </FieldGroup>
           </form>

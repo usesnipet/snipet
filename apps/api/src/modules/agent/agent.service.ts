@@ -23,9 +23,9 @@ export class AgentService extends CrudService<Agent> {
 
   override async create(dto: CreateAgent): Promise<Agent> {
     const avatar = await this.storeAvatar(dto.avatar);
-    // The position in llms and hooks is the order they run in.
+    // The position in llms is the order they run in; in hooks, the tie-break within a stage.
     const llms = dto.llms.map((llm, order) => ({ ...llm, order }));
-    const hooks = dto.hooks?.map((hook, order) => ({ ...hook, order }));
+    const hooks = dto.hooks?.map((hook, position) => ({ ...hook, position }));
     try {
       const { id } = await this.repo.save(this.repo.create({ ...dto, avatar, llms, hooks }));
       return this.findById(id);
@@ -65,7 +65,7 @@ export class AgentService extends CrudService<Agent> {
         }
         if (hooks) {
           await hookRepo.delete({ agentId: id });
-          await hookRepo.insert(hooks.map((hook, order) => ({ ...hook, order, agentId: id })));
+          await hookRepo.insert(hooks.map((hook, position) => ({ ...hook, position, agentId: id })));
         }
       });
     } catch (error) {

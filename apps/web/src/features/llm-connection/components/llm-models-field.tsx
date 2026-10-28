@@ -1,11 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, ChevronUp, GripVertical, Info, Plus, X } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useListLlmConnections, useLLMModels, useLLMs } from "@snipet/client";
+import { ChevronDown, ChevronUp, GripVertical, Plus, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
-
-import { useListLlmConnections, useLLMModels, useLLMs } from "@snipet/client";
 
 import type { LlmCapability, LlmConnection, LlmManifest } from "@snipet/shared";
 type Props = {
@@ -49,53 +56,43 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Models</CardTitle>
-            <CardDescription>
-              Tried top to bottom — if one errors, Snipet falls back to the next.
-            </CardDescription>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <Label>Models</Label>
+          <p className="text-muted-foreground text-xs">
+            Tried top to bottom — if one errors, Snipet falls back to the next.
+          </p>
+        </div>
+        <Button type="button" size="sm" onClick={() => append({ model: "" })}>
+          <Plus />
+          Add model
+        </Button>
+      </div>
+      <div className="space-y-2">
+        {fields.map((field, index) => (
+          <div
+            key={field.id}
+            draggable
+            onDragStart={() => (dragIndexRef.current = index)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop(index)}
+          >
+            <LlmModelTargetRow
+              name={name}
+              index={index}
+              llms={llms}
+              connections={connections}
+              total={fields.length}
+              onRemove={() => remove(index)}
+              onMoveUp={() => move(index, index - 1)}
+              onMoveDown={() => move(index, index + 1)}
+              allowedModelCapabilities={allowedModelCapabilities}
+            />
           </div>
-          <Button type="button" size="sm" onClick={() => append({ model: "" })}>
-            <Plus />
-            Add model
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {fields.map((field, index) => (
-            <div
-              key={field.id}
-              draggable
-              onDragStart={() => (dragIndexRef.current = index)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop(index)}
-            >
-              <LlmModelTargetRow
-                name={name}
-                index={index}
-                llms={llms}
-                connections={connections}
-                total={fields.length}
-                onRemove={() => remove(index)}
-                onMoveUp={() => move(index, index - 1)}
-                onMoveDown={() => move(index, index + 1)}
-                allowedModelCapabilities={allowedModelCapabilities}
-              />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-      <CardFooter>
-        <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-          <Info className="size-3.5 shrink-0" />
-          Order sets priority. Drag a model to change where it falls back to.
-        </p>
-      </CardFooter>
-    </Card>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -9,7 +9,7 @@ export class AddHooks1793097402463 implements MigrationInterface {
     );
     await queryRunner.query(`CREATE INDEX "IDX_752401e23334485e0574ed8732" ON "hook_connections"  ("hookKey") `);
     await queryRunner.query(
-      `CREATE TABLE "agent_hooks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "agentId" uuid, "hookConnectionId" uuid NOT NULL, "hooks" text array NOT NULL, "order" integer NOT NULL DEFAULT '0', "match" jsonb, "timeoutMs" integer, "onError" character varying(16) NOT NULL DEFAULT 'continue', "async" boolean NOT NULL DEFAULT false, "enabled" boolean NOT NULL DEFAULT true, CONSTRAINT "PK_84a5b044c0184363be87527be6b" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "agent_hooks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "agentId" uuid, "hookConnectionId" uuid NOT NULL, "event" character varying(64) NOT NULL, "stage" integer NOT NULL DEFAULT '0', "position" integer NOT NULL DEFAULT '0', "match" jsonb, "timeoutMs" integer, "onError" character varying(16) NOT NULL DEFAULT 'continue', "async" boolean NOT NULL DEFAULT false, "enabled" boolean NOT NULL DEFAULT true, CONSTRAINT "PK_84a5b044c0184363be87527be6b" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(`CREATE INDEX "IDX_f4b66211b1334493c76f6b559f" ON "agent_hooks"  ("agentId") `);
     await queryRunner.query(

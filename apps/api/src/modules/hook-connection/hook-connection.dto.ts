@@ -16,5 +16,5 @@ export const findHookConnectionsSchema = findHookConnectionsParamsSchema.transfo
 export const findAgentHooksSchema = findAgentHooksParamsSchema.transform(({ agentId, hookConnectionId, ...page }) => ({
   ...page,
   where: { ...(agentId && { agentId }), ...(hookConnectionId && { hookConnectionId }) },
-  order: { order: "ASC" as const, createdAt: "ASC" as const },
+  order: { stage: "ASC" as const, position: "ASC" as const, createdAt: "ASC" as const },
 }));

@@ -2,7 +2,7 @@ import { LlmError } from "#src/llm/errors.js";
 import { jest } from "@jest/globals";
 import { AgentRunStatus, hookNameSchema } from "@snipet/shared";
 
-import { RunHooks } from "../hook-connection/hook.dispatcher.js";
+import { HookRunner } from "../hook-connection/hook.runner.js";
 
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
@@ -11,11 +11,12 @@ import { AgentContext } from "./agent-context.js";
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { Agent } from "../agent/agent.entity.js";
 import type { HookDriver } from "#src/hook/driver.js";
-import type { HookDispatcher, RunHookContext } from "../hook-connection/hook.dispatcher.js";
+import type { HookDispatcher } from "../hook-connection/hook.dispatcher.js";
+import type { HookRunnerContext } from "../hook-connection/hook.runner.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import type { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 import type { AgentRun } from "./agent-run.entity.js";
-import type { HookEvent, LlmMessage, LlmStreamEvent } from "@snipet/shared";
+import type { HookEvent, HookResult, LlmMessage, LlmStreamEvent } from "@snipet/shared";
 import type { Repository } from "typeorm";
 
 type Fn = (...args: unknown[]) => Promise<unknown>;
@@ -40,8 +41,14 @@ const owner: Owner = { userId: "u1", appId: null, externalUserId: null, name: nu
 
 const wiki = { pluginConnectionId: "p1", pluginConnection: { name: "Wiki" } };
 
-/** replies: what the model answers on each turn; an Error is thrown instead. */
-function setup(replies: (LlmMessage | Error)[]) {
+/**
+ * replies: what the model answers on each turn; an Error is thrown instead.
+ * reply: what the hooks answer to each event.
+ */
+function setup(
+  replies: (LlmMessage | Error)[],
+  reply: (event: HookEvent) => HookResult = () => ({ action: "continue" }),
+) {
   let nextId = 1;
   const saved: LlmMessage[] = [];
   const messages = {
@@ -70,17 +77,28 @@ function setup(replies: (LlmMessage | Error)[]) {
     findInstructions: jest.fn<Fn>().mockResolvedValue([]),
   };
 
-  // Every event the hooks got, through one handler bound to all of them.
+  // Every event the hooks got, through one synchronous handler bound to each.
   const events: HookEvent[] = [];
-  const driver = { handle: (event: HookEvent) => Promise.resolve(void events.push(event)) } as unknown as HookDriver;
+  const driver = {
+    handle: (event: HookEvent) => {
+      events.push(event);
+      return Promise.resolve(reply(event));
+    },
+  } as unknown as HookDriver;
+  const handlers = hookNameSchema.options.map((event) => ({
+    name: "rec",
+    event,
+    global: false,
+    stage: 0,
+    match: null,
+    async: false,
+    onError: "continue" as const,
+    driver,
+    options: {},
+    timeoutMs: 1000,
+  }));
   const hooks = {
-    forRun: (ctx: RunHookContext) =>
-      Promise.resolve(
-        new RunHooks(
-          [{ name: "rec", hooks: new Set(hookNameSchema.options), driver, options: {}, timeoutMs: 1000 }],
-          ctx,
-        ),
-      ),
+    forRun: (ctx: HookRunnerContext) => Promise.resolve(new HookRunner(handlers, ctx)),
   } as unknown as HookDispatcher;
 
   const runner = new AgentRunner(
@@ -149,6 +167,7 @@ describe("AgentRunner.run", () => {
       "0 run.context",
       "1 llm.request",
       "1 llm.response",
+      "1 tool.before",
       "1 tool.after",
       "2 llm.request",
       "2 llm.response",
@@ -157,16 +176,45 @@ describe("AgentRunner.run", () => {
     ]);
     const payload = (hook: string, n = 0) => events.filter((e) => e.hook === hook)[n].payload;
     expect(payload("run.start")).toEqual({ input: "hi" });
-    expect(payload("run.context")).toMatchObject({
-      tools: [{ name: "ask_question" }],
-      denied: [{ action: "read_wiki", pluginConnectionId: "p1" }],
-    });
+    expect(payload("run.context")).toMatchObject({ tools: [{ name: "ask_question" }] });
     // Each request holds the messages as they were sent, not the final history.
     expect((payload("llm.request", 0) as { messages: unknown[] }).messages).toHaveLength(3);
     expect((payload("llm.request", 1) as { messages: unknown[] }).messages).toHaveLength(5);
     expect(payload("tool.after")).toMatchObject({ call: { name: "ask_question" }, result: { content: "answer" } });
     expect(payload("run.end")).toMatchObject({ status: AgentRunStatus.COMPLETED, error: null, turns: 2 });
     expect(events.at(-1)).toMatchObject({ run: { id: "r1", sessionId: "s1", status: AgentRunStatus.COMPLETED } });
+  });
+
+  it("runs a tool call as a hook changed it, answering the call the model made", async () => {
+    const { runner, plugins, saved } = setup([callTool, answer], (e) =>
+      e.hook === "tool.before"
+        ? { action: "modify", payload: { call: { ...e.payload.call, arguments: { q: "y" } } } }
+        : { action: "continue" },
+    );
+    await runner.run(agent, run, owner);
+
+    expect(plugins.executeAction).toHaveBeenCalledWith("a1", { q: "y" });
+    expect(saved[1].parts).toMatchObject([{ toolCallId: "c1", content: "answer" }]);
+  });
+
+  it("gives a blocked tool call the reason as an error result, without running it", async () => {
+    const { runner, plugins, saved } = setup([callTool, answer], (e) =>
+      e.hook === "tool.before" ? { action: "block", reason: "not now" } : { action: "continue" },
+    );
+    await runner.run(agent, run, owner);
+
+    expect(plugins.executeAction).not.toHaveBeenCalled();
+    expect(saved[1].parts).toEqual([{ type: "tool_result", toolCallId: "c1", content: "not now", isError: true }]);
+  });
+
+  it("fails the run with the reason when a hook blocks its start", async () => {
+    const { runner, runs, llm } = setup([answer], (e) =>
+      e.hook === "run.start" ? { action: "block", reason: "off topic" } : { action: "continue" },
+    );
+    await runner.run(agent, run, owner);
+
+    expect(llm.stream).not.toHaveBeenCalled();
+    expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "off topic" });
   });
 
   it("stops at maxTurns while the model keeps calling tools", async () => {

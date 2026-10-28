@@ -26,7 +26,6 @@ export function AgentPluginsField() {
         <Label>Plugins</Label>
         <Button
           type="button"
-          variant="ghost"
           size="sm"
           onClick={() => append({ pluginConnectionId: "", allow: [], deny: [] })}
         >

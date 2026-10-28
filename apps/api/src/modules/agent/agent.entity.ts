@@ -63,11 +63,11 @@ export class Agent extends BaseEntity implements AgentContract {
   @OneToMany(() => AgentHook, (hook) => hook.agent, { eager: true, cascade: ["insert"] })
   hooks: AgentHook[];
 
-  /** Puts llms and hooks in the order they run; eager relations load unordered. */
+  /** Puts llms in the order they run and hooks by position; eager relations load unordered. */
   @AfterLoad()
   sortByOrder() {
     this.llms?.sort((a, b) => a.order - b.order);
-    this.hooks?.sort((a, b) => a.order - b.order);
+    this.hooks?.sort((a, b) => a.position - b.position);
   }
 }
 
@@ -143,11 +143,14 @@ export class AgentHook extends BaseEntity implements AgentHookContract {
   @JoinColumn({ name: "hookConnectionId" })
   hookConnection?: HookConnection;
 
-  @Column({ type: "text", array: true })
-  hooks: HookName[];
+  @Column({ type: "varchar", length: 64 })
+  event: HookName;
 
   @Column({ type: "int", default: 0 })
-  order: number;
+  stage: number;
+
+  @Column({ type: "int", default: 0 })
+  position: number;
 
   @Column({ type: "jsonb", nullable: true })
   match: HookMatch | null;

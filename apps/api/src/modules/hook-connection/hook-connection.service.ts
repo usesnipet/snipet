@@ -22,6 +22,11 @@ export class HookConnectionService extends ConnectionService<HookConnection, Hoo
   ) {
     super(repo, hooks, drivers);
   }
+
+  /** The connection's handle driver with its options resolved; throws when the config no longer fits them. */
+  handlerOf(conn: HookConnection) {
+    return this.drivers.resolve(this.manifests.get(conn.hookKey), "handle", conn.config)!;
+  }
 }
 
 @Injectable()

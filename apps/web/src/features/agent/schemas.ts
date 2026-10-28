@@ -4,8 +4,8 @@ import { z } from "zod";
 const hookSchema = createAgentSchema.shape.hooks.unwrap().element;
 
 /**
- * Form shape behind the create/edit dialog; max turns and hook timeouts are
- * typed as text and coerced (an empty timeout means the default).
+ * Form shape behind the create/edit dialog; max turns, hook stages and
+ * timeouts are typed as text and coerced (an empty timeout means the default).
  */
 export const agentFormSchema = createAgentSchema.extend({
   maxTurns: z.coerce
@@ -16,7 +16,17 @@ export const agentFormSchema = createAgentSchema.extend({
   hooks: z.array(
     hookSchema.extend({
       hookConnectionId: z.uuid("Select a connection"),
-      hooks: hookSchema.shape.hooks.min(1, "Select at least one event"),
+      stage: z.coerce.number<string | number>().int().min(0, "Stage must be at least 0"),
+      // Blank patterns are dropped; no pattern means no filter.
+      match: z
+        .object({ tools: z.array(z.string()).optional(), models: z.array(z.string()).optional() })
+        .nullable()
+        .optional()
+        .transform((match) => {
+          const tools = match?.tools?.filter(Boolean);
+          const models = match?.models?.filter(Boolean);
+          return tools?.length || models?.length ? { tools, models } : null;
+        }),
       timeoutMs: z.preprocess(
         (v) => (v === "" || v == null ? null : v),
         z.coerce
