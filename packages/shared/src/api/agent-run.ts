@@ -44,7 +44,6 @@ export const agentRunSchema = z.object({
   error: z.string().nullable(),
   turns: z.number().int(),
   finishedAt: z.coerce.date().nullable(),
-  debugged: z.boolean(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });

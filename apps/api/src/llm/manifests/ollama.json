@@ -17,6 +17,23 @@
         "format": "password",
         "title": "API key",
         "description": "Only needed when the server sits behind an authenticating proxy."
+      },
+      "keepAlive": {
+        "type": "string",
+        "title": "Keep alive",
+        "description": "How long a model stays loaded after a request, e.g. 5m, 1h or -1m to keep it loaded. Defaults to the server's setting."
+      },
+      "numCtx": {
+        "type": "integer",
+        "minimum": 1,
+        "title": "Context length",
+        "description": "Context window (num_ctx) used for chat. Defaults to the model's setting."
+      },
+      "think": {
+        "type": "string",
+        "title": "Thinking",
+        "enum": ["off", "on", "low", "medium", "high"],
+        "description": "Reasoning before answering, for models that support it. low, medium and high only work on models that grade their effort, such as gpt-oss. Defaults to the model's setting."
       }
     },
     "required": ["baseUrl"]
@@ -31,10 +48,17 @@
     }
   },
   "chat": {
-    "driver": "openai",
+    "driver": "ollama",
     "options": {
-      "baseUrl": "{{ connection.baseUrl }}/v1",
-      "apiKey": "{{ connection.apiKey }}"
+      "baseUrl": "{{ connection.baseUrl }}",
+      "headers": {
+        "Authorization": "Bearer {{ connection.apiKey }}"
+      },
+      "keepAlive": "{{ connection.keepAlive }}",
+      "options": {
+        "num_ctx": "{{ connection.numCtx }}"
+      },
+      "think": "{{ connection.think }}"
     }
   },
   "healthCheck": {

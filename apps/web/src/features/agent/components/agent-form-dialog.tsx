@@ -1,9 +1,15 @@
 import { FormInput } from "@/components/form/input";
+import { FormSlider } from "@/components/form/slider";
 import { FormSwitch } from "@/components/form/switch";
 import { FormTextarea } from "@/components/form/textarea";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
@@ -11,17 +17,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { LlmModelsField } from "@/features/llm-connection/components/llm-models-field";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useCreateAgent, useUpdateAgent } from "@snipet/client";
+import { LlmCapability } from "@snipet/shared";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 
-import { useCreateAgent, useUpdateAgent } from "@snipet/client";
 import { agentFormSchema } from "../schemas";
 
 import { AgentAvatarField } from "./agent-avatar";
+import { AgentHooksField } from "./agent-hooks-field";
 import { AgentPluginsField } from "./agent-plugins-field";
 
 import type { AgentForm, AgentFormInput } from "../schemas";
-import { LlmCapability } from "@snipet/shared";
 import type { Agent } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
@@ -37,6 +44,7 @@ const toForm = (agent?: Agent): AgentFormInput => ({
   avatar: agent?.avatar ?? null,
   systemPrompt: agent?.systemPrompt ?? "",
   maxTurns: agent?.maxTurns ?? 20,
+  historyRuns: agent?.historyRuns ?? 10,
   enabled: agent?.enabled ?? true,
   llms: agent?.llms.map((llm) => ({
     model: llm.model,
@@ -44,7 +52,19 @@ const toForm = (agent?: Agent): AgentFormInput => ({
     extraOptions: llm.extraOptions ?? undefined,
   })) ?? [{ model: "" }],
   pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, allow, deny }) => ({
-    pluginConnectionId, allow, deny,
+    pluginConnectionId,
+    allow,
+    deny,
+  })),
+  hooks: (agent?.hooks ?? []).map(({ event, hookConnectionId, stage, match, timeoutMs, onError, async, enabled }) => ({
+    event,
+    hookConnectionId,
+    stage,
+    match: match ?? {},
+    timeoutMs,
+    onError,
+    async,
+    enabled,
   })),
 });
 
@@ -66,18 +86,19 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
   });
 
   return (
-    <DialogContent className="sm:max-w-2xl">
+    <DialogContent className="sm:max-w-7xl">
       <DialogHeader>
         <DialogTitle>{agent ? "Edit agent" : "New agent"}</DialogTitle>
         <DialogDescription>
-          An agent loops between its models and plugin actions until the task is done or it runs out of turns.
+          An agent loops between its models and plugin actions until the task is done or it runs out of turns. Hooks run
+          on loop events.
         </DialogDescription>
       </DialogHeader>
 
       <ScrollArea className="max-h-[calc(100vh-250px)]">
         <Form {...form}>
-          <form id={formId} onSubmit={onSubmit} className="p-1 pr-3">
-            <FieldGroup>
+          <form id={formId} onSubmit={onSubmit} className="grid p-1 pr-3 lg:grid-cols-3 divide-x">
+            <FieldGroup className="pr-4">
               <AgentAvatarField name="avatar" />
               <FormInput name="name" label="Name" placeholder="e.g. Support triage" required />
               <FormInput name="description" label="Description" placeholder="What this agent is for" />
@@ -86,8 +107,14 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
                 <FormInput name="maxTurns" label="Max turns" inputMode="numeric" fieldclassname="max-w-32" />
                 <FormSwitch name="enabled" label="Enabled" fieldclassname="pb-2" />
               </div>
+              <FormSlider name="historyRuns" label="Previous runs in history" min={0} max={100} showValue />
+            </FieldGroup>
+            <div className="space-y-2 px-4">
               <LlmModelsField name="llms" allowedModelCapabilities={[LlmCapability.TEXT]} />
               <AgentPluginsField />
+            </div>
+            <FieldGroup className="pl-4">
+              <AgentHooksField />
             </FieldGroup>
           </form>
         </Form>

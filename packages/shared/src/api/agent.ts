@@ -3,6 +3,8 @@ import { z } from "zod";
 import { dataUrlSchema } from "../schemas/data-url.js";
 import { jsonObjectSchema } from "../schemas/json.js";
 
+import { agentHookSchema, createAgentHookSchema } from "./hook.js";
+
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 /**
@@ -37,9 +39,12 @@ export const agentSchema = z.object({
   avatar: z.url().nullable(),
   systemPrompt: z.string(),
   maxTurns: z.number().int(),
+  historyRuns: z.number().int(),
   enabled: z.boolean(),
   llms: z.array(agentLlmSchema),
   pluginConnections: z.array(agentPluginConnectionSchema),
+  /** The agent's own hooks, by position. */
+  hooks: z.array(agentHookSchema),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -51,8 +56,8 @@ export const paginatedAgentSchema = paginatedSchema(agentSchema);
 const patternsSchema = z.array(z.string().trim()).transform((patterns) => patterns.filter(Boolean));
 
 /**
- * The position in llms is the order. llms and pluginConnections
- * replace the whole list when sent.
+ * The position in llms is the order, in hooks the tie-break within a stage. llms, pluginConnections and
+ * hooks replace the whole list when sent.
  */
 export const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(255),
@@ -67,6 +72,12 @@ export const createAgentSchema = z.object({
     .int()
     .min(1, "Max turns must be at least 1")
     .max(500, "Max turns must be at most 500")
+    .optional(),
+  historyRuns: z
+    .number()
+    .int()
+    .min(0, "History runs must be at least 0")
+    .max(100, "History runs must be at most 100")
     .optional(),
   enabled: z.boolean().optional(),
   llms: z
@@ -87,6 +98,7 @@ export const createAgentSchema = z.object({
       }),
     )
     .optional(),
+  hooks: z.array(createAgentHookSchema.omit({ agentId: true, position: true })).optional(),
 });
 export type CreateAgent = z.infer<typeof createAgentSchema>;
 

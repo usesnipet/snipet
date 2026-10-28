@@ -11,23 +11,13 @@ function setup(rows: Partial<Setting>[]) {
 }
 
 describe("SettingsService", () => {
-  it("returns stored values over the defaults and drops unknown keys", async () => {
-    const { service } = setup([
-      { key: "agentDebugEnabled", value: true },
-      { key: "removedSetting", value: 1 },
-    ]);
-    expect(await service.get()).toEqual({ agentDebugEnabled: true });
+  it("drops stored keys of settings that no longer exist", async () => {
+    expect(await setup([{ key: "agentDebugEnabled", value: true }]).service.get()).toEqual({});
   });
 
-  it("falls back to the default of a setting not stored", async () => {
-    expect(await setup([]).service.get()).toEqual({ agentDebugEnabled: false });
-  });
-
-  it("upserts only the keys sent", async () => {
+  it("doesn't write when nothing is sent", async () => {
     const { service, repo } = setup([]);
-    await service.update({ agentDebugEnabled: true });
-    expect(repo.upsert).toHaveBeenCalledWith([{ key: "agentDebugEnabled", value: true }], ["key"]);
     await service.update({});
-    expect(repo.upsert).toHaveBeenCalledTimes(1);
+    expect(repo.upsert).not.toHaveBeenCalled();
   });
 });

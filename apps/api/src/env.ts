@@ -50,6 +50,7 @@ const envSchema = z
     // Plugin manifests (*.json). Defaults to apps/api/plugins (same depth from src/ and dist/).
     PLUGINS_DIR: z.string().default(resolve(import.meta.dirname, "../plugins")),
     LLMS_DIR: z.string().default(resolve(import.meta.dirname, "../llms")),
+    HOOKS_DIR: z.string().default(resolve(import.meta.dirname, "../hooks")),
 
     // CACHE
     CACHE_TTL_MS: z.coerce.number().int().positive().default(60_000), // 1 minute

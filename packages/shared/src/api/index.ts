@@ -3,6 +3,7 @@ export * from "./agent-run.js";
 export * from "./api-key.js";
 export * from "./app.js";
 export * from "./auth.js";
+export * from "./hook.js";
 export * from "./llm-connection.js";
 export * from "./llm.js";
 export * from "./pagination.js";

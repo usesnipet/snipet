@@ -71,9 +71,6 @@ export class AgentRun extends BaseEntity implements AgentRunContract {
 
   @Column({ type: "timestamptz", nullable: true })
   finishedAt: Date | null;
-
-  @Column({ default: false })
-  debugged: boolean;
 }
 
 @Entity("agent_messages")

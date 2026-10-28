@@ -12,6 +12,7 @@ import { ApiKeyModule } from "#src/modules/api-key/api-key.module.js";
 import { AppsModule } from "#src/modules/app/app.module.js";
 import { AuthModule } from "#src/modules/auth/auth.module.js";
 import { FilesModule } from "#src/modules/files/files.module.js";
+import { HookConnectionModule } from "#src/modules/hook-connection/hook-connection.module.js";
 import { LlmConnectionModule } from "#src/modules/llm-connection/llm-connection.module.js";
 import { PluginConnectionModule } from "#src/modules/plugin-connection/plugin-connection.module.js";
 import { SettingsModule } from "#src/modules/settings/settings.module.js";
@@ -41,6 +42,7 @@ import { ensureDatabase } from "@snipet/server-common";
     AuthModule,
     CacheModule.register(),
     FilesModule,
+    HookConnectionModule,
     LlmConnectionModule,
     PluginConnectionModule,
     SettingsModule,

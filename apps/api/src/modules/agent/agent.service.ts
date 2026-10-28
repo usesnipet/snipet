@@ -6,7 +6,7 @@ import { QueryDeepPartialEntity, Repository } from "typeorm";
 
 import { FilesStorage } from "../files/files.storage.js";
 
-import { Agent, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
+import { Agent, AgentHook, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
 
 import type { CreateAgent, UpdateAgent } from "@snipet/shared";
 
@@ -23,10 +23,11 @@ export class AgentService extends CrudService<Agent> {
 
   override async create(dto: CreateAgent): Promise<Agent> {
     const avatar = await this.storeAvatar(dto.avatar);
-    // The position in llms is the order the runner tries them.
+    // The position in llms is the order they run in; in hooks, the tie-break within a stage.
     const llms = dto.llms.map((llm, order) => ({ ...llm, order }));
+    const hooks = dto.hooks?.map((hook, position) => ({ ...hook, position }));
     try {
-      const { id } = await this.repo.save(this.repo.create({ ...dto, avatar, llms }));
+      const { id } = await this.repo.save(this.repo.create({ ...dto, avatar, llms, hooks }));
       return this.findById(id);
     } catch (error) {
       if (avatar) await this.removeFile(avatar);
@@ -34,9 +35,9 @@ export class AgentService extends CrudService<Agent> {
     }
   }
 
-  // llms and pluginConnections, when sent, replace the agent's whole list.
+  // llms, pluginConnections and hooks, when sent, replace the agent's whole list.
   override async updateById(id: string, dto: QueryDeepPartialEntity<Agent>): Promise<void> {
-    const { llms, pluginConnections, avatar: avatarInput, ...rest } = dto as UpdateAgent;
+    const { llms, pluginConnections, hooks, avatar: avatarInput, ...rest } = dto as UpdateAgent;
     const avatar = await this.storeAvatar(avatarInput);
     const fields = avatar === undefined ? rest : { ...rest, avatar };
     let previousAvatar: string | null = null;
@@ -45,6 +46,7 @@ export class AgentService extends CrudService<Agent> {
         const agentRepo = m.getRepository(Agent);
         const llmRepo = m.getRepository(AgentLlm);
         const pluginConnectionRepo = m.getRepository(AgentPluginConnection);
+        const hookRepo = m.getRepository(AgentHook);
         const current = await agentRepo.findOne({
           where: { id },
           select: { id: true, avatar: true },
@@ -60,6 +62,10 @@ export class AgentService extends CrudService<Agent> {
         if (pluginConnections) {
           await pluginConnectionRepo.delete({ agentId: id });
           await pluginConnectionRepo.insert(pluginConnections.map((grant) => ({ ...grant, agentId: id })));
+        }
+        if (hooks) {
+          await hookRepo.delete({ agentId: id });
+          await hookRepo.insert(hooks.map((hook, position) => ({ ...hook, position, agentId: id })));
         }
       });
     } catch (error) {

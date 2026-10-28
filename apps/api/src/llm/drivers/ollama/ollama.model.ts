@@ -1,17 +1,11 @@
 import { Driver } from "#src/manifest/driver.js";
 import { LlmCapability } from "@snipet/shared";
-import z from "zod";
 
-import { LlmError, llmErrorFromStatus } from "../../errors.js";
+import { ollamaClient, ollamaOptionsSchema, toLlmError } from "./ollama.client.js";
 
 import type { LlmModel } from "@snipet/shared";
 import type { ModelDriver } from "../../driver.js";
-
-const optionsSchema = z.strictObject({
-  baseUrl: z.url(), // Ollama root, e.g. http://localhost:11434
-  headers: z.record(z.string(), z.string()).default({}),
-});
-type OllamaOptions = z.infer<typeof optionsSchema>;
+import type { OllamaOptions } from "./ollama.client.js";
 
 export interface OllamaShow {
   capabilities?: string[];
@@ -38,31 +32,24 @@ export function toLlmModel(name: string, show: OllamaShow): LlmModel {
 
 /**
  * Lists models through Ollama's native api, which unlike /v1/models reports
- * capabilities and context length. Chat goes through the openai driver.
+ * capabilities and context length.
  */
-export class OllamaModelDriver extends Driver(optionsSchema) implements ModelDriver<OllamaOptions> {
+export class OllamaModelDriver extends Driver(ollamaOptionsSchema) implements ModelDriver<OllamaOptions> {
   readonly key = "ollama";
 
   async listModels(options: OllamaOptions): Promise<LlmModel[]> {
-    const { models } = await call<{ models: { name: string }[] }>(options, "/api/tags");
-    return Promise.all(
-      models.map(async (m) => toLlmModel(m.name, await call<OllamaShow>(options, "/api/show", { model: m.name }))),
-    );
+    try {
+      const client = ollamaClient(options, AbortSignal.timeout(10_000));
+      const { models } = await client.list();
+      return await Promise.all(
+        models.map(async (m) => {
+          // The SDK types model_info as a Map, but it arrives as plain JSON.
+          const show = (await client.show({ model: m.name })) as unknown as OllamaShow;
+          return toLlmModel(m.name, show);
+        }),
+      );
+    } catch (err) {
+      throw toLlmError(err);
+    }
   }
-}
-
-async function call<T>({ baseUrl, headers }: OllamaOptions, path: string, body?: object): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(new URL(path, baseUrl), {
-      method: body ? "POST" : "GET",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: body && JSON.stringify(body),
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch (err) {
-    throw new LlmError("unavailable", `ollama: ${err instanceof Error ? err.message : String(err)}`);
-  }
-  if (!res.ok) throw llmErrorFromStatus(res.status, `ollama: HTTP ${res.status} on ${path}`);
-  return (await res.json()) as T;
 }

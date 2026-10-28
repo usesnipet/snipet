@@ -25,6 +25,8 @@ const LlmPlaygroundPage = lazy(() =>
   import("./routes/llm-playground/page").then((m) => ({ default: m.LlmPlaygroundPage })));
 const PluginsPage = lazy(() =>
   import("./routes/plugins/page").then((m) => ({ default: m.PluginsPage })));
+const HooksPage = lazy(() =>
+  import("./routes/hooks/page").then((m) => ({ default: m.HooksPage })));
 const AppsPage = lazy(() =>
   import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
 const UsersPage = lazy(() =>
@@ -57,6 +59,7 @@ export const Router = () => {
                 <Route element={<RequireRole role={Role.Admin} />}>
                   <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
                   <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
+                  <Route path={toReactRouterPath(ROUTES.hooks)} element={<HooksPage />} />
                   <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
                   <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
                   <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />

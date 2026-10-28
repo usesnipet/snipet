@@ -1,0 +1,10 @@
+{
+  "key": "debug",
+  "name": "Debug",
+  "description": "Saves every event it is bound to as a JSON file in storage (debug/), to inspect what goes in and out of agent runs. The files hold whole conversations: bind it only while debugging.",
+  "icon": "",
+  "tags": ["debug", "official"],
+  "auth": { "type": "none" },
+  "connection": { "type": "object", "properties": {} },
+  "handle": { "driver": "debug", "options": {} }
+}

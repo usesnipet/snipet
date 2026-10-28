@@ -10,7 +10,6 @@ import { AgentRunStatus } from "@snipet/shared";
 import { IsNull, LessThan, MoreThan, Repository } from "typeorm";
 
 import { AgentService } from "../agent/agent.service.js";
-import { DebugService } from "../debug/debug.service.js";
 
 import { AgentMessage, AgentRun, AgentSession } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
@@ -43,7 +42,6 @@ export class AgentRunService implements OnApplicationBootstrap {
     private readonly agents: AgentService,
     private readonly runner: AgentRunner,
     private readonly events: AgentRunEvents,
-    private readonly debugs: DebugService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -131,13 +129,12 @@ export class AgentRunService implements OnApplicationBootstrap {
       }
     }
 
-    const debugged = await this.debugs.isEnabled();
     const run = await this.runsRepo.manager.transaction(async (m) => {
       const sessions = m.getRepository(AgentSession);
       let id = sessionId;
       if (id) await sessions.update(id, { updatedAt: new Date() });
       else ({ id } = await sessions.save({ agentId, ...owner, title: input.split("\n")[0].slice(0, TITLE_LENGTH) }));
-      const run = await m.getRepository(AgentRun).save({ sessionId: id, status: AgentRunStatus.RUNNING, debugged });
+      const run = await m.getRepository(AgentRun).save({ sessionId: id, status: AgentRunStatus.RUNNING });
       await m.getRepository(AgentMessage).save({
         sessionId: id,
         runId: run.id,

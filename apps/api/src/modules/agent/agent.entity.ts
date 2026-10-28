@@ -1,7 +1,11 @@
 import type {
   Agent as AgentContract,
   AgentLlm as AgentLlmContract,
+  AgentHook as AgentHookContract,
   AgentPluginConnection as AgentPluginConnectionContract,
+  HookName,
+  HookMatch,
+  HookOnError,
   JsonObject,
 } from "@snipet/shared";
 import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
@@ -10,6 +14,7 @@ import {
   AfterLoad,
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -18,6 +23,7 @@ import {
   ValueTransformer,
 } from "typeorm";
 
+import { HookConnection } from "../hook-connection/hook-connection.entity.js";
 import { LlmConnection } from "../llm-connection/llm-connection.entity.js";
 import { PluginConnection } from "../plugin-connection/plugin-connection.entity.js";
 
@@ -45,6 +51,10 @@ export class Agent extends BaseEntity implements AgentContract {
   @Column({ type: "int", default: 20 })
   maxTurns: number;
 
+  /** How many of the session's previous runs the models see, besides the current one. */
+  @Column({ type: "int", default: 10 })
+  historyRuns: number;
+
   @Column({ default: true })
   enabled: boolean;
 
@@ -54,10 +64,15 @@ export class Agent extends BaseEntity implements AgentContract {
   @OneToMany(() => AgentPluginConnection, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
   pluginConnections: AgentPluginConnection[];
 
-  /** Puts llms in the order the runner tries them; eager relations load unordered. */
+  /** Only the agent's own hooks; global ones (agentId null) aren't listed here. */
+  @OneToMany(() => AgentHook, (hook) => hook.agent, { eager: true, cascade: ["insert"] })
+  hooks: AgentHook[];
+
+  /** Puts llms in the order they run and hooks by position; eager relations load unordered. */
   @AfterLoad()
-  sortLlms() {
+  sortByOrder() {
     this.llms?.sort((a, b) => a.order - b.order);
+    this.hooks?.sort((a, b) => a.position - b.position);
   }
 }
 
@@ -113,4 +128,47 @@ export class AgentPluginConnection extends BaseEntity implements AgentPluginConn
 
   @Column({ type: "text", array: true, default: [] })
   deny: string[];
+}
+
+@Entity("agent_hooks")
+export class AgentHook extends BaseEntity implements AgentHookContract {
+  /** null: applies to every agent. */
+  @Index()
+  @Column({ type: "uuid", nullable: true })
+  agentId: string | null;
+
+  @ManyToOne(() => Agent, (agent) => agent.hooks, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "agentId" })
+  agent?: Agent;
+
+  @Column({ type: "uuid" })
+  hookConnectionId: string;
+
+  @ManyToOne(() => HookConnection, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "hookConnectionId" })
+  hookConnection?: HookConnection;
+
+  @Column({ type: "varchar", length: 64 })
+  event: HookName;
+
+  @Column({ type: "int", default: 0 })
+  stage: number;
+
+  @Column({ type: "int", default: 0 })
+  position: number;
+
+  @Column({ type: "jsonb", nullable: true })
+  match: HookMatch | null;
+
+  @Column({ type: "int", nullable: true })
+  timeoutMs: number | null;
+
+  @Column({ type: "varchar", length: 16, default: "continue" })
+  onError: HookOnError;
+
+  @Column({ default: false })
+  async: boolean;
+
+  @Column({ default: true })
+  enabled: boolean;
 }
