@@ -66,11 +66,18 @@ export async function parseApiErrorResponse(
   return fallbackApiError(response);
 }
 
+/**
+ * The zod issues as an ApiError. Each issue keeps its path: most fail deep in
+ * the value (e.g. `data.3.parts.0.content`), where treeifyError's root
+ * `errors` would be empty.
+ */
 export function parseZodErrors(error: z.ZodError, message?: string): ApiError {
-  const errors = z.treeifyError(error).errors;
+  const errors = error.issues.map((issue) =>
+    issue.path.length ? `${issue.path.join(".")}: ${issue.message}` : issue.message,
+  );
 
   return new ApiError({
-    message: message ?? errors[0],
+    message: message ? `${message}: ${errors[0]}` : errors[0],
     details: { errors },
   });
 }

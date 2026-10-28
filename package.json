@@ -5,7 +5,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev --filter @snipet/api --filter @snipet/web",
     "dev:site": "turbo run dev --filter @snipet/site",
-    "dev:widgets": "turbo run dev --filter @snipet/widget --filter @snipet/api --filter @snipet/web",
+    "dev:widget": "turbo run dev --filter @snipet/widget",
     "lint": "turbo run build --filter @snipet/shared && eslint . --cache",
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",

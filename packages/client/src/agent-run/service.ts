@@ -1,4 +1,4 @@
-import http, { httpSse } from "../http";
+import http, { httpSse, parseZodErrors } from "../http";
 
 import {
   agentMessageSchema, agentRunSchema, agentSessionSchema, findAgentMessagesParamsSchema, findAgentRunsParamsSchema,
@@ -52,8 +52,12 @@ const events = async (
     headers: lastId > 0 ? { "Last-Event-ID": String(lastId) } : undefined,
     signal: opts.signal,
     onEvent: (event, data) => {
-      if (event === "message") data = agentMessageSchema.parse(data);
-      else if (event === "run_finished") data = agentRunSchema.parse(data);
+      const schema = event === "message" ? agentMessageSchema : event === "run_finished" ? agentRunSchema : undefined;
+      if (schema) {
+        const parsed = schema.safeParse(data);
+        if (!parsed.success) throw parseZodErrors(parsed.error, `Invalid ${event} event`);
+        data = parsed.data;
+      }
       onEvent({ event, data } as AgentRunEvent);
     },
   });

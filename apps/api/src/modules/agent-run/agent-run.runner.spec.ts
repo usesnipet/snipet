@@ -32,6 +32,7 @@ const agent = {
   name: "Suporte Técnico",
   systemPrompt: "be brief",
   maxTurns: 5,
+  historyRuns: 10,
   llms: [{ model: "openai/gpt", connectionId: null, extraOptions: null }],
   pluginConnections: [{ pluginConnectionId: "p1", allow: ["ask_*"], deny: [] }],
 } as unknown as Agent;
@@ -52,14 +53,18 @@ function setup(
   let nextId = 1;
   const saved: LlmMessage[] = [];
   const messages = {
-    find: jest.fn<Fn>().mockResolvedValue([{ role: "user", parts: [{ type: "text", text: "hi" }] }]),
+    find: jest.fn<Fn>().mockResolvedValue([{ runId: "r1", role: "user", parts: [{ type: "text", text: "hi" }] }]),
     create: (m: unknown) => m,
     save: jest.fn((m: LlmMessage) => {
       saved.push({ role: m.role, parts: m.parts });
       return Promise.resolve({ ...m, id: nextId++ });
     }),
   };
-  const runs = { update: jest.fn<Fn>(), findOneByOrFail: jest.fn<Fn>().mockResolvedValue(run) };
+  const runs = {
+    find: jest.fn<Fn>().mockResolvedValue([{ id: "r1" }]),
+    update: jest.fn<Fn>(),
+    findOneByOrFail: jest.fn<Fn>().mockResolvedValue(run),
+  };
   const llm = {
     stream: jest.fn(async function* (): AsyncGenerator<LlmStreamEvent> {
       const reply = await Promise.resolve(replies.shift()!);
@@ -109,7 +114,7 @@ function setup(
     new AgentContext(plugins as unknown as PluginConnectionService),
     hooks,
   );
-  return { runner, runs, llm, plugins, saved, events };
+  return { runner, runs, messages, llm, plugins, saved, events };
 }
 
 const finishedWith = (runs: { update: jest.Mock<Fn> }) => runs.update.mock.calls[0][1];
@@ -215,6 +220,25 @@ describe("AgentRunner.run", () => {
 
     expect(llm.stream).not.toHaveBeenCalled();
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "off topic" });
+  });
+
+  it("sees the current run and the historyRuns before it, with the tool results of the older ones omitted", async () => {
+    const { runner, runs, messages, llm } = setup([answer]);
+    runs.find.mockResolvedValue([{ id: "r1" }, { id: "r0" }, { id: "rOld" }]);
+    const result = (toolCallId: string) => ({ type: "tool_result", toolCallId, content: "data", isError: false });
+    messages.find.mockResolvedValue([
+      { runId: "rOld", role: "assistant", parts: [{ ...callTool.parts[0], id: "old" }] },
+      { runId: "rOld", role: "tool", parts: [result("old")] },
+      { runId: "r0", role: "assistant", parts: [{ ...callTool.parts[0], id: "prev" }] },
+      { runId: "r0", role: "tool", parts: [result("prev")] },
+      { runId: "r1", role: "user", parts: [{ type: "text", text: "hi" }] },
+    ]);
+    await runner.run({ ...agent, historyRuns: 2 } as Agent, run, owner);
+
+    expect(runs.find).toHaveBeenCalledWith(expect.objectContaining({ where: { sessionId: "s1" }, take: 3 }));
+    const [{ messages: sent }] = llm.stream.mock.calls[0] as unknown as [{ messages: LlmMessage[] }];
+    const contents = sent.flatMap((m) => m.parts.flatMap((p) => (p.type === "tool_result" ? [p.content] : [])));
+    expect(contents).toEqual(["[result omitted]", "data"]);
   });
 
   it("stops at maxTurns while the model keeps calling tools", async () => {

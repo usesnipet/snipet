@@ -1,4 +1,5 @@
 import { FormInput } from "@/components/form/input";
+import { FormSlider } from "@/components/form/slider";
 import { FormSwitch } from "@/components/form/switch";
 import { FormTextarea } from "@/components/form/textarea";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ const toForm = (agent?: Agent): AgentFormInput => ({
   avatar: agent?.avatar ?? null,
   systemPrompt: agent?.systemPrompt ?? "",
   maxTurns: agent?.maxTurns ?? 20,
+  historyRuns: agent?.historyRuns ?? 10,
   enabled: agent?.enabled ?? true,
   llms: agent?.llms.map((llm) => ({
     model: llm.model,
@@ -50,10 +52,19 @@ const toForm = (agent?: Agent): AgentFormInput => ({
     extraOptions: llm.extraOptions ?? undefined,
   })) ?? [{ model: "" }],
   pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, allow, deny }) => ({
-    pluginConnectionId, allow, deny,
+    pluginConnectionId,
+    allow,
+    deny,
   })),
   hooks: (agent?.hooks ?? []).map(({ event, hookConnectionId, stage, match, timeoutMs, onError, async, enabled }) => ({
-    event, hookConnectionId, stage, match: match ?? {}, timeoutMs, onError, async, enabled,
+    event,
+    hookConnectionId,
+    stage,
+    match: match ?? {},
+    timeoutMs,
+    onError,
+    async,
+    enabled,
   })),
 });
 
@@ -79,7 +90,8 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
       <DialogHeader>
         <DialogTitle>{agent ? "Edit agent" : "New agent"}</DialogTitle>
         <DialogDescription>
-          An agent loops between its models and plugin actions until the task is done or it runs out of turns. Hooks run on loop events.
+          An agent loops between its models and plugin actions until the task is done or it runs out of turns. Hooks run
+          on loop events.
         </DialogDescription>
       </DialogHeader>
 
@@ -95,6 +107,7 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
                 <FormInput name="maxTurns" label="Max turns" inputMode="numeric" fieldclassname="max-w-32" />
                 <FormSwitch name="enabled" label="Enabled" fieldclassname="pb-2" />
               </div>
+              <FormSlider name="historyRuns" label="Previous runs in history" min={0} max={100} showValue />
             </FieldGroup>
             <div className="space-y-2 px-4">
               <LlmModelsField name="llms" allowedModelCapabilities={[LlmCapability.TEXT]} />

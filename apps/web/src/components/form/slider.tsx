@@ -36,7 +36,7 @@ export const FormSlider = ({
           {label ? <FormLabel>{label}</FormLabel> : null}
           {showValue && typeof value === "number" ? (
             <span className="absolute right-0 top-0 text-sm text-muted-foreground">
-              {value.toFixed(1)}
+              {value}
             </span>
           ) : null}
           <FormControl>

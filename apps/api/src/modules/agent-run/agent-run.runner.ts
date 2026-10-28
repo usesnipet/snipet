@@ -5,7 +5,7 @@ import { ActionResult } from "#src/plugin/driver.js";
 import { HttpException, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { AgentRunStatus } from "@snipet/shared";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 
 import { Agent } from "../agent/agent.entity.js";
 import { HookDispatcher } from "../hook-connection/hook.dispatcher.js";
@@ -17,7 +17,12 @@ import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 
 import type { HookName, HookToolErrorReason, LlmMessage, LlmPart, LlmToolCallPart } from "@snipet/shared";
-const HISTORY_LIMIT = 20;
+
+/** The last runs, the current one included, whose tool results the models see in full. */
+const FULL_TOOL_RUNS = 2;
+
+/** Stands in for an older tool result, which is mostly tokens the models no longer need. */
+const OMITTED_RESULT = "[result omitted]";
 
 const INTERNAL_ERROR = "internal error";
 
@@ -62,25 +67,37 @@ export class AgentRunner {
     private readonly hooks: HookDispatcher,
   ) {}
 
-  /** The session's last messages, from its first user message, with every tool call paired to its result. */
-  private async getHistory(sessionId: string): Promise<LlmMessage[]> {
-    const stored = await this.messages.find({
+  /**
+   * The messages of the current run and the session's `previousRuns` before it, with every tool call paired
+   * to its result. Tool results older than the last FULL_TOOL_RUNS runs are
+   * replaced by a placeholder: the calls stay, so the model knows what it did.
+   */
+  private async getHistory(sessionId: string, previousRuns: number): Promise<LlmMessage[]> {
+    const recent = await this.runs.find({
+      select: { id: true },
       where: { sessionId },
-      order: { id: "DESC" },
-      take: HISTORY_LIMIT,
+      order: { createdAt: "DESC" },
+      take: previousRuns + 1,
     });
-    stored.reverse();
-    const firstUser = stored.findIndex((m) => m.role === "user");
-    const messages = stored.slice(firstUser);
-    // Providers reject calls without results and results without calls; the
-    // history window or a crashed run can leave either.
+    const messages = await this.messages.find({
+      where: { runId: In(recent.map((r) => r.id)) },
+      order: { id: "ASC" },
+    });
+    const full = new Set(recent.slice(0, FULL_TOOL_RUNS).map((r) => r.id));
+    // Providers reject calls without results and results without calls; a
+    // crashed run can leave either.
     const all = messages.flatMap((m) => m.parts);
     const calls = new Set(all.flatMap((p) => (p.type === "tool_call" ? [p.id] : [])));
     const results = new Set(all.flatMap((p) => (p.type === "tool_result" ? [p.toolCallId] : [])));
     const paired = (p: LlmPart) =>
       p.type === "tool_call" ? results.has(p.id) : p.type === "tool_result" ? calls.has(p.toolCallId) : true;
     return messages
-      .map(({ role, parts }) => ({ role, parts: parts.filter(paired) })) // the DB only holds valid messages
+      .map(({ role, parts, runId }) => ({
+        role,
+        parts: parts
+          .filter(paired) // the DB only holds valid messages
+          .map((p) => (p.type === "tool_result" && !full.has(runId) ? { ...p, content: OMITTED_RESULT } : p)),
+      }))
       .filter((m) => m.parts.length > 0);
   }
 
@@ -110,7 +127,7 @@ export class AgentRunner {
     const startedAt = Date.now();
 
     try {
-      const history = await this.getHistory(run.sessionId);
+      const history = await this.getHistory(run.sessionId, agent.historyRuns);
       const input = history.at(-1);
       await hooks.pass("run.start", {
         input: input?.parts.flatMap((p) => (p.type === "text" ? [p.text] : [])).join("\n") ?? "",

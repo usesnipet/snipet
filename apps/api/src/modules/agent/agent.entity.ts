@@ -51,6 +51,10 @@ export class Agent extends BaseEntity implements AgentContract {
   @Column({ type: "int", default: 20 })
   maxTurns: number;
 
+  /** How many of the session's previous runs the models see, besides the current one. */
+  @Column({ type: "int", default: 10 })
+  historyRuns: number;
+
   @Column({ default: true })
   enabled: boolean;
 

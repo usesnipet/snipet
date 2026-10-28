@@ -39,6 +39,7 @@ export const agentSchema = z.object({
   avatar: z.url().nullable(),
   systemPrompt: z.string(),
   maxTurns: z.number().int(),
+  historyRuns: z.number().int(),
   enabled: z.boolean(),
   llms: z.array(agentLlmSchema),
   pluginConnections: z.array(agentPluginConnectionSchema),
@@ -71,6 +72,12 @@ export const createAgentSchema = z.object({
     .int()
     .min(1, "Max turns must be at least 1")
     .max(500, "Max turns must be at most 500")
+    .optional(),
+  historyRuns: z
+    .number()
+    .int()
+    .min(0, "History runs must be at least 0")
+    .max(100, "History runs must be at most 100")
     .optional(),
   enabled: z.boolean().optional(),
   llms: z
