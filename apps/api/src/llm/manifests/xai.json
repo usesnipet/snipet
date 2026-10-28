@@ -17,6 +17,14 @@
         "type": "string",
         "title": "Base URL",
         "description": "Optional override, defaults to https://api.x.ai/v1."
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "description": "How random the replies are: lower is focused and repeatable, higher is more varied and creative. Leave empty to use the model's default.",
+        "minimum": 0,
+        "maximum": 1,
+        "step": 0.01
       }
     },
     "required": [
@@ -34,7 +42,8 @@
     "driver": "openai",
     "options": {
       "baseUrl": "{{ connection.baseUrl || \"https://api.x.ai/v1\" }}",
-      "apiKey": "{{ connection.apiKey }}"
+      "apiKey": "{{ connection.apiKey }}",
+      "temperature": "{{ connection.temperature }}"
     }
   },
   "healthCheck": {

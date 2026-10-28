@@ -22,6 +22,14 @@
         "type": "string",
         "title": "Organization",
         "description": "OpenAI Compatible organization, from openai.com/api-keys."
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "description": "How random the replies are: lower is focused and repeatable, higher is more varied and creative. Leave empty to use the model's default.",
+        "minimum": 0,
+        "maximum": 1,
+        "step": 0.01
       }
     },
     "required": ["baseUrl"]
@@ -39,7 +47,8 @@
     "options": {
       "baseUrl": "{{ connection.baseUrl }}/v1",
       "apiKey": "{{ connection.apiKey }}",
-      "organization": "{{ connection.organization }}"
+      "organization": "{{ connection.organization }}",
+      "temperature": "{{ connection.temperature }}"
     }
   },
   "healthCheck": {

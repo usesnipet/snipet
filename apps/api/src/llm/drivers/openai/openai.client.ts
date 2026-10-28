@@ -12,6 +12,9 @@ export const openAiOptionsSchema = z.strictObject({
   apiKey: z.string().default(""),
   organization: z.string().default(""),
   headers: z.record(z.string(), z.string()).default({}),
+  // "" is an unset `{{ connection.temperature }}`; left out, the model's own
+  // default applies (reasoning models reject any other).
+  temperature: z.preprocess((v) => (v === "" ? undefined : v), z.number().optional()),
 });
 export type OpenAiOptions = z.infer<typeof openAiOptionsSchema>;
 

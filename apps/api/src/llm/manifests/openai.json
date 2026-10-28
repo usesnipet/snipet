@@ -17,6 +17,14 @@
         "type": "string",
         "title": "Organization",
         "description": "OpenAI organization, from openai.com/api-keys."
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "description": "How random the replies are: lower is focused and repeatable, higher is more varied and creative. Leave empty to use the model's default.",
+        "minimum": 0,
+        "maximum": 1,
+        "step": 0.01
       }
     },
     "required": ["apiKey"]
@@ -34,7 +42,8 @@
     "options": {
       "baseUrl": "https://api.openai.com/v1",
       "apiKey": "{{ connection.apiKey }}",
-      "organization": "{{ connection.organization }}"
+      "organization": "{{ connection.organization }}",
+      "temperature": "{{ connection.temperature }}"
     }
   },
   "healthCheck": {
