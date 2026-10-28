@@ -7,18 +7,39 @@ import { agentRunStatusSchema } from "./agent-run.js";
 import { executeLlmTargetSchema, llmMessageSchema, llmToolCallPartSchema, llmToolSchema } from "./llm.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-const actionResultSchema = z.object({ content: z.string(), isError: z.boolean() });
-const toolCallSchema = z.object({ call: llmToolCallPartSchema });
-const durationSchema = z.number();
+// --- constants -------------------------------------------------------------
+
+/** Version of the event envelope handlers get; bump on a breaking change. */
+export const HOOK_EVENT_VERSION = 1;
+/** Timeout of a synchronous handler without its own: it holds the run up. */
+export const DEFAULT_SYNC_HOOK_TIMEOUT_MS = 5_000;
+/** Timeout of an async handler without its own. */
+export const DEFAULT_ASYNC_HOOK_TIMEOUT_MS = 30_000;
+/** Longest a handler may take. */
+export const MAX_HOOK_TIMEOUT_MS = 30_000;
+
+// --- hook points -----------------------------------------------------------
+
+const toolResultSchema = z.object({ content: z.string(), isError: z.boolean() });
+const toolCallPayloadSchema = z.object({ call: llmToolCallPartSchema });
+const durationMsSchema = z.number();
+
+/** Why a tool call ended in an error result. */
+export const hookToolErrorReasonSchema = z.enum(["cancelled", "error_result", "unknown_tool"]);
+export type HookToolErrorReason = z.infer<typeof hookToolErrorReasonSchema>;
+
+/** What a failing handler does to the step: `fail` blocks it (guardrails). */
+export const hookOnErrorSchema = z.enum(["continue", "fail"]);
+export type HookOnError = z.infer<typeof hookOnErrorSchema>;
 
 /** What a synchronous handler's reply may do besides `continue`. */
 export const hookActionSchema = z.enum(["modify", "block", "respond"]);
 export type HookAction = z.infer<typeof hookActionSchema>;
 
 /** The `match` filters a hook point can be narrowed by. */
-type HookMatchKey = "tools" | "models";
+export type HookMatchKey = "tools" | "models";
 
-type HookDef = {
+type HookDefinition = {
   payload: z.ZodObject;
   /** Empty: handlers only observe, their reply is ignored. */
   actions: readonly HookAction[];
@@ -55,27 +76,27 @@ export const HOOKS = {
       model: z.string().nullable(),
       message: llmMessageSchema,
       skipped: z.array(z.unknown()),
-      durationMs: durationSchema,
+      durationMs: durationMsSchema,
     }),
     actions: ["modify", "block"],
     match: ["models"],
   },
   "tool.before": {
-    payload: toolCallSchema,
+    payload: toolCallPayloadSchema,
     actions: ["modify", "block", "respond"],
-    respond: actionResultSchema,
+    respond: toolResultSchema,
     match: ["tools"],
   },
   "tool.after": {
-    payload: toolCallSchema.extend({ result: actionResultSchema, durationMs: durationSchema }),
+    payload: toolCallPayloadSchema.extend({ result: toolResultSchema, durationMs: durationMsSchema }),
     actions: ["modify"],
     match: ["tools"],
   },
   "tool.error": {
-    payload: toolCallSchema.extend({
-      result: actionResultSchema,
-      reason: z.enum(["cancelled", "error_result", "unknown_tool"]),
-      durationMs: durationSchema,
+    payload: toolCallPayloadSchema.extend({
+      result: toolResultSchema,
+      reason: hookToolErrorReasonSchema,
+      durationMs: durationMsSchema,
     }),
     actions: ["modify"],
     match: ["tools"],
@@ -85,7 +106,7 @@ export const HOOKS = {
       status: agentRunStatusSchema,
       error: z.string().nullable(),
       turns: z.number().int(),
-      durationMs: durationSchema,
+      durationMs: durationMsSchema,
     }),
     actions: [],
     match: [],
@@ -101,7 +122,7 @@ export const HOOKS = {
   },
   "run.cancelled": { payload: z.object({}), actions: [], match: [] },
   "run.maxTurns": { payload: z.object({}), actions: [], match: [] },
-} as const satisfies Record<string, HookDef>;
+} as const satisfies Record<string, HookDefinition>;
 
 export const hookNameSchema = z.enum(Object.keys(HOOKS) as [keyof typeof HOOKS]);
 export type HookName = z.infer<typeof hookNameSchema>;
@@ -113,7 +134,7 @@ export type HookRespond<K extends HookName> = (typeof HOOKS)[K] extends { respon
 
 /** The envelope every handler gets; only `payload` changes per hook. */
 export const hookEventSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(HOOK_EVENT_VERSION),
   /** Unique per dispatch: the idempotency key. */
   id: z.uuid(),
   hook: hookNameSchema,
@@ -196,9 +217,6 @@ export type FindHookConnectionsParams = z.infer<typeof findHookConnectionsParams
 
 // --- agent hooks -----------------------------------------------------------
 
-/** Longest a handler may take. */
-export const MAX_HOOK_TIMEOUT_MS = 30_000;
-
 /**
  * Fires only when every given filter matches, by glob (`github_*`): tools on
  * the call's name, models on the model asked for or answering. A hook point
@@ -226,10 +244,9 @@ export const agentHookSchema = z.object({
   /** Order in the agent's list; breaks ties within a stage. */
   position: z.number().int(),
   match: hookMatchSchema.nullable(),
-  /** null: 5 s synchronous, 30 s async. */
+  /** null: DEFAULT_SYNC_HOOK_TIMEOUT_MS, or DEFAULT_ASYNC_HOOK_TIMEOUT_MS when async. */
   timeoutMs: z.number().int().nullable(),
-  /** `fail` blocks the step when the handler errors (guardrails). */
-  onError: z.enum(["continue", "fail"]),
+  onError: hookOnErrorSchema,
   /** Don't wait for the reply: the hook only observes. */
   async: z.boolean(),
   enabled: z.boolean(),
@@ -248,7 +265,7 @@ export const createAgentHookSchema = z.object({
   position: z.number().int().optional(),
   match: hookMatchSchema.nullable().optional(),
   timeoutMs: z.number().int().min(1).max(MAX_HOOK_TIMEOUT_MS).nullable().optional(),
-  onError: z.enum(["continue", "fail"]).optional(),
+  onError: hookOnErrorSchema.optional(),
   async: z.boolean().optional(),
   enabled: z.boolean().optional(),
 });

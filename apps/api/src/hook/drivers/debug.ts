@@ -6,7 +6,8 @@ import { z } from "zod";
 import type { HookEvent, HookResult } from "@snipet/shared";
 import type { HookDriver } from "../driver.js";
 
-const PREFIX = "debug";
+/** Storage prefix the debug driver saves events under. */
+const DEBUG_STORAGE_PREFIX = "debug";
 
 const optionsSchema = z.strictObject({});
 
@@ -19,8 +20,9 @@ type DebugOptions = z.infer<typeof optionsSchema>;
  */
 export function debugPath(event: HookEvent): string {
   const [date, time] = event.occurredAt.replace("Z", "").split("T");
-  const agent = `${slugify(event.agent.name) || "agent"}_${event.agent.id}`;
-  return `${date}/${agent}/${event.run.sessionId}/${event.run.id}/${time.replaceAll(":", "-")}_${event.hook}_${event.id.slice(0, 8)}.json`;
+  const agentFolder = `${slugify(event.agent.name) || "agent"}_${event.agent.id}`;
+  const fileName = `${time.replaceAll(":", "-")}_${event.hook}_${event.id.slice(0, 8)}.json`;
+  return `${date}/${agentFolder}/${event.run.sessionId}/${event.run.id}/${fileName}`;
 }
 
 /** Saves each event it gets as a JSON file in storage; only observes. */
@@ -32,8 +34,8 @@ export class DebugDriver extends Driver(optionsSchema) implements HookDriver<Deb
   }
 
   async handle(event: HookEvent): Promise<HookResult> {
-    const json = Buffer.from(JSON.stringify(event, null, 2));
-    await this.storage.put(PREFIX, debugPath(event), json, "application/json");
+    const eventJson = Buffer.from(JSON.stringify(event, null, 2));
+    await this.storage.put(DEBUG_STORAGE_PREFIX, debugPath(event), eventJson, "application/json");
     return { action: "continue" };
   }
 }

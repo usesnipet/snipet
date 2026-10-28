@@ -1,4 +1,4 @@
-import { HookDrivers } from "#src/hook/driver.js";
+import { HookDriver, HookDrivers } from "#src/hook/driver.js";
 import { HookDriverRegistry, HookRegistry } from "#src/hook/hook.registry.js";
 import { ConnectionService } from "#src/manifest/connection.service.js";
 import { Injectable } from "@nestjs/common";
@@ -24,8 +24,8 @@ export class HookConnectionService extends ConnectionService<HookConnection, Hoo
   }
 
   /** The connection's handle driver with its options resolved; throws when the config no longer fits them. */
-  handlerOf(conn: HookConnection) {
-    return this.drivers.resolve(this.manifests.get(conn.hookKey), "handle", conn.config)!;
+  handlerOf(connection: HookConnection): { driver: HookDriver; options: unknown } {
+    return this.drivers.resolve(this.manifests.get(connection.hookKey), "handle", connection.config)!;
   }
 }
 

@@ -6,8 +6,15 @@ import { z } from "zod";
 import type { HookEvent, HookResult } from "@snipet/shared";
 import type { HookDriver } from "../driver.js";
 
-/** Largest reply body read from the webhook. */
-const MAX_RESPONSE_BYTES = 1_000_000;
+/** Largest reply body read from a webhook. */
+const WEBHOOK_MAX_RESPONSE_BYTES = 1_000_000;
+
+/** Headers a webhook request carries besides the connection's own. */
+const WEBHOOK_HEADERS = {
+  eventId: "X-Snipet-Event-Id",
+  hook: "X-Snipet-Hook",
+  signature: "X-Snipet-Signature",
+} as const;
 
 const optionsSchema = z.strictObject({
   url: z.url({ protocol: /^https?$/ }),
@@ -22,9 +29,10 @@ type WebhookOptions = z.infer<typeof optionsSchema>;
  * Stripe-style signature: `t=<unix>,v1=<hex hmac-sha256(secret, "<t>.<body>")>`.
  * The timestamp lets the receiver reject replays.
  */
-export function sign(secret: string, body: string, now = Date.now()): string {
-  const t = Math.floor(now / 1000);
-  return `t=${t},v1=${createHmac("sha256", secret).update(`${t}.${body}`).digest("hex")}`;
+export function sign(secret: string, body: string, now: number = Date.now()): string {
+  const timestamp = Math.floor(now / 1000);
+  const hmac = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
+  return `t=${timestamp},v1=${hmac}`;
 }
 
 /**
@@ -41,7 +49,7 @@ export class WebhookDriver extends Driver(optionsSchema) implements HookDriver<W
     signal: AbortSignal,
   ): Promise<HookResult> {
     const body = JSON.stringify(event);
-    const res = await fetch(url, {
+    const response: Response = await fetch(url, {
       method: "POST",
       body,
       signal,
@@ -49,28 +57,30 @@ export class WebhookDriver extends Driver(optionsSchema) implements HookDriver<W
       redirect: "error",
       headers: {
         // Unset connection fields render as "": drop them instead of sending empty headers.
-        ...Object.fromEntries(Object.entries(headers ?? {}).filter(([, v]) => v)),
+        ...Object.fromEntries(Object.entries(headers ?? {}).filter(([, value]) => value)),
         "Content-Type": "application/json",
-        "X-Snipet-Event-Id": event.id,
-        "X-Snipet-Hook": event.hook,
-        ...(signingSecret ? { "X-Snipet-Signature": sign(signingSecret, body) } : {}),
+        [WEBHOOK_HEADERS.eventId]: event.id,
+        [WEBHOOK_HEADERS.hook]: event.hook,
+        ...(signingSecret ? { [WEBHOOK_HEADERS.signature]: sign(signingSecret, body) } : {}),
       },
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const text = await res.text();
-    if (text.length > MAX_RESPONSE_BYTES) throw new Error("reply too large");
-    if (!text.trim()) return { action: "continue" };
+    const replyText: string = await response.text();
+    if (replyText.length > WEBHOOK_MAX_RESPONSE_BYTES) throw new Error("reply too large");
+    if (!replyText.trim()) return { action: "continue" };
 
-    let raw: unknown;
+    let replyJson: unknown;
     try {
-      raw = JSON.parse(text);
+      replyJson = JSON.parse(replyText);
     } catch {
       throw new Error("reply is not JSON");
     }
-    const result = hookResultSchema.safeParse(raw);
+    const parsed = hookResultSchema.safeParse(replyJson);
     // Issues only, never the body: the reply is untrusted.
-    if (!result.success) throw new Error(`invalid reply: ${result.error.issues.map((i) => i.message).join("; ")}`);
-    return result.data;
+    if (!parsed.success) {
+      throw new Error(`invalid reply: ${parsed.error.issues.map((issue) => issue.message).join("; ")}`);
+    }
+    return parsed.data;
   }
 }

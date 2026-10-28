@@ -1,5 +1,7 @@
-import { createAgentSchema, MAX_HOOK_TIMEOUT_MS } from "@snipet/shared";
+import { createAgentSchema, hookMatchSchema, MAX_HOOK_TIMEOUT_MS } from "@snipet/shared";
 import { z } from "zod";
+
+import type { HookMatch } from "@snipet/shared";
 
 const hookSchema = createAgentSchema.shape.hooks.unwrap().element;
 
@@ -18,11 +20,10 @@ export const agentFormSchema = createAgentSchema.extend({
       hookConnectionId: z.uuid("Select a connection"),
       stage: z.coerce.number<string | number>().int().min(0, "Stage must be at least 0"),
       // Blank patterns are dropped; no pattern means no filter.
-      match: z
-        .object({ tools: z.array(z.string()).optional(), models: z.array(z.string()).optional() })
+      match: hookMatchSchema
         .nullable()
         .optional()
-        .transform((match) => {
+        .transform((match): HookMatch | null => {
           const tools = match?.tools?.filter(Boolean);
           const models = match?.models?.filter(Boolean);
           return tools?.length || models?.length ? { tools, models } : null;

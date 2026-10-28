@@ -5,6 +5,7 @@ import type {
   AgentPluginConnection as AgentPluginConnectionContract,
   HookName,
   HookMatch,
+  HookOnError,
   JsonObject,
 } from "@snipet/shared";
 import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
@@ -159,7 +160,7 @@ export class AgentHook extends BaseEntity implements AgentHookContract {
   timeoutMs: number | null;
 
   @Column({ type: "varchar", length: 16, default: "continue" })
-  onError: "continue" | "fail";
+  onError: HookOnError;
 
   @Column({ default: false })
   async: boolean;

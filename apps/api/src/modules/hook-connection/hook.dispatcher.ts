@@ -1,18 +1,25 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { DEFAULT_ASYNC_HOOK_TIMEOUT_MS, DEFAULT_SYNC_HOOK_TIMEOUT_MS } from "@snipet/shared";
 import { IsNull, Repository } from "typeorm";
 
 import { AgentHook } from "../agent/agent.entity.js";
 
 import { HookConnectionService } from "./hook-connection.service.js";
-import { ASYNC_TIMEOUT_MS, HookHandler, HookRunner, HookRunnerContext, SYNC_TIMEOUT_MS } from "./hook.runner.js";
+import { HookRunner } from "./hook.runner.js";
+
+import type { HookHandler, HookRunnerContext } from "./hook.runner.js";
+
+/** Global hooks first: false (0) sorts before true (1). */
+const byAgentScope = (left: AgentHook, right: AgentHook): number =>
+  Number(left.agentId !== null) - Number(right.agentId !== null);
 
 @Injectable()
 export class HookDispatcher {
   private readonly logger = new Logger(HookDispatcher.name);
 
   constructor(
-    @InjectRepository(AgentHook) private readonly bindings: Repository<AgentHook>,
+    @InjectRepository(AgentHook) private readonly agentHooks: Repository<AgentHook>,
     private readonly connections: HookConnectionService,
   ) {}
 
@@ -21,49 +28,56 @@ export class HookDispatcher {
    * agent's, each group by stage and position. Never throws: a hook that can't load is
    * logged and left out, so it can't fail the run.
    */
-  async forRun(ctx: HookRunnerContext): Promise<HookRunner> {
-    let bindings: AgentHook[] = [];
+  async forRun(context: HookRunnerContext): Promise<HookRunner> {
+    const agentHooks = await this.loadEnabled(context);
+    // Stable sort: keeps the stage order within each group.
+    agentHooks.sort(byAgentScope);
+    const handlers = agentHooks.flatMap((agentHook): HookHandler[] => {
+      const handler = this.toHandler(agentHook);
+      return handler ? [handler] : [];
+    });
+    return new HookRunner(handlers, context, this.logger);
+  }
+
+  /** Enabled bindings of the run's agent and global ones, on enabled connections; empty when the query fails. */
+  private async loadEnabled({ run, agent }: HookRunnerContext): Promise<AgentHook[]> {
+    const enabled = { enabled: true, hookConnection: { enabled: true } };
     try {
-      const enabled = { enabled: true, hookConnection: { enabled: true } };
-      bindings = await this.bindings.find({
+      return await this.agentHooks.find({
         where: [
           { ...enabled, agentId: IsNull() },
-          { ...enabled, agentId: ctx.agent.id },
+          { ...enabled, agentId: agent.id },
         ],
         relations: { hookConnection: true },
         order: { stage: "ASC", position: "ASC", createdAt: "ASC" },
       });
     } catch (err) {
-      this.logger.warn(`load hooks of run ${ctx.run.id}: ${String(err)}`);
+      this.logger.warn(`load hooks of run ${run.id}: ${String(err)}`);
+      return [];
     }
-    // Stable sort: keeps the order within each group.
-    bindings.sort((a, b) => Number(a.agentId !== null) - Number(b.agentId !== null));
+  }
 
-    const handlers = bindings.flatMap((b): HookHandler[] => {
-      const conn = b.hookConnection!;
-      try {
-        const { driver, options } = this.connections.handlerOf(conn);
-        const timeoutMs = b.timeoutMs ?? (b.async ? ASYNC_TIMEOUT_MS : SYNC_TIMEOUT_MS);
-        const { event, stage, match, async, onError } = b;
-        return [
-          {
-            name: conn.name,
-            event,
-            global: b.agentId === null,
-            stage,
-            match,
-            async,
-            onError,
-            driver,
-            options,
-            timeoutMs,
-          },
-        ];
-      } catch (err) {
-        this.logger.warn(`hook connection ${conn.id} (${conn.hookKey}): ${String(err)}`);
-        return [];
-      }
-    });
-    return new HookRunner(handlers, ctx, this.logger);
+  /** The binding with its connection's driver resolved; undefined when the connection no longer resolves. */
+  private toHandler(agentHook: AgentHook): HookHandler | undefined {
+    const connection = agentHook.hookConnection!;
+    const { event, stage, match, async, onError } = agentHook;
+    try {
+      const { driver, options } = this.connections.handlerOf(connection);
+      return {
+        name: connection.name,
+        event,
+        global: agentHook.agentId === null,
+        stage,
+        match,
+        async,
+        onError,
+        driver,
+        options,
+        timeoutMs: agentHook.timeoutMs ?? (async ? DEFAULT_ASYNC_HOOK_TIMEOUT_MS : DEFAULT_SYNC_HOOK_TIMEOUT_MS),
+      };
+    } catch (err) {
+      this.logger.warn(`hook connection ${connection.id} (${connection.hookKey}): ${String(err)}`);
+      return undefined;
+    }
   }
 }

@@ -16,7 +16,7 @@ import { AgentContext, RunContext } from "./agent-context.js";
 import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 
-import type { LlmMessage, LlmPart, LlmToolCallPart } from "@snipet/shared";
+import type { HookName, HookToolErrorReason, LlmMessage, LlmPart, LlmToolCallPart } from "@snipet/shared";
 const HISTORY_LIMIT = 20;
 
 const INTERNAL_ERROR = "internal error";
@@ -43,7 +43,7 @@ const RUN_STATUS_HOOK = {
   [AgentRunStatus.FAILED]: "run.failed",
   [AgentRunStatus.CANCELLED]: "run.cancelled",
   [AgentRunStatus.MAX_TURNS]: "run.maxTurns",
-} as const;
+} as const satisfies Record<Exclude<AgentRunStatus, AgentRunStatus.RUNNING>, HookName>;
 
 /**
  * The agent loop: call the models, run the tools they ask for, feed the
@@ -196,20 +196,24 @@ export class AgentRunner {
 
   /** Runs one tool call through its hooks; never throws. */
   private async callTool(
-    asked: LlmToolCallPart,
+    requestedCall: LlmToolCallPart,
     context: RunContext,
     hooks: HookRunner,
     signal: AbortSignal,
   ): Promise<ActionResult> {
     const started = Date.now();
     if (signal.aborted)
-      return this.toolDone(hooks, asked, { content: "cancelled", isError: true }, "cancelled", started);
-    const before = await hooks.call("tool.before", { call: asked });
-    if (before.action === "block") return { content: before.reason, isError: true };
-    if (before.action === "respond") return before.result;
-    const { call } = before.payload;
+      return this.toolDone(hooks, requestedCall, { content: "cancelled", isError: true }, "cancelled", started);
+    const beforeOutcome = await hooks.call("tool.before", { call: requestedCall });
+    if (beforeOutcome.action === "block") return { content: beforeOutcome.reason, isError: true };
+    if (beforeOutcome.action === "respond") return beforeOutcome.result;
+    const { call } = beforeOutcome.payload;
     const result = await context.call(call);
-    const reason = signal.aborted ? "cancelled" : context.has(call.name) ? "error_result" : "unknown_tool";
+    const reason: HookToolErrorReason = signal.aborted
+      ? "cancelled"
+      : context.has(call.name)
+        ? "error_result"
+        : "unknown_tool";
     return this.toolDone(hooks, call, result, reason, started);
   }
 
@@ -218,7 +222,7 @@ export class AgentRunner {
     hooks: HookRunner,
     call: LlmToolCallPart,
     result: ActionResult,
-    reason: "cancelled" | "error_result" | "unknown_tool",
+    reason: HookToolErrorReason,
     started: number,
   ): Promise<ActionResult> {
     const durationMs = Date.now() - started;
