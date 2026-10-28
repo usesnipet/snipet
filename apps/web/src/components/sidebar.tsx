@@ -44,7 +44,7 @@ const navItems: NavEntry[] = [
         ],
       },
       { title: "Plugins", href: ROUTES.plugins, icon: Plug, visible: isAdmin },
-      { title: "Hooks", href: ROUTES.hooks, icon: Webhook, visible: isAdmin },
+      { title: "Hooks", href: ROUTES.hooks, icon: Webhook, visible: isAdmin, experimental: true },
       { title: "Apps", href: ROUTES.apps, icon: AppWindow, visible: isAdmin },
     ],
   },

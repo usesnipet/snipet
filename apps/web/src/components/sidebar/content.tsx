@@ -25,12 +25,16 @@ type NavSection = {
   items: NavLeafEntry[]
 }
 
-function ComingSoonBadge() {
+function NavTag({ children }: { children: React.ReactNode }) {
   return (
     <span className="ml-2 rounded-md bg-sidebar-foreground/10 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-foreground/50">
-      Coming Soon
+      {children}
     </span>
   )
+}
+
+function ComingSoonBadge() {
+  return <NavTag>Coming Soon</NavTag>
 }
 
 function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: string }) {
@@ -97,6 +101,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
                 <item.icon />
                 <span>{item.title}</span>
                 {item.comingSoon && <ComingSoonBadge />}
+                {"experimental" in item && item.experimental && <NavTag>Experimental</NavTag>}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

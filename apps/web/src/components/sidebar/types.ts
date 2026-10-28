@@ -18,6 +18,8 @@ export type NavItem = {
   visible?: boolean | (() => boolean)
   disabled?: boolean | (() => boolean)
   comingSoon?: boolean
+  /** Shows an "Experimental" tag: the feature may still change. */
+  experimental?: boolean
 }
 
 export type NavItemWithChildren = {

@@ -1,3 +1,4 @@
+import { ExperimentalBadge } from "@/components/experimental-badge";
 import { FormInput } from "@/components/form/input";
 import { FormSelect } from "@/components/form/select";
 import { FormSwitch } from "@/components/form/switch";
@@ -68,7 +69,10 @@ export function AgentHooksField() {
 
   return (
     <div className="space-y-2">
-      <Label>Hooks</Label>
+      <div className="flex items-center gap-2">
+        <Label>Hooks</Label>
+        <ExperimentalBadge />
+      </div>
       <div className="space-y-3">
         {HOOK_GROUPS.map(([group, events]) => (
           <div key={group}>
