@@ -6,9 +6,7 @@ import { Setting } from "./settings.entity.js";
 
 import type { Settings, UpdateSettings } from "@snipet/shared";
 
-const DEFAULTS: Settings = {
-  agentDebugEnabled: false,
-};
+const DEFAULTS: Settings = {};
 
 const entries = (settings: UpdateSettings) => Object.entries(settings).map(([key, value]) => ({ key, value }));
 

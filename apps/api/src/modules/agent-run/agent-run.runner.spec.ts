@@ -1,8 +1,8 @@
 import { LlmError } from "#src/llm/errors.js";
 import { jest } from "@jest/globals";
-import { AgentRunStatus } from "@snipet/shared";
+import { AgentRunStatus, hookNameSchema } from "@snipet/shared";
 
-import { Debugger } from "../debug/debugger.js";
+import { RunHooks } from "../hook-connection/hook.dispatcher.js";
 
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
@@ -10,11 +10,12 @@ import { AgentContext } from "./agent-context.js";
 
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { Agent } from "../agent/agent.entity.js";
-import type { DebugService } from "../debug/debug.service.js";
+import type { HookDriver } from "#src/hook/driver.js";
+import type { HookDispatcher, RunHookContext } from "../hook-connection/hook.dispatcher.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import type { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 import type { AgentRun } from "./agent-run.entity.js";
-import type { LlmMessage, LlmStreamEvent } from "@snipet/shared";
+import type { HookEvent, LlmMessage, LlmStreamEvent } from "@snipet/shared";
 import type { Repository } from "typeorm";
 
 type Fn = (...args: unknown[]) => Promise<unknown>;
@@ -33,7 +34,7 @@ const agent = {
   llms: [{ model: "openai/gpt", connectionId: null, extraOptions: null }],
   pluginConnections: [{ pluginConnectionId: "p1", allow: ["ask_*"], deny: [] }],
 } as unknown as Agent;
-const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z"), debugged: true } as AgentRun;
+const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z") } as AgentRun;
 
 const owner: Owner = { userId: "u1", appId: null, externalUserId: null, name: null };
 
@@ -69,19 +70,18 @@ function setup(replies: (LlmMessage | Error)[]) {
     findInstructions: jest.fn<Fn>().mockResolvedValue([]),
   };
 
-  // The debug files written, by path.
-  const debugFiles = new Map<string, unknown>();
-  const debugs = {
-    debug: async (dir: string, enabled: boolean, fn: (d: Debugger) => Promise<void>) => {
-      const d = new Debugger(
-        enabled
-          ? (file, json) => Promise.resolve(void debugFiles.set(`${dir}/${file}`, JSON.parse(json) as unknown))
-          : undefined,
-      );
-      await fn(d);
-      await d.save();
-    },
-  };
+  // Every event the hooks got, through one handler bound to all of them.
+  const events: HookEvent[] = [];
+  const driver = { handle: (event: HookEvent) => Promise.resolve(void events.push(event)) } as unknown as HookDriver;
+  const hooks = {
+    forRun: (ctx: RunHookContext) =>
+      Promise.resolve(
+        new RunHooks(
+          [{ name: "rec", hooks: new Set(hookNameSchema.options), driver, options: {}, timeoutMs: 1000 }],
+          ctx,
+        ),
+      ),
+  } as unknown as HookDispatcher;
 
   const runner = new AgentRunner(
     runs as unknown as Repository<AgentRun>,
@@ -89,9 +89,9 @@ function setup(replies: (LlmMessage | Error)[]) {
     llm as unknown as LlmConnectionService,
     new AgentRunEvents(),
     new AgentContext(plugins as unknown as PluginConnectionService),
-    debugs as unknown as DebugService,
+    hooks,
   );
-  return { runner, runs, llm, plugins, saved, debugFiles };
+  return { runner, runs, llm, plugins, saved, events };
 }
 
 const finishedWith = (runs: { update: jest.Mock<Fn> }) => runs.update.mock.calls[0][1];
@@ -140,40 +140,33 @@ describe("AgentRunner.run", () => {
     ]);
   });
 
-  it("records the run in its debug files", async () => {
-    const { runner, debugFiles } = setup([callTool, answer]);
+  it("fires the run's hooks with the payload as it was at the time", async () => {
+    const { runner, events } = setup([callTool, answer]);
     await runner.run(agent, run, owner);
 
-    const dir = "2026-10-16/suporte-tecnico_ag1/s1/14-32-05_r1/";
-    const file = (name: string) => debugFiles.get(dir + name);
-    expect([...debugFiles.keys()].map((path) => path.slice(dir.length)).sort()).toEqual([
-      "agent.json",
-      "outcome.json",
-      "toolCalls/0001.json",
-      "tools.json",
-      "turns/0001.json",
-      "turns/0002.json",
+    expect(events.map((e) => `${e.run.turn} ${e.hook}`)).toEqual([
+      "0 run.start",
+      "0 run.context",
+      "1 llm.request",
+      "1 llm.response",
+      "1 tool.after",
+      "2 llm.request",
+      "2 llm.response",
+      "2 run.end",
+      "2 run.completed",
     ]);
-    expect(file("tools.json")).toMatchObject({
-      available: [{ name: "ask_question" }],
+    const payload = (hook: string, n = 0) => events.filter((e) => e.hook === hook)[n].payload;
+    expect(payload("run.start")).toEqual({ input: "hi" });
+    expect(payload("run.context")).toMatchObject({
+      tools: [{ name: "ask_question" }],
       denied: [{ action: "read_wiki", pluginConnectionId: "p1" }],
     });
-    const turns = ["turns/0001.json", "turns/0002.json"].map(
-      (name) => file(name) as { turn: number; messages: LlmMessage[]; reply: LlmMessage },
-    );
-    // Each turn holds the messages as they were sent, not the final history.
-    expect(turns.map((t) => [t.turn, t.messages.length])).toEqual([
-      [1, 3],
-      [2, 5],
-    ]);
-    expect(turns[1].reply).toEqual(answer);
-    expect(file("toolCalls/0001.json")).toMatchObject({
-      turn: 1,
-      name: "ask_question",
-      known: true,
-      result: { content: "answer" },
-    });
-    expect(file("outcome.json")).toEqual({ status: AgentRunStatus.COMPLETED, error: null, turns: 2 });
+    // Each request holds the messages as they were sent, not the final history.
+    expect((payload("llm.request", 0) as { messages: unknown[] }).messages).toHaveLength(3);
+    expect((payload("llm.request", 1) as { messages: unknown[] }).messages).toHaveLength(5);
+    expect(payload("tool.after")).toMatchObject({ call: { name: "ask_question" }, result: { content: "answer" } });
+    expect(payload("run.end")).toMatchObject({ status: AgentRunStatus.COMPLETED, error: null, turns: 2 });
+    expect(events.at(-1)).toMatchObject({ run: { id: "r1", sessionId: "s1", status: AgentRunStatus.COMPLETED } });
   });
 
   it("stops at maxTurns while the model keeps calling tools", async () => {
@@ -190,12 +183,12 @@ describe("AgentRunner.run", () => {
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "llm provider unavailable" });
   });
 
-  it("keeps the raw error, hidden from the client, in the debug files", async () => {
-    const { runner, debugFiles } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
+  it("gives run.failed the raw error the client never sees", async () => {
+    const { runner, events } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
     await runner.run(agent, run, owner);
 
-    const dir = "2026-10-16/suporte-tecnico_ag1/s1/14-32-05_r1/";
-    expect(debugFiles.get(`${dir}error.json`)).toMatchObject({ message: "connect ECONNREFUSED 10.0.0.1" });
-    expect(debugFiles.get(`${dir}outcome.json`)).toMatchObject({ status: AgentRunStatus.FAILED });
+    expect(events.find((e) => e.hook === "run.failed")?.payload).toMatchObject({
+      error: { message: "connect ECONNREFUSED 10.0.0.1" },
+    });
   });
 });
