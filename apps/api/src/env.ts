@@ -52,6 +52,21 @@ const envSchema = z
     LLMS_DIR: z.string().default(resolve(import.meta.dirname, "../llms")),
     HOOKS_DIR: z.string().default(resolve(import.meta.dirname, "../hooks")),
 
+    // Hosts (name or IP) and CIDRs that connections may reach although they
+    // aren't public, comma-separated, e.g. adding "10.0.0.0/8". Everything else
+    // non-public (cloud metadata included) is refused. The default lets a
+    // self-hosted install reach a local Ollama or LM Studio, from the host or
+    // from Docker; set it empty to refuse every non-public address.
+    OUTBOUND_ALLOWLIST: z
+      .string()
+      .default("localhost,127.0.0.0/8,::1,host.docker.internal")
+      .transform((v) =>
+        v
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+
     // CACHE
     CACHE_TTL_MS: z.coerce.number().int().positive().default(60_000), // 1 minute
 

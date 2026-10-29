@@ -1,20 +1,18 @@
 import { jest } from "@jest/globals";
 import { createHmac } from "node:crypto";
 
-import { WebhookDriver } from "./webhook.js";
-
 import type { HookEvent } from "@snipet/shared";
+
+const fetchMock = jest.fn<typeof fetch>();
+jest.unstable_mockModule("#src/infra/http/safe-fetch.js", () => ({ safeFetch: fetchMock }));
+const { WebhookDriver } = await import("./webhook.js");
 
 const event = { id: "e1", hook: "tool.before" } as HookEvent;
 const signal = new AbortController().signal;
 
 describe("WebhookDriver", () => {
   const driver = new WebhookDriver();
-  const fetchMock = jest.fn<typeof fetch>();
-  beforeEach(() => {
-    fetchMock.mockReset();
-    global.fetch = fetchMock;
-  });
+  beforeEach(() => fetchMock.mockReset());
 
   it("signs the body and drops empty headers", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));

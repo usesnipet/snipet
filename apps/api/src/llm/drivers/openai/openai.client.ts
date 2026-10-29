@@ -1,3 +1,4 @@
+import { safeFetch } from "#src/infra/http/safe-fetch.js";
 import OpenAI, { APIConnectionError, APIError, APIUserAbortError } from "openai";
 import z from "zod";
 
@@ -25,6 +26,7 @@ export function openAiClient({ baseUrl, apiKey, headers, organization }: OpenAiO
     organization: organization,
     defaultHeaders: headers,
     maxRetries: 0,
+    fetch: safeFetch,
   });
 }
 

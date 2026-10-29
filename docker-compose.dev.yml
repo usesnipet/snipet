@@ -5,9 +5,12 @@ services:
     ports:
       - "8852:8852"
     env_file: .env
+    # host.docker.internal is the host, for a local Ollama or LM Studio; Linux needs it declared.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       PORT: 8852
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/snipet
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/snipet-agent
     depends_on:
       db:
         condition: service_healthy

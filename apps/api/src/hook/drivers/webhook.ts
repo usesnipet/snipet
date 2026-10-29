@@ -1,3 +1,4 @@
+import { safeFetch } from "#src/infra/http/safe-fetch.js";
 import { Driver } from "#src/manifest/driver.js";
 import { hookResultSchema } from "@snipet/shared";
 import { createHmac } from "node:crypto";
@@ -49,7 +50,7 @@ export class WebhookDriver extends Driver(optionsSchema) implements HookDriver<W
     signal: AbortSignal,
   ): Promise<HookResult> {
     const body = JSON.stringify(event);
-    const response: Response = await fetch(url, {
+    const response: Response = await safeFetch(url, {
       method: "POST",
       body,
       signal,
