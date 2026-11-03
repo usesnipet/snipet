@@ -2,7 +2,7 @@ import { LlmError } from "#src/llm/errors.js";
 import { jest } from "@jest/globals";
 import { AgentRunStatus, hookNameSchema } from "@snipet/shared";
 
-import { HookRunner } from "../hook-connection/hook.runner.js";
+import { HookRunner } from "./hooks/hook.runner.js";
 
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
@@ -10,9 +10,9 @@ import { AgentContext } from "./agent-context.js";
 
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { Agent } from "../agent/agent.entity.js";
-import type { HookDriver } from "#src/hook/driver.js";
-import type { HookDispatcher } from "../hook-connection/hook.dispatcher.js";
-import type { HookRunnerContext } from "../hook-connection/hook.runner.js";
+import type { HookDriver } from "#src/plugin/driver.js";
+import type { HookDispatcher } from "./hooks/hook.dispatcher.js";
+import type { HookRunnerContext } from "./hooks/hook.runner.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import type { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 import type { AgentRun } from "./agent-run.entity.js";

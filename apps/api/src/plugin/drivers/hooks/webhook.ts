@@ -4,7 +4,7 @@ import { createHmac } from "node:crypto";
 import { z } from "zod";
 
 import type { HookEvent, HookResult } from "@snipet/shared";
-import type { HookDriver } from "../driver.js";
+import type { HookDriver } from "../../driver.js";
 
 /** Largest reply body read from a webhook. */
 const WEBHOOK_MAX_RESPONSE_BYTES = 1_000_000;

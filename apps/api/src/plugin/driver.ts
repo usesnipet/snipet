@@ -1,5 +1,6 @@
 import type { BaseDriver } from "#src/manifest/driver.js";
 import type { HealthCheckDriver } from "#src/manifest/health-check.js";
+import type { HookEvent, HookResult } from "@snipet/shared";
 
 /** An action as listed by a driver. */
 export interface Action {
@@ -35,3 +36,9 @@ export type PluginDrivers = {
   instructions: InstructionsDriver;
   healthCheck: HealthCheckDriver;
 };
+
+/** Gets a run's hook events; reshaped into the `hooks` capability in phase 3. */
+export interface HookDriver<Opts = unknown> extends BaseDriver<Opts> {
+  /** Runs the handler; throws on failure, timeout (`signal`) or an invalid reply. */
+  handle(event: HookEvent, options: Opts, signal: AbortSignal): Promise<HookResult>;
+}

@@ -8,13 +8,13 @@ import { AgentRunStatus } from "@snipet/shared";
 import { In, Repository } from "typeorm";
 
 import { Agent } from "../agent/agent.entity.js";
-import { HookDispatcher } from "../hook-connection/hook.dispatcher.js";
-import { HookBlockedError, HookRunner } from "../hook-connection/hook.runner.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 
 import { AgentContext, RunContext } from "./agent-context.js";
 import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
+import { HookDispatcher } from "./hooks/hook.dispatcher.js";
+import { HookBlockedError, HookRunner } from "./hooks/hook.runner.js";
 
 import type { HookName, HookToolErrorReason, LlmMessage, LlmPart, LlmToolCallPart } from "@snipet/shared";
 

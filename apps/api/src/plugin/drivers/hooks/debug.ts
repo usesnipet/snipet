@@ -4,7 +4,7 @@ import { slugify } from "#src/utils/slug/slug.js";
 import { z } from "zod";
 
 import type { HookEvent, HookResult } from "@snipet/shared";
-import type { HookDriver } from "../driver.js";
+import type { HookDriver } from "../../driver.js";
 
 /** Storage prefix the debug driver saves events under. */
 const DEBUG_STORAGE_PREFIX = "debug";

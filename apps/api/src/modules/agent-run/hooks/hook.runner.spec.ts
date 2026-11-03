@@ -2,7 +2,7 @@ import { jest } from "@jest/globals";
 
 import { HookRunner } from "./hook.runner.js";
 
-import type { HookDriver } from "#src/hook/driver.js";
+import type { HookDriver } from "#src/plugin/driver.js";
 import type { HookHandler, HookRunnerContext } from "./hook.runner.js";
 import type { HookEvent, HookResult } from "@snipet/shared";
 

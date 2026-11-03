@@ -5,7 +5,6 @@ import { baseManifestSchema, driverSchema } from "../schemas/manifest.js";
 
 import { agentRunStatusSchema } from "./agent-run.js";
 import { executeLlmTargetSchema, llmMessageSchema, llmToolCallPartSchema, llmToolSchema } from "./llm.js";
-import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 // --- constants -------------------------------------------------------------
 
@@ -182,42 +181,7 @@ export const hookManifestSchema = baseManifestSchema.extend({
 });
 export type HookManifest = z.infer<typeof hookManifestSchema>;
 
-// --- connections ---------------------------------------------------------
-
-/** A configured instance of a hook manifest, e.g. "CRM webhook". */
-export const hookConnectionSchema = z.object({
-  id: z.uuid(),
-  name: z.string(),
-  description: z.string(),
-  hookKey: z.string(),
-  config: jsonObjectSchema,
-  enabled: z.boolean(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-});
-export type HookConnection = z.infer<typeof hookConnectionSchema>;
-
-export const paginatedHookConnectionSchema = paginatedSchema(hookConnectionSchema);
-
-/** config is checked against the manifest's `connection` schema by the API. */
-export const createHookConnectionSchema = z.object({
-  name: z.string().min(1).max(255),
-  description: z.string().optional(),
-  hookKey: z.string().min(1).max(255),
-  config: jsonObjectSchema,
-  enabled: z.boolean().optional(),
-});
-export type CreateHookConnection = z.infer<typeof createHookConnectionSchema>;
-
-export const updateHookConnectionSchema = createHookConnectionSchema.partial();
-export type UpdateHookConnection = z.infer<typeof updateHookConnectionSchema>;
-
-export const findHookConnectionsParamsSchema = paginationParamsSchema.extend({
-  hookKey: z.string().optional(),
-});
-export type FindHookConnectionsParams = z.infer<typeof findHookConnectionsParamsSchema>;
-
-// --- agent hooks -----------------------------------------------------------
+// --- match filters ---------------------------------------------------------
 
 /**
  * Fires only when every given filter matches, by glob (`github_*`): tools on
@@ -229,55 +193,3 @@ export const hookMatchSchema = z.object({
   models: z.array(z.string()).optional(),
 });
 export type HookMatch = z.infer<typeof hookMatchSchema>;
-
-/**
- * Binds a hook connection to one hook point of one agent, or of every agent
- * when agentId is null. Global hooks run before the agent's. Within each,
- * synchronous handlers run stage by stage: the same stage in parallel (then
- * a reply may only block), each stage getting the payload the last one left.
- * Async handlers get the final payload and their reply is ignored.
- */
-export const agentHookSchema = z.object({
-  id: z.uuid(),
-  agentId: z.uuid().nullable(),
-  hookConnectionId: z.uuid(),
-  event: hookNameSchema,
-  stage: z.number().int(),
-  /** Order in the agent's list; breaks ties within a stage. */
-  position: z.number().int(),
-  match: hookMatchSchema.nullable(),
-  /** null: DEFAULT_SYNC_HOOK_TIMEOUT_MS, or DEFAULT_ASYNC_HOOK_TIMEOUT_MS when async. */
-  timeoutMs: z.number().int().nullable(),
-  onError: hookOnErrorSchema,
-  /** Don't wait for the reply: the hook only observes. */
-  async: z.boolean(),
-  enabled: z.boolean(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-});
-export type AgentHook = z.infer<typeof agentHookSchema>;
-
-export const paginatedAgentHookSchema = paginatedSchema(agentHookSchema);
-
-export const createAgentHookSchema = z.object({
-  agentId: z.uuid().nullable().optional(),
-  hookConnectionId: z.uuid(),
-  event: hookNameSchema,
-  stage: z.number().int().min(0).optional(),
-  position: z.number().int().optional(),
-  match: hookMatchSchema.nullable().optional(),
-  timeoutMs: z.number().int().min(1).max(MAX_HOOK_TIMEOUT_MS).nullable().optional(),
-  onError: hookOnErrorSchema.optional(),
-  async: z.boolean().optional(),
-  enabled: z.boolean().optional(),
-});
-export type CreateAgentHook = z.infer<typeof createAgentHookSchema>;
-
-export const updateAgentHookSchema = createAgentHookSchema.partial();
-export type UpdateAgentHook = z.infer<typeof updateAgentHookSchema>;
-
-export const findAgentHooksParamsSchema = paginationParamsSchema.extend({
-  agentId: z.uuid().optional(),
-  hookConnectionId: z.uuid().optional(),
-});
-export type FindAgentHooksParams = z.infer<typeof findAgentHooksParamsSchema>;

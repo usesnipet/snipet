@@ -4,7 +4,7 @@ import { AgentRunStatus, HOOK_EVENT_VERSION, HOOKS } from "@snipet/shared";
 import { randomUUID } from "node:crypto";
 
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
-import type { HookDriver } from "#src/hook/driver.js";
+import type { HookDriver } from "#src/plugin/driver.js";
 import type {
   Agent,
   AgentRun,
