@@ -4,13 +4,21 @@
   "description": "Search AWS documentation, API references and best practices",
   "icon": "https://github.com/aws.png",
   "tags": ["docs", "remote", "official"],
-  "auth": { "type": "none" },
-  "actions": {
-    "driver": "mcp",
-    "options": { "url": "https://knowledge-mcp.global.api.aws" }
+  "auth": {
+    "type": "none"
   },
-  "instructions": {
-    "driver": "mcp",
-    "options": { "url": "https://knowledge-mcp.global.api.aws" }
+  "capabilities": {
+    "actions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://knowledge-mcp.global.api.aws"
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://knowledge-mcp.global.api.aws"
+      }
+    }
   }
 }

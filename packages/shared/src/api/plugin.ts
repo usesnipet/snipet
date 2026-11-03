@@ -10,10 +10,12 @@ export const MAX_PLUGIN_INSTRUCTIONS = 8000;
 
 /** The JSON manifest of a plugin. */
 export const pluginManifestSchema = baseManifestSchema.extend({
-  actions: driverSchema.optional(),
-  /** How the agent should use the plugin, added to the system prompt of agents granted it. */
-  instructions: driverSchema.optional(),
-  healthCheck: driverSchema.optional(),
+  capabilities: z.object({
+    actions: driverSchema.optional(),
+    /** How the agent should use the plugin, added to the system prompt of agents granted it. */
+    instructions: driverSchema.optional(),
+    healthCheck: driverSchema.optional(),
+  }),
 });
 export type PluginManifest = z.infer<typeof pluginManifestSchema>;
 

@@ -75,7 +75,8 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
 
 /** The manifest's driver for a capability, if it has one. */
 export function driverOf(manifest: BaseManifest, type: PropertyKey): ManifestDriver | undefined {
-  return (manifest as unknown as Record<PropertyKey, ManifestDriver | undefined>)[type];
+  const { capabilities } = manifest as { capabilities?: Record<PropertyKey, ManifestDriver | undefined> };
+  return capabilities?.[type];
 }
 
 /** Names of the `connection` properties marked `secret: true`. */

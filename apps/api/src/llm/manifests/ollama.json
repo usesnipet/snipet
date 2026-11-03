@@ -38,35 +38,37 @@
     },
     "required": ["baseUrl"]
   },
-  "models": {
-    "driver": "ollama",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl }}",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}"
-      }
-    }
-  },
-  "chat": {
-    "driver": "ollama",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl }}",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}"
-      },
-      "keepAlive": "{{ connection.keepAlive }}",
+  "capabilities": {
+    "models": {
+      "driver": "ollama",
       "options": {
-        "num_ctx": "{{ connection.numCtx }}"
-      },
-      "think": "{{ connection.think }}"
-    }
-  },
-  "healthCheck": {
-    "driver": "http",
-    "options": {
-      "url": "{{ connection.baseUrl }}/api/version",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}"
+        "baseUrl": "{{ connection.baseUrl }}",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
+      }
+    },
+    "chat": {
+      "driver": "ollama",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl }}",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        },
+        "keepAlive": "{{ connection.keepAlive }}",
+        "options": {
+          "num_ctx": "{{ connection.numCtx }}"
+        },
+        "think": "{{ connection.think }}"
+      }
+    },
+    "healthCheck": {
+      "driver": "http",
+      "options": {
+        "url": "{{ connection.baseUrl }}/api/version",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
       }
     }
   }

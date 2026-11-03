@@ -21,29 +21,31 @@
     },
     "required": ["apiKey"]
   },
-  "models": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "https://api.openai.com/v1",
-      "apiKey": "{{ connection.apiKey }}",
-      "organization": "{{ connection.organization }}"
-    }
-  },
-  "chat": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "https://api.openai.com/v1",
-      "apiKey": "{{ connection.apiKey }}",
-      "organization": "{{ connection.organization }}"
-    }
-  },
-  "healthCheck": {
-    "driver": "http",
-    "options": {
-      "url": "https://api.openai.com/v1/models",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}",
-        "OpenAI-Organization": "{{ connection.organization }}"
+  "capabilities": {
+    "models": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "https://api.openai.com/v1",
+        "apiKey": "{{ connection.apiKey }}",
+        "organization": "{{ connection.organization }}"
+      }
+    },
+    "chat": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "https://api.openai.com/v1",
+        "apiKey": "{{ connection.apiKey }}",
+        "organization": "{{ connection.organization }}"
+      }
+    },
+    "healthCheck": {
+      "driver": "http",
+      "options": {
+        "url": "https://api.openai.com/v1/models",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}",
+          "OpenAI-Organization": "{{ connection.organization }}"
+        }
       }
     }
   }

@@ -63,9 +63,12 @@ export const llmCapabilitySchema = z.enum(LlmCapability);
  * LlmModel.capabilities), so text, vision and tools all go through `chat`.
  */
 export const llmManifestSchema = baseManifestSchema.extend({
-  models: driverSchema,
-  chat: driverSchema.optional(), // generate + stream
-  healthCheck: driverSchema.optional(),
+  capabilities: z.object({
+    models: driverSchema,
+    /** generate + stream */
+    chat: driverSchema.optional(),
+    healthCheck: driverSchema.optional(),
+  }),
 });
 export type LlmManifest = z.infer<typeof llmManifestSchema>;
 

@@ -19,30 +19,30 @@
         "description": "Optional override, defaults to https://api.mistral.ai/v1."
       }
     },
-    "required": [
-      "apiKey"
-    ]
+    "required": ["apiKey"]
   },
-  "models": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl || \"https://api.mistral.ai/v1\" }}",
-      "apiKey": "{{ connection.apiKey }}"
-    }
-  },
-  "chat": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl || \"https://api.mistral.ai/v1\" }}",
-      "apiKey": "{{ connection.apiKey }}"
-    }
-  },
-  "healthCheck": {
-    "driver": "http",
-    "options": {
-      "url": "{{ connection.baseUrl || \"https://api.mistral.ai/v1\" }}/models",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}"
+  "capabilities": {
+    "models": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl || \"https://api.mistral.ai/v1\" }}",
+        "apiKey": "{{ connection.apiKey }}"
+      }
+    },
+    "chat": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl || \"https://api.mistral.ai/v1\" }}",
+        "apiKey": "{{ connection.apiKey }}"
+      }
+    },
+    "healthCheck": {
+      "driver": "http",
+      "options": {
+        "url": "{{ connection.baseUrl || \"https://api.mistral.ai/v1\" }}/models",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
       }
     }
   }

@@ -175,8 +175,10 @@ export type HookResult = z.infer<typeof hookResultSchema>;
 
 /** The JSON manifest of a hook handler. */
 export const hookManifestSchema = baseManifestSchema.extend({
-  handle: driverSchema,
-  healthCheck: driverSchema.optional(),
+  capabilities: z.object({
+    handle: driverSchema,
+    healthCheck: driverSchema.optional(),
+  }),
 });
 export type HookManifest = z.infer<typeof hookManifestSchema>;
 

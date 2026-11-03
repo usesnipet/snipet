@@ -26,29 +26,31 @@
     },
     "required": ["baseUrl"]
   },
-  "models": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl }}/v1",
-      "apiKey": "{{ connection.apiKey }}",
-      "organization": "{{ connection.organization }}"
-    }
-  },
-  "chat": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl }}/v1",
-      "apiKey": "{{ connection.apiKey }}",
-      "organization": "{{ connection.organization }}"
-    }
-  },
-  "healthCheck": {
-    "driver": "http",
-    "options": {
-      "url": "{{ connection.baseUrl }}/v1/models",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}",
-        "OpenAI-Organization": "{{ connection.organization }}"
+  "capabilities": {
+    "models": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl }}/v1",
+        "apiKey": "{{ connection.apiKey }}",
+        "organization": "{{ connection.organization }}"
+      }
+    },
+    "chat": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl }}/v1",
+        "apiKey": "{{ connection.apiKey }}",
+        "organization": "{{ connection.organization }}"
+      }
+    },
+    "healthCheck": {
+      "driver": "http",
+      "options": {
+        "url": "{{ connection.baseUrl }}/v1/models",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}",
+          "OpenAI-Organization": "{{ connection.organization }}"
+        }
       }
     }
   }

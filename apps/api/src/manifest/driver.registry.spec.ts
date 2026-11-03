@@ -42,7 +42,7 @@ describe("DriverRegistry", () => {
   });
 
   it("resolves a manifest driver with its options rendered from the connection", () => {
-    const m = manifest({ actions: { driver: "mcp", options: { url: "{{ connection.url }}/mcp" } } });
+    const m = manifest({ capabilities: { actions: { driver: "mcp", options: { url: "{{ connection.url }}/mcp" } } } });
     const resolved = registry.resolve(m, "actions", { url: "https://x.dev" });
     expect(resolved?.driver.key).toBe("mcp");
     expect(resolved?.options).toEqual({ url: "https://x.dev/mcp" });
@@ -53,7 +53,9 @@ describe("DriverRegistry", () => {
   });
 
   it("throws when the rendered options are invalid", () => {
-    const m = manifest({ actions: { driver: "mcp", options: { url: "{{ connection.url }}", extra: 1 } } });
+    const m = manifest({
+      capabilities: { actions: { driver: "mcp", options: { url: "{{ connection.url }}", extra: 1 } } },
+    });
     expect(() => registry.resolve(m, "actions", { url: "x" })).toThrow("invalid options");
   });
 });

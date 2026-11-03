@@ -13,22 +13,24 @@
       }
     }
   },
-  "models": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}"
-    }
-  },
-  "chat": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}"
-    }
-  },
-  "healthCheck": {
-    "driver": "http",
-    "options": {
-      "url": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}/models"
+  "capabilities": {
+    "models": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}"
+      }
+    },
+    "chat": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}"
+      }
+    },
+    "healthCheck": {
+      "driver": "http",
+      "options": {
+        "url": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}/models"
+      }
     }
   }
 }

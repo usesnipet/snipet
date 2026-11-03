@@ -19,7 +19,7 @@ type Drivers = { actions: Echo; healthCheck: Echo };
 
 const drivers = new DriverRegistry<Drivers>({ actions: [new Echo("mcp")], healthCheck: [new Echo("http")] });
 
-const base = { name: "X", connection: { type: "object", properties: {} } };
+const base = { name: "X", connection: { type: "object", properties: {} }, capabilities: {} };
 
 describe("ManifestRegistry", () => {
   let dir: string;
@@ -27,11 +27,11 @@ describe("ManifestRegistry", () => {
   beforeAll(() => {
     dir = mkdtempSync(join(tmpdir(), "manifests-"));
     const files: Record<string, unknown> = {
-      "b.json": { ...base, key: "beta", actions: { driver: "mcp" } },
-      "a.json": { ...base, key: "alpha", healthCheck: { driver: "http" } },
+      "b.json": { ...base, key: "beta", capabilities: { actions: { driver: "mcp" } } },
+      "a.json": { ...base, key: "alpha", capabilities: { healthCheck: { driver: "http" } } },
       "dup.json": { ...base, key: "alpha" },
       "bad-key.json": { ...base, key: "Not A Key" },
-      "unknown-driver.json": { ...base, key: "gamma", actions: { driver: "nope" } },
+      "unknown-driver.json": { ...base, key: "gamma", capabilities: { actions: { driver: "nope" } } },
       "bad-schema.json": { ...base, key: "delta", connection: { type: "nope" } },
       "ignored.txt": "not a manifest",
     };
@@ -50,7 +50,11 @@ describe("ManifestRegistry", () => {
 
   it("applies the schema defaults", () => {
     const registry = new ManifestRegistry("plugin", dir, dir, pluginManifestSchema, drivers);
-    expect(registry.get("beta")).toMatchObject({ description: "", tags: [], actions: { driver: "mcp", options: {} } });
+    expect(registry.get("beta")).toMatchObject({
+      description: "",
+      tags: [],
+      capabilities: { actions: { driver: "mcp", options: {} } },
+    });
   });
 
   it("throws NotFoundException for an unknown key", () => {
@@ -69,6 +73,7 @@ describe("secretFields", () => {
         type: "object",
         properties: { url: { type: "string" }, token: { type: "string", secret: true } },
       },
+      capabilities: {},
     });
     expect(secretFields(manifest)).toEqual(["token"]);
   });

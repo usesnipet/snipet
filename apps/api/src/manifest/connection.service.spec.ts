@@ -35,7 +35,9 @@ const manifest = (key: string) =>
       properties: { url: { type: "string" }, token: { type: "string", secret: true }, retries: { default: 3 } },
       required: ["url"],
     },
-    actions: { driver: "echo", options: { url: "{{ connection.url }}", token: "{{ connection.token }}" } },
+    capabilities: {
+      actions: { driver: "echo", options: { url: "{{ connection.url }}", token: "{{ connection.token }}" } },
+    },
   });
 
 const stored: Conn = {

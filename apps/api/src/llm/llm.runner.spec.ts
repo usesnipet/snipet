@@ -33,8 +33,10 @@ const llms = {
   get: (key: string) =>
     ({
       key,
-      models: { driver: "static", options: {} },
-      ...(key !== "nochat" && { chat: { driver: key, options: {} } }),
+      capabilities: {
+        models: { driver: "static", options: {} },
+        ...(key !== "nochat" && { chat: { driver: key, options: {} } }),
+      },
     }) as LlmManifest,
 } as unknown as LLMRegistry;
 

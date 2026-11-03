@@ -4,13 +4,21 @@
   "description": "Search Cloudflare's developer documentation",
   "icon": "https://github.com/cloudflare.png",
   "tags": ["docs", "remote", "official"],
-  "auth": { "type": "none" },
-  "actions": {
-    "driver": "mcp",
-    "options": { "url": "https://docs.mcp.cloudflare.com/mcp" }
+  "auth": {
+    "type": "none"
   },
-  "instructions": {
-    "driver": "mcp",
-    "options": { "url": "https://docs.mcp.cloudflare.com/mcp" }
+  "capabilities": {
+    "actions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://docs.mcp.cloudflare.com/mcp"
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://docs.mcp.cloudflare.com/mcp"
+      }
+    }
   }
 }

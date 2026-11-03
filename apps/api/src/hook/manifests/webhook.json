@@ -4,7 +4,9 @@
   "description": "Sends the hook event to a URL and uses its JSON reply.",
   "icon": "",
   "tags": ["webhook", "http", "official"],
-  "auth": { "type": "none" },
+  "auth": {
+    "type": "none"
+  },
   "connection": {
     "type": "object",
     "properties": {
@@ -30,14 +32,16 @@
     },
     "required": ["url"]
   },
-  "handle": {
-    "driver": "webhook",
-    "options": {
-      "url": "{{ connection.url }}",
-      "headers": {
-        "Authorization": "{{ connection.Authorization }}"
-      },
-      "signingSecret": "{{ connection.secret }}"
+  "capabilities": {
+    "handle": {
+      "driver": "webhook",
+      "options": {
+        "url": "{{ connection.url }}",
+        "headers": {
+          "Authorization": "{{ connection.Authorization }}"
+        },
+        "signingSecret": "{{ connection.secret }}"
+      }
     }
   }
 }

@@ -4,13 +4,21 @@
   "description": "Search and fetch official Microsoft and Azure documentation",
   "icon": "https://github.com/microsoftdocs.png",
   "tags": ["docs", "remote", "official"],
-  "auth": { "type": "none" },
-  "actions": {
-    "driver": "mcp",
-    "options": { "url": "https://learn.microsoft.com/api/mcp" }
+  "auth": {
+    "type": "none"
   },
-  "instructions": {
-    "driver": "mcp",
-    "options": { "url": "https://learn.microsoft.com/api/mcp" }
+  "capabilities": {
+    "actions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://learn.microsoft.com/api/mcp"
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://learn.microsoft.com/api/mcp"
+      }
+    }
   }
 }

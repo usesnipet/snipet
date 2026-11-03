@@ -72,8 +72,10 @@ function setup({ healthy = true, withHealth = true } = {}) {
   const manifest = pluginManifestSchema.parse({
     key: "alpha",
     name: "Alpha",
-    actions: { driver: "lister" },
-    ...(withHealth && { healthCheck: { driver: "health", options: { ok: healthy } } }),
+    capabilities: {
+      actions: { driver: "lister" },
+      ...(withHealth && { healthCheck: { driver: "health", options: { ok: healthy } } }),
+    },
   });
   const service = new TestSync(
     connections as unknown as Repository<Conn>,

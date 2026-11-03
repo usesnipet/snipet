@@ -91,7 +91,8 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
     const action = await this.actions.findOneByOrFail({ id: actionId });
     const conn = await this.findById(action.pluginConnectionId);
     const manifest = this.manifests.get(conn.pluginKey);
-    if (!conn.enabled || !manifest.actions) return { content: "plugin connection is unavailable", isError: true };
+    if (!conn.enabled || !manifest.capabilities.actions)
+      return { content: "plugin connection is unavailable", isError: true };
 
     try {
       args = validateJson(action.inputSchema, args);
