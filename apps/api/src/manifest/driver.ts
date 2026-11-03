@@ -10,7 +10,7 @@ export interface BaseDriver<Opts = unknown> {
 /**
  * Base class giving a driver `validateOptions` from a zod schema. Issues never
  * carry the input, so rendered secrets stay out of the error.
- * @example class FooDriver extends Driver(optionsSchema) implements ActionDriver<FooOptions> {}
+ * @example class FooDriver extends Driver(optionsSchema) implements ToolDriver<FooOptions> {}
  */
 export function Driver<Opts>(optionsSchema: z.ZodType<Opts>) {
   return class Driver {

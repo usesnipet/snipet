@@ -1,20 +1,20 @@
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { ConnectionService } from "#src/manifest/connection.service.js";
-import { ActionResult, PluginDrivers } from "#src/plugin/driver.js";
+import { ToolResult, PluginDrivers } from "#src/plugin/driver.js";
 import { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { validateJson } from "@snipet/server-common";
 import { DeepPartial, In, QueryDeepPartialEntity, Repository } from "typeorm";
 
-import { PluginAction } from "./plugin-action.entity.js";
+import { PluginTool } from "./plugin-tool.entity.js";
 import { PluginConnection } from "./plugin-connection.entity.js";
 import { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 
 import type { PluginManifest } from "@snipet/shared";
 
 /**
- * Service for managing plugin connections and executing actions.
+ * Service for managing plugin connections and executing tools.
  */
 @Injectable()
 export class PluginConnectionService extends ConnectionService<PluginConnection, PluginManifest, PluginDrivers> {
@@ -22,7 +22,7 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
 
   constructor(
     @InjectRepository(PluginConnection) repo: Repository<PluginConnection>,
-    @InjectRepository(PluginAction) private readonly actions: Repository<PluginAction>,
+    @InjectRepository(PluginTool) private readonly tools: Repository<PluginTool>,
     plugins: PluginRegistry,
     drivers: PluginDriverRegistry,
     private readonly syncer: PluginConnectionSyncService,
@@ -65,13 +65,13 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   /**
-   * Synced actions of the enabled connections among connectionIds, with the
+   * Synced tools of the enabled connections among connectionIds, with the
    * connection's name.
    */
-  findActions(connectionIds: string[]): Promise<PluginAction[]> {
+  findTools(connectionIds: string[]): Promise<PluginTool[]> {
     if (!connectionIds.length) return Promise.resolve([]);
-    return this.actions.find({
-      // No config: it would be decrypted once per action.
+    return this.tools.find({
+      // No config: it would be decrypted once per tool.
       select: {
         id: true,
         name: true,
@@ -104,24 +104,24 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   /**
-   * Runs a synced action through its connection's driver. Failures the model
+   * Runs a synced tool through its connection's driver. Failures the model
    * can act on (bad arguments, unreachable service) come back as an isError result.
    */
-  async executeAction(actionId: string, args: Record<string, unknown> = {}): Promise<ActionResult> {
-    const action = await this.actions.findOneByOrFail({ id: actionId });
-    const conn = await this.findById(action.pluginConnectionId);
+  async executeTool(toolId: string, args: Record<string, unknown> = {}): Promise<ToolResult> {
+    const tool = await this.tools.findOneByOrFail({ id: toolId });
+    const conn = await this.findById(tool.pluginConnectionId);
     const manifest = this.manifests.get(conn.pluginKey);
-    if (!conn.enabled || !manifest.capabilities.actions)
+    if (!conn.enabled || !manifest.capabilities.tools)
       return { content: "plugin connection is unavailable", isError: true };
 
     try {
-      args = validateJson(action.inputSchema, args);
+      args = validateJson(tool.inputSchema, args);
     } catch (err) {
       return { content: `invalid arguments: ${describe(err)}`, isError: true };
     }
     try {
-      const { driver, options } = this.drivers.resolve(manifest, "actions", conn.config)!;
-      return await driver.callAction(conn.id, action.name, args, options);
+      const { driver, options } = this.drivers.resolve(manifest, "tools", conn.config)!;
+      return await driver.callTool(conn.id, tool.name, args, options);
     } catch (err) {
       return { content: describe(err), isError: true, ...(isTimeout(err) && { timedOut: true }) };
     }

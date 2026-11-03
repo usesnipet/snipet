@@ -18,7 +18,7 @@ export type SyncedConnectionEntity = ConnectionEntity & {
 };
 
 /**
- * Keeps a connection's items (plugin actions, llm models) in line with what
+ * Keeps a connection's items (plugin tools, llm models) in line with what
  * its driver lists: health check first, then the items are replaced, matched
  * by `itemKeyField`, in one transaction with the connection's `fields`.
  * Runs on boot, every hour and on demand.

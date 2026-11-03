@@ -3,7 +3,7 @@ import type { HookHandler, PluginManifest } from "@snipet/shared";
 /** Badges for what a plugin does. */
 export function capabilityLabels({ capabilities }: PluginManifest): string[] {
   return [
-    capabilities.actions && "Tools",
+    capabilities.tools && "Tools",
     capabilities.instructions && "Instructions",
     capabilities.hooks && "Hooks",
   ].filter((label): label is string => !!label);

@@ -11,7 +11,7 @@ class Echo extends Driver(z.strictObject({ url: z.string() })) {
   }
 }
 
-type Drivers = { actions: Echo; healthCheck: Echo };
+type Drivers = { tools: Echo; healthCheck: Echo };
 
 const manifest = (extra: object) =>
   ({
@@ -25,25 +25,25 @@ const manifest = (extra: object) =>
   }) as BaseManifest;
 
 describe("DriverRegistry", () => {
-  const registry = new DriverRegistry<Drivers>({ actions: [new Echo("mcp")], healthCheck: [new Echo("http")] });
+  const registry = new DriverRegistry<Drivers>({ tools: [new Echo("mcp")], healthCheck: [new Echo("http")] });
 
   it("finds drivers by capability and key", () => {
-    expect(registry.types()).toEqual(["actions", "healthCheck"]);
-    expect(registry.has("actions", "mcp")).toBe(true);
-    expect(registry.has("actions", "http")).toBe(false);
+    expect(registry.types()).toEqual(["tools", "healthCheck"]);
+    expect(registry.has("tools", "mcp")).toBe(true);
+    expect(registry.has("tools", "http")).toBe(false);
     expect(registry.get("healthCheck", "http").key).toBe("http");
-    expect(() => registry.get("actions", "http")).toThrow('actions driver "http" not found');
+    expect(() => registry.get("tools", "http")).toThrow('tools driver "http" not found');
   });
 
   it("rejects a key registered twice for the same capability", () => {
-    expect(() => new DriverRegistry<Drivers>({ actions: [new Echo("a"), new Echo("a")], healthCheck: [] })).toThrow(
-      'actions driver "a" registered twice',
+    expect(() => new DriverRegistry<Drivers>({ tools: [new Echo("a"), new Echo("a")], healthCheck: [] })).toThrow(
+      'tools driver "a" registered twice',
     );
   });
 
   it("resolves a manifest driver with its options rendered from the connection", () => {
-    const m = manifest({ capabilities: { actions: { driver: "mcp", options: { url: "{{ connection.url }}/mcp" } } } });
-    const resolved = registry.resolve(m, "actions", { url: "https://x.dev" });
+    const m = manifest({ capabilities: { tools: { driver: "mcp", options: { url: "{{ connection.url }}/mcp" } } } });
+    const resolved = registry.resolve(m, "tools", { url: "https://x.dev" });
     expect(resolved?.driver.key).toBe("mcp");
     expect(resolved?.options).toEqual({ url: "https://x.dev/mcp" });
   });
@@ -54,8 +54,8 @@ describe("DriverRegistry", () => {
 
   it("throws when the rendered options are invalid", () => {
     const m = manifest({
-      capabilities: { actions: { driver: "mcp", options: { url: "{{ connection.url }}", extra: 1 } } },
+      capabilities: { tools: { driver: "mcp", options: { url: "{{ connection.url }}", extra: 1 } } },
     });
-    expect(() => registry.resolve(m, "actions", { url: "x" })).toThrow("invalid options");
+    expect(() => registry.resolve(m, "tools", { url: "x" })).toThrow("invalid options");
   });
 });

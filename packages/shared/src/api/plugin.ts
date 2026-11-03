@@ -15,14 +15,14 @@ export const pluginManifestSchema = baseManifestSchema.extend({
   settings: jsonObjectSchema.optional(),
   capabilities: z
     .object({
-      actions: driverSchema.optional(),
+      tools: driverSchema.optional(),
       /** How the agent should use the plugin, added to the system prompt of agents granted it. */
       instructions: driverSchema.optional(),
       /** Handlers on the hooks of the agent loop. */
       hooks: hooksCapabilitySchema.optional(),
       healthCheck: driverSchema.optional(),
     })
-    .refine((c) => c.actions || c.instructions || c.hooks, "a plugin needs actions, instructions or hooks"),
+    .refine((c) => c.tools || c.instructions || c.hooks, "a plugin needs tools, instructions or hooks"),
 });
 export type PluginManifest = z.infer<typeof pluginManifestSchema>;
 

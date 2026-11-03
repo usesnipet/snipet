@@ -83,7 +83,7 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
       <DialogHeader>
         <DialogTitle>{agent ? "Edit agent" : "New agent"}</DialogTitle>
         <DialogDescription>
-          An agent loops between its models and plugin actions until the task is done or it runs out of turns.
+          An agent loops between its models and plugin tools until the task is done or it runs out of turns.
         </DialogDescription>
       </DialogHeader>
 

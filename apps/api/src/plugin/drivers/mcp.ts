@@ -5,7 +5,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import z from "zod";
 
 import type { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol";
-import type { Action, ActionDriver, ActionResult, InstructionsDriver } from "../driver.js";
+import type { Tool, ToolDriver, ToolResult, InstructionsDriver } from "../driver.js";
 const optionsSchema = z.strictObject({
   url: z.url({ protocol: /^https?$/ }),
   headers: z.record(z.string(), z.string()).optional(),
@@ -14,23 +14,23 @@ const optionsSchema = z.strictObject({
 type McpOptions = z.infer<typeof optionsSchema>;
 
 /**
- * Actions are the tools of a remote MCP server and instructions the ones it
+ * Tools are the ones of a remote MCP server and instructions the ones it
  * sends on initialize. Only the http transport is supported.
  */
 export class McpDriver
   extends Driver(optionsSchema)
-  implements ActionDriver<McpOptions>, InstructionsDriver<McpOptions>
+  implements ToolDriver<McpOptions>, InstructionsDriver<McpOptions>
 {
   readonly key = "mcp";
 
-  async listActions(_connectionId: string, options: McpOptions): Promise<Action[]> {
+  async listTools(_connectionId: string, options: McpOptions): Promise<Tool[]> {
     return this.withSession(options, async (client, opts) => {
-      const actions: Action[] = [];
+      const tools: Tool[] = [];
       let cursor: string | undefined;
       do {
         const page = await client.listTools({ cursor }, opts);
         for (const t of page.tools) {
-          actions.push({
+          tools.push({
             name: t.name,
             description: t.description ?? "",
             inputSchema: t.inputSchema,
@@ -38,16 +38,16 @@ export class McpDriver
         }
         cursor = page.nextCursor;
       } while (cursor);
-      return actions;
+      return tools;
     });
   }
 
-  callAction(
+  callTool(
     _connectionId: string,
     name: string,
     parameters: Record<string, unknown>,
     options: McpOptions,
-  ): Promise<ActionResult> {
+  ): Promise<ToolResult> {
     return this.withSession(options, async (client, opts) => {
       const result = await client.callTool(
         {

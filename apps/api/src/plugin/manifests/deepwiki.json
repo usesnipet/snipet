@@ -6,7 +6,7 @@
     "type": "none"
   },
   "capabilities": {
-    "actions": {
+    "tools": {
       "driver": "mcp",
       "options": {
         "url": "https://mcp.deepwiki.com/mcp"

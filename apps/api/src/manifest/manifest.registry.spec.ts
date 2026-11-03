@@ -15,14 +15,14 @@ class Echo extends Driver(z.object({})) {
   }
 }
 
-type Drivers = { actions: Echo; healthCheck: Echo };
+type Drivers = { tools: Echo; healthCheck: Echo };
 
-const drivers = new DriverRegistry<Drivers>({ actions: [new Echo("mcp")], healthCheck: [new Echo("http")] });
+const drivers = new DriverRegistry<Drivers>({ tools: [new Echo("mcp")], healthCheck: [new Echo("http")] });
 
 const base = {
   name: "X",
   connection: { type: "object", properties: {} },
-  capabilities: { actions: { driver: "mcp" } },
+  capabilities: { tools: { driver: "mcp" } },
 };
 
 describe("ManifestRegistry", () => {
@@ -31,15 +31,15 @@ describe("ManifestRegistry", () => {
   beforeAll(() => {
     dir = mkdtempSync(join(tmpdir(), "manifests-"));
     const files: Record<string, unknown> = {
-      "b.json": { ...base, key: "beta", capabilities: { actions: { driver: "mcp" } } },
+      "b.json": { ...base, key: "beta", capabilities: { tools: { driver: "mcp" } } },
       "a.json": {
         ...base,
         key: "alpha",
-        capabilities: { actions: { driver: "mcp" }, healthCheck: { driver: "http" } },
+        capabilities: { tools: { driver: "mcp" }, healthCheck: { driver: "http" } },
       },
       "dup.json": { ...base, key: "alpha" },
       "bad-key.json": { ...base, key: "Not A Key" },
-      "unknown-driver.json": { ...base, key: "gamma", capabilities: { actions: { driver: "nope" } } },
+      "unknown-driver.json": { ...base, key: "gamma", capabilities: { tools: { driver: "nope" } } },
       "bad-schema.json": { ...base, key: "delta", connection: { type: "nope" } },
       "ignored.txt": "not a manifest",
     };
@@ -61,7 +61,7 @@ describe("ManifestRegistry", () => {
     expect(registry.get("beta")).toMatchObject({
       description: "",
       tags: [],
-      capabilities: { actions: { driver: "mcp", options: {} } },
+      capabilities: { tools: { driver: "mcp", options: {} } },
     });
   });
 
@@ -81,7 +81,7 @@ describe("secretFields", () => {
         type: "object",
         properties: { url: { type: "string" }, token: { type: "string", secret: true } },
       },
-      capabilities: { actions: { driver: "mcp" } },
+      capabilities: { tools: { driver: "mcp" } },
     });
     expect(secretFields(manifest.connection)).toEqual(["token"]);
   });

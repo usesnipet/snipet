@@ -21,7 +21,7 @@
     "required": ["apiKey"]
   },
   "capabilities": {
-    "actions": {
+    "tools": {
       "driver": "mcp",
       "options": {
         "url": "https://mcp.apify.com",

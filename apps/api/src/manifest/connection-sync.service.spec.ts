@@ -26,7 +26,7 @@ class Health extends Driver(z.object({ ok: z.boolean() })) implements HealthChec
 class Lister extends Driver(z.object({})) {
   readonly key = "lister";
 }
-type Drivers = { actions: Lister; healthCheck: Health };
+type Drivers = { tools: Lister; healthCheck: Health };
 
 type Conn = SyncedConnectionEntity & { pluginKey: string };
 type Item = BaseEntity & { connId: string; name: string; v: number };
@@ -73,14 +73,14 @@ function setup({ healthy = true, withHealth = true } = {}) {
     key: "alpha",
     name: "Alpha",
     capabilities: {
-      actions: { driver: "lister" },
+      tools: { driver: "lister" },
       ...(withHealth && { healthCheck: { driver: "health", options: { ok: healthy } } }),
     },
   });
   const service = new TestSync(
     connections as unknown as Repository<Conn>,
     { get: () => manifest } as unknown as ManifestRegistry<PluginManifest, Drivers>,
-    new DriverRegistry<Drivers>({ actions: [new Lister()], healthCheck: [new Health()] }),
+    new DriverRegistry<Drivers>({ tools: [new Lister()], healthCheck: [new Health()] }),
     "items",
   );
   return { service, connections, connRepo, items };

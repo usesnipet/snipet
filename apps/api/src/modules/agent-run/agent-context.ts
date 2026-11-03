@@ -1,5 +1,5 @@
 import { Owner } from "#src/common/decorators/owner.decorator.js";
-import { ActionResult } from "#src/plugin/driver.js";
+import { ToolResult } from "#src/plugin/driver.js";
 import { isGranted } from "#src/utils/grant/grant.js";
 import { Injectable } from "@nestjs/common";
 
@@ -8,23 +8,23 @@ import { PluginConnectionService } from "../plugin-connection/plugin-connection.
 
 import type { LlmMessage, LlmTool, LlmToolCallPart } from "@snipet/shared";
 
-type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;
+type Executor = (args: Record<string, unknown>) => Promise<ToolResult>;
 type ToolSource = { id: string; name: string };
-export type DeniedAction = { action: string; pluginConnectionId: string };
+export type DeniedTool = { tool: string; pluginConnectionId: string };
 
 /** What one run gives the models: system messages and tools, and how to run their calls. */
 export type RunContext = {
   /** The agent's name and prompt, then the instructions of its plugins. */
   system: LlmMessage[];
   tools?: LlmTool[];
-  denied: DeniedAction[];
-  /** Instructions of the plugin connections with at least one granted action. */
+  denied: DeniedTool[];
+  /** Instructions of the plugin connections with at least one granted tool. */
   instructions: { name: string; text: string }[];
   has(name: string): boolean;
   /** The plugin connection a tool comes from; null for an unknown tool. */
   toolOf(name: string): { id: string; name: string } | null;
-  /** Never throws: an unknown tool or a failed action is an error result. */
-  call(call: LlmToolCallPart): Promise<ActionResult>;
+  /** Never throws: an unknown tool or a failed tool is an error result. */
+  call(call: LlmToolCallPart): Promise<ToolResult>;
 };
 
 /** Keeps a connection name from closing the attribute or tag it is put in. */
@@ -33,18 +33,18 @@ const escapeAttr = (s: string) =>
 
 const systemText = (text: string): LlmMessage => ({ role: "system", parts: [{ type: "text", text }] });
 
-/** Builds a run's context from the agent and its plugin connections; plugin actions become LLM tools. */
+/** Builds a run's context from the agent and its plugin connections; plugin tools become LLM tools. */
 @Injectable()
 export class AgentContext {
   constructor(private readonly plugins: PluginConnectionService) {}
 
   /**
-   * The tools of the agent's actions of its plugin connections that pass the
+   * The tools of the agent's plugin connections that pass the
    * grant's allow/deny; the others are returned as denied. Names are made
    * unique and provider-safe; executors maps them back.
    */
   async build(agent: Agent, owner: Owner): Promise<RunContext> {
-    const denied: DeniedAction[] = [];
+    const denied: DeniedTool[] = [];
     const executors = new Map<string, Executor>();
     const sources = new Map<string, ToolSource>();
     const tools: LlmTool[] = [];
@@ -65,15 +65,15 @@ export class AgentContext {
 
     const pluginGrants = new Map((agent.pluginConnections ?? []).map((g) => [g.pluginConnectionId, g]));
     const used = new Set<string>();
-    for (const action of await this.plugins.findActions([...pluginGrants.keys()])) {
-      if (!isGranted(action.name, pluginGrants.get(action.pluginConnectionId)!)) {
-        denied.push({ action: action.name, pluginConnectionId: action.pluginConnectionId });
+    for (const tool of await this.plugins.findTools([...pluginGrants.keys()])) {
+      if (!isGranted(tool.name, pluginGrants.get(tool.pluginConnectionId)!)) {
+        denied.push({ tool: tool.name, pluginConnectionId: tool.pluginConnectionId });
         continue;
       }
-      used.add(action.pluginConnectionId);
-      const description = `[${action.pluginConnection!.name}] ${action.description}`.trim();
-      const source = { id: action.pluginConnectionId, name: action.pluginConnection!.name };
-      add(action.name, description, action.inputSchema, source, (args) => this.plugins.executeAction(action.id, args));
+      used.add(tool.pluginConnectionId);
+      const description = `[${tool.pluginConnection!.name}] ${tool.description}`.trim();
+      const source = { id: tool.pluginConnectionId, name: tool.pluginConnection!.name };
+      add(tool.name, description, tool.inputSchema, source, (args) => this.plugins.executeTool(tool.id, args));
     }
 
     const instructions = await this.plugins.findInstructions([...used]);

@@ -8,7 +8,7 @@
     "type": "none"
   },
   "capabilities": {
-    "actions": {
+    "tools": {
       "driver": "mcp",
       "options": {
         "url": "https://learn.microsoft.com/api/mcp"

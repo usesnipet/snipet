@@ -17,7 +17,7 @@ import type { AgentFormInput } from "../schemas";
 
 /**
  * Plugin connections granted to the agent, in order (the order its hooks run
- * in): allow/deny globs on the action name, the optional hooks it runs, and
+ * in): allow/deny globs on the tool name, the optional hooks it runs, and
  * the agent's settings for the plugin.
  */
 export function AgentPluginsField() {
@@ -94,7 +94,7 @@ function PluginGrant({
   const manifest = connection && manifestOf.get(connection.pluginKey);
   if (!manifest) return null;
 
-  const { actions, hooks } = manifest.capabilities;
+  const { tools, hooks } = manifest.capabilities;
   const settings = manifest.settings as RJSFSchema | undefined;
   const toggleHook = (hook: HookName, on: boolean) =>
     form.setValue(
@@ -105,13 +105,13 @@ function PluginGrant({
 
   return (
     <>
-      {actions && (
+      {tools && (
         <>
           <div className="grid grid-cols-2 gap-2">
-            <FormInput name={`${name}.allow`} label="Allow" placeholder="all actions" split className="font-mono text-xs" />
+            <FormInput name={`${name}.allow`} label="Allow" placeholder="all tools" split className="font-mono text-xs" />
             <FormInput name={`${name}.deny`} label="Deny" placeholder="list_*, *delete*" split className="font-mono text-xs" />
           </div>
-          <p className="text-muted-foreground text-xs">Comma-separated glob patterns on the action name. Deny wins over allow.</p>
+          <p className="text-muted-foreground text-xs">Comma-separated glob patterns on the tool name. Deny wins over allow.</p>
         </>
       )}
       {hooks && (

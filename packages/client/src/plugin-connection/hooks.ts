@@ -28,7 +28,7 @@ export const useListPluginConnections = (
   useQuery({
     queryKey: [...listPluginConnectionsQueryKey(), opts?.searchParams],
     queryFn: () => pluginConnectionService.list(opts),
-    // Action sync runs in the background after create; poll until it settles.
+    // Tool sync runs in the background after create; poll until it settles.
     refetchInterval: (query) =>
       query.state.data?.data.some((conn) => syncState(conn).kind === "pending") ? 5000 : false,
   });

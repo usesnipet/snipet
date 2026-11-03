@@ -58,7 +58,7 @@ describe("HookDispatcher.forRun", () => {
         ),
       getManifest: (key: keyof typeof manifests) => manifests[key],
     } as unknown as PluginConnectionService;
-    const drivers = new PluginDriverRegistry({ actions: [], instructions: [], hooks: [driver], healthCheck: [] });
+    const drivers = new PluginDriverRegistry({ tools: [], instructions: [], hooks: [driver], healthCheck: [] });
     const agent = {
       id: "ag1",
       pluginConnections: [
@@ -94,7 +94,7 @@ describe("HookDispatcher.forRun", () => {
         throw new Error("gone");
       },
     } as unknown as PluginConnectionService;
-    const drivers = new PluginDriverRegistry({ actions: [], instructions: [], hooks: [], healthCheck: [] });
+    const drivers = new PluginDriverRegistry({ tools: [], instructions: [], hooks: [], healthCheck: [] });
     const agent = { id: "ag1", pluginConnections: [grant("c1", 0)] };
     const runner = await new HookDispatcher(plugins, drivers).forRun({ agent } as unknown as HookRunnerContext);
     await expect(runner.call("run.start", { input: "hi" })).resolves.toEqual({

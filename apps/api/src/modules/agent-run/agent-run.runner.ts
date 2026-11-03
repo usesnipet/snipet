@@ -1,7 +1,7 @@
 import { Owner } from "#src/common/decorators/owner.decorator.js";
 import { toHttpException } from "#src/common/filter/llm-error.filter.js";
 import { FailoverError, LlmError } from "#src/llm/errors.js";
-import { ActionResult } from "#src/plugin/driver.js";
+import { ToolResult } from "#src/plugin/driver.js";
 import { HttpException, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { AgentRunStatus } from "@snipet/shared";
@@ -243,7 +243,7 @@ export class AgentRunner {
     context: RunContext,
     hooks: HookRunner,
     signal: AbortSignal,
-  ): Promise<ActionResult> {
+  ): Promise<ToolResult> {
     const started = Date.now();
     if (signal.aborted)
       return this.toolDone(hooks, requestedCall, { content: "cancelled", isError: true }, "cancelled", started);
@@ -272,10 +272,10 @@ export class AgentRunner {
   private async toolDone(
     hooks: HookRunner,
     call: LlmToolCallPart,
-    result: ActionResult,
+    result: ToolResult,
     reason: HookToolErrorReason,
     started: number,
-  ): Promise<ActionResult> {
+  ): Promise<ToolResult> {
     const durationMs = Date.now() - started;
     const outcome = result.isError
       ? await hooks.call("tool.error", { call, result, reason, durationMs })

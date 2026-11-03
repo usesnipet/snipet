@@ -5,14 +5,14 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { MAX_PLUGIN_INSTRUCTIONS } from "@snipet/shared";
 import { Repository } from "typeorm";
 
-import { PluginAction } from "../plugin-action.entity.js";
+import { PluginTool } from "../plugin-tool.entity.js";
 import { PluginConnection } from "../plugin-connection.entity.js";
 
 import type { PluginDrivers } from "#src/plugin/driver.js";
 import type { PluginManifest } from "@snipet/shared";
 
 /**
- * Keeps plugin_actions in line with what each connection's action driver
+ * Keeps plugin_tools in line with what each connection's tool driver
  * lists, and the connection's instructions with its instructions driver.
  */
 @Injectable()
@@ -20,7 +20,7 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
   PluginConnection,
   PluginManifest,
   PluginDrivers,
-  PluginAction
+  PluginTool
 > {
   protected readonly keyField = "pluginKey";
   protected readonly connectionField = "pluginConnectionId";
@@ -31,12 +31,12 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
     plugins: PluginRegistry,
     drivers: PluginDriverRegistry,
   ) {
-    super(connections, plugins, drivers, PluginAction);
+    super(connections, plugins, drivers, PluginTool);
   }
 
   protected async list(conn: PluginConnection, manifest: PluginManifest) {
-    const resolved = this.drivers.resolve(manifest, "actions", conn.config);
-    return resolved && resolved.driver.listActions(conn.id, resolved.options);
+    const resolved = this.drivers.resolve(manifest, "tools", conn.config);
+    return resolved && resolved.driver.listTools(conn.id, resolved.options);
   }
 
   protected override async fields(conn: PluginConnection, manifest: PluginManifest) {

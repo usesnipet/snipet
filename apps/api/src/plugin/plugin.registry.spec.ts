@@ -81,9 +81,9 @@ describe("hookHandlersOf", () => {
 });
 
 describe("pluginManifestSchema", () => {
-  it("needs actions, instructions or hooks", () => {
+  it("needs tools, instructions or hooks", () => {
     const result = pluginManifestSchema.safeParse({ key: "xx", name: "X", capabilities: {} });
-    expect(result.error?.issues[0].message).toBe("a plugin needs actions, instructions or hooks");
+    expect(result.error?.issues[0].message).toBe("a plugin needs tools, instructions or hooks");
   });
 });
 
@@ -98,7 +98,7 @@ class MemoryDriver extends Driver(z.object({})) implements HookDriver {
 describe("PluginRegistry", () => {
   let dir: string;
   const drivers = new PluginDriverRegistry({
-    actions: [],
+    tools: [],
     instructions: [],
     hooks: [new MemoryDriver()],
     healthCheck: [],
@@ -125,7 +125,7 @@ describe("PluginRegistry", () => {
     const builtIn = resolve(import.meta.dirname, "manifests");
     const mcp = new McpDriver();
     const real = new PluginDriverRegistry({
-      actions: [mcp],
+      tools: [mcp],
       instructions: [mcp, new StaticInstructionsDriver()],
       hooks: [new DebugDriver({} as Storage), new WebhookDriver()],
       healthCheck: [new HttpHealthCheckDriver()],

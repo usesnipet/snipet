@@ -20,7 +20,7 @@ import { PluginDriverRegistry, PluginRegistry } from "./plugin.registry.js";
       useFactory: (storage: Storage) => {
         const mcp = new McpDriver();
         return new PluginDriverRegistry({
-          actions: [mcp],
+          tools: [mcp],
           instructions: [mcp, new StaticInstructionsDriver()],
           hooks: [new DebugDriver(storage), new WebhookDriver()],
           healthCheck: [new HttpHealthCheckDriver()],

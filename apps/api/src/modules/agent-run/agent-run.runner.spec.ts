@@ -74,11 +74,11 @@ function setup(
     }),
   };
   const plugins = {
-    findActions: jest.fn<Fn>().mockResolvedValue([
+    findTools: jest.fn<Fn>().mockResolvedValue([
       { id: "a1", name: "ask_question", description: "Asks", inputSchema: {}, ...wiki },
       { id: "a2", name: "read_wiki", description: "", inputSchema: {}, ...wiki },
     ]),
-    executeAction: jest.fn<Fn>().mockResolvedValue({ content: "answer", isError: false }),
+    executeTool: jest.fn<Fn>().mockResolvedValue({ content: "answer", isError: false }),
     findInstructions: jest.fn<Fn>().mockResolvedValue([]),
   };
 
@@ -120,7 +120,7 @@ describe("AgentRunner.run", () => {
     const { runner, runs, llm, plugins, saved } = setup([callTool, answer]);
     await runner.run(agent, run, owner);
 
-    expect(plugins.executeAction).toHaveBeenCalledWith("a1", { q: "x" });
+    expect(plugins.executeTool).toHaveBeenCalledWith("a1", { q: "x" });
     expect(saved.map((m) => m.role)).toEqual(["assistant", "tool", "assistant"]);
     expect(saved[1].parts).toEqual([{ type: "tool_result", toolCallId: "c1", content: "answer", isError: false }]);
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.COMPLETED, turns: 2, error: null });
@@ -131,7 +131,7 @@ describe("AgentRunner.run", () => {
     expect(messages.map((m) => m.role)).toEqual(["system", "system", "user", "assistant", "tool"]);
     // read_wiki isn't in the plugin grant's allow.
     expect(tools.map((t) => [t.name, t.description])).toEqual([["ask_question", "[Wiki] Asks"]]);
-    expect(plugins.findActions).toHaveBeenCalledWith(["p1"]);
+    expect(plugins.findTools).toHaveBeenCalledWith(["p1"]);
   });
 
   it("adds the instructions of the plugins with granted actions after the system prompt", async () => {
@@ -203,7 +203,7 @@ describe("AgentRunner.run", () => {
     );
     await runner.run(agent, run, owner);
 
-    expect(plugins.executeAction).toHaveBeenCalledWith("a1", { q: "y" });
+    expect(plugins.executeTool).toHaveBeenCalledWith("a1", { q: "y" });
     expect(saved[1].parts).toMatchObject([{ toolCallId: "c1", content: "answer" }]);
   });
 
@@ -213,14 +213,14 @@ describe("AgentRunner.run", () => {
     );
     await runner.run(agent, run, owner);
 
-    expect(plugins.executeAction).not.toHaveBeenCalled();
+    expect(plugins.executeTool).not.toHaveBeenCalled();
     expect(saved[1].parts).toEqual([{ type: "tool_result", toolCallId: "c1", content: "not now", isError: true }]);
     expect(events.find((e) => e.hook === "tool.error")?.payload).toMatchObject({ reason: "denied" });
   });
 
   it("tells tool.error a call timed out, without the flag reaching the model", async () => {
     const { runner, plugins, saved, events } = setup([callTool, answer]);
-    plugins.executeAction.mockResolvedValue({ content: "Request timed out", isError: true, timedOut: true });
+    plugins.executeTool.mockResolvedValue({ content: "Request timed out", isError: true, timedOut: true });
     await runner.run(agent, run, owner);
 
     expect(events.find((e) => e.hook === "tool.error")?.payload).toMatchObject({ reason: "timeout" });
@@ -246,7 +246,7 @@ describe("AgentRunner.run", () => {
     );
     await runner.run(agent, run, owner);
 
-    expect(plugins.executeAction).not.toHaveBeenCalled();
+    expect(plugins.executeTool).not.toHaveBeenCalled();
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "forbidden" });
   });
 

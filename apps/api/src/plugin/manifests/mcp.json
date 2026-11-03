@@ -32,7 +32,7 @@
     "required": ["url", "Authorization"]
   },
   "capabilities": {
-    "actions": {
+    "tools": {
       "driver": "mcp",
       "options": {
         "url": "{{ connection.url }}",

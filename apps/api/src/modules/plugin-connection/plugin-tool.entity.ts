@@ -3,9 +3,9 @@ import { Column, Entity, JoinColumn, ManyToOne, Unique } from "typeorm";
 
 import { PluginConnection } from "./plugin-connection.entity.js";
 
-@Entity("plugin_actions")
+@Entity("plugin_tools")
 @Unique(["pluginConnectionId", "name"])
-export class PluginAction extends BaseEntity {
+export class PluginTool extends BaseEntity {
   @Column({ type: "uuid" })
   pluginConnectionId: string;
 

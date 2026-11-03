@@ -6,7 +6,7 @@ import type { BaseDriver } from "./driver.js";
 
 /**
  * Driver interface per capability; the keys are the keys of a manifest's
- * `capabilities`, e.g. { actions: ActionDriver; healthCheck: HealthCheckDriver }.
+ * `capabilities`, e.g. { tools: ToolDriver; healthCheck: HealthCheckDriver }.
  */
 export type DriverTypes = Record<string, BaseDriver>;
 

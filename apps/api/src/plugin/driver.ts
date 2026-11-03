@@ -2,29 +2,29 @@ import type { BaseDriver } from "#src/manifest/driver.js";
 import type { HealthCheckDriver } from "#src/manifest/health-check.js";
 import type { HookEvent, HookName, HookResult, JsonObject } from "@snipet/shared";
 
-/** An action as listed by a driver. */
-export interface Action {
+/** A tool as listed by a driver. */
+export interface Tool {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
 }
 
-/** The outcome of an action call, flattened to text. */
-export interface ActionResult {
+/** The outcome of a tool call, flattened to text. */
+export interface ToolResult {
   content: string;
   isError: boolean;
   /** Set when the call timed out; never sent to the model. */
   timedOut?: boolean;
 }
 
-export interface ActionDriver<Opts = unknown> extends BaseDriver<Opts> {
-  listActions(connectionId: string, options: Opts): Promise<Action[]>;
-  callAction(
+export interface ToolDriver<Opts = unknown> extends BaseDriver<Opts> {
+  listTools(connectionId: string, options: Opts): Promise<Tool[]>;
+  callTool(
     connectionId: string,
     name: string,
     parameters: Record<string, unknown>,
     options: Opts,
-  ): Promise<ActionResult>;
+  ): Promise<ToolResult>;
 }
 
 export interface InstructionsDriver<Opts = unknown> extends BaseDriver<Opts> {
@@ -51,7 +51,7 @@ export interface HookDriver<Opts = unknown> extends BaseDriver<Opts> {
 
 /** Driver per capability, keyed by the manifest field that names it. */
 export type PluginDrivers = {
-  actions: ActionDriver;
+  tools: ToolDriver;
   instructions: InstructionsDriver;
   hooks: HookDriver;
   healthCheck: HealthCheckDriver;
