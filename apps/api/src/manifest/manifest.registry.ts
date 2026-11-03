@@ -69,7 +69,15 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
       if (ref && !drivers.has(type, ref.driver)) return `unknown ${String(type)} driver "${ref.driver}"`;
     }
     if (!checkJsonSchema(m.connection)) return "invalid connection schema";
+    const error = this.check(m, drivers);
+    if (error) return error;
     manifests.set(m.key, m);
+  }
+
+  /** Checks specific to a kind of manifest, run once its drivers are known to exist; returns why it's rejected. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected check(manifest: M, drivers: DriverRegistry<D>): string | undefined {
+    return undefined;
   }
 }
 

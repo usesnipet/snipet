@@ -9,6 +9,7 @@ import { PluginConnectionService } from "../plugin-connection/plugin-connection.
 import type { LlmMessage, LlmTool, LlmToolCallPart } from "@snipet/shared";
 
 type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;
+type ToolSource = { id: string; name: string };
 export type DeniedAction = { action: string; pluginConnectionId: string };
 
 /** What one run gives the models: system messages and tools, and how to run their calls. */
@@ -20,6 +21,8 @@ export type RunContext = {
   /** Instructions of the plugin connections with at least one granted action. */
   instructions: { name: string; text: string }[];
   has(name: string): boolean;
+  /** The plugin connection a tool comes from; null for an unknown tool. */
+  toolOf(name: string): { id: string; name: string } | null;
   /** Never throws: an unknown tool or a failed action is an error result. */
   call(call: LlmToolCallPart): Promise<ActionResult>;
 };
@@ -43,12 +46,20 @@ export class AgentContext {
   async build(agent: Agent, owner: Owner): Promise<RunContext> {
     const denied: DeniedAction[] = [];
     const executors = new Map<string, Executor>();
+    const sources = new Map<string, ToolSource>();
     const tools: LlmTool[] = [];
-    const add = (rawName: string, description: string, parameters: Record<string, unknown>, execute: Executor) => {
+    const add = (
+      rawName: string,
+      description: string,
+      parameters: Record<string, unknown>,
+      source: ToolSource,
+      execute: Executor,
+    ) => {
       const base = rawName.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60);
       let name = base;
       for (let n = 2; executors.has(name); n++) name = `${base}_${n}`;
       executors.set(name, execute);
+      sources.set(name, source);
       tools.push({ name, description, parameters });
     };
 
@@ -61,7 +72,8 @@ export class AgentContext {
       }
       used.add(action.pluginConnectionId);
       const description = `[${action.pluginConnection!.name}] ${action.description}`.trim();
-      add(action.name, description, action.inputSchema, (args) => this.plugins.executeAction(action.id, args));
+      const source = { id: action.pluginConnectionId, name: action.pluginConnection!.name };
+      add(action.name, description, action.inputSchema, source, (args) => this.plugins.executeAction(action.id, args));
     }
 
     const instructions = await this.plugins.findInstructions([...used]);
@@ -78,6 +90,7 @@ export class AgentContext {
       denied,
       instructions,
       has: (name) => executors.has(name),
+      toolOf: (name) => sources.get(name) ?? null,
       call: async (call) => {
         const execute = executors.get(call.name);
         if (!execute) return { content: `unknown tool "${call.name}"`, isError: true };

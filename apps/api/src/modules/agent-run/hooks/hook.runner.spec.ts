@@ -2,12 +2,13 @@ import { jest } from "@jest/globals";
 
 import { HookRunner } from "./hook.runner.js";
 
-import type { HookDriver } from "#src/plugin/driver.js";
+import type { HookContext, HookDriver } from "#src/plugin/driver.js";
 import type { HookHandler, HookRunnerContext } from "./hook.runner.js";
 import type { HookEvent, HookResult } from "@snipet/shared";
 
 const ctx = { run: { id: "r1" }, agent: { id: "ag1" }, owner: {} } as unknown as HookRunnerContext;
 const call = { type: "tool_call" as const, id: "c1", name: "github_search", arguments: { q: "x" } };
+const tool = { id: "p1", name: "GitHub" };
 
 /** A tool.before handler that logs what it got and answers with reply. */
 function handler(
@@ -17,7 +18,7 @@ function handler(
   rest: Partial<HookHandler> = {},
 ): HookHandler {
   const driver = {
-    handle: async (e: HookEvent<"tool.before">, _: unknown, signal: AbortSignal) => {
+    handle: async (e: HookEvent<"tool.before">, _: unknown, { signal }: HookContext) => {
       log.push(`${name} ${JSON.stringify(e.payload.call.arguments)} ${e.actions.join(",")}`);
       return reply(e, signal);
     },
@@ -27,9 +28,8 @@ function handler(
     event: "tool.before",
     global: false,
     stage: 0,
-    match: null,
     async: false,
-    onError: "continue",
+    onFailure: "continue",
     driver,
     options: {},
     timeoutMs: 1000,
@@ -56,17 +56,17 @@ describe("HookRunner.call", () => {
       ],
       ctx,
     );
-    const outcome = await hooks.call("tool.before", { call });
+    const outcome = await hooks.call("tool.before", { call, tool });
 
     expect(log).toEqual([
-      'global {"q":"x"} modify,block,respond',
-      'a {"q":"g"} modify,block,respond',
-      'b {"q":"a"} modify,block,respond',
+      'global {"q":"x"} modify,deny,respond,stop',
+      'a {"q":"g"} modify,deny,respond,stop',
+      'b {"q":"a"} modify,deny,respond,stop',
     ]);
-    expect(outcome).toEqual({ action: "continue", payload: { call: { ...call, arguments: { q: "a" } } } });
+    expect(outcome).toEqual({ action: "continue", payload: { call: { ...call, arguments: { q: "a" } }, tool } });
   });
 
-  it("only lets parallel handlers block, and the first block cancels the rest", async () => {
+  it("only lets parallel handlers deny or stop, and the first deny cancels the rest", async () => {
     const log: string[] = [];
     let slowAborted = false;
     const slow = (_: unknown, signal: AbortSignal) =>
@@ -78,47 +78,48 @@ describe("HookRunner.call", () => {
       );
     const hooks = new HookRunner(
       [
-        handler("guard", log, () => ({ action: "block", reason: "no" })),
+        handler("guard", log, () => ({ action: "deny", reason: "no" })),
         handler("slow", log, slow),
         handler("later", log, ok, { stage: 1 }),
       ],
       ctx,
     );
 
-    expect(await hooks.call("tool.before", { call })).toEqual({ action: "block", reason: "no" });
+    expect(await hooks.call("tool.before", { call, tool })).toEqual({ action: "deny", reason: "no" });
     expect(slowAborted).toBe(true);
-    expect(log).toEqual(['guard {"q":"x"} block', 'slow {"q":"x"} block']);
+    expect(log).toEqual(['guard {"q":"x"} deny,stop', 'slow {"q":"x"} deny,stop']);
   });
 
-  it("treats a reply the hook doesn't allow as an error, which blocks only on onError fail", async () => {
+  it("treats a reply the hook doesn't allow as a failure, handled per onFailure", async () => {
     const log: string[] = [];
     const parallel = [handler("a", log, modify("a")), handler("b", log, ok)];
-    expect(await new HookRunner(parallel, ctx).call("tool.before", { call })).toEqual({
+    expect(await new HookRunner(parallel, ctx).call("tool.before", { call, tool })).toEqual({
       action: "continue",
-      payload: { call },
+      payload: { call, tool },
     });
 
-    const failing = [handler("a", log, modify("a"), { onError: "fail" }), handler("b", log, ok)];
-    expect(await new HookRunner(failing, ctx).call("tool.before", { call })).toEqual({
-      action: "block",
-      reason: 'hook "a" failed',
+    const denying = [handler("a", log, modify("a"), { onFailure: "deny" }), handler("b", log, ok)];
+    expect(await new HookRunner(denying, ctx).call("tool.before", { call, tool })).toEqual({
+      action: "deny",
+      reason: 'plugin "a" failed',
+    });
+    const stopping = [handler("a", log, modify("a"), { onFailure: "stop" }), handler("b", log, ok)];
+    expect(await new HookRunner(stopping, ctx).call("tool.before", { call, tool })).toEqual({
+      action: "stop",
+      reason: 'plugin "a" failed',
     });
   });
 
-  it("skips handlers whose match filters leave the call out, and gives async ones the final payload", async () => {
+  it("gives async handlers the final payload", async () => {
     const log: string[] = [];
     const seen = jest.fn<(e: HookEvent<"tool.before">) => HookResult>(ok);
     const hooks = new HookRunner(
-      [
-        handler("jira", log, modify("j"), { match: { tools: ["jira_*"] } }),
-        handler("github", log, modify("g"), { match: { tools: ["github_*"] } }),
-        handler("log", log, seen, { async: true }),
-      ],
+      [handler("github", log, modify("g")), handler("log", log, seen, { async: true })],
       ctx,
     );
-    await hooks.call("tool.before", { call });
+    await hooks.call("tool.before", { call, tool });
     await hooks.settle();
 
-    expect(log).toEqual(['github {"q":"x"} modify,block,respond', 'log {"q":"g"} ']);
+    expect(log).toEqual(['github {"q":"x"} modify,deny,respond,stop', 'log {"q":"g"} ']);
   });
 });

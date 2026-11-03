@@ -1,12 +1,12 @@
 import { jest } from "@jest/globals";
 import { createHmac } from "node:crypto";
 
-import { WebhookDriver } from "./webhook.js";
+import { WebhookDriver } from "./webhook.hooks.js";
 
 import type { HookEvent } from "@snipet/shared";
 
 const event = { id: "e1", hook: "tool.before" } as HookEvent;
-const signal = new AbortController().signal;
+const context = { settings: {}, state: {}, signal: new AbortController().signal };
 
 describe("WebhookDriver", () => {
   const driver = new WebhookDriver();
@@ -24,7 +24,7 @@ describe("WebhookDriver", () => {
       signingSecret: "s",
     });
 
-    await expect(driver.handle(event, options, signal)).resolves.toEqual({ action: "continue" });
+    await expect(driver.handle(event, options, context)).resolves.toEqual({ action: "continue" });
 
     const init = fetchMock.mock.calls[0][1]!;
     const headers = init.headers as Record<string, string>;
@@ -42,14 +42,14 @@ describe("WebhookDriver", () => {
     const options = driver.validateOptions({ url: "https://x.test/hook" });
     const reply = (body: string, status = 200) => fetchMock.mockResolvedValueOnce(new Response(body, { status }));
 
-    reply(JSON.stringify({ action: "block", reason: "no" }));
-    await expect(driver.handle(event, options, signal)).resolves.toEqual({ action: "block", reason: "no" });
+    reply(JSON.stringify({ action: "deny", reason: "no" }));
+    await expect(driver.handle(event, options, context)).resolves.toEqual({ action: "deny", reason: "no" });
 
     reply("{}", 500);
-    await expect(driver.handle(event, options, signal)).rejects.toThrow("HTTP 500");
+    await expect(driver.handle(event, options, context)).rejects.toThrow("HTTP 500");
     reply("nope");
-    await expect(driver.handle(event, options, signal)).rejects.toThrow("not JSON");
+    await expect(driver.handle(event, options, context)).rejects.toThrow("not JSON");
     reply(JSON.stringify({ action: "explode" }));
-    await expect(driver.handle(event, options, signal)).rejects.toThrow("invalid reply");
+    await expect(driver.handle(event, options, context)).rejects.toThrow("invalid reply");
   });
 });

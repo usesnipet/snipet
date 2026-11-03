@@ -19,7 +19,11 @@ type Drivers = { actions: Echo; healthCheck: Echo };
 
 const drivers = new DriverRegistry<Drivers>({ actions: [new Echo("mcp")], healthCheck: [new Echo("http")] });
 
-const base = { name: "X", connection: { type: "object", properties: {} }, capabilities: {} };
+const base = {
+  name: "X",
+  connection: { type: "object", properties: {} },
+  capabilities: { actions: { driver: "mcp" } },
+};
 
 describe("ManifestRegistry", () => {
   let dir: string;
@@ -28,7 +32,11 @@ describe("ManifestRegistry", () => {
     dir = mkdtempSync(join(tmpdir(), "manifests-"));
     const files: Record<string, unknown> = {
       "b.json": { ...base, key: "beta", capabilities: { actions: { driver: "mcp" } } },
-      "a.json": { ...base, key: "alpha", capabilities: { healthCheck: { driver: "http" } } },
+      "a.json": {
+        ...base,
+        key: "alpha",
+        capabilities: { actions: { driver: "mcp" }, healthCheck: { driver: "http" } },
+      },
       "dup.json": { ...base, key: "alpha" },
       "bad-key.json": { ...base, key: "Not A Key" },
       "unknown-driver.json": { ...base, key: "gamma", capabilities: { actions: { driver: "nope" } } },
@@ -73,7 +81,7 @@ describe("secretFields", () => {
         type: "object",
         properties: { url: { type: "string" }, token: { type: "string", secret: true } },
       },
-      capabilities: {},
+      capabilities: { actions: { driver: "mcp" } },
     });
     expect(secretFields(manifest)).toEqual(["token"]);
   });

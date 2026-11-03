@@ -1,24 +1,20 @@
-import { isGranted } from "#src/utils/grant/grant.js";
 import { Logger } from "@nestjs/common";
 import { AgentRunStatus, HOOK_EVENT_VERSION, HOOKS } from "@snipet/shared";
 import { randomUUID } from "node:crypto";
 
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
-import type { HookDriver } from "#src/plugin/driver.js";
+import type { HookContext, HookDriver } from "#src/plugin/driver.js";
 import type {
   Agent,
   AgentRun,
   HookAction,
   HookEvent,
-  HookMatch,
-  HookMatchKey,
   HookName,
-  HookOnError,
+  HookOnFailure,
   HookPayload,
   HookRespond,
   HookResult,
   JsonObject,
-  LlmToolCallPart,
 } from "@snipet/shared";
 
 /** A bound hook ready to run: its driver with the connection's options resolved. */
@@ -28,9 +24,8 @@ export interface HookHandler {
   /** Global hooks run before the agent's; stages never mix the two. */
   global: boolean;
   stage: number;
-  match: HookMatch | null;
   async: boolean;
-  onError: HookOnError;
+  onFailure: HookOnFailure;
   driver: HookDriver;
   options: unknown;
   timeoutMs: number;
@@ -46,39 +41,18 @@ export interface HookRunnerContext {
 /** What the handlers made of a step. */
 export type HookOutcome<K extends HookName> =
   | { action: "continue"; payload: HookPayload<K> }
-  | { action: "block"; reason: string }
+  | { action: "deny"; reason: string }
+  | { action: "stop"; reason: string }
   | { action: "respond"; result: HookRespond<K> };
 
-/** A step a hook blocked: fails the run with the hook's reason. */
+/** A step a hook stopped or denied where it can't be: fails the run with the hook's reason. */
 export class HookBlockedError extends Error {}
-
-/** The payload fields the `match` filters read; which exist depends on the hook. */
-type MatchablePayload = {
-  call?: LlmToolCallPart;
-  model?: string | null;
-  targets?: { model: string }[];
-};
 
 /** The parts of a hook definition the runner validates replies with. */
 type ParsableHookDefinition = {
   payload: { parse(value: unknown): unknown };
   respond?: { parse(value: unknown): unknown };
 };
-
-/** Whether the payload passes the filters its hook point applies. */
-function matchesFilters(hook: HookName, match: HookMatch | null, payload: unknown): boolean {
-  if (!match) return true;
-  const { call, model, targets } = payload as MatchablePayload;
-  const candidatesByKey: Record<HookMatchKey, string[]> = {
-    tools: call ? [call.name] : [],
-    models: targets?.map((target) => target.model) ?? (model ? [model] : []),
-  };
-  const appliedKeys: readonly HookMatchKey[] = HOOKS[hook].match;
-  return appliedKeys.every((key) => {
-    const allow = match[key];
-    return !allow?.length || candidatesByKey[key].some((candidate) => isGranted(candidate, { allow }));
-  });
-}
 
 /** Splits handlers into stages: consecutive ones of the same group and stage, which run in parallel. */
 function groupIntoStages(handlers: HookHandler[]): HookHandler[][] {
@@ -99,8 +73,9 @@ export class HookRunner {
   /** The run's current status, stamped on each event. */
   status: AgentRunStatus = AgentRunStatus.RUNNING;
 
-  /** Shared by the run's handlers: each reply's metadata is merged in. */
-  private readonly metadata: JsonObject = {};
+  /** Shared by the run's handlers: each reply's state is merged in. */
+  // TODO(phase 5): one state per plugin connection.
+  private readonly state: JsonObject = {};
   /** Async handlers still running, awaited by settle(). */
   private readonly pending = new Set<Promise<void>>();
 
@@ -113,7 +88,7 @@ export class HookRunner {
 
   /** Fires `hook` on every handler bound to it without waiting; replies are ignored. */
   emit<K extends HookName>(hook: K, payload: HookPayload<K>): void {
-    for (const handler of this.handlersFor(hook, payload)) this.runInBackground(handler, hook, payload);
+    for (const handler of this.handlersFor(hook)) this.runInBackground(handler, hook, payload);
   }
 
   /**
@@ -122,17 +97,18 @@ export class HookRunner {
    * handlers then get the final payload.
    */
   async call<K extends HookName>(hook: K, payload: HookPayload<K>): Promise<HookOutcome<K>> {
-    const handlers = this.handlersFor(hook, payload);
+    const handlers = this.handlersFor(hook);
     let currentPayload: HookPayload<K> = payload;
     let outcome: HookOutcome<K> | undefined;
     for (const stage of groupIntoStages(handlers.filter((handler) => !handler.async))) {
       // Parallel handlers all get the same payload, so only a lone one may change or answer it.
-      const allowedActions: readonly HookAction[] = stage.length > 1 ? ["block"] : HOOKS[hook].actions;
+      const accepted: readonly HookAction[] = HOOKS[hook].actions;
+      const allowedActions = stage.length > 1 ? accepted.filter((a) => a === "deny" || a === "stop") : accepted;
       const stageBlocked = new AbortController();
       const outcomes = await Promise.all(
         stage.map(async (handler) => {
           const handlerOutcome = await this.send(handler, hook, currentPayload, allowedActions, stageBlocked.signal);
-          if (handlerOutcome.action === "block") stageBlocked.abort();
+          if (handlerOutcome.action === "deny" || handlerOutcome.action === "stop") stageBlocked.abort();
           return handlerOutcome;
         }),
       );
@@ -149,7 +125,7 @@ export class HookRunner {
   async pass<K extends HookName>(hook: K, payload: HookPayload<K>): Promise<HookPayload<K>> {
     const outcome = await this.call(hook, payload);
     if (outcome.action === "continue") return outcome.payload;
-    throw new HookBlockedError(outcome.action === "block" ? outcome.reason : `${hook} can't be answered`);
+    throw new HookBlockedError(outcome.action === "respond" ? `${hook} can't be answered` : outcome.reason);
   }
 
   /** Waits for the handlers still running. */
@@ -157,12 +133,11 @@ export class HookRunner {
     await Promise.all(this.pending);
   }
 
-  /** The handlers bound to `hook` whose match filters let the payload through. */
-  private handlersFor(hook: HookName, payload: unknown): HookHandler[] {
-    return this.handlers.filter((handler) => handler.event === hook && matchesFilters(hook, handler.match, payload));
+  private handlersFor(hook: HookName): HookHandler[] {
+    return this.handlers.filter((handler) => handler.event === hook);
   }
 
-  /** Never throws: a failed handler continues, or blocks when its onError is `fail`. */
+  /** Never throws: a failed handler continues, denies or stops, per its onFailure. */
   private async send<K extends HookName>(
     handler: HookHandler,
     hook: K,
@@ -174,18 +149,19 @@ export class HookRunner {
     try {
       const signal = AbortSignal.any([AbortSignal.timeout(handler.timeoutMs), stageSignal]);
       const event = this.buildEvent(hook, payload, allowedActions);
-      const reply: HookResult = await handler.driver.handle(event, handler.options, signal);
+      const reply: HookResult = await handler.driver.handle(event, handler.options, this.contextOf(signal));
       if (reply.action !== "continue" && !allowedActions.includes(reply.action)) {
         throw new Error(`can't ${reply.action} here`);
       }
       const outcome = this.toOutcome(hook, payload, reply) ?? unchanged;
-      if (reply.metadata) Object.assign(this.metadata, reply.metadata);
+      if (reply.state) Object.assign(this.state, reply.state);
       return outcome;
     } catch (err) {
-      // Another handler of the stage blocked: this one's reply no longer matters.
+      // Another handler of the stage ended it: this one's reply no longer matters.
       if (stageSignal.aborted) return unchanged;
       this.warnFailure(handler, hook, err);
-      return handler.onError === "fail" ? { action: "block", reason: `hook "${handler.name}" failed` } : unchanged;
+      if (handler.onFailure === "continue") return unchanged;
+      return { action: handler.onFailure, reason: `plugin "${handler.name}" failed` };
     }
   }
 
@@ -197,8 +173,9 @@ export class HookRunner {
   ): HookOutcome<K> | undefined {
     const definition: ParsableHookDefinition = HOOKS[hook];
     switch (reply.action) {
-      case "block":
-        return { action: "block", reason: reply.reason };
+      case "deny":
+      case "stop":
+        return { action: reply.action, reason: reply.reason };
       case "respond":
         return { action: "respond", result: definition.respond!.parse(reply.result) as HookRespond<K> };
       case "modify":
@@ -215,7 +192,7 @@ export class HookRunner {
   private runInBackground(handler: HookHandler, hook: HookName, payload: unknown): void {
     const event = this.buildEvent(hook, payload, []);
     const running: Promise<void> = handler.driver
-      .handle(event, handler.options, AbortSignal.timeout(handler.timeoutMs))
+      .handle(event, handler.options, this.contextOf(AbortSignal.timeout(handler.timeoutMs)))
       .then(
         () => undefined,
         (err: unknown) => this.warnFailure(handler, hook, err),
@@ -228,6 +205,12 @@ export class HookRunner {
     this.logger.warn(`hook ${hook} (${handler.name}) on run ${this.context.run.id}: ${String(err)}`);
   }
 
+  /** What a handler gets besides the event. */
+  private contextOf(signal: AbortSignal): HookContext {
+    // TODO(phase 5): the agent's settings for the plugin.
+    return { settings: {}, state: { ...this.state }, signal };
+  }
+
   private buildEvent(hook: HookName, payload: unknown, allowedActions: readonly HookAction[]): HookEvent {
     const { run, agent, owner } = this.context;
     return {
@@ -236,10 +219,11 @@ export class HookRunner {
       hook,
       actions: [...allowedActions],
       occurredAt: new Date().toISOString(),
-      run: { ...run, turn: this.turn, status: this.status },
-      agent,
-      owner,
-      metadata: { ...this.metadata },
+      run: { id: run.id, sessionId: run.sessionId, turn: this.turn, status: this.status },
+      agent: { id: agent.id, name: agent.name },
+      user: owner,
+      settings: {},
+      state: { ...this.state },
       // Snapshot: the loop keeps mutating its history after this returns.
       payload: structuredClone(payload),
     } as HookEvent;

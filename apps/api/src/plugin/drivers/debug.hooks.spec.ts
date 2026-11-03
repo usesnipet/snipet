@@ -1,4 +1,4 @@
-import { debugPath } from "./debug.js";
+import { debugPath } from "./debug.hooks.js";
 
 import type { HookEvent } from "@snipet/shared";
 

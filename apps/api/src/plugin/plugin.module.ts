@@ -17,6 +17,7 @@ import { PluginDriverRegistry, PluginRegistry } from "./plugin.registry.js";
         return new PluginDriverRegistry({
           actions: [mcp],
           instructions: [mcp, new StaticInstructionsDriver()],
+          hooks: [],
           healthCheck: [new HttpHealthCheckDriver()],
         });
       },

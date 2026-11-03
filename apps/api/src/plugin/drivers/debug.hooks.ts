@@ -1,10 +1,11 @@
 import { Storage } from "#src/infra/storage/storage.js";
 import { Driver } from "#src/manifest/driver.js";
 import { slugify } from "#src/utils/slug/slug.js";
+import { ALL_HOOKS } from "@snipet/shared";
 import { z } from "zod";
 
 import type { HookEvent, HookResult } from "@snipet/shared";
-import type { HookDriver } from "../../driver.js";
+import type { HookDriver } from "../driver.js";
 
 /** Storage prefix the debug driver saves events under. */
 const DEBUG_STORAGE_PREFIX = "debug";
@@ -28,6 +29,7 @@ export function debugPath(event: HookEvent): string {
 /** Saves each event it gets as a JSON file in storage; only observes. */
 export class DebugDriver extends Driver(optionsSchema) implements HookDriver<DebugOptions> {
   readonly key = "debug";
+  readonly hooks = ALL_HOOKS;
 
   constructor(private readonly storage: Storage) {
     super();

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { jsonObjectSchema } from "../schemas/json.js";
 import { baseManifestSchema, driverSchema } from "../schemas/manifest.js";
 
+import { hooksCapabilitySchema } from "./hook.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 /** Longest plugin instructions put in a run's context, from the driver or the user. */
@@ -10,12 +11,18 @@ export const MAX_PLUGIN_INSTRUCTIONS = 8000;
 
 /** The JSON manifest of a plugin. */
 export const pluginManifestSchema = baseManifestSchema.extend({
-  capabilities: z.object({
-    actions: driverSchema.optional(),
-    /** How the agent should use the plugin, added to the system prompt of agents granted it. */
-    instructions: driverSchema.optional(),
-    healthCheck: driverSchema.optional(),
-  }),
+  /** JSON Schema of the per-agent settings; `secret: true` fields are sealed. */
+  settings: jsonObjectSchema.optional(),
+  capabilities: z
+    .object({
+      actions: driverSchema.optional(),
+      /** How the agent should use the plugin, added to the system prompt of agents granted it. */
+      instructions: driverSchema.optional(),
+      /** Handlers on the hooks of the agent loop. */
+      hooks: hooksCapabilitySchema.optional(),
+      healthCheck: driverSchema.optional(),
+    })
+    .refine((c) => c.actions || c.instructions || c.hooks, "a plugin needs actions, instructions or hooks"),
 });
 export type PluginManifest = z.infer<typeof pluginManifestSchema>;
 

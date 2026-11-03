@@ -16,7 +16,7 @@ import { AgentRunEvents } from "./agent-run.events.js";
 import { HookDispatcher } from "./hooks/hook.dispatcher.js";
 import { HookBlockedError, HookRunner } from "./hooks/hook.runner.js";
 
-import type { HookName, HookToolErrorReason, LlmMessage, LlmPart, LlmToolCallPart } from "@snipet/shared";
+import type { HookToolErrorReason, LlmMessage, LlmUsage, LlmPart, LlmToolCallPart } from "@snipet/shared";
 
 /** The last runs, the current one included, whose tool results the models see in full. */
 const FULL_TOOL_RUNS = 2;
@@ -42,13 +42,9 @@ function describeError(err: unknown) {
   return err instanceof Error ? { name: err.name, message: err.message, stack: err.stack } : { message: String(err) };
 }
 
-/** The run.* shortcut hook fired after run.end for each final status. */
-const RUN_STATUS_HOOK = {
-  [AgentRunStatus.COMPLETED]: "run.completed",
-  [AgentRunStatus.FAILED]: "run.failed",
-  [AgentRunStatus.CANCELLED]: "run.cancelled",
-  [AgentRunStatus.MAX_TURNS]: "run.maxTurns",
-} as const satisfies Record<Exclude<AgentRunStatus, AgentRunStatus.RUNNING>, HookName>;
+/** The text parts of a message, joined. */
+const textOf = (message: LlmMessage | undefined) =>
+  message?.parts.flatMap((p) => (p.type === "text" ? [p.text] : [])).join("\n") ?? "";
 
 /**
  * The agent loop: call the models, run the tools they ask for, feed the
@@ -124,16 +120,25 @@ export class AgentRunner {
     let error: string | null = null;
     let rawError: unknown = null;
     let turns = 0;
+    let input = "";
+    let output: string | null = null;
+    let history: LlmMessage[] = [];
+    let runStart = 0;
+    const usage = { inputTokens: 0, outputTokens: 0 };
     const startedAt = Date.now();
 
     try {
-      const history = await this.getHistory(run.sessionId, agent.historyRuns);
-      const input = history.at(-1);
-      await hooks.pass("run.start", {
-        input: input?.parts.flatMap((p) => (p.type === "text" ? [p.text] : [])).join("\n") ?? "",
-      });
+      history = await this.getHistory(run.sessionId, agent.historyRuns);
+      // The run's own messages start at the user's, the last of the history.
+      runStart = Math.max(history.length - 1, 0);
+      input = textOf(history.at(-1));
+      await hooks.pass("run.start", { input });
       const context = await this.agentContext.build(agent, owner);
-      const { system, tools } = await hooks.pass("run.context", { system: context.system, tools: context.tools ?? [] });
+      const { system, tools } = await hooks.pass("run.context", {
+        input,
+        system: context.system,
+        tools: context.tools ?? [],
+      });
       const agentTargets = agent.llms.map((llm) => ({
         model: llm.model,
         connectionId: llm.connectionId ?? undefined,
@@ -145,6 +150,7 @@ export class AgentRunner {
         hooks.turn = turns;
         let reply: LlmMessage | undefined;
         let model: string | null = null;
+        let turnUsage: LlmUsage | null = null;
         const skipped: unknown[] = [];
         const request = await hooks.pass("llm.request", {
           messages: [...system, ...history],
@@ -160,12 +166,18 @@ export class AgentRunner {
           if (event.event === "llm_started") model = event.data.llm;
           else if (event.event === "llm_skipped") skipped.push(event.data);
           else if (event.event === "text_delta") this.events.emit(run.id, event);
+          else if (event.event === "usage") turnUsage = event.data;
           else if (event.event === "message") reply = event.data.message;
         }
         if (!reply) throw new Error("llm stream ended without a message");
+        if (turnUsage) {
+          usage.inputTokens += turnUsage.inputTokens;
+          usage.outputTokens += turnUsage.outputTokens;
+        }
         ({ message: reply } = await hooks.pass("llm.response", {
           model,
           message: reply,
+          usage: turnUsage,
           skipped,
           durationMs: Date.now() - started,
         }));
@@ -174,6 +186,7 @@ export class AgentRunner {
         const calls = reply.parts.filter((p): p is LlmToolCallPart => p.type === "tool_call");
         if (calls.length === 0) {
           status = AgentRunStatus.COMPLETED;
+          output = textOf(reply);
           break;
         }
         // Every call gets a result, even after a cancel, or the next run's
@@ -197,8 +210,17 @@ export class AgentRunner {
       rawError = err;
     }
     hooks.status = status;
-    hooks.emit("run.end", { status, error, turns, durationMs: Date.now() - startedAt });
-    hooks.emit(RUN_STATUS_HOOK[status], status === AgentRunStatus.FAILED ? { error: describeError(rawError) } : {});
+    hooks.emit("run.end", {
+      status,
+      error,
+      rawError: rawError === null ? null : describeError(rawError),
+      input,
+      messages: history.slice(runStart),
+      output,
+      turns,
+      usage,
+      durationMs: Date.now() - startedAt,
+    });
 
     try {
       await this.runs.update(run.id, { status, error, turns, finishedAt: new Date() });
@@ -211,7 +233,7 @@ export class AgentRunner {
     }
   }
 
-  /** Runs one tool call through its hooks; never throws. */
+  /** Runs one tool call through its hooks; throws only when a hook stops the run. */
   private async callTool(
     requestedCall: LlmToolCallPart,
     context: RunContext,
@@ -221,8 +243,13 @@ export class AgentRunner {
     const started = Date.now();
     if (signal.aborted)
       return this.toolDone(hooks, requestedCall, { content: "cancelled", isError: true }, "cancelled", started);
-    const beforeOutcome = await hooks.call("tool.before", { call: requestedCall });
-    if (beforeOutcome.action === "block") return { content: beforeOutcome.reason, isError: true };
+    const beforeOutcome = await hooks.call("tool.before", {
+      call: requestedCall,
+      tool: context.toolOf(requestedCall.name),
+    });
+    // TODO(phase 5): a denied call goes through tool.error with reason "denied".
+    if (beforeOutcome.action === "deny") return { content: beforeOutcome.reason, isError: true };
+    if (beforeOutcome.action === "stop") throw new HookBlockedError(beforeOutcome.reason);
     if (beforeOutcome.action === "respond") return beforeOutcome.result;
     const { call } = beforeOutcome.payload;
     const result = await context.call(call);
@@ -246,7 +273,8 @@ export class AgentRunner {
     const outcome = result.isError
       ? await hooks.call("tool.error", { call, result, reason, durationMs })
       : await hooks.call("tool.after", { call, result, durationMs });
-    // Neither accepts a block, so it's always continue.
+    if (outcome.action === "stop") throw new HookBlockedError(outcome.reason);
+    // Neither accepts deny nor respond, so it's continue.
     return outcome.action === "continue" ? outcome.payload.result : result;
   }
 

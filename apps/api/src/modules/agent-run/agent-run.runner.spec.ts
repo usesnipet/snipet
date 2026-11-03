@@ -95,9 +95,8 @@ function setup(
     event,
     global: false,
     stage: 0,
-    match: null,
     async: false,
-    onError: "continue" as const,
+    onFailure: "continue" as const,
     driver,
     options: {},
     timeoutMs: 1000,
@@ -177,16 +176,25 @@ describe("AgentRunner.run", () => {
       "2 llm.request",
       "2 llm.response",
       "2 run.end",
-      "2 run.completed",
     ]);
     const payload = (hook: string, n = 0) => events.filter((e) => e.hook === hook)[n].payload;
     expect(payload("run.start")).toEqual({ input: "hi" });
-    expect(payload("run.context")).toMatchObject({ tools: [{ name: "ask_question" }] });
+    expect(payload("run.context")).toMatchObject({ input: "hi", tools: [{ name: "ask_question" }] });
     // Each request holds the messages as they were sent, not the final history.
     expect((payload("llm.request", 0) as { messages: unknown[] }).messages).toHaveLength(3);
     expect((payload("llm.request", 1) as { messages: unknown[] }).messages).toHaveLength(5);
+    expect(payload("tool.before")).toMatchObject({ tool: { id: "p1", name: "Wiki" } });
     expect(payload("tool.after")).toMatchObject({ call: { name: "ask_question" }, result: { content: "answer" } });
-    expect(payload("run.end")).toMatchObject({ status: AgentRunStatus.COMPLETED, error: null, turns: 2 });
+    expect(payload("run.end")).toMatchObject({
+      status: AgentRunStatus.COMPLETED,
+      error: null,
+      rawError: null,
+      input: "hi",
+      output: (answer.parts[0] as { text: string }).text,
+      turns: 2,
+    });
+    // The user's message, then each reply and tool result.
+    expect((payload("run.end") as { messages: unknown[] }).messages).toHaveLength(4);
     expect(events.at(-1)).toMatchObject({ run: { id: "r1", sessionId: "s1", status: AgentRunStatus.COMPLETED } });
   });
 
@@ -202,9 +210,9 @@ describe("AgentRunner.run", () => {
     expect(saved[1].parts).toMatchObject([{ toolCallId: "c1", content: "answer" }]);
   });
 
-  it("gives a blocked tool call the reason as an error result, without running it", async () => {
+  it("gives a denied tool call the reason as an error result, without running it", async () => {
     const { runner, plugins, saved } = setup([callTool, answer], (e) =>
-      e.hook === "tool.before" ? { action: "block", reason: "not now" } : { action: "continue" },
+      e.hook === "tool.before" ? { action: "deny", reason: "not now" } : { action: "continue" },
     );
     await runner.run(agent, run, owner);
 
@@ -212,9 +220,9 @@ describe("AgentRunner.run", () => {
     expect(saved[1].parts).toEqual([{ type: "tool_result", toolCallId: "c1", content: "not now", isError: true }]);
   });
 
-  it("fails the run with the reason when a hook blocks its start", async () => {
+  it("fails the run with the reason when a hook stops its start", async () => {
     const { runner, runs, llm } = setup([answer], (e) =>
-      e.hook === "run.start" ? { action: "block", reason: "off topic" } : { action: "continue" },
+      e.hook === "run.start" ? { action: "stop", reason: "off topic" } : { action: "continue" },
     );
     await runner.run(agent, run, owner);
 
@@ -255,12 +263,13 @@ describe("AgentRunner.run", () => {
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "llm provider unavailable" });
   });
 
-  it("gives run.failed the raw error the client never sees", async () => {
+  it("gives run.end the raw error the client never sees", async () => {
     const { runner, events } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
     await runner.run(agent, run, owner);
 
-    expect(events.find((e) => e.hook === "run.failed")?.payload).toMatchObject({
-      error: { message: "connect ECONNREFUSED 10.0.0.1" },
+    expect(events.find((e) => e.hook === "run.end")?.payload).toMatchObject({
+      status: AgentRunStatus.FAILED,
+      rawError: { message: "connect ECONNREFUSED 10.0.0.1" },
     });
   });
 });

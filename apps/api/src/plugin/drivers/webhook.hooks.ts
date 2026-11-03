@@ -1,10 +1,10 @@
 import { Driver } from "#src/manifest/driver.js";
-import { hookResultSchema } from "@snipet/shared";
+import { ALL_HOOKS, hookResultSchema } from "@snipet/shared";
 import { createHmac } from "node:crypto";
 import { z } from "zod";
 
 import type { HookEvent, HookResult } from "@snipet/shared";
-import type { HookDriver } from "../../driver.js";
+import type { HookContext, HookDriver } from "../driver.js";
 
 /** Largest reply body read from a webhook. */
 const WEBHOOK_MAX_RESPONSE_BYTES = 1_000_000;
@@ -42,11 +42,12 @@ export function sign(secret: string, body: string, now: number = Date.now()): st
  */
 export class WebhookDriver extends Driver(optionsSchema) implements HookDriver<WebhookOptions> {
   readonly key = "webhook";
+  readonly hooks = ALL_HOOKS;
 
   async handle(
     event: HookEvent,
     { url, headers, signingSecret }: WebhookOptions,
-    signal: AbortSignal,
+    { signal }: HookContext,
   ): Promise<HookResult> {
     const body = JSON.stringify(event);
     const response: Response = await fetch(url, {
