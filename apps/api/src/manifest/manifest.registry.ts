@@ -3,7 +3,7 @@ import { checkJsonSchema } from "@snipet/server-common";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { BaseManifest, ManifestDriver } from "@snipet/shared";
+import type { BaseManifest, JsonObject, ManifestDriver } from "@snipet/shared";
 import type { z } from "zod";
 import type { DriverRegistry, DriverTypes } from "./driver.registry.js";
 
@@ -87,8 +87,8 @@ export function driverOf(manifest: BaseManifest, type: PropertyKey): ManifestDri
   return capabilities?.[type];
 }
 
-/** Names of the `connection` properties marked `secret: true`. */
-export function secretFields(manifest: BaseManifest): string[] {
-  const properties = (manifest.connection.properties ?? {}) as Record<string, { secret?: boolean }>;
+/** Names of the properties of a JSON Schema (`connection`, `settings`) marked `secret: true`. */
+export function secretFields(schema: JsonObject | undefined): string[] {
+  const properties = (schema?.properties ?? {}) as Record<string, { secret?: boolean }>;
   return Object.keys(properties).filter((k) => properties[k]?.secret === true);
 }

@@ -83,6 +83,6 @@ describe("secretFields", () => {
       },
       capabilities: { actions: { driver: "mcp" } },
     });
-    expect(secretFields(manifest)).toEqual(["token"]);
+    expect(secretFields(manifest.connection)).toEqual(["token"]);
   });
 });

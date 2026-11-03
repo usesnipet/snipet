@@ -13,7 +13,7 @@ interface CrudSchemas {
   create: z.ZodType;
   update: z.ZodType;
   filter?: z.ZodType;
-  /** Shapes each entity a route returns, e.g. to mask secrets. */
+  /** Shapes each entity a route returns, e.g. to mask secrets; may be async. */
   serialize?: (entity: never) => unknown;
 }
 
@@ -39,7 +39,7 @@ export function CrudController<T extends BaseEntity>(schemas: CrudSchemas) {
     @Get()
     async filter(@Query(new ZodPipe(schemas.filter ?? paginationParamsSchema)) query: FilterQuery<T>) {
       const page = await this.service.filter(query);
-      return { ...page, data: page.data.map((e) => this.serialize(e)) };
+      return { ...page, data: await Promise.all(page.data.map((e) => this.serialize(e))) };
     }
 
     @Get(":id")

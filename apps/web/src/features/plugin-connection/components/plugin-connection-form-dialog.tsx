@@ -15,7 +15,9 @@ import { useId } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCreatePluginConnection, useUpdatePluginConnection } from "@snipet/client";
-import { createPluginConnectionSchema } from "@snipet/shared";
+import { createPluginConnectionSchema, hookHandlersOf } from "@snipet/shared";
+
+import { describeHandler } from "../capabilities";
 
 import type { RJSFSchema } from "@rjsf/utils";
 import type { CreatePluginConnection, PluginConnection, PluginManifest } from "@snipet/shared";
@@ -85,6 +87,18 @@ export function PluginConnectionFormDialog({ plugin, connection, close }: Plugin
               }
             />
             <FormSwitch name="enabled" label="Enabled" />
+            {plugin.capabilities.hooks && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Hooks</p>
+                <ul className="space-y-0.5 text-xs">
+                  {[...hookHandlersOf(plugin.capabilities.hooks)].map(([hook, handler]) => (
+                    <li key={hook}>
+                      <code>{hook}</code> <span className="text-muted-foreground">{describeHandler(handler)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </FieldGroup>
           {hasConfig ? (
             <div className="space-y-2">

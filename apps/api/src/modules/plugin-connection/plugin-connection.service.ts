@@ -1,3 +1,4 @@
+import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { ConnectionService } from "#src/manifest/connection.service.js";
 import { ActionResult, PluginDrivers } from "#src/plugin/driver.js";
 import { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
@@ -42,6 +43,25 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
 
   sync(id: string): Promise<void> {
     return this.syncer.sync(id);
+  }
+
+  /**
+   * The manifest of each existing connection among connectionIds; null when
+   * its plugin is no longer in the catalog. Missing ids aren't in the map.
+   */
+  async manifestsOf(connectionIds: string[]): Promise<Map<string, PluginManifest | null>> {
+    if (!connectionIds.length) return new Map();
+    // No config: it would be decrypted for nothing.
+    const conns = await this.repo.find({ select: { id: true, pluginKey: true }, where: { id: In(connectionIds) } });
+    const manifestOf = (key: string) => this.manifests.getAll().find((m) => m.key === key) ?? null;
+    return new Map(conns.map((c) => [c.id, manifestOf(c.pluginKey)]));
+  }
+
+  /** The enabled connections among connectionIds, config unsealed, by id. */
+  async findEnabled(connectionIds: string[]): Promise<Map<string, PluginConnection>> {
+    if (!connectionIds.length) return new Map();
+    const conns = await this.repo.find({ where: { id: In(connectionIds), enabled: true } });
+    return new Map(conns.map((c) => [c.id, c]));
   }
 
   /**
@@ -103,9 +123,17 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
       const { driver, options } = this.drivers.resolve(manifest, "actions", conn.config)!;
       return await driver.callAction(conn.id, action.name, args, options);
     } catch (err) {
-      return { content: describe(err), isError: true };
+      return { content: describe(err), isError: true, ...(isTimeout(err) && { timedOut: true }) };
     }
   }
+}
+
+/** The MCP error code of a timed out request; the SDK reports an abort as one too. */
+const MCP_TIMEOUT: number = ErrorCode.RequestTimeout;
+
+/** Whether the call failed by timing out. */
+function isTimeout(err: unknown): boolean {
+  return err instanceof McpError ? err.code === MCP_TIMEOUT : (err as Error)?.name === "TimeoutError";
 }
 
 function describe(err: unknown): string {

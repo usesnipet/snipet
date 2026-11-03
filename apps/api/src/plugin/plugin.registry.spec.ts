@@ -1,14 +1,21 @@
 import { ALL_HOOKS, hookHandlersOf, hooksCapabilitySchema, pluginManifestSchema } from "@snipet/shared";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { z } from "zod";
 
 import { Driver } from "#src/manifest/driver.js";
+import { HttpHealthCheckDriver } from "#src/manifest/drivers/http.health.js";
+
+import { DebugDriver } from "./drivers/debug.hooks.js";
+import { McpDriver } from "./drivers/mcp.js";
+import { StaticInstructionsDriver } from "./drivers/static.instructions.js";
+import { WebhookDriver } from "./drivers/webhook.hooks.js";
 
 import { PluginDriverRegistry, PluginRegistry } from "./plugin.registry.js";
 
 import type { HookName, HookResult } from "@snipet/shared";
+import type { Storage } from "#src/infra/storage/storage.js";
 import type { HookDriver } from "./driver.js";
 
 /** The issue messages of a capability that fails to parse. */
@@ -112,5 +119,18 @@ describe("PluginRegistry", () => {
   it("skips a manifest with a handler on a hook its driver doesn't implement", () => {
     const registry = new PluginRegistry("plugin", dir, dir, pluginManifestSchema, drivers);
     expect(registry.getAll().map((m) => m.key)).toEqual(["ok"]);
+  });
+
+  it("loads every built-in manifest with the drivers PluginModule registers", () => {
+    const builtIn = resolve(import.meta.dirname, "manifests");
+    const mcp = new McpDriver();
+    const real = new PluginDriverRegistry({
+      actions: [mcp],
+      instructions: [mcp, new StaticInstructionsDriver()],
+      hooks: [new DebugDriver({} as Storage), new WebhookDriver()],
+      healthCheck: [new HttpHealthCheckDriver()],
+    });
+    const registry = new PluginRegistry("plugin", builtIn, builtIn, pluginManifestSchema, real);
+    expect(registry.getAll()).toHaveLength(readdirSync(builtIn).length);
   });
 });

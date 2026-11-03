@@ -1,15 +1,41 @@
 import { jest } from "@jest/globals";
-import { NotFoundException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { SECRET_PLACEHOLDER } from "@snipet/server-common";
+import { pluginManifestSchema } from "@snipet/shared";
 
 import { Agent, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
 import { AgentService } from "./agent.service.js";
 
 import type { FilesStorage } from "../files/files.storage.js";
+import type { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 
 import type { Repository } from "typeorm";
 
+/** A plugin with a secret setting, an optional hook and a required one. */
+const memory = pluginManifestSchema.parse({
+  key: "memory",
+  name: "Memory",
+  settings: {
+    type: "object",
+    properties: {
+      scope: { type: "string", enum: ["user", "agent"], default: "user" },
+      apiKey: { type: "string", secret: true },
+    },
+  },
+  capabilities: {
+    hooks: {
+      driver: "memory",
+      handlers: [
+        { hook: "run.context", actions: ["modify"] },
+        { hook: "run.end", background: true, optional: true },
+      ],
+    },
+  },
+});
+
 function setup(exists = true, avatar: string | null = null) {
   const repoMock = () => ({
+    find: jest.fn(() => Promise.resolve([] as unknown[])),
     findOne: jest.fn(() => Promise.resolve(exists ? { id: "a1", avatar } : null)),
     update: jest.fn(),
     delete: jest.fn(),
@@ -27,7 +53,19 @@ function setup(exists = true, avatar: string | null = null) {
     putDataUrl: jest.fn(() => Promise.resolve("agents/new.webp")),
     delete: jest.fn(() => Promise.resolve()),
   };
-  const service = new AgentService(repo as unknown as Repository<Agent>, storage as unknown as FilesStorage);
+  const plugins = {
+    // p1 is a memory connection, p2 one whose plugin left the catalog; anything else doesn't exist.
+    manifestsOf: jest.fn((ids: string[]) =>
+      Promise.resolve(
+        new Map(ids.filter((id) => id === "p1" || id === "p2").map((id) => [id, id === "p1" ? memory : null])),
+      ),
+    ),
+  };
+  const service = new AgentService(
+    repo as unknown as Repository<Agent>,
+    storage as unknown as FilesStorage,
+    plugins as unknown as PluginConnectionService,
+  );
   return {
     service,
     storage,
@@ -51,13 +89,55 @@ describe("AgentService.updateById", () => {
     expect(pluginGrants.delete).not.toHaveBeenCalled();
   });
 
-  it("replaces plugin connections when sent", async () => {
+  it("replaces plugin connections when sent, in list order, settings checked against the manifest", async () => {
     const { service, pluginGrants } = setup();
-    const grant = { pluginConnectionId: "p1", allow: ["read_*"], deny: [] };
-    await service.updateById("a1", { pluginConnections: [grant] });
+    const grant = { pluginConnectionId: "p1", allow: ["read_*"], deny: [], settings: {}, disabledHooks: [] };
+    const gone = { pluginConnectionId: "p2", allow: [], deny: [], settings: { x: 1 }, disabledHooks: [] };
+    await service.updateById("a1", { pluginConnections: [grant, gone] });
 
     expect(pluginGrants.delete).toHaveBeenCalledWith({ agentId: "a1" });
-    expect(pluginGrants.insert).toHaveBeenCalledWith([{ ...grant, agentId: "a1" }]);
+    expect(pluginGrants.insert).toHaveBeenCalledWith([
+      { ...grant, position: 0, settings: { scope: "user" }, agentId: "a1" },
+      // Its plugin left the catalog: kept as sent.
+      { ...gone, position: 1, agentId: "a1" },
+    ]);
+  });
+
+  it("rejects settings that don't fit the manifest, and unknown connections", async () => {
+    const { service } = setup();
+    const grant = (pluginConnectionId: string, settings = {}) => ({
+      pluginConnectionId,
+      allow: [],
+      deny: [],
+      settings,
+      disabledHooks: [],
+    });
+    await expect(
+      service.updateById("a1", { pluginConnections: [grant("p1", { scope: "team" })] }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.updateById("a1", { pluginConnections: [grant("p9")] })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+
+  it("keeps stored secrets behind placeholders and only disables optional hooks", async () => {
+    const { service, pluginGrants } = setup();
+    pluginGrants.find.mockResolvedValue([{ pluginConnectionId: "p1", settings: { apiKey: "sk-1" } }]);
+    await service.updateById("a1", {
+      pluginConnections: [
+        {
+          pluginConnectionId: "p1",
+          allow: [],
+          deny: [],
+          settings: { apiKey: SECRET_PLACEHOLDER },
+          disabledHooks: ["run.context", "run.end"],
+        },
+      ],
+    });
+
+    expect(pluginGrants.insert).toHaveBeenCalledWith([
+      expect.objectContaining({ settings: { scope: "user", apiKey: "sk-1" }, disabledHooks: ["run.end"] }),
+    ]);
   });
 
   it("404s an unknown agent", async () => {
@@ -89,5 +169,24 @@ describe("AgentService.updateById", () => {
       NotFoundException,
     );
     expect(storage.delete).toHaveBeenCalledWith("agents/new.webp");
+  });
+});
+
+describe("AgentService.mask", () => {
+  it("hides secret settings, and every setting of a plugin gone from the catalog", async () => {
+    const { service } = setup();
+    const agent = {
+      id: "a1",
+      pluginConnections: [
+        { pluginConnectionId: "p1", settings: { scope: "user", apiKey: "sk-1" } },
+        { pluginConnectionId: "p2", settings: { token: "t" } },
+      ],
+    } as unknown as Agent;
+
+    const masked = await service.mask(agent);
+    expect(masked.pluginConnections.map((g) => g.settings)).toEqual([
+      { scope: "user", apiKey: SECRET_PLACEHOLDER },
+      { token: SECRET_PLACEHOLDER },
+    ]);
   });
 });

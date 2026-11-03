@@ -1,0 +1,36 @@
+{
+  "key": "debug",
+  "name": "Debug",
+  "description": "Saves every event of the agent's runs as a JSON file in storage (debug/), to inspect what goes in and out of them. The files hold whole conversations: add it only while debugging.",
+  "icon": "",
+  "tags": ["debug", "official"],
+  "auth": {
+    "type": "none"
+  },
+  "connection": {
+    "type": "object",
+    "properties": {}
+  },
+  "capabilities": {
+    "hooks": {
+      "driver": "debug",
+      "options": {},
+      "handlers": [
+        {
+          "hook": [
+            "run.start",
+            "run.context",
+            "llm.request",
+            "llm.response",
+            "tool.before",
+            "tool.after",
+            "tool.error",
+            "run.end"
+          ],
+          "background": true,
+          "optional": true
+        }
+      ]
+    }
+  }
+}

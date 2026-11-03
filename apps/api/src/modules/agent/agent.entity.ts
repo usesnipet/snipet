@@ -2,9 +2,11 @@ import type {
   Agent as AgentContract,
   AgentLlm as AgentLlmContract,
   AgentPluginConnection as AgentPluginConnectionContract,
+  HookName,
   JsonObject,
 } from "@snipet/shared";
 import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
+import { sealConfig } from "#src/manifest/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
 import {
   AfterLoad,
@@ -25,6 +27,15 @@ import { PluginConnection } from "../plugin-connection/plugin-connection.entity.
 export const storagePathTransformer: ValueTransformer = {
   from: (path: string | null) => path && toStorageUrl(path),
   to: (url: string | null | undefined) => url && fromStorageUrl(url),
+};
+
+/**
+ * sealConfig, reading a missing value (rows added by SQL, which can't seal)
+ * as no settings.
+ */
+const sealSettings: ValueTransformer = {
+  to: (value?: JsonObject | null) => sealConfig.to(value ?? {}) as string,
+  from: (value?: string | null) => (value ? (sealConfig.from(value) as JsonObject) : {}),
 };
 
 @Entity("agents")
@@ -58,10 +69,11 @@ export class Agent extends BaseEntity implements AgentContract {
   @OneToMany(() => AgentPluginConnection, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
   pluginConnections: AgentPluginConnection[];
 
-  /** Puts llms in the order they run; eager relations load unordered. */
+  /** Puts llms in the order they run and plugins by position; eager relations load unordered. */
   @AfterLoad()
   sortByOrder() {
     this.llms?.sort((a, b) => a.order - b.order);
+    this.pluginConnections?.sort((a, b) => a.position - b.position);
   }
 }
 
@@ -117,4 +129,14 @@ export class AgentPluginConnection extends BaseEntity implements AgentPluginConn
 
   @Column({ type: "text", array: true, default: [] })
   deny: string[];
+
+  @Column({ type: "int", default: 0 })
+  position: number;
+
+  /** Sealed whole, like connection configs: settings may hold secrets. */
+  @Column({ type: "text", nullable: true, transformer: sealSettings })
+  settings: JsonObject;
+
+  @Column({ type: "text", array: true, default: [] })
+  disabledHooks: HookName[];
 }

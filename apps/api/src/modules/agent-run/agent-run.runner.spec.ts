@@ -1,6 +1,6 @@
 import { LlmError } from "#src/llm/errors.js";
 import { jest } from "@jest/globals";
-import { AgentRunStatus, hookNameSchema } from "@snipet/shared";
+import { AgentRunStatus, HOOKS, hookHandlerSchema, hookNameSchema } from "@snipet/shared";
 
 import { HookRunner } from "./hooks/hook.runner.js";
 
@@ -90,16 +90,13 @@ function setup(
       return Promise.resolve(reply(event));
     },
   } as unknown as HookDriver;
-  const handlers = hookNameSchema.options.map((event) => ({
-    name: "rec",
-    event,
-    global: false,
-    stage: 0,
-    async: false,
-    onFailure: "continue" as const,
+  const handlers = hookNameSchema.options.map((hook) => ({
+    plugin: { id: "p9", name: "rec" },
+    hook,
+    handler: hookHandlerSchema.parse({ hook, actions: HOOKS[hook].actions }),
     driver,
     options: {},
-    timeoutMs: 1000,
+    settings: {},
   }));
   const hooks = {
     forRun: (ctx: HookRunnerContext) => Promise.resolve(new HookRunner(handlers, ctx)),
@@ -210,14 +207,47 @@ describe("AgentRunner.run", () => {
     expect(saved[1].parts).toMatchObject([{ toolCallId: "c1", content: "answer" }]);
   });
 
-  it("gives a denied tool call the reason as an error result, without running it", async () => {
-    const { runner, plugins, saved } = setup([callTool, answer], (e) =>
+  it("gives a denied tool call the reason as an error result and tool.error, without running it", async () => {
+    const { runner, plugins, saved, events } = setup([callTool, answer], (e) =>
       e.hook === "tool.before" ? { action: "deny", reason: "not now" } : { action: "continue" },
     );
     await runner.run(agent, run, owner);
 
     expect(plugins.executeAction).not.toHaveBeenCalled();
     expect(saved[1].parts).toEqual([{ type: "tool_result", toolCallId: "c1", content: "not now", isError: true }]);
+    expect(events.find((e) => e.hook === "tool.error")?.payload).toMatchObject({ reason: "denied" });
+  });
+
+  it("tells tool.error a call timed out, without the flag reaching the model", async () => {
+    const { runner, plugins, saved, events } = setup([callTool, answer]);
+    plugins.executeAction.mockResolvedValue({ content: "Request timed out", isError: true, timedOut: true });
+    await runner.run(agent, run, owner);
+
+    expect(events.find((e) => e.hook === "tool.error")?.payload).toMatchObject({ reason: "timeout" });
+    expect(saved[1].parts).toEqual([
+      { type: "tool_result", toolCallId: "c1", content: "Request timed out", isError: true },
+    ]);
+  });
+
+  it("uses an llm.request respond as the reply, without calling the LLM", async () => {
+    const { runner, runs, llm, saved } = setup([], (e) =>
+      e.hook === "llm.request" ? { action: "respond", result: answer } : { action: "continue" },
+    );
+    await runner.run(agent, run, owner);
+
+    expect(llm.stream).not.toHaveBeenCalled();
+    expect(saved).toEqual([answer]);
+    expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.COMPLETED, turns: 1 });
+  });
+
+  it("fails the run with the reason when a hook stops a tool call", async () => {
+    const { runner, runs, plugins } = setup([callTool, answer], (e) =>
+      e.hook === "tool.before" ? { action: "stop", reason: "forbidden" } : { action: "continue" },
+    );
+    await runner.run(agent, run, owner);
+
+    expect(plugins.executeAction).not.toHaveBeenCalled();
+    expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "forbidden" });
   });
 
   it("fails the run with the reason when a hook stops its start", async () => {

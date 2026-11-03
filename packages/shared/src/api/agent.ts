@@ -3,6 +3,7 @@ import { z } from "zod";
 import { dataUrlSchema } from "../schemas/data-url.js";
 import { jsonObjectSchema } from "../schemas/json.js";
 
+import { hookNameSchema } from "./hook.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 /**
@@ -20,12 +21,15 @@ export const agentLlmSchema = z.object({
 });
 export type AgentLlm = z.infer<typeof agentLlmSchema>;
 
-/** Grants an agent a plugin connection's actions. */
+/** Adds a plugin connection to an agent: its actions, hooks and settings. */
 export const agentPluginConnectionSchema = z.object({
   agentId: z.uuid(),
   pluginConnectionId: z.uuid(),
+  position: z.number().int(),
   allow: z.array(z.string()),
   deny: z.array(z.string()),
+  settings: jsonObjectSchema,
+  disabledHooks: z.array(hookNameSchema),
 });
 export type AgentPluginConnection = z.infer<typeof agentPluginConnectionSchema>;
 
@@ -52,7 +56,7 @@ export const paginatedAgentSchema = paginatedSchema(agentSchema);
 const patternsSchema = z.array(z.string().trim()).transform((patterns) => patterns.filter(Boolean));
 
 /**
- * The position in llms is the order. llms and pluginConnections replace the whole list when sent.
+ * The position in llms and pluginConnections is the order; both replace the whole list when sent.
  */
 export const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(255),
@@ -90,6 +94,8 @@ export const createAgentSchema = z.object({
         pluginConnectionId: z.uuid("Select a connection"),
         allow: patternsSchema,
         deny: patternsSchema,
+        settings: jsonObjectSchema.default({}),
+        disabledHooks: z.array(hookNameSchema).default([]),
       }),
     )
     .optional(),

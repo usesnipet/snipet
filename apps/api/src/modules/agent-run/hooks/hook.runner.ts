@@ -9,26 +9,25 @@ import type {
   AgentRun,
   HookAction,
   HookEvent,
+  HookHandler,
   HookName,
-  HookOnFailure,
+  HookOrder,
   HookPayload,
   HookRespond,
   HookResult,
   JsonObject,
 } from "@snipet/shared";
 
-/** A bound hook ready to run: its driver with the connection's options resolved. */
-export interface HookHandler {
-  name: string;
-  event: HookName;
-  /** Global hooks run before the agent's; stages never mix the two. */
-  global: boolean;
-  stage: number;
-  async: boolean;
-  onFailure: HookOnFailure;
+/** A plugin's handler on one hook, ready to run: its driver with the connection's options resolved. */
+export interface BoundHandler {
+  /** The plugin connection: its name goes in failure reasons, its id keys the run state. */
+  plugin: { id: string; name: string };
+  hook: HookName;
+  handler: HookHandler;
   driver: HookDriver;
   options: unknown;
-  timeoutMs: number;
+  /** The agent's settings for the plugin. */
+  settings: JsonObject;
 }
 
 /** Who and what a run's events are about. */
@@ -38,15 +37,17 @@ export interface HookRunnerContext {
   owner: Owner;
 }
 
-/** What the handlers made of a step. */
+/** What the handlers made of a step; `stop` throws HookStoppedError instead. */
 export type HookOutcome<K extends HookName> =
   | { action: "continue"; payload: HookPayload<K> }
   | { action: "deny"; reason: string }
-  | { action: "stop"; reason: string }
   | { action: "respond"; result: HookRespond<K> };
 
-/** A step a hook stopped or denied where it can't be: fails the run with the hook's reason. */
-export class HookBlockedError extends Error {}
+/** What one handler made of a step. */
+type HandlerOutcome<K extends HookName> = HookOutcome<K> | { action: "stop"; reason: string };
+
+/** A hook stopped the run: fails it with the hook's reason. */
+export class HookStoppedError extends Error {}
 
 /** The parts of a hook definition the runner validates replies with. */
 type ParsableHookDefinition = {
@@ -54,16 +55,21 @@ type ParsableHookDefinition = {
   respond?: { parse(value: unknown): unknown };
 };
 
-/** Splits handlers into stages: consecutive ones of the same group and stage, which run in parallel. */
-function groupIntoStages(handlers: HookHandler[]): HookHandler[][] {
-  const stages: HookHandler[][] = [];
-  for (const handler of handlers) {
-    const lastStage = stages.at(-1);
-    const sameStage = lastStage && lastStage[0].global === handler.global && lastStage[0].stage === handler.stage;
-    if (sameStage) lastStage.push(handler);
-    else stages.push([handler]);
+const ORDER_RANK: Record<HookOrder, number> = { first: 0, default: 1, last: 2 };
+
+/** Whether the handler may change or answer the step, so it must run alone. */
+const runsAlone = ({ handler }: BoundHandler) =>
+  handler.actions.includes("modify") || handler.actions.includes("respond");
+
+/** Splits handlers into groups: one that runs alone, or consecutive ones that run in parallel. */
+function groupHandlers(handlers: BoundHandler[]): BoundHandler[][] {
+  const groups: BoundHandler[][] = [];
+  for (const bound of handlers) {
+    const last = groups.at(-1);
+    if (last && !runsAlone(bound) && !runsAlone(last[0])) last.push(bound);
+    else groups.push([bound]);
   }
-  return stages;
+  return groups;
 }
 
 /** The hooks of one run. */
@@ -73,59 +79,60 @@ export class HookRunner {
   /** The run's current status, stamped on each event. */
   status: AgentRunStatus = AgentRunStatus.RUNNING;
 
-  /** Shared by the run's handlers: each reply's state is merged in. */
-  // TODO(phase 5): one state per plugin connection.
-  private readonly state: JsonObject = {};
-  /** Async handlers still running, awaited by settle(). */
+  /** Each plugin connection's run state, by connection id. */
+  private readonly states = new Map<string, JsonObject>();
+  /** Background handlers still running, awaited by settle(). */
   private readonly pending = new Set<Promise<void>>();
 
-  /** handlers: globals first, then the agent's, each group by stage. */
+  /** handlers: in the agent's plugin order. */
   constructor(
-    private readonly handlers: HookHandler[],
+    private readonly handlers: BoundHandler[],
     private readonly context: HookRunnerContext,
     private readonly logger: Logger = new Logger(HookRunner.name),
   ) {}
 
-  /** Fires `hook` on every handler bound to it without waiting; replies are ignored. */
+  /** Fires `hook` on every handler bound to it in background; replies are ignored. */
   emit<K extends HookName>(hook: K, payload: HookPayload<K>): void {
-    for (const handler of this.handlersFor(hook)) this.runInBackground(handler, hook, payload);
+    for (const bound of this.handlersFor(hook)) this.runInBackground(bound, payload);
   }
 
   /**
-   * Runs the synchronous handlers of `hook` stage by stage, each stage getting
-   * the payload the last one left, until one blocks or responds. Async
-   * handlers then get the final payload.
+   * Runs the handlers of `hook` group by group, each group getting the
+   * payload the last one left, until one denies, responds or stops.
+   * Background handlers then get the final payload. Throws HookStoppedError on `stop`.
    */
   async call<K extends HookName>(hook: K, payload: HookPayload<K>): Promise<HookOutcome<K>> {
     const handlers = this.handlersFor(hook);
-    let currentPayload: HookPayload<K> = payload;
-    let outcome: HookOutcome<K> | undefined;
-    for (const stage of groupIntoStages(handlers.filter((handler) => !handler.async))) {
-      // Parallel handlers all get the same payload, so only a lone one may change or answer it.
-      const accepted: readonly HookAction[] = HOOKS[hook].actions;
-      const allowedActions = stage.length > 1 ? accepted.filter((a) => a === "deny" || a === "stop") : accepted;
-      const stageBlocked = new AbortController();
+    let current: HookPayload<K> = payload;
+    // Set by the first handler to end the step: in a parallel group, the first to reply.
+    const step: { ended?: HandlerOutcome<K> } = {};
+    for (const group of groupHandlers(handlers.filter((bound) => !bound.handler.background))) {
+      const groupEnded = new AbortController();
       const outcomes = await Promise.all(
-        stage.map(async (handler) => {
-          const handlerOutcome = await this.send(handler, hook, currentPayload, allowedActions, stageBlocked.signal);
-          if (handlerOutcome.action === "deny" || handlerOutcome.action === "stop") stageBlocked.abort();
-          return handlerOutcome;
+        group.map(async (bound) => {
+          const outcome = await this.send(bound, current, groupEnded.signal);
+          if (outcome.action !== "continue" && !groupEnded.signal.aborted) {
+            step.ended = outcome;
+            groupEnded.abort();
+          }
+          return outcome;
         }),
       );
-      outcome = outcomes.find((candidate) => candidate.action !== "continue");
-      if (outcome) break;
-      // Every outcome is `continue` here, and only a lone handler can have modified the payload.
-      currentPayload = (outcomes[0] as { payload: HookPayload<K> }).payload;
+      if (step.ended) break;
+      // All continued; only a lone handler can have modified the payload.
+      current = (outcomes[0] as { payload: HookPayload<K> }).payload;
     }
-    for (const handler of handlers) if (handler.async) this.runInBackground(handler, hook, currentPayload);
-    return outcome ?? { action: "continue", payload: currentPayload };
+    for (const bound of handlers) if (bound.handler.background) this.runInBackground(bound, current);
+    const outcome: HandlerOutcome<K> = step.ended ?? { action: "continue", payload: current };
+    if (outcome.action === "stop") throw new HookStoppedError(outcome.reason);
+    return outcome;
   }
 
-  /** call() for a step that can't be answered: the final payload, or HookBlockedError. */
+  /** call() for a step that can't be denied or answered: the final payload. */
   async pass<K extends HookName>(hook: K, payload: HookPayload<K>): Promise<HookPayload<K>> {
     const outcome = await this.call(hook, payload);
     if (outcome.action === "continue") return outcome.payload;
-    throw new HookBlockedError(outcome.action === "respond" ? `${hook} can't be answered` : outcome.reason);
+    throw new HookStoppedError(`${hook} can't be ${outcome.action === "deny" ? "denied" : "answered"}`);
   }
 
   /** Waits for the handlers still running. */
@@ -133,44 +140,43 @@ export class HookRunner {
     await Promise.all(this.pending);
   }
 
-  private handlersFor(hook: HookName): HookHandler[] {
-    return this.handlers.filter((handler) => handler.event === hook);
+  /** The handlers of `hook`, by order then plugin position (the sort is stable). */
+  private handlersFor(hook: HookName): BoundHandler[] {
+    return this.handlers
+      .filter((bound) => bound.hook === hook)
+      .sort((a, b) => ORDER_RANK[a.handler.order] - ORDER_RANK[b.handler.order]);
   }
 
   /** Never throws: a failed handler continues, denies or stops, per its onFailure. */
   private async send<K extends HookName>(
-    handler: HookHandler,
-    hook: K,
+    bound: BoundHandler,
     payload: HookPayload<K>,
-    allowedActions: readonly HookAction[],
-    stageSignal: AbortSignal,
-  ): Promise<HookOutcome<K>> {
-    const unchanged: HookOutcome<K> = { action: "continue", payload };
+    groupSignal: AbortSignal,
+  ): Promise<HandlerOutcome<K>> {
+    const hook = bound.hook as K;
+    const { actions, timeoutMs, onFailure } = bound.handler;
     try {
-      const signal = AbortSignal.any([AbortSignal.timeout(handler.timeoutMs), stageSignal]);
-      const event = this.buildEvent(hook, payload, allowedActions);
-      const reply: HookResult = await handler.driver.handle(event, handler.options, this.contextOf(signal));
-      if (reply.action !== "continue" && !allowedActions.includes(reply.action)) {
-        throw new Error(`can't ${reply.action} here`);
-      }
-      const outcome = this.toOutcome(hook, payload, reply) ?? unchanged;
-      if (reply.state) Object.assign(this.state, reply.state);
+      const signal = AbortSignal.any([AbortSignal.timeout(timeoutMs), groupSignal]);
+      const reply = await bound.driver.handle(
+        this.buildEvent(bound, payload, actions),
+        bound.options,
+        this.contextOf(bound, signal),
+      );
+      if (reply.action !== "continue" && !actions.includes(reply.action)) throw new Error(`can't ${reply.action}`);
+      const outcome = this.toOutcome(hook, payload, reply);
+      if (reply.state) this.states.set(bound.plugin.id, { ...this.stateOf(bound), ...reply.state });
       return outcome;
     } catch (err) {
-      // Another handler of the stage ended it: this one's reply no longer matters.
-      if (stageSignal.aborted) return unchanged;
-      this.warnFailure(handler, hook, err);
-      if (handler.onFailure === "continue") return unchanged;
-      return { action: handler.onFailure, reason: `plugin "${handler.name}" failed` };
+      // Another handler of the group ended the step.
+      if (groupSignal.aborted) return { action: "continue", payload };
+      this.warnFailure(bound, err);
+      if (onFailure === "continue") return { action: "continue", payload };
+      return { action: onFailure, reason: `plugin "${bound.plugin.name}" failed` };
     }
   }
 
-  /** The reply as an outcome, checked against the hook's schemas; undefined for `continue`. Throws when it doesn't fit. */
-  private toOutcome<K extends HookName>(
-    hook: K,
-    payload: HookPayload<K>,
-    reply: HookResult,
-  ): HookOutcome<K> | undefined {
+  /** The reply as an outcome, checked against the hook's schemas. Throws when it doesn't fit. */
+  private toOutcome<K extends HookName>(hook: K, payload: HookPayload<K>, reply: HookResult): HandlerOutcome<K> {
     const definition: ParsableHookDefinition = HOOKS[hook];
     switch (reply.action) {
       case "deny":
@@ -184,46 +190,49 @@ export class HookRunner {
           payload: definition.payload.parse({ ...payload, ...reply.payload }) as HookPayload<K>,
         };
       case "continue":
-        return undefined;
+        return { action: "continue", payload };
     }
   }
 
   /** Runs the handler without waiting; its reply is ignored and a failure only logged. */
-  private runInBackground(handler: HookHandler, hook: HookName, payload: unknown): void {
-    const event = this.buildEvent(hook, payload, []);
-    const running: Promise<void> = handler.driver
-      .handle(event, handler.options, this.contextOf(AbortSignal.timeout(handler.timeoutMs)))
+  private runInBackground(bound: BoundHandler, payload: unknown): void {
+    const signal = AbortSignal.timeout(bound.handler.timeoutMs);
+    const running: Promise<void> = bound.driver
+      .handle(this.buildEvent(bound, payload, []), bound.options, this.contextOf(bound, signal))
       .then(
         () => undefined,
-        (err: unknown) => this.warnFailure(handler, hook, err),
+        (err: unknown) => this.warnFailure(bound, err),
       )
       .finally(() => this.pending.delete(running));
     this.pending.add(running);
   }
 
-  private warnFailure(handler: HookHandler, hook: HookName, err: unknown): void {
-    this.logger.warn(`hook ${hook} (${handler.name}) on run ${this.context.run.id}: ${String(err)}`);
+  private warnFailure(bound: BoundHandler, err: unknown): void {
+    this.logger.warn(`hook ${bound.hook} (${bound.plugin.name}) on run ${this.context.run.id}: ${String(err)}`);
   }
 
-  /** What a handler gets besides the event. */
-  private contextOf(signal: AbortSignal): HookContext {
-    // TODO(phase 5): the agent's settings for the plugin.
-    return { settings: {}, state: { ...this.state }, signal };
+  private stateOf(bound: BoundHandler): JsonObject {
+    return this.states.get(bound.plugin.id) ?? {};
   }
 
-  private buildEvent(hook: HookName, payload: unknown, allowedActions: readonly HookAction[]): HookEvent {
+  /** What a handler gets besides the event; copies, so a driver can't change them. */
+  private contextOf(bound: BoundHandler, signal: AbortSignal): HookContext {
+    return { settings: structuredClone(bound.settings), state: structuredClone(this.stateOf(bound)), signal };
+  }
+
+  private buildEvent(bound: BoundHandler, payload: unknown, actions: readonly HookAction[]): HookEvent {
     const { run, agent, owner } = this.context;
     return {
       version: HOOK_EVENT_VERSION,
       id: randomUUID(),
-      hook,
-      actions: [...allowedActions],
+      hook: bound.hook,
+      actions: [...actions],
       occurredAt: new Date().toISOString(),
       run: { id: run.id, sessionId: run.sessionId, turn: this.turn, status: this.status },
       agent: { id: agent.id, name: agent.name },
       user: owner,
-      settings: {},
-      state: { ...this.state },
+      settings: structuredClone(bound.settings),
+      state: structuredClone(this.stateOf(bound)),
       // Snapshot: the loop keeps mutating its history after this returns.
       payload: structuredClone(payload),
     } as HookEvent;

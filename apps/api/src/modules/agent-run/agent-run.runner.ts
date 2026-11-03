@@ -14,7 +14,7 @@ import { AgentContext, RunContext } from "./agent-context.js";
 import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 import { HookDispatcher } from "./hooks/hook.dispatcher.js";
-import { HookBlockedError, HookRunner } from "./hooks/hook.runner.js";
+import { HookRunner, HookStoppedError } from "./hooks/hook.runner.js";
 
 import type { HookToolErrorReason, LlmMessage, LlmUsage, LlmPart, LlmToolCallPart } from "@snipet/shared";
 
@@ -28,11 +28,11 @@ const INTERNAL_ERROR = "internal error";
 
 /**
  * Client-safe message for a failed run: LLM errors never carry the raw
- * provider message, which may hold hosts or credentials. A hook's block
+ * provider message, which may hold hosts or credentials. A hook's stop
  * reason is meant for the client.
  */
 function describe(err: unknown): string {
-  if (err instanceof HookBlockedError) return err.message;
+  if (err instanceof HookStoppedError) return err.message;
   if (err instanceof LlmError || err instanceof FailoverError) err = toHttpException(err);
   return err instanceof HttpException ? err.message : INTERNAL_ERROR;
 }
@@ -152,22 +152,26 @@ export class AgentRunner {
         let model: string | null = null;
         let turnUsage: LlmUsage | null = null;
         const skipped: unknown[] = [];
-        const request = await hooks.pass("llm.request", {
+        const started = Date.now();
+        const request = await hooks.call("llm.request", {
           messages: [...system, ...history],
           tools,
           targets: agentTargets,
         });
-        const { messages, targets } = request;
-        const started = Date.now();
-        // Providers may reject an empty tool list.
-        const offered = request.tools.length ? request.tools : undefined;
-        const stream = this.llm.stream({ targets, messages, tools: offered }, signal);
-        for await (const event of stream) {
-          if (event.event === "llm_started") model = event.data.llm;
-          else if (event.event === "llm_skipped") skipped.push(event.data);
-          else if (event.event === "text_delta") this.events.emit(run.id, event);
-          else if (event.event === "usage") turnUsage = event.data;
-          else if (event.event === "message") reply = event.data.message;
+        // llm.request accepts no deny, so the outcome is continue or respond.
+        if (request.action === "respond") reply = request.result;
+        else if (request.action === "continue") {
+          const { messages, targets } = request.payload;
+          // Providers may reject an empty tool list.
+          const offered = request.payload.tools.length ? request.payload.tools : undefined;
+          const stream = this.llm.stream({ targets, messages, tools: offered }, signal);
+          for await (const event of stream) {
+            if (event.event === "llm_started") model = event.data.llm;
+            else if (event.event === "llm_skipped") skipped.push(event.data);
+            else if (event.event === "text_delta") this.events.emit(run.id, event);
+            else if (event.event === "usage") turnUsage = event.data;
+            else if (event.event === "message") reply = event.data.message;
+          }
         }
         if (!reply) throw new Error("llm stream ended without a message");
         if (turnUsage) {
@@ -233,7 +237,7 @@ export class AgentRunner {
     }
   }
 
-  /** Runs one tool call through its hooks; throws only when a hook stops the run. */
+  /** Runs one tool call through its hooks; throws only when a hook stops the run (HookStoppedError). */
   private async callTool(
     requestedCall: LlmToolCallPart,
     context: RunContext,
@@ -247,17 +251,20 @@ export class AgentRunner {
       call: requestedCall,
       tool: context.toolOf(requestedCall.name),
     });
-    // TODO(phase 5): a denied call goes through tool.error with reason "denied".
-    if (beforeOutcome.action === "deny") return { content: beforeOutcome.reason, isError: true };
-    if (beforeOutcome.action === "stop") throw new HookBlockedError(beforeOutcome.reason);
+    if (beforeOutcome.action === "deny") {
+      const denied = { content: beforeOutcome.reason, isError: true };
+      return this.toolDone(hooks, requestedCall, denied, "denied", started);
+    }
     if (beforeOutcome.action === "respond") return beforeOutcome.result;
     const { call } = beforeOutcome.payload;
-    const result = await context.call(call);
+    const { timedOut, ...result } = await context.call(call);
     const reason: HookToolErrorReason = signal.aborted
       ? "cancelled"
-      : context.has(call.name)
-        ? "error_result"
-        : "unknown_tool";
+      : timedOut
+        ? "timeout"
+        : context.has(call.name)
+          ? "error_result"
+          : "unknown_tool";
     return this.toolDone(hooks, call, result, reason, started);
   }
 
@@ -273,7 +280,6 @@ export class AgentRunner {
     const outcome = result.isError
       ? await hooks.call("tool.error", { call, result, reason, durationMs })
       : await hooks.call("tool.after", { call, result, durationMs });
-    if (outcome.action === "stop") throw new HookBlockedError(outcome.reason);
     // Neither accepts deny nor respond, so it's continue.
     return outcome.action === "continue" ? outcome.payload.result : result;
   }
