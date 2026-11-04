@@ -1,3 +1,4 @@
+import { safeFetch } from "#src/infra/http/safe-fetch.js";
 import { Ollama } from "ollama";
 import z from "zod";
 
@@ -32,7 +33,7 @@ export function ollamaClient({ baseUrl, headers }: OllamaOptions, signal?: Abort
     host: baseUrl,
     headers,
     fetch: (input, init) =>
-      fetch(input, {
+      safeFetch(input, {
         ...init,
         signal: signal && init?.signal ? AbortSignal.any([signal, init.signal]) : (signal ?? init?.signal),
       }),
@@ -50,6 +51,7 @@ export function toLlmError(err: unknown): unknown {
     return llmErrorFromStatus(status_code, `ollama: ${message}`);
   }
   // fetch rejects with a TypeError when the server can't be reached.
-  if (name === "TypeError" || name === "TimeoutError") return new LlmError("unavailable", `ollama: ${message}`);
+  if (name === "TypeError" || name === "TimeoutError" || name === "BlockedAddressError")
+    return new LlmError("unavailable", `ollama: ${message}`);
   return err;
 }

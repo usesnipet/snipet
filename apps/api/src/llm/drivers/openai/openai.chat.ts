@@ -17,7 +17,7 @@ export class OpenAiChatDriver extends Driver(openAiOptionsSchema) implements Cha
   async generate(req: ChatRequest, options: OpenAiOptions): Promise<LlmResponse> {
     try {
       const completion = await openAiClient(options).chat.completions.create(
-        { ...req.extraOptions, ...body(req), stream: false },
+        { temperature: options.temperature, ...req.extraOptions, ...body(req), stream: false },
         { signal: req.signal },
       );
       return fromCompletion(completion);
@@ -29,7 +29,13 @@ export class OpenAiChatDriver extends Driver(openAiOptionsSchema) implements Cha
   async *stream(req: ChatRequest, options: OpenAiOptions): AsyncGenerator<ChatStreamEvent> {
     try {
       const chunks = await openAiClient(options).chat.completions.create(
-        { ...req.extraOptions, ...body(req), stream: true, stream_options: { include_usage: true } },
+        {
+          temperature: options.temperature,
+          ...req.extraOptions,
+          ...body(req),
+          stream: true,
+          stream_options: { include_usage: true },
+        },
         { signal: req.signal },
       );
       yield* toStreamEvents(chunks);

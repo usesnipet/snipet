@@ -1,3 +1,5 @@
+import { safeFetch } from "#src/infra/http/safe-fetch.js";
+
 import { Driver } from "../driver.js";
 import { z } from "zod";
 
@@ -21,7 +23,7 @@ export class HttpHealthCheckDriver extends Driver(optionsSchema) implements Heal
     { url, method, headers, timeout }: HttpHealthOptions,
   ): Promise<HealthCheckResult> {
     try {
-      const res = await fetch(url, { method, headers, signal: AbortSignal.timeout(timeout * 1000) });
+      const res = await safeFetch(url, { method, headers, signal: AbortSignal.timeout(timeout * 1000) });
       return res.ok ? { isHealthy: true } : { isHealthy: false, error: `HTTP ${res.status}` };
     } catch (err) {
       return { isHealthy: false, error: err instanceof Error ? err.message : String(err) };

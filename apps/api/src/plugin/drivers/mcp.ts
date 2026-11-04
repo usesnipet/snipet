@@ -1,7 +1,8 @@
 import { env } from "#src/env.js";
+import { safeFetch } from "#src/infra/http/safe-fetch.js";
 import { Driver } from "#src/manifest/driver.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { StreamableHTTPClientTransport, StreamableHTTPError } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import z from "zod";
 
 import type { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol";
@@ -71,6 +72,7 @@ export class McpDriver extends Driver(optionsSchema) implements ToolDriver<McpOp
   ): Promise<T> {
     const transport = new StreamableHTTPClientTransport(new URL(options.url), {
       requestInit: { headers: options.headers },
+      fetch: safeFetch,
     });
     const ms = options.timeout * 1000;
     const opts: RequestOptions = { signal: AbortSignal.timeout(ms), timeout: ms };
@@ -78,6 +80,10 @@ export class McpDriver extends Driver(optionsSchema) implements ToolDriver<McpOp
     try {
       await client.connect(transport, opts);
       return await fn(client, opts);
+    } catch (err) {
+      // Its message holds the response body, which ends up in tool results and lastSyncedError.
+      if (err instanceof StreamableHTTPError) throw new Error(`MCP server answered HTTP ${err.code}`, { cause: err });
+      throw err;
     } finally {
       await client.close(); // also kills a stdio process
     }
