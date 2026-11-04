@@ -8,14 +8,13 @@ import { LlmConnectionService } from "./llm-connection.service.js";
 import type { LLMDriverRegistry, LLMRegistry } from "#src/llm/llm.registry.js";
 import type { Repository } from "typeorm";
 import type { LlmConnection } from "./llm-connection.entity.js";
-import type { LlmModel } from "./llm-model.entity.js";
 import type { LlmConnectionSyncService } from "./sync/llm-connection-sync.service.js";
 
-type Fn = (...args: unknown[]) => Promise<unknown>;
+const model = (key: string) => ({ key, name: key, description: "", capabilities: [], contextWindow: 0 });
 
 const byId: Record<string, Partial<LlmConnection>> = {
-  c1: { id: "c1", llmKey: "openai", config: { apiKey: "sk-1" } },
-  c2: { id: "c2", llmKey: "openai", config: { apiKey: "sk-2" }, default: true },
+  c1: { id: "c1", llmKey: "openai", config: { apiKey: "sk-1" }, models: [model("gpt-4o")] },
+  c2: { id: "c2", llmKey: "openai", config: { apiKey: "sk-2" }, default: true, models: [model("meta/llama")] },
   c3: { id: "c3", llmKey: "ollama", config: {} },
 };
 
@@ -26,23 +25,17 @@ function setup() {
         where.id ? byId[where.id] : Object.values(byId).find((c) => c.llmKey === where.llmKey && c.default),
       ),
     ),
+    findOne: jest.fn(({ where }: { where: { id: string } }) => Promise.resolve(byId[where.id] ?? null)),
     metadata: { name: "LlmConnection" },
-  };
-  const models = {
-    existsBy: jest.fn((where: { llmConnectionId: string; key: string }) =>
-      Promise.resolve(where.key === "gpt-4o" || where.key === "meta/llama"),
-    ),
-    find: jest.fn<Fn>().mockResolvedValue([]),
   };
   const service = new LlmConnectionService(
     repo as unknown as Repository<LlmConnection>,
-    models as unknown as Repository<LlmModel>,
     {} as LLMRegistry,
     {} as LLMDriverRegistry,
     {} as LlmConnectionSyncService,
     {} as LLMRunner,
   );
-  return { service, models };
+  return { service };
 }
 
 describe("LlmConnectionService.resolveTargets", () => {
@@ -60,11 +53,10 @@ describe("LlmConnectionService.resolveTargets", () => {
   });
 
   it("checks the model against the connection's synced models", async () => {
-    const { service, models } = setup();
+    const { service } = setup();
     await expect(service.resolveTargets([{ model: "openai/gpt-5", connectionId: "c1" }])).rejects.toThrow(
       'model "openai/gpt-5" not found',
     );
-    expect(models.existsBy).toHaveBeenCalledWith({ llmConnectionId: "c1", key: "gpt-5" });
   });
 
   it("rejects a connection of another llm", async () => {
@@ -82,8 +74,7 @@ describe("LlmConnectionService.resolveTargets", () => {
 
 describe("LlmConnectionService.listLLMModels", () => {
   it("reads the default connection's models from the database", async () => {
-    const { service, models } = setup();
-    await service.listLLMModels("openai");
-    expect(models.find).toHaveBeenCalledWith({ where: { llmConnectionId: "c2" }, order: { key: "ASC" } });
+    const { service } = setup();
+    await expect(service.listLLMModels("openai")).resolves.toEqual([model("meta/llama")]);
   });
 });

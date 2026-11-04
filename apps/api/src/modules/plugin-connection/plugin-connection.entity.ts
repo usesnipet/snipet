@@ -1,3 +1,4 @@
+import type { Tool } from "#src/plugin/driver.js";
 import type { JsonObject, PluginConnection as PluginConnectionContract } from "@snipet/shared";
 import { sealConfig } from "#src/manifest/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
@@ -20,6 +21,10 @@ export class PluginConnection extends BaseEntity implements PluginConnectionCont
 
   @Column({ default: true })
   enabled: boolean;
+
+  /** What the tools driver listed on the last sync. Only loaded on request: it would weigh down every listing. */
+  @Column({ type: "jsonb", default: [], select: false })
+  tools: Tool[];
 
   /** What the instructions driver returned on the last sync. */
   @Column({ type: "text", nullable: true })

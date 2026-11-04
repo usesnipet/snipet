@@ -1,17 +1,14 @@
+import { Driver } from "#src/manifest/driver.js";
+import { HttpHealthCheckDriver } from "#src/manifest/drivers/http.health.js";
 import { ALL_HOOKS, hookHandlersOf, hooksCapabilitySchema, pluginManifestSchema } from "@snipet/shared";
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
 
-import { Driver } from "#src/manifest/driver.js";
-import { HttpHealthCheckDriver } from "#src/manifest/drivers/http.health.js";
-
 import { DebugDriver } from "./drivers/debug.hooks.js";
 import { McpDriver } from "./drivers/mcp.js";
 import { StaticInstructionsDriver } from "./drivers/static.instructions.js";
-import { WebhookDriver } from "./drivers/webhook.hooks.js";
-
 import { PluginDriverRegistry, PluginRegistry } from "./plugin.registry.js";
 
 import type { HookName, HookResult } from "@snipet/shared";
@@ -127,7 +124,7 @@ describe("PluginRegistry", () => {
     const real = new PluginDriverRegistry({
       tools: [mcp],
       instructions: [mcp, new StaticInstructionsDriver()],
-      hooks: [new DebugDriver({} as Storage), new WebhookDriver()],
+      hooks: [new DebugDriver({} as Storage)],
       healthCheck: [new HttpHealthCheckDriver()],
     });
     const registry = new PluginRegistry("plugin", builtIn, builtIn, pluginManifestSchema, real);

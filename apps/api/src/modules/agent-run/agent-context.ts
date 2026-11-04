@@ -72,14 +72,15 @@ export class AgentContext {
     const pluginGrants = new Map((agent.pluginConnections ?? []).map((g) => [g.pluginConnectionId, g]));
     const used = new Set<string>();
     for (const tool of await this.plugins.findTools([...pluginGrants.keys()])) {
-      if (!isGranted(tool.name, pluginGrants.get(tool.pluginConnectionId)!)) {
-        denied.push({ tool: tool.name, pluginConnectionId: tool.pluginConnectionId });
+      if (!isGranted(tool.name, pluginGrants.get(tool.connection.id)!)) {
+        denied.push({ tool: tool.name, pluginConnectionId: tool.connection.id });
         continue;
       }
-      used.add(tool.pluginConnectionId);
-      const description = `[${tool.pluginConnection!.name}] ${tool.description}`.trim();
-      const source = { id: tool.pluginConnectionId, name: tool.pluginConnection!.name };
-      add(tool.name, description, tool.inputSchema, source, (args) => this.plugins.executeTool(tool.id, args));
+      used.add(tool.connection.id);
+      const description = `[${tool.connection.name}] ${tool.description}`.trim();
+      add(tool.name, description, tool.inputSchema, tool.connection, (args) =>
+        this.plugins.executeTool(tool.connection.id, tool, args),
+      );
     }
 
     const instructions = await this.plugins.findInstructions([...used]);

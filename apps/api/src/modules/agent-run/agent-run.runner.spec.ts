@@ -41,7 +41,7 @@ const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:0
 
 const owner: Owner = { userId: "u1", appId: null, externalUserId: null, name: null };
 
-const wiki = { pluginConnectionId: "p1", pluginConnection: { name: "Wiki" } };
+const wiki = { connection: { id: "p1", name: "Wiki" } };
 
 /**
  * replies: what the model answers on each turn; an Error is thrown instead.
@@ -76,8 +76,8 @@ function setup(
   };
   const plugins = {
     findTools: jest.fn<Fn>().mockResolvedValue([
-      { id: "a1", name: "ask_question", description: "Asks", inputSchema: {}, ...wiki },
-      { id: "a2", name: "read_wiki", description: "", inputSchema: {}, ...wiki },
+      { name: "ask_question", description: "Asks", inputSchema: {}, ...wiki },
+      { name: "read_wiki", description: "", inputSchema: {}, ...wiki },
     ]),
     executeTool: jest.fn<Fn>().mockResolvedValue({ content: "answer", isError: false }),
     findInstructions: jest.fn<Fn>().mockResolvedValue([]),
@@ -121,7 +121,9 @@ describe("AgentRunner.run", () => {
     const { runner, runs, llm, plugins, saved } = setup([callTool, answer]);
     await runner.run(agent, run, owner);
 
-    expect(plugins.executeTool).toHaveBeenCalledWith("a1", { q: "x" });
+    expect(plugins.executeTool).toHaveBeenCalledWith("p1", expect.objectContaining({ name: "ask_question" }), {
+      q: "x",
+    });
     expect(saved.map((m) => m.role)).toEqual(["assistant", "tool", "assistant"]);
     expect(saved[1].parts).toEqual([{ type: "tool_result", toolCallId: "c1", content: "answer", isError: false }]);
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.COMPLETED, turns: 2, error: null });
@@ -204,7 +206,9 @@ describe("AgentRunner.run", () => {
     );
     await runner.run(agent, run, owner);
 
-    expect(plugins.executeTool).toHaveBeenCalledWith("a1", { q: "y" });
+    expect(plugins.executeTool).toHaveBeenCalledWith("p1", expect.objectContaining({ name: "ask_question" }), {
+      q: "y",
+    });
     expect(saved[1].parts).toMatchObject([{ toolCallId: "c1", content: "answer" }]);
   });
 

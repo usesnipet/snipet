@@ -1,5 +1,5 @@
 import { ConnectionService } from "#src/manifest/connection.service.js";
-import { PluginDrivers, ToolResult } from "#src/plugin/driver.js";
+import { PluginDrivers, Tool, ToolResult } from "#src/plugin/driver.js";
 import { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -7,10 +7,12 @@ import { validateJson } from "@snipet/server-common";
 import { DeepPartial, In, QueryDeepPartialEntity, Repository } from "typeorm";
 
 import { PluginConnection } from "./plugin-connection.entity.js";
-import { PluginTool } from "./plugin-tool.entity.js";
 import { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 
 import type { PluginManifest } from "@snipet/shared";
+
+/** A synced tool with the connection it comes from. */
+export type ConnectionTool = Tool & { connection: { id: string; name: string } };
 
 /**
  * Service for managing plugin connections and executing tools.
@@ -21,7 +23,6 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
 
   constructor(
     @InjectRepository(PluginConnection) repo: Repository<PluginConnection>,
-    @InjectRepository(PluginTool) private readonly tools: Repository<PluginTool>,
     plugins: PluginRegistry,
     drivers: PluginDriverRegistry,
     private readonly syncer: PluginConnectionSyncService,
@@ -64,25 +65,20 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   /**
-   * Synced tools of the enabled connections among connectionIds, with the
-   * connection's name.
+   * Synced tools of the enabled connections among connectionIds, by name then
+   * connection id so prompts stay cacheable.
    */
-  findTools(connectionIds: string[]): Promise<PluginTool[]> {
-    if (!connectionIds.length) return Promise.resolve([]);
-    return this.tools.find({
-      // No config: it would be decrypted once per tool.
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        inputSchema: true,
-        pluginConnectionId: true,
-        pluginConnection: { id: true, name: true },
-      },
-      relations: { pluginConnection: true },
-      where: { pluginConnectionId: In(connectionIds), pluginConnection: { enabled: true } },
-      order: { name: "ASC", pluginConnectionId: "ASC" },
+  async findTools(connectionIds: string[]): Promise<ConnectionTool[]> {
+    if (!connectionIds.length) return [];
+    const conns = await this.repo.find({
+      // No config: it would be decrypted for nothing.
+      select: { id: true, name: true, tools: true },
+      where: { id: In(connectionIds), enabled: true },
+      order: { id: "ASC" },
     });
+    return conns
+      .flatMap(({ id, name, tools }) => tools.map((tool) => ({ ...tool, connection: { id, name } })))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
@@ -106,9 +102,8 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
    * Runs a synced tool through its connection's driver. Throws on bad
    * arguments or an unreachable service; the caller turns that into a result.
    */
-  async executeTool(toolId: string, args: Record<string, unknown> = {}): Promise<ToolResult> {
-    const tool = await this.tools.findOneByOrFail({ id: toolId });
-    const conn = await this.findById(tool.pluginConnectionId);
+  async executeTool(connectionId: string, tool: Tool, args: Record<string, unknown> = {}): Promise<ToolResult> {
+    const conn = await this.findById(connectionId);
     const manifest = this.manifests.get(conn.pluginKey);
     if (!conn.enabled || !manifest.capabilities.tools) {
       return { content: "plugin connection is unavailable", isError: true };
