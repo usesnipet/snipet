@@ -24,12 +24,12 @@ export function Icon({ name, icon, className }: Props) {
 
   return (
     <Avatar className={cn("size-9 rounded-full bg-white", className)}>
-      {isUrl && <AvatarImage src={trimmed} alt="" className="object-contain" />}
+      {isUrl && <AvatarImage src={trimmed} alt="" className="object-contain rounded-full" />}
       <AvatarFallback
-        className="rounded-lg text-xs font-semibold text-foreground"
+        className="rounded-full text-xs font-semibold text-foreground"
         style={isRawSvg ? undefined : { backgroundColor: stc(name) }}
       >
-        {isRawSvg ? <SVG svg={trimmed!} className="size-full" /> : initials(name)}
+        {isRawSvg ? <SVG svg={trimmed!} className="size-full rounded-full" /> : initials(name)}
       </AvatarFallback>
     </Avatar>
   );
