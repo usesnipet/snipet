@@ -1,7 +1,12 @@
 import { FormInput } from "@/components/form/input";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
@@ -58,8 +63,7 @@ export function UpdateUserDialog({ user, close }: UpdateUserDialogProps) {
       <DialogHeader>
         <DialogTitle>Edit user</DialogTitle>
         <DialogDescription>
-          Update settings for{" "}
-          <span className="font-medium text-foreground">{user.name}</span>.
+          Update settings for <span className="font-medium text-foreground">{user.name}</span>.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>

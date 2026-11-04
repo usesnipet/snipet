@@ -9,18 +9,11 @@ import {
 } from "@snipet/shared";
 
 import type { CreateUser, FindUsersParams, Paginated, UpdateUser, User } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const USERS_URL = "/api/users";
 
-const list = async (
-  opts: ServiceGetOptions<Paginated<User>, FindUsersParams> = {},
-): Promise<Paginated<User>> =>
+const list = async (opts: ServiceGetOptions<Paginated<User>, FindUsersParams> = {}): Promise<Paginated<User>> =>
   http.get({
     url: USERS_URL,
     schemas: {
@@ -30,10 +23,7 @@ const list = async (
     ...opts,
   });
 
-const findById = async (
-  id: string,
-  opts: ServiceGetOptions<User> = {},
-): Promise<User> =>
+const findById = async (id: string, opts: ServiceGetOptions<User> = {}): Promise<User> =>
   http.get({
     url: `${USERS_URL}/{id}`,
     params: { id },
@@ -41,10 +31,7 @@ const findById = async (
     ...opts,
   });
 
-const create = async (
-  body: CreateUser,
-  opts: ServicePostOptions<CreateUser, User> = {},
-): Promise<User> =>
+const create = async (body: CreateUser, opts: ServicePostOptions<CreateUser, User> = {}): Promise<User> =>
   http.post({
     url: USERS_URL,
     body,
@@ -52,11 +39,7 @@ const create = async (
     ...opts,
   });
 
-const update = async (
-  id: string,
-  body: UpdateUser,
-  opts: ServicePutOptions<UpdateUser, void> = {},
-): Promise<void> =>
+const update = async (id: string, body: UpdateUser, opts: ServicePutOptions<UpdateUser, void> = {}): Promise<void> =>
   http.put({
     url: `${USERS_URL}/{id}`,
     params: { id },

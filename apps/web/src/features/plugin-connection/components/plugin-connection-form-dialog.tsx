@@ -4,7 +4,12 @@ import { FormTextarea } from "@/components/form/textarea";
 import { SchemaFormFields } from "@/components/schema-form";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
@@ -68,9 +73,13 @@ export function PluginConnectionFormDialog({ plugin, connection, close }: Plugin
       <DialogHeader>
         <DialogTitle>{isEditing ? "Edit connection" : `Connect ${plugin.name}`}</DialogTitle>
         <DialogDescription>
-          {isEditing
-            ? <>Update settings for <span className="font-medium text-foreground">{connection.name}</span>.</>
-            : plugin.description || `Create a connection to ${plugin.name}.`}
+          {isEditing ? (
+            <>
+              Update settings for <span className="font-medium text-foreground">{connection.name}</span>.
+            </>
+          ) : (
+            plugin.description || `Create a connection to ${plugin.name}.`
+          )}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>

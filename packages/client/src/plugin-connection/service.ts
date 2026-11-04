@@ -18,12 +18,7 @@ import type {
   PluginManifest,
   UpdatePluginConnection,
 } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const PLUGIN_CONNECTION_URL = "/api/plugin-connections";
 
@@ -39,9 +34,7 @@ const list = async (
     ...opts,
   });
 
-const listPlugins = async (
-  opts: ServiceGetOptions<PluginManifest[]> = {},
-): Promise<PluginManifest[]> =>
+const listPlugins = async (opts: ServiceGetOptions<PluginManifest[]> = {}): Promise<PluginManifest[]> =>
   http.get({
     url: `${PLUGIN_CONNECTION_URL}/plugins`,
     schemas: { response: z.array(pluginManifestSchema) },

@@ -13,5 +13,5 @@ export const getSystemInfo = async (opts?: ServiceGetOptions<SystemInfo>) => {
       response: systemInfoSchema,
     },
     ...opts,
-  })
-}
+  });
+};

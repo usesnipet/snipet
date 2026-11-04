@@ -9,5 +9,5 @@ export function usePathBuilder() {
       Object.entries(params).filter((entry): entry is [string, string] => entry[1] != null),
     );
     return applyPathParams(path, pathParams);
-  }
+  };
 }

@@ -59,20 +59,21 @@ function AppCard({ app }: { app: App }) {
   const { mutateAsync: deleteApp } = useDeleteApp();
   const { copy } = useClipboard();
 
-  const openDelete = () => openDialog({
-    component: DeleteDialog,
-    props: {
-      title: "Delete app?",
-      description: (
-        <>
-          <span className="font-medium text-foreground">{app.name}</span> and all its API keys and
-          sessions will be deleted. This action cannot be undone.
-        </>
-      ),
-      confirmLabel: "Delete",
-      onConfirm: () => deleteApp(app.id),
-    },
-  });
+  const openDelete = () =>
+    openDialog({
+      component: DeleteDialog,
+      props: {
+        title: "Delete app?",
+        description: (
+          <>
+            <span className="font-medium text-foreground">{app.name}</span> and all its API keys and sessions will be
+            deleted. This action cannot be undone.
+          </>
+        ),
+        confirmLabel: "Delete",
+        onConfirm: () => deleteApp(app.id),
+      },
+    });
 
   const origins = app.allowedOrigins.length;
 

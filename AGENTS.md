@@ -13,6 +13,6 @@ This block is written and re-added by `turbo` before repository-scoped commands 
 
 ## Comments
 
-- Document classes, functions, methods, fields, types and top-level constants with JSDoc (`/** ... */`), not `//`, so editors show it on hover. One line when it fits: `/** The run's stored messages after lastId. */`; otherwise the multi-line form with ` * ` on each line.
+- Document classes, functions, methods, fields, types and top-level constants with JSDoc (`/** ... */`), not `//`, so editors show it on hover. One line when it fits: `/** The run's stored messages after lastId. */`; otherwise the multi-line form with `*` on each line.
 - Keep `//` for comments inside a body that explain a statement or a non-obvious step.
 - Say why or what's non-obvious, not what the name already says.

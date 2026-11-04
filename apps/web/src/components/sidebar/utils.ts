@@ -1,11 +1,11 @@
 import type { NavEntry, NavGroup, NavItemWithChildren, NavLeafEntry, NavSubItem } from "./types";
 
 export function isNavGroup(item: NavEntry): item is NavGroup {
-  return "label" in item
+  return "label" in item;
 }
 
 export function isNavItemWithChildren(item: NavLeafEntry): item is NavItemWithChildren {
-  return "items" in item
+  return "items" in item;
 }
 
 export function isNavActive(pathname: string, href: string, exact?: boolean) {
@@ -15,5 +15,5 @@ export function isNavActive(pathname: string, href: string, exact?: boolean) {
 }
 
 export function isNavGroupActive(pathname: string, items: NavSubItem[]) {
-  return items.some((item) => isNavActive(pathname, item.href, item.exact))
+  return items.some((item) => isNavActive(pathname, item.href, item.exact));
 }

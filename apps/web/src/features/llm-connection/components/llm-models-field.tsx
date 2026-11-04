@@ -108,7 +108,17 @@ type RowProps = {
   onMoveDown: () => void;
 };
 
-function LlmModelTargetRow({ name, index, llms, connections, total, onRemove, onMoveUp, onMoveDown, allowedModelCapabilities }: RowProps) {
+function LlmModelTargetRow({
+  name,
+  index,
+  llms,
+  connections,
+  total,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  allowedModelCapabilities,
+}: RowProps) {
   const form = useFormContext();
   const fieldPath = `${name}.${index}`;
   const modelRef = (useWatch({ control: form.control, name: `${fieldPath}.model` }) as string | undefined) ?? "";

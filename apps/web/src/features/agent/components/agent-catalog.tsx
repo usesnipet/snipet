@@ -3,7 +3,11 @@ import { DeleteDialog } from "@/components/confirm-dialog";
 import { LoadingFallback } from "@/components/loading-fallback";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InputSearch } from "@/components/ui/input-search";
 import { useClipboard } from "@/hooks/use-clipboard";
@@ -61,19 +65,20 @@ function AgentCard({ agent }: { agent: Agent }) {
 
   const openEdit = () => openDialog({ component: AgentFormDialog, props: { agent } });
 
-  const openDelete = () => openDialog({
-    component: DeleteDialog,
-    props: {
-      title: "Delete agent?",
-      description: (
-        <>
-          <span className="font-medium text-foreground">{agent.name}</span> and all of its sessions will be
-          deleted. This action cannot be undone.
-        </>
-      ),
-      onConfirm: () => deleteAgent(agent.id),
-    },
-  });
+  const openDelete = () =>
+    openDialog({
+      component: DeleteDialog,
+      props: {
+        title: "Delete agent?",
+        description: (
+          <>
+            <span className="font-medium text-foreground">{agent.name}</span> and all of its sessions will be deleted.
+            This action cannot be undone.
+          </>
+        ),
+        onConfirm: () => deleteAgent(agent.id),
+      },
+    });
 
   return (
     <CatalogCard

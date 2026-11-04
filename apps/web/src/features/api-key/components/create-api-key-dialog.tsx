@@ -27,7 +27,7 @@ import type { DialogInstanceProps } from "@/lib/dialog";
 type CreateApiKeyInput = z.input<typeof createApiKeySchema>;
 
 type CreateApiKeyDialogProps = DialogInstanceProps<{
-  onCreated: (apiKey: ApiKeyWithSecret) => void
+  onCreated: (apiKey: ApiKeyWithSecret) => void;
 }>;
 
 export function CreateApiKeyDialog({ onCreated, close }: CreateApiKeyDialogProps) {
@@ -55,29 +55,14 @@ export function CreateApiKeyDialog({ onCreated, close }: CreateApiKeyDialogProps
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Create API Key</DialogTitle>
-        <DialogDescription>
-          Create a new API key. The secret will be shown only once.
-        </DialogDescription>
+        <DialogDescription>Create a new API key. The secret will be shown only once.</DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <FieldGroup>
-            <FormInput
-              name="name"
-              label="Name"
-              placeholder="Production"
-              required
-            />
-            <FormAppSelect
-              name="appId"
-              label="App"
-              placeholder="Select app"
-            />
-            <FormDurationSelect
-              name="expiresAt"
-              label="Expiration"
-              placeholder="Select duration"
-            />
+            <FormInput name="name" label="Name" placeholder="Production" required />
+            <FormAppSelect name="appId" label="App" placeholder="Select app" />
+            <FormDurationSelect name="expiresAt" label="Expiration" placeholder="Select duration" />
           </FieldGroup>
           <DialogFooter>
             <DialogClose asChild>
@@ -93,5 +78,5 @@ export function CreateApiKeyDialog({ onCreated, close }: CreateApiKeyDialogProps
         </form>
       </Form>
     </DialogContent>
-  )
+  );
 }

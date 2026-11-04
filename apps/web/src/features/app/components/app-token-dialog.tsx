@@ -3,7 +3,12 @@ import { FormTextarea } from "@/components/form/textarea";
 import { SecretKeyDialog } from "@/components/secret-key-dialog";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";

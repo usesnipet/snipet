@@ -11,7 +11,11 @@ export function SnippetTabs({ snippets }: { snippets: HighlightedSnippet[] }) {
 
   return (
     <div className="min-w-0 overflow-hidden rounded-xl bg-[#24292e]">
-      <div className="flex items-center justify-between border-b border-white/10 px-2" role="tablist" aria-label="Embed options">
+      <div
+        className="flex items-center justify-between border-b border-white/10 px-2"
+        role="tablist"
+        aria-label="Embed options"
+      >
         <div className="flex">
           {snippets.map((s, i) => (
             <button

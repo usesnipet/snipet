@@ -1,14 +1,28 @@
 import http, { httpSse, parseZodErrors } from "../http";
 
 import {
-  agentMessageSchema, agentRunSchema, agentSessionSchema, findAgentMessagesParamsSchema, findAgentRunsParamsSchema,
-  findAgentSessionsParamsSchema, paginatedAgentMessageSchema, paginatedAgentRunSchema, paginatedAgentSessionSchema,
+  agentMessageSchema,
+  agentRunSchema,
+  agentSessionSchema,
+  findAgentMessagesParamsSchema,
+  findAgentRunsParamsSchema,
+  findAgentSessionsParamsSchema,
+  paginatedAgentMessageSchema,
+  paginatedAgentRunSchema,
+  paginatedAgentSessionSchema,
   startAgentRunSchema,
 } from "@snipet/shared";
 
 import type {
-  AgentMessage, AgentRun, AgentRunEvent, AgentSession, FindAgentMessagesParams, FindAgentRunsParams,
-  FindAgentSessionsParams, Paginated, StartAgentRun,
+  AgentMessage,
+  AgentRun,
+  AgentRunEvent,
+  AgentSession,
+  FindAgentMessagesParams,
+  FindAgentRunsParams,
+  FindAgentSessionsParams,
+  Paginated,
+  StartAgentRun,
 } from "@snipet/shared";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions } from "../http";
 
@@ -89,4 +103,13 @@ const listMessages = async (
     ...opts,
   });
 
-export const agentRunService = { start, cancel, listRuns, events, listSessions, findSession, deleteSession, listMessages };
+export const agentRunService = {
+  start,
+  cancel,
+  listRuns,
+  events,
+  listSessions,
+  findSession,
+  deleteSession,
+  listMessages,
+};

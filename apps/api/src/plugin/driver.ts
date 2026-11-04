@@ -19,12 +19,7 @@ export interface ToolResult {
 
 export interface ToolDriver<Opts = unknown> extends BaseDriver<Opts> {
   listTools(connectionId: string, options: Opts): Promise<Tool[]>;
-  callTool(
-    connectionId: string,
-    name: string,
-    parameters: Record<string, unknown>,
-    options: Opts,
-  ): Promise<ToolResult>;
+  callTool(connectionId: string, name: string, parameters: Record<string, unknown>, options: Opts): Promise<ToolResult>;
 }
 
 export interface InstructionsDriver<Opts = unknown> extends BaseDriver<Opts> {

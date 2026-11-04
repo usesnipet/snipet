@@ -18,23 +18,21 @@ export function LlmConnectionCatalogCard({ view }: LlmConnectionCatalogCardProps
   const { openDialog } = useDialog();
 
   const countLabel =
-    connectionCount === 0
-      ? "No connections yet"
-      : `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
+    connectionCount === 0 ? "No connections yet" : `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
 
   const onClick = () => {
     if (connected) {
       openDialog({
         component: LlmConnectionListDialog,
-        props: { llm: { name, key } }
-      })
+        props: { llm: { name, key } },
+      });
     } else {
       openDialog({
         component: CreateLlmConnectionDialog,
-        props: { defaultValues: { llmKey: key } }
+        props: { defaultValues: { llmKey: key } },
       });
     }
-  }
+  };
 
   return (
     <CatalogCard
@@ -47,7 +45,7 @@ export function LlmConnectionCatalogCard({ view }: LlmConnectionCatalogCardProps
         label: connected ? "Configure" : "Connect",
         icon: connected ? <ArrowRight /> : <Plus />,
         variant: connected ? "outline" : "default",
-        onClick
+        onClick,
       }}
     />
   );

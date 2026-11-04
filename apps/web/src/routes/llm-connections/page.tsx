@@ -28,10 +28,7 @@ export const LlmConnectionsPage = () => {
       description="Bring your own API keys or run models locally. Connect an LLM to make it available to your agents."
       documentTitle="LLM Connections"
     >
-      <CatalogPageContent
-        createLabel="Add connection"
-        onCreate={openCreate}
-      >
+      <CatalogPageContent createLabel="Add connection" onCreate={openCreate}>
         <RegistryCatalog
           registry={llms.data ?? []}
           connections={connections.data?.data ?? []}

@@ -17,10 +17,7 @@ type McpOptions = z.infer<typeof optionsSchema>;
  * Tools are the ones of a remote MCP server and instructions the ones it
  * sends on initialize. Only the http transport is supported.
  */
-export class McpDriver
-  extends Driver(optionsSchema)
-  implements ToolDriver<McpOptions>, InstructionsDriver<McpOptions>
-{
+export class McpDriver extends Driver(optionsSchema) implements ToolDriver<McpOptions>, InstructionsDriver<McpOptions> {
   readonly key = "mcp";
 
   async listTools(_connectionId: string, options: McpOptions): Promise<Tool[]> {

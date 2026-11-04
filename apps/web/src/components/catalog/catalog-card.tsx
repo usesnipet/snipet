@@ -85,20 +85,13 @@ export function CatalogCard({
               </Badge>
             ) : null}
             {tags?.map((tag) => (
-              <Badge
-                key={tag}
-                variant="outline"
-                className="text-muted-foreground shrink-0 font-normal"
-              >
+              <Badge key={tag} variant="outline" className="text-muted-foreground shrink-0 font-normal">
                 {tag}
               </Badge>
             ))}
             {extraBadges}
           </div>
-          <div
-            className="flex shrink-0 items-center"
-            onClick={(event) => event.stopPropagation()}
-          >
+          <div className="flex shrink-0 items-center" onClick={(event) => event.stopPropagation()}>
             {headerActions}
             {actions?.map((action) => (
               <Button
@@ -116,13 +109,9 @@ export function CatalogCard({
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-3 p-0">
-        {description ? (
-          <p className="text-muted-foreground text-sm">{truncateDescription(description)}</p>
-        ) : null}
+        {description ? <p className="text-muted-foreground text-sm">{truncateDescription(description)}</p> : null}
         {updatedAt ? (
-          <p className="text-muted-foreground mt-auto pt-1 text-xs">
-            Updated {formatUpdatedAt(updatedAt)}
-          </p>
+          <p className="text-muted-foreground mt-auto pt-1 text-xs">Updated {formatUpdatedAt(updatedAt)}</p>
         ) : null}
       </CardContent>
       {hasFooter ? (
@@ -132,12 +121,7 @@ export function CatalogCard({
         >
           <span className="text-muted-foreground min-w-0 truncate text-xs">{meta}</span>
           {cta ? (
-            <Button
-              variant={cta.variant ?? "outline"}
-              size="sm"
-              disabled={cta.disabled}
-              onClick={cta.onClick}
-            >
+            <Button variant={cta.variant ?? "outline"} size="sm" disabled={cta.disabled} onClick={cta.onClick}>
               {cta.icon}
               {cta.label}
             </Button>

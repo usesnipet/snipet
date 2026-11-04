@@ -19,7 +19,7 @@ import { Version } from "./version";
 
 import type { NavEntry } from "@/components/sidebar/types";
 
-const isAdmin = () => hasRole(useAuthStore.getState().user?.role, [Role.Admin]) ;
+const isAdmin = () => hasRole(useAuthStore.getState().user?.role, [Role.Admin]);
 
 const navItems: NavEntry[] = [
   {
@@ -120,7 +120,6 @@ function UserMenu() {
 }
 
 function SidebarFooterInfo() {
-
   return (
     <SidebarFooter className="flex-row items-center justify-between border-sidebar-border border-t group-data-[collapsible=icon]:hidden">
       <Version />

@@ -42,7 +42,7 @@ export function DialogContainer() {
           >
             <Component {...(dialogProps as any)} />
           </Dialog>
-        )
+        );
       })}
     </>
   );

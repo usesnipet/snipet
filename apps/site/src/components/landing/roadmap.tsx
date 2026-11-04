@@ -1,7 +1,9 @@
 import type { Milestone } from "../../lib/github";
 
 const formatDate = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "";
+  iso
+    ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+    : "";
 
 export function Roadmap({ roadmap }: { roadmap: Milestone[] }) {
   if (roadmap.length === 0) return null;
@@ -25,7 +27,9 @@ export function Roadmap({ roadmap }: { roadmap: Milestone[] }) {
                 </span>
               </div>
               {m.description.map((d) => (
-                <p key={d} className="mt-1 text-muted-foreground">{d}</p>
+                <p key={d} className="mt-1 text-muted-foreground">
+                  {d}
+                </p>
               ))}
             </li>
           ))}

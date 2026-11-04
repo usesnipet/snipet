@@ -10,7 +10,10 @@ export const on: WidgetApi["on"] = (event, handler) => {
 };
 
 /** Calls the event's handlers; one that throws doesn't stop the others or the widget. */
-export function emit<E extends WidgetEvent>(event: E, ...[payload]: WidgetEvents[E] extends void ? [] : [WidgetEvents[E]]) {
+export function emit<E extends WidgetEvent>(
+  event: E,
+  ...[payload]: WidgetEvents[E] extends void ? [] : [WidgetEvents[E]]
+) {
   handlers.get(event)?.forEach((handler) => {
     try {
       (handler as (payload: WidgetEvents[E] | undefined) => void)(payload);

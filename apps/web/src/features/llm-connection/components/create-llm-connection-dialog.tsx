@@ -1,6 +1,11 @@
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
@@ -27,7 +32,7 @@ const DEFAULT_VALUES: CreateLlmConnection = {
   name: "",
   llmKey: "",
   config: {},
-  enabled: true
+  enabled: true,
 };
 
 export function CreateLlmConnectionDialog({ onSaved, close, defaultValues, llm }: CreateLlmConnectionDialogProps) {
@@ -62,9 +67,13 @@ export function CreateLlmConnectionDialog({ onSaved, close, defaultValues, llm }
       <DialogHeader>
         <DialogTitle>{isEditing ? "Edit LLM connection" : "New LLM connection"}</DialogTitle>
         <DialogDescription>
-          {isEditing
-            ? <>Update settings for <span className="font-medium text-foreground">{llm.name}</span>.</>
-            : "Point at an LLM and drop in your API key — it becomes available to your agents."}
+          {isEditing ? (
+            <>
+              Update settings for <span className="font-medium text-foreground">{llm.name}</span>.
+            </>
+          ) : (
+            "Point at an LLM and drop in your API key — it becomes available to your agents."
+          )}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>

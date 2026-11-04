@@ -27,11 +27,7 @@ export type RegistryView<C = unknown> = {
 
 export type RegistryFilter = "all" | "connected";
 
-export type RegistrySort =
-  | "connected-first"
-  | "name-asc"
-  | "name-desc"
-  | "connections-desc";
+export type RegistrySort = "connected-first" | "name-asc" | "name-desc" | "connections-desc";
 
 export const REGISTRY_SORTS: { value: RegistrySort; label: string }[] = [
   { value: "connected-first", label: "Connected first" },
@@ -66,11 +62,7 @@ export function buildRegistryViews<C>(
   });
 }
 
-export function filterRegistryViews<V extends RegistryView>(
-  views: V[],
-  filter: RegistryFilter,
-  search: string,
-): V[] {
+export function filterRegistryViews<V extends RegistryView>(views: V[], filter: RegistryFilter, search: string): V[] {
   const query = search.trim().toLowerCase();
 
   return views.filter((view) => {
@@ -85,10 +77,7 @@ export function filterRegistryViews<V extends RegistryView>(
   });
 }
 
-export function sortRegistryViews<V extends RegistryView>(
-  views: V[],
-  sort: RegistrySort,
-): V[] {
+export function sortRegistryViews<V extends RegistryView>(views: V[], sort: RegistrySort): V[] {
   const byName = (a: RegistryView, b: RegistryView) => a.name.localeCompare(b.name);
   const sorted = [...views];
 
@@ -98,14 +87,10 @@ export function sortRegistryViews<V extends RegistryView>(
     case "name-desc":
       return sorted.sort((a, b) => byName(b, a));
     case "connections-desc":
-      return sorted.sort(
-        (a, b) => b.connectionCount - a.connectionCount || byName(a, b),
-      );
+      return sorted.sort((a, b) => b.connectionCount - a.connectionCount || byName(a, b));
     case "connected-first":
     default:
-      return sorted.sort(
-        (a, b) => Number(b.connected) - Number(a.connected) || byName(a, b),
-      );
+      return sorted.sort((a, b) => Number(b.connected) - Number(a.connected) || byName(a, b));
   }
 }
 

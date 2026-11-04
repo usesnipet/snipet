@@ -17,7 +17,7 @@ export type ApiRequestOptions<
   TResponse = unknown,
   TSearchParams = SearchParamsRecord,
   TPathParams = PathParamsRecord,
-  THeaders = Record<string, string>
+  THeaders = Record<string, string>,
 > = {
   retry?: boolean;
   skipAuth?: boolean;
@@ -33,12 +33,16 @@ export type ApiRequestOptions<
     searchParams?: ZodType<TSearchParams>;
     pathParams?: ZodType<TPathParams>;
     headers?: ZodType<THeaders>;
-  }
+  };
 };
 
-export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(
-  options: ApiRequestOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>,
-): Promise<TResponse> {
+export async function httpx<
+  TResponse = unknown,
+  TBody = unknown,
+  TSearchParams = SearchParamsRecord,
+  TPathParams = PathParamsRecord,
+  THeaders = Record<string, string>,
+>(options: ApiRequestOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>): Promise<TResponse> {
   const { url, method, schemas, retry, skipAuth } = options;
   let { body, headers, params, searchParams } = options;
   const pathUrl = params ? applyPathParams(url, params as PathParamsRecord) : url;
@@ -53,9 +57,7 @@ export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams 
     throw error;
   }
 
-  const requestUrl = searchParams
-    ? applySearchParams(pathUrl, searchParams as SearchParamsRecord)
-    : pathUrl;
+  const requestUrl = searchParams ? applySearchParams(pathUrl, searchParams as SearchParamsRecord) : pathUrl;
 
   const { baseUrl = "", getAccessToken, refreshToken, onUnauthorized } = getHttpConfig();
   const accessToken = skipAuth ? undefined : getAccessToken?.();
@@ -95,14 +97,18 @@ export async function httpx<TResponse = unknown, TBody = unknown, TSearchParams 
   return json as TResponse;
 }
 
-
 export type HttpGetOptions<
   TResponse = unknown,
   TSearchParams = SearchParamsRecord,
   TPathParams = PathParamsRecord,
-  THeaders = Record<string, string>
+  THeaders = Record<string, string>,
 > = Omit<ApiRequestOptions<undefined, TResponse, TSearchParams, TPathParams, THeaders>, "method" | "body">;
-export function httpGet<TResponse = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(options: HttpGetOptions<TResponse, TSearchParams, TPathParams, THeaders>): Promise<TResponse> {
+export function httpGet<
+  TResponse = unknown,
+  TSearchParams = SearchParamsRecord,
+  TPathParams = PathParamsRecord,
+  THeaders = Record<string, string>,
+>(options: HttpGetOptions<TResponse, TSearchParams, TPathParams, THeaders>): Promise<TResponse> {
   return httpx<TResponse, undefined, TSearchParams, TPathParams, THeaders>({ ...options, method: "GET" });
 }
 
@@ -111,9 +117,15 @@ export type HttpPostOptions<
   TResponse = unknown,
   TSearchParams = SearchParamsRecord,
   TPathParams = PathParamsRecord,
-  THeaders = Record<string, string>
+  THeaders = Record<string, string>,
 > = Omit<ApiRequestOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>, "method">;
-export function httpPost<TResponse = unknown, TBody = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(options: HttpPostOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>): Promise<TResponse> {
+export function httpPost<
+  TResponse = unknown,
+  TBody = unknown,
+  TSearchParams = SearchParamsRecord,
+  TPathParams = PathParamsRecord,
+  THeaders = Record<string, string>,
+>(options: HttpPostOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>): Promise<TResponse> {
   return httpx<TResponse, TBody, TSearchParams, TPathParams, THeaders>({ ...options, method: "POST" });
 }
 
@@ -122,9 +134,15 @@ export type HttpPutOptions<
   TResponse = unknown,
   TSearchParams = SearchParamsRecord,
   TPathParams = PathParamsRecord,
-  THeaders = Record<string, string>
+  THeaders = Record<string, string>,
 > = Omit<ApiRequestOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>, "method">;
-export function httpPut<TResponse = unknown, TBody = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(options: HttpPutOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>): Promise<TResponse> {
+export function httpPut<
+  TResponse = unknown,
+  TBody = unknown,
+  TSearchParams = SearchParamsRecord,
+  TPathParams = PathParamsRecord,
+  THeaders = Record<string, string>,
+>(options: HttpPutOptions<TBody, TResponse, TSearchParams, TPathParams, THeaders>): Promise<TResponse> {
   return httpx<TResponse, TBody, TSearchParams, TPathParams, THeaders>({ ...options, method: "PUT" });
 }
 
@@ -132,9 +150,14 @@ export type HttpDeleteOptions<
   TResponse = unknown,
   TSearchParams = SearchParamsRecord,
   TPathParams = PathParamsRecord,
-  THeaders = Record<string, string>
+  THeaders = Record<string, string>,
 > = Omit<ApiRequestOptions<undefined, TResponse, TSearchParams, TPathParams, THeaders>, "method" | "body">;
-export function httpDelete<TResponse = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(options: HttpDeleteOptions<TResponse, TSearchParams, TPathParams, THeaders>): Promise<TResponse> {
+export function httpDelete<
+  TResponse = unknown,
+  TSearchParams = SearchParamsRecord,
+  TPathParams = PathParamsRecord,
+  THeaders = Record<string, string>,
+>(options: HttpDeleteOptions<TResponse, TSearchParams, TPathParams, THeaders>): Promise<TResponse> {
   return httpx<TResponse, undefined, TSearchParams, TPathParams, THeaders>({ ...options, method: "DELETE" });
 }
 
@@ -145,22 +168,52 @@ export class HttpClient {
     this.defaultHeaders = defaultHeaders;
   }
 
-  get = <T = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(options: HttpGetOptions<T, TSearchParams, TPathParams, THeaders>) =>
+  get = <
+    T = unknown,
+    TSearchParams = SearchParamsRecord,
+    TPathParams = PathParamsRecord,
+    THeaders = Record<string, string>,
+  >(
+    options: HttpGetOptions<T, TSearchParams, TPathParams, THeaders>,
+  ) =>
     httpGet<T, TSearchParams, TPathParams, THeaders>({
       ...options,
       headers: { ...this.defaultHeaders, ...(options.headers as Record<string, string> | undefined) } as THeaders,
     });
-  post = <T = unknown, B = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(options: HttpPostOptions<B, T, TSearchParams, TPathParams, THeaders>) =>
+  post = <
+    T = unknown,
+    B = unknown,
+    TSearchParams = SearchParamsRecord,
+    TPathParams = PathParamsRecord,
+    THeaders = Record<string, string>,
+  >(
+    options: HttpPostOptions<B, T, TSearchParams, TPathParams, THeaders>,
+  ) =>
     httpPost<T, B, TSearchParams, TPathParams, THeaders>({
       ...options,
       headers: { ...this.defaultHeaders, ...(options.headers as Record<string, string> | undefined) } as THeaders,
     });
-  put = <T = unknown, B = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(options: HttpPutOptions<B, T, TSearchParams, TPathParams, THeaders>) =>
+  put = <
+    T = unknown,
+    B = unknown,
+    TSearchParams = SearchParamsRecord,
+    TPathParams = PathParamsRecord,
+    THeaders = Record<string, string>,
+  >(
+    options: HttpPutOptions<B, T, TSearchParams, TPathParams, THeaders>,
+  ) =>
     httpPut<T, B, TSearchParams, TPathParams, THeaders>({
       ...options,
       headers: { ...this.defaultHeaders, ...(options.headers as Record<string, string> | undefined) } as THeaders,
     });
-  delete = <T = unknown, TSearchParams = SearchParamsRecord, TPathParams = PathParamsRecord, THeaders = Record<string, string>>(options: HttpDeleteOptions<T, TSearchParams, TPathParams, THeaders>) =>
+  delete = <
+    T = unknown,
+    TSearchParams = SearchParamsRecord,
+    TPathParams = PathParamsRecord,
+    THeaders = Record<string, string>,
+  >(
+    options: HttpDeleteOptions<T, TSearchParams, TPathParams, THeaders>,
+  ) =>
     httpDelete<T, TSearchParams, TPathParams, THeaders>({
       ...options,
       headers: { ...this.defaultHeaders, ...(options.headers as Record<string, string> | undefined) } as THeaders,

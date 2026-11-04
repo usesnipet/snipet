@@ -30,18 +30,8 @@ export function LoginForm() {
     <Form {...form}>
       <form onSubmit={onSubmit}>
         <FieldGroup>
-          <FormInput
-            name="username"
-            label="Username"
-            autoComplete="username"
-            autoFocus
-          />
-          <FormInput
-            name="password"
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-          />
+          <FormInput name="username" label="Username" autoComplete="username" autoFocus />
+          <FormInput name="password" label="Password" type="password" autoComplete="current-password" />
         </FieldGroup>
         <Button type="submit" className="mt-6 w-full" disabled={isPending}>
           {isPending && <Spinner size="sm" />}

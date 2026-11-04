@@ -1,13 +1,15 @@
 import http from "../http";
 
 import {
-  agentSchema, createAgentSchema, findAgentsParamsSchema, paginatedAgentSchema, updateAgentSchema,
+  agentSchema,
+  createAgentSchema,
+  findAgentsParamsSchema,
+  paginatedAgentSchema,
+  updateAgentSchema,
 } from "@snipet/shared";
 
 import type { Agent, CreateAgent, FindAgentsParams, Paginated, UpdateAgent } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const AGENT_URL = "/api/agents";
 

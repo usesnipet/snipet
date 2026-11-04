@@ -33,18 +33,13 @@ function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
       return <span className="text-muted-foreground italic">[]</span>;
     }
 
-    const allPrimitive = value.every(
-      (item) => item === null || typeof item !== "object",
-    );
+    const allPrimitive = value.every((item) => item === null || typeof item !== "object");
 
     if (allPrimitive) {
       return (
         <ul className="flex flex-wrap gap-1.5">
           {value.map((item, index) => (
-            <li
-              key={index}
-              className="rounded-md border bg-muted/40 px-2 py-0.5 text-sm"
-            >
+            <li key={index} className="rounded-md border bg-muted/40 px-2 py-0.5 text-sm">
               <JsonPrimitive value={item} />
             </li>
           ))}
@@ -76,15 +71,11 @@ function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
       <dl className="space-y-2.5">
         {entries.map(([key, nested]) => (
           <div key={key} className="space-y-1">
-            <dt className="text-xs font-medium tracking-wide text-muted-foreground">
-              {key}
-            </dt>
+            <dt className="text-xs font-medium tracking-wide text-muted-foreground">{key}</dt>
             <dd
               className={cn(
                 "text-sm",
-                (isPlainObject(nested) || Array.isArray(nested)) &&
-                  depth >= 0 &&
-                  "border-l border-border pl-3",
+                (isPlainObject(nested) || Array.isArray(nested)) && depth >= 0 && "border-l border-border pl-3",
               )}
             >
               <JsonNode value={nested} depth={depth + 1} />

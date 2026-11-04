@@ -20,9 +20,7 @@ export function PluginCatalogCard({ plugin, view }: PluginCatalogCardProps) {
   const { openDialog } = useDialog();
 
   const countLabel =
-    connectionCount === 0
-      ? "No connections yet"
-      : `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
+    connectionCount === 0 ? "No connections yet" : `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
 
   const onClick = () => {
     if (connected) openDialog({ component: PluginConnectionListDialog, props: { plugin } });

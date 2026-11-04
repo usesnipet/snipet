@@ -28,10 +28,7 @@ export function isApiErrorBody(value: unknown): value is ApiErrorBody {
   if (typeof value !== "object" || value === null) return false;
 
   const record = value as Record<string, unknown>;
-  return (
-    typeof record.statusCode === "number" &&
-    typeof record.message === "string"
-  );
+  return typeof record.statusCode === "number" && typeof record.message === "string";
 }
 
 function fallbackApiError(response: Response): ApiError {
@@ -42,9 +39,7 @@ function fallbackApiError(response: Response): ApiError {
   });
 }
 
-export async function parseApiErrorResponse(
-  response: Response,
-): Promise<ApiError> {
+export async function parseApiErrorResponse(response: Response): Promise<ApiError> {
   const contentType = response.headers.get("content-type");
   if (!contentType?.includes("application/json")) {
     return fallbackApiError(response);

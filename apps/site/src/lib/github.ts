@@ -17,7 +17,9 @@ export async function loadManifests(dir: "llm" | "plugin"): Promise<Manifest[] |
     if (!res.ok) throw new Error(`status ${res.status}`);
     const files = (await res.json()) as { name: string; download_url: string }[];
     return await Promise.all(
-      files.filter((f) => f.name.endsWith(".json")).map(async (f) => (await fetch(f.download_url)).json() as Promise<Manifest>),
+      files
+        .filter((f) => f.name.endsWith(".json"))
+        .map(async (f) => (await fetch(f.download_url)).json() as Promise<Manifest>),
     );
   } catch (error) {
     console.warn(`Loading ${dir} manifests from GitHub failed:`, error);
@@ -41,12 +43,15 @@ export async function loadRoadmap(): Promise<Milestone[] | null> {
   }
   const all = ((await res.json()) as Milestone[])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .map((m: any) => ({
-      title: m.title,
-      description: m.description?.split("\n") ?? [],
-      state: m.state,
-      due_on: m.due_on,
-    } as Milestone))
+    .map(
+      (m: any) =>
+        ({
+          title: m.title,
+          description: m.description?.split("\n") ?? [],
+          state: m.state,
+          due_on: m.due_on,
+        }) as Milestone,
+    )
     // Patch releases (x.y.1+) are fixes, too small for the roadmap.
     .filter((m) => !/^\d+\.\d+\.[1-9]/.test(m.title))
     .sort((a, b) => (a.due_on ?? "").localeCompare(b.due_on ?? ""));

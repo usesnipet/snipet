@@ -47,9 +47,7 @@ export function Page({ title, description, documentTitle, children, actions, lef
         </header>
         <div className="flex w-full max-w-6xl mx-auto min-h-0 flex-1 flex-col">
           <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error as Error} />}>
-            <Suspense fallback={<LoadingFallback />}>
-              {children}
-            </Suspense>
+            <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
           </ErrorBoundary>
         </div>
       </div>
@@ -62,7 +60,7 @@ const usePage = () => {
     throw new Error("PageActions must be used within Page");
   }
   return context;
-}
+};
 /** Renders actions in the page header while keeping definition in `content.tsx`. */
 export function PageActions({ children }: { children: React.ReactNode }) {
   const { setActions } = usePage();
@@ -75,7 +73,6 @@ export function PageActions({ children }: { children: React.ReactNode }) {
   return null;
 }
 
-
 /** Renders left actions in the page header while keeping definition in `content.tsx`. */
 export function PageLeftActions({ children }: { children: React.ReactNode }) {
   const { setLeftActions } = usePage();
@@ -87,4 +84,3 @@ export function PageLeftActions({ children }: { children: React.ReactNode }) {
 
   return null;
 }
-

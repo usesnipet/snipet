@@ -52,10 +52,15 @@ export function Pagination({
       className={cn("flex flex-col items-center gap-3 sm:flex-row sm:justify-between", className)}
     >
       <p className="text-muted-foreground text-xs tabular-nums">
-        {total === 0 ? `No ${itemLabel}` : (
+        {total === 0 ? (
+          `No ${itemLabel}`
+        ) : (
           <>
-            Showing <span className="text-foreground font-medium">{from}–{to}</span> of{" "}
-            <span className="text-foreground font-medium">{total}</span> {itemLabel}
+            Showing{" "}
+            <span className="text-foreground font-medium">
+              {from}–{to}
+            </span>{" "}
+            of <span className="text-foreground font-medium">{total}</span> {itemLabel}
           </>
         )}
       </p>
@@ -70,7 +75,9 @@ export function Pagination({
               </SelectTrigger>
               <SelectContent>
                 {pageSizeOptions.map((option) => (
-                  <SelectItem key={option} value={String(option)}>{option}</SelectItem>
+                  <SelectItem key={option} value={String(option)}>
+                    {option}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -100,7 +107,9 @@ export function Pagination({
                 {slot}
               </Button>
             ) : (
-              <span key={slot} className="text-muted-foreground w-7 text-center text-xs">…</span>
+              <span key={slot} className="text-muted-foreground w-7 text-center text-xs">
+                …
+              </span>
             ),
           )}
           <Button

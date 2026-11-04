@@ -28,14 +28,7 @@ export type SchemaFormDialogProps = DialogInstanceProps<{
 
 const FORM_ID_PREFIX = "schema-form-dialog";
 
-export function SchemaFormDialog({
-  title,
-  description,
-  schema,
-  formData,
-  onSubmit,
-  close,
-}: SchemaFormDialogProps) {
+export function SchemaFormDialog({ title, description, schema, formData, onSubmit, close }: SchemaFormDialogProps) {
   const formId = `${FORM_ID_PREFIX}-${useId()}`;
 
   const uiSchema = useMemo<UiSchema>(() => {
@@ -57,9 +50,7 @@ export function SchemaFormDialog({
         {description ? (
           <DialogDescription>{description}</DialogDescription>
         ) : (
-          <DialogDescription className="sr-only">
-            Configure {title}
-          </DialogDescription>
+          <DialogDescription className="sr-only">Configure {title}</DialogDescription>
         )}
       </DialogHeader>
 

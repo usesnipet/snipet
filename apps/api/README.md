@@ -24,16 +24,16 @@ a local S3 for file storage.
 Environment variables, all validated in [`src/env.ts`](src/env.ts) (each one is documented there).
 The ones to set in production:
 
-| Variable                      |                                                           |
-| ----------------------------- | --------------------------------------------------------- |
-| `DATABASE_URL`                | App database.                                             |
-| `JWT_SECRET`                  | 32+ characters.                                           |
-| `ENCRYPTION_KEY`              | 32 bytes, base64: encrypts stored credentials.            |
-| `ROOT_PASSWORD`               | First admin's password.                                   |
-| `PUBLIC_URL`                  | URL the server is reached at.                             |
-| `CORS_ORIGINS`                | Sites embedding the widget, comma-separated.              |
-| `TRUST_PROXY`                 | Behind a reverse proxy, so rate limits see the client IP. |
-| `STORAGE_*`                   | Uploaded files.                                           |
+| Variable         |                                                           |
+| ---------------- | --------------------------------------------------------- |
+| `DATABASE_URL`   | App database.                                             |
+| `JWT_SECRET`     | 32+ characters.                                           |
+| `ENCRYPTION_KEY` | 32 bytes, base64: encrypts stored credentials.            |
+| `ROOT_PASSWORD`  | First admin's password.                                   |
+| `PUBLIC_URL`     | URL the server is reached at.                             |
+| `CORS_ORIGINS`   | Sites embedding the widget, comma-separated.              |
+| `TRUST_PROXY`    | Behind a reverse proxy, so rate limits see the client IP. |
+| `STORAGE_*`      | Uploaded files.                                           |
 
 ## Scripts
 

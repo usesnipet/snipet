@@ -21,7 +21,10 @@ export function Header({ stars, showRoadmap }: Props) {
             Docs
           </a>
           {showRoadmap && (
-            <a href="#roadmap" className="hidden rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground sm:block">
+            <a
+              href="#roadmap"
+              className="hidden rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground sm:block"
+            >
               Roadmap
             </a>
           )}

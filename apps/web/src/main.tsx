@@ -6,10 +6,10 @@ import "./lib/configure-http";
 import { RootProviders } from "./root-providers.tsx";
 import { Router } from "./router.tsx";
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <RootProviders>
       <Router />
     </RootProviders>
   </StrictMode>,
-)
+);

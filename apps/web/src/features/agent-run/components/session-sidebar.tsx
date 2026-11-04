@@ -1,11 +1,24 @@
 import { DeleteDialog } from "@/components/confirm-dialog";
 import { Link } from "@/components/ui/link";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
-  SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarMenuSkeleton,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
 import { useDialog } from "@/lib/dialog";
@@ -60,8 +73,8 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
         description: (
           <>
             This will permanently delete{" "}
-            <span className="font-medium text-foreground">{session.title || "this chat"}</span>{" "}
-            and all its messages. This action cannot be undone.
+            <span className="font-medium text-foreground">{session.title || "this chat"}</span> and all its messages.
+            This action cannot be undone.
           </>
         ),
         onConfirm: async () => {
@@ -124,7 +137,10 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
                           </SidebarMenuAction>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent side="right" align="start">
-                          <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => openDelete(session)}>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={() => openDelete(session)}
+                          >
                             <Trash2 />
                             Delete
                           </DropdownMenuItem>

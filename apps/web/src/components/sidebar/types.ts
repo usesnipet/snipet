@@ -1,41 +1,41 @@
-import type { LucideIcon } from "lucide-react"
+import type { LucideIcon } from "lucide-react";
 
 export type NavSubItem = {
-  title: string
-  href: string
+  title: string;
+  href: string;
   /** When true, only exact pathname matches (avoids /llm matching /llm/playground). */
-  exact?: boolean
-  visible?: boolean | (() => boolean)
-  disabled?: boolean | (() => boolean)
-  comingSoon?: boolean
-}
+  exact?: boolean;
+  visible?: boolean | (() => boolean);
+  disabled?: boolean | (() => boolean);
+  comingSoon?: boolean;
+};
 
 export type NavItem = {
-  title: string
-  href: string
-  icon: LucideIcon
-  exact?: boolean
-  visible?: boolean | (() => boolean)
-  disabled?: boolean | (() => boolean)
-  comingSoon?: boolean
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  exact?: boolean;
+  visible?: boolean | (() => boolean);
+  disabled?: boolean | (() => boolean);
+  comingSoon?: boolean;
   /** Shows an "Experimental" tag: the feature may still change. */
-  experimental?: boolean
-}
+  experimental?: boolean;
+};
 
 export type NavItemWithChildren = {
-  title: string
-  icon: LucideIcon
-  items: NavSubItem[]
-  visible?: boolean | (() => boolean)
-  disabled?: boolean | (() => boolean)
-  comingSoon?: boolean
-}
+  title: string;
+  icon: LucideIcon;
+  items: NavSubItem[];
+  visible?: boolean | (() => boolean);
+  disabled?: boolean | (() => boolean);
+  comingSoon?: boolean;
+};
 
-export type NavLeafEntry = NavItem | NavItemWithChildren
+export type NavLeafEntry = NavItem | NavItemWithChildren;
 
 export type NavGroup = {
-  label: string
-  items: NavLeafEntry[]
-}
+  label: string;
+  items: NavLeafEntry[];
+};
 
-export type NavEntry = NavLeafEntry | NavGroup
+export type NavEntry = NavLeafEntry | NavGroup;

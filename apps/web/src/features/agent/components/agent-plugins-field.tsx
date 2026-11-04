@@ -46,7 +46,9 @@ export function AgentPluginsField() {
         </Button>
       </div>
       {fields.length === 0 ? (
-        <p className="text-muted-foreground text-xs">No plugins. Add a connection to give the agent its tools and hooks.</p>
+        <p className="text-muted-foreground text-xs">
+          No plugins. Add a connection to give the agent its tools and hooks.
+        </p>
       ) : (
         fields.map((field, index) => (
           <div key={field.id} className="space-y-2 rounded-lg border bg-muted/30 p-3">
@@ -57,13 +59,33 @@ export function AgentPluginsField() {
                 placeholder="Select a connection"
                 fieldclassname="flex-1"
               />
-              <Button type="button" variant="ghost" size="icon-sm" aria-label="Move up" disabled={index === 0} onClick={() => move(index, index - 1)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Move up"
+                disabled={index === 0}
+                onClick={() => move(index, index - 1)}
+              >
                 <ArrowUp />
               </Button>
-              <Button type="button" variant="ghost" size="icon-sm" aria-label="Move down" disabled={index === fields.length - 1} onClick={() => move(index, index + 1)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Move down"
+                disabled={index === fields.length - 1}
+                onClick={() => move(index, index + 1)}
+              >
                 <ArrowDown />
               </Button>
-              <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove plugin" onClick={() => remove(index)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Remove plugin"
+                onClick={() => remove(index)}
+              >
                 <X />
               </Button>
             </div>
@@ -97,21 +119,33 @@ function PluginGrant({
   const { tools, hooks } = manifest.capabilities;
   const settings = manifest.settings as RJSFSchema | undefined;
   const toggleHook = (hook: HookName, on: boolean) =>
-    form.setValue(
-      `${name}.disabledHooks`,
-      on ? disabledHooks.filter((h) => h !== hook) : [...disabledHooks, hook],
-      { shouldDirty: true },
-    );
+    form.setValue(`${name}.disabledHooks`, on ? disabledHooks.filter((h) => h !== hook) : [...disabledHooks, hook], {
+      shouldDirty: true,
+    });
 
   return (
     <>
       {tools && (
         <>
           <div className="grid grid-cols-2 gap-2">
-            <FormInput name={`${name}.allow`} label="Allow" placeholder="all tools" split className="font-mono text-xs" />
-            <FormInput name={`${name}.deny`} label="Deny" placeholder="list_*, *delete*" split className="font-mono text-xs" />
+            <FormInput
+              name={`${name}.allow`}
+              label="Allow"
+              placeholder="all tools"
+              split
+              className="font-mono text-xs"
+            />
+            <FormInput
+              name={`${name}.deny`}
+              label="Deny"
+              placeholder="list_*, *delete*"
+              split
+              className="font-mono text-xs"
+            />
           </div>
-          <p className="text-muted-foreground text-xs">Comma-separated glob patterns on the tool name. Deny wins over allow.</p>
+          <p className="text-muted-foreground text-xs">
+            Comma-separated glob patterns on the tool name. Deny wins over allow.
+          </p>
         </>
       )}
       {hooks && (

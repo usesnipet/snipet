@@ -7,25 +7,12 @@ import {
   userSchema,
 } from "@snipet/shared";
 
-import type {
-  AuthResponse,
-  ChangeOwnPassword,
-  Login,
-  RefreshToken,
-  User,
-} from "@snipet/shared";
-import type {
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { AuthResponse, ChangeOwnPassword, Login, RefreshToken, User } from "@snipet/shared";
+import type { ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const AUTH_URL = "/api/auth";
 
-const login = async (
-  body: Login,
-  opts: ServicePostOptions<Login, AuthResponse> = {},
-): Promise<AuthResponse> =>
+const login = async (body: Login, opts: ServicePostOptions<Login, AuthResponse> = {}): Promise<AuthResponse> =>
   http.post({
     url: `${AUTH_URL}/login`,
     body,
@@ -44,10 +31,7 @@ const refresh = async (
     ...opts,
   });
 
-const logout = async (
-  body: RefreshToken,
-  opts: ServicePostOptions<RefreshToken, void> = {},
-): Promise<void> =>
+const logout = async (body: RefreshToken, opts: ServicePostOptions<RefreshToken, void> = {}): Promise<void> =>
   http.post({
     url: `${AUTH_URL}/logout`,
     body,

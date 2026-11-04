@@ -44,5 +44,5 @@ export function ApiKeysPage() {
       </PageActions>
       <ApiKeyTable />
     </Page>
-  )
+  );
 }

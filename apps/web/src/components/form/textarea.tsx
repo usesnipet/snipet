@@ -1,14 +1,14 @@
-import React from 'react';
-import { useFormContext } from 'react-hook-form';
+import React from "react";
+import { useFormContext } from "react-hook-form";
 
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
-import { Textarea } from '../ui/textarea';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
+import { Textarea } from "../ui/textarea";
 
 type Props = React.ComponentProps<"textarea"> & {
-  label?: string
-  name: string
-  fieldclassname?: string
-}
+  label?: string;
+  name: string;
+  fieldclassname?: string;
+};
 
 export const FormTextarea = (props: Props) => {
   const form = useFormContext();
@@ -20,7 +20,7 @@ export const FormTextarea = (props: Props) => {
       name={props.name}
       render={({ field }) => (
         <FormItem className={props.fieldclassname}>
-          {props.label && (<FormLabel>{props.label}</FormLabel>)}
+          {props.label && <FormLabel>{props.label}</FormLabel>}
           <FormControl>
             <Textarea disabled={isLoading} {...field} {...props} />
           </FormControl>

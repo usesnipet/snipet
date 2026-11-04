@@ -9,7 +9,10 @@ const HIDDEN_TAGS = new Set(["remote", "official"]);
 function filtersOf(plugins: Manifest[]) {
   const counts = new Map<string, number>();
   for (const tag of plugins.flatMap((p) => p.tags ?? [])) counts.set(tag, (counts.get(tag) ?? 0) + 1);
-  return [...counts].filter(([tag, n]) => n > 1 && !HIDDEN_TAGS.has(tag)).map(([tag]) => tag).sort();
+  return [...counts]
+    .filter(([tag, n]) => n > 1 && !HIDDEN_TAGS.has(tag))
+    .map(([tag]) => tag)
+    .sort();
 }
 
 export function Plugins({ plugins }: { plugins: Manifest[] }) {
@@ -33,7 +36,9 @@ export function Plugins({ plugins }: { plugins: Manifest[] }) {
               onClick={() => setTag(t)}
               aria-pressed={tag === t}
               className={`rounded-full border px-3.5 py-1.5 text-sm capitalize transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-                tag === t ? "border-primary bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
+                tag === t
+                  ? "border-primary bg-background text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t ?? "All"}
@@ -54,7 +59,9 @@ export function Plugins({ plugins }: { plugins: Manifest[] }) {
             </li>
           ))}
           <li className="flex items-center gap-3 border-b py-3">
-            <span className="flex size-7 items-center justify-center rounded border border-dashed text-muted-foreground">+</span>
+            <span className="flex size-7 items-center justify-center rounded border border-dashed text-muted-foreground">
+              +
+            </span>
             <div>
               <h3 className="font-medium">Any MCP server</h3>
               <p className="text-sm text-muted-foreground">Bring your own server by URL.</p>

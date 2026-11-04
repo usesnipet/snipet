@@ -11,12 +11,7 @@ import type {
   PluginManifest,
   UpdatePluginConnection,
 } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
 const BASE_QUERY_KEY = "plugin-connection";
@@ -34,9 +29,7 @@ export const useListPluginConnections = (
   });
 
 export const pluginsQueryKey = () => [BASE_QUERY_KEY, "plugins"] as const;
-export const usePlugins = (
-  opts?: ServiceGetOptions<PluginManifest[]>,
-): UseQueryResult<PluginManifest[], Error> =>
+export const usePlugins = (opts?: ServiceGetOptions<PluginManifest[]>): UseQueryResult<PluginManifest[], Error> =>
   useQuery({
     queryKey: pluginsQueryKey(),
     queryFn: () => pluginConnectionService.listPlugins(opts),
