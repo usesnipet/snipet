@@ -75,6 +75,7 @@ describe("DebugS3Driver", () => {
       prefix: "debug/",
       endpoint: "",
       forcePathStyle: false,
+      timeout: 10,
     });
   });
 
@@ -102,6 +103,19 @@ describe("DebugS3Driver", () => {
       expect(received.url?.split("?")[0]).toBe(`/logs/debug/${eventPath}`);
       expect(JSON.parse(received.body)).toEqual(event);
     } finally {
+      server.close();
+    }
+  });
+
+  it("gives up on the put after the connection's timeout", async () => {
+    const server = createServer(() => undefined);
+    await new Promise<void>((done) => server.listen(0, "127.0.0.2", done));
+    try {
+      const endpoint = `http://127.0.0.2:${(server.address() as AddressInfo).port}`;
+      const options = optionsOf("debug-s3", driver, { ...required, endpoint, forcePathStyle: true, timeout: 1 });
+      await expect(driver.handle(event, options, context)).rejects.toThrow();
+    } finally {
+      server.closeAllConnections();
       server.close();
     }
   });

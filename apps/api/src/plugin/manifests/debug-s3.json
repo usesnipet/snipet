@@ -48,8 +48,8 @@
       },
       "timeout": {
         "type": "integer",
-        "title": "Health check timeout",
-        "description": "Seconds to wait for the bucket to answer the health check.",
+        "title": "Timeout",
+        "description": "Seconds to wait for the bucket to answer, when saving an event or on the health check.",
         "minimum": 1,
         "maximum": 60,
         "default": 10
@@ -92,6 +92,7 @@
       "options": {
         "bucket": "{{ connection.bucket }}",
         "region": "{{ connection.region }}",
+        "prefix": "{{ connection.prefix }}",
         "endpoint": "{{ connection.endpoint }}",
         "forcePathStyle": "{{ connection.forcePathStyle }}",
         "accessKeyId": "{{ connection.accessKeyId }}",
