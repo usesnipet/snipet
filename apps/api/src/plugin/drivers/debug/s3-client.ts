@@ -14,9 +14,11 @@ export const s3ConnectionSchema = z.strictObject({
   // Required: without them the SDK would fall back to the API server's own AWS credentials.
   accessKeyId: z.string().min(1),
   secretAccessKey: z.string().min(1),
+  timeout: z.number().int().min(1).max(60), // seconds
+  prefix: z.string(),
 });
 
-type S3ConnectionOptions = z.infer<typeof s3ConnectionSchema>;
+export type S3ConnectionOptions = z.infer<typeof s3ConnectionSchema>;
 
 /**
  * A client that only reaches public addresses or OUTBOUND_ALLOWLIST. Names are

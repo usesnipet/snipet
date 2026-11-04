@@ -38,7 +38,7 @@
       "endpoint": {
         "type": "string",
         "title": "Endpoint",
-        "description": "For S3-compatible services, e.g. https://minio.example.com. Leave empty for AWS S3. Non-public addresses must be in OUTBOUND_ALLOWLIST."
+        "description": "For S3-compatible services, e.g. https://minio.example.com. Leave empty for AWS S3."
       },
       "forcePathStyle": {
         "type": "boolean",
@@ -67,7 +67,8 @@
         "endpoint": "{{ connection.endpoint }}",
         "forcePathStyle": "{{ connection.forcePathStyle }}",
         "accessKeyId": "{{ connection.accessKeyId }}",
-        "secretAccessKey": "{{ connection.secretAccessKey }}"
+        "secretAccessKey": "{{ connection.secretAccessKey }}",
+        "timeout": "{{ connection.timeout }}"
       },
       "handlers": [
         {
