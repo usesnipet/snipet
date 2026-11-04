@@ -5,6 +5,7 @@ import { pluginManifestSchema } from "@snipet/shared";
 import { resolve } from "node:path";
 
 import { DebugFsDriver } from "./drivers/debug/fs.hooks.js";
+import { DebugS3HealthCheckDriver } from "./drivers/debug/s3.health.js";
 import { DebugS3Driver } from "./drivers/debug/s3.hooks.js";
 import { McpDriver } from "./drivers/mcp.js";
 import { StaticInstructionsDriver } from "./drivers/static.instructions.js";
@@ -20,7 +21,7 @@ import { PluginDriverRegistry, PluginRegistry } from "./plugin.registry.js";
           tools: [mcp],
           instructions: [mcp, new StaticInstructionsDriver()],
           hooks: [new DebugFsDriver(), new DebugS3Driver()],
-          healthCheck: [new HttpHealthCheckDriver()],
+          healthCheck: [new HttpHealthCheckDriver(), new DebugS3HealthCheckDriver()],
         });
       },
     },
