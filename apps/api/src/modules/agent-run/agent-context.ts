@@ -1,6 +1,5 @@
 import { Owner } from "#src/common/decorators/owner.decorator.js";
 import { ToolResult } from "#src/plugin/driver.js";
-import { isGranted } from "#src/utils/grant/grant.js";
 import { BadRequestException, Injectable } from "@nestjs/common";
 
 import { Agent } from "../agent/agent.entity.js";
@@ -45,9 +44,9 @@ export class AgentContext {
   constructor(private readonly plugins: PluginConnectionService) {}
 
   /**
-   * The tools of the agent's plugin connections that pass the
-   * grant's allow/deny; the others are returned as denied. Names are made
-   * unique and provider-safe; executors maps them back.
+   * The tools of the agent's plugin connections selected in the grant; the
+   * others are returned as denied. Names are made unique and provider-safe;
+   * executors maps them back.
    */
   async build(agent: Agent, owner: Owner): Promise<RunContext> {
     const denied: DeniedTool[] = [];
@@ -72,7 +71,7 @@ export class AgentContext {
     const pluginGrants = new Map((agent.pluginConnections ?? []).map((g) => [g.pluginConnectionId, g]));
     const used = new Set<string>();
     for (const tool of await this.plugins.findTools([...pluginGrants.keys()])) {
-      if (!isGranted(tool.name, pluginGrants.get(tool.connection.id)!)) {
+      if (!pluginGrants.get(tool.connection.id)!.tools.includes(tool.name)) {
         denied.push({ tool: tool.name, pluginConnectionId: tool.connection.id });
         continue;
       }
