@@ -26,8 +26,7 @@ export const agentPluginConnectionSchema = z.object({
   agentId: z.uuid(),
   pluginConnectionId: z.uuid(),
   position: z.number().int(),
-  allow: z.array(z.string()),
-  deny: z.array(z.string()),
+  tools: z.array(z.string()),
   settings: jsonObjectSchema,
   disabledHooks: z.array(hookNameSchema),
 });
@@ -51,9 +50,6 @@ export const agentSchema = z.object({
 export type Agent = z.infer<typeof agentSchema>;
 
 export const paginatedAgentSchema = paginatedSchema(agentSchema);
-
-/** Glob patterns; blanks are dropped. */
-const patternsSchema = z.array(z.string().trim()).transform((patterns) => patterns.filter(Boolean));
 
 /**
  * The position in llms and pluginConnections is the order; both replace the whole list when sent.
@@ -92,8 +88,7 @@ export const createAgentSchema = z.object({
     .array(
       z.object({
         pluginConnectionId: z.uuid("Select a connection"),
-        allow: patternsSchema,
-        deny: patternsSchema,
+        tools: z.array(z.string()).default([]),
         settings: jsonObjectSchema.default({}),
         disabledHooks: z.array(hookNameSchema).default([]),
       }),

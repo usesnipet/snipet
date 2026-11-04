@@ -47,6 +47,13 @@ export type PluginConnection = z.infer<typeof pluginConnectionSchema>;
 
 export const paginatedPluginConnectionSchema = paginatedSchema(pluginConnectionSchema);
 
+/** A tool a connection offers, as listed when choosing what an agent can call. */
+export const pluginToolSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+});
+export type PluginTool = z.infer<typeof pluginToolSchema>;
+
 /** config is checked against the manifest's `connection` schema by the API. */
 export const createPluginConnectionSchema = z.object({
   name: z.string().min(1).max(255),

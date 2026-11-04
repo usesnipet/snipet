@@ -1,8 +1,9 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 /**
- * Plugin tools and llm models become jsonb columns of their connection. The
- * rows aren't moved: the sync on boot fills the columns in again.
+ * Plugin tools and llm models become jsonb columns of their connection. Tools
+ * are moved because the next migration reads them to expand agent grants; the
+ * sync on boot fills in the models and refreshes the tools.
  */
 export class SyncedItemsAsJsonb1793500000000 implements MigrationInterface {
   name = "SyncedItemsAsJsonb1793500000000";
@@ -10,6 +11,12 @@ export class SyncedItemsAsJsonb1793500000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "plugin_connections" ADD "tools" jsonb NOT NULL DEFAULT '[]'`);
     await queryRunner.query(`ALTER TABLE "llm_connections" ADD "models" jsonb NOT NULL DEFAULT '[]'`);
+    await queryRunner.query(
+      `UPDATE "plugin_connections" c SET "tools" = t."tools" FROM (
+        SELECT "pluginConnectionId", jsonb_agg(jsonb_build_object('name', "name", 'description', "description", 'inputSchema', "inputSchema") ORDER BY "name") AS "tools"
+        FROM "plugin_tools" GROUP BY "pluginConnectionId"
+      ) t WHERE t."pluginConnectionId" = c."id"`,
+    );
     await queryRunner.query(`DROP TABLE "plugin_tools"`);
     await queryRunner.query(`DROP TABLE "llm_models"`);
   }

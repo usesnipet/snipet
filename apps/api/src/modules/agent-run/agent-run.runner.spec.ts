@@ -35,7 +35,7 @@ const agent = {
   maxTurns: 5,
   historyRuns: 10,
   llms: [{ model: "openai/gpt", connectionId: null, extraOptions: null }],
-  pluginConnections: [{ pluginConnectionId: "p1", allow: ["ask_*"], deny: [] }],
+  pluginConnections: [{ pluginConnectionId: "p1", tools: ["ask_question"] }],
 } as unknown as Agent;
 const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z") } as AgentRun;
 
@@ -132,7 +132,7 @@ describe("AgentRunner.run", () => {
       { messages: LlmMessage[]; tools: { name: string; description: string }[] },
     ];
     expect(messages.map((m) => m.role)).toEqual(["system", "system", "user", "assistant", "tool"]);
-    // read_wiki isn't in the plugin grant's allow.
+    // read_wiki isn't selected in the plugin grant.
     expect(tools.map((t) => [t.name, t.description])).toEqual([["ask_question", "[Wiki] Asks"]]);
     expect(plugins.findTools).toHaveBeenCalledWith(["p1"]);
   });

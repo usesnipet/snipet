@@ -124,11 +124,9 @@ export class AgentPluginConnection extends BaseEntity implements AgentPluginConn
   @JoinColumn({ name: "pluginConnectionId" })
   pluginConnection?: PluginConnection;
 
+  /** Names of the tools the agent can call; a tool added by a later sync stays off until selected. */
   @Column({ type: "text", array: true, default: [] })
-  allow: string[];
-
-  @Column({ type: "text", array: true, default: [] })
-  deny: string[];
+  tools: string[];
 
   @Column({ type: "int", default: 0 })
   position: number;

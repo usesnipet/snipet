@@ -91,8 +91,8 @@ describe("AgentService.updateById", () => {
 
   it("replaces plugin connections when sent, in list order, settings checked against the manifest", async () => {
     const { service, pluginGrants } = setup();
-    const grant = { pluginConnectionId: "p1", allow: ["read_*"], deny: [], settings: {}, disabledHooks: [] };
-    const gone = { pluginConnectionId: "p2", allow: [], deny: [], settings: { x: 1 }, disabledHooks: [] };
+    const grant = { pluginConnectionId: "p1", tools: ["read_wiki"], settings: {}, disabledHooks: [] };
+    const gone = { pluginConnectionId: "p2", tools: [], settings: { x: 1 }, disabledHooks: [] };
     await service.updateById("a1", { pluginConnections: [grant, gone] });
 
     expect(pluginGrants.delete).toHaveBeenCalledWith({ agentId: "a1" });
@@ -107,8 +107,7 @@ describe("AgentService.updateById", () => {
     const { service } = setup();
     const grant = (pluginConnectionId: string, settings = {}) => ({
       pluginConnectionId,
-      allow: [],
-      deny: [],
+      tools: [],
       settings,
       disabledHooks: [],
     });
@@ -127,8 +126,7 @@ describe("AgentService.updateById", () => {
       pluginConnections: [
         {
           pluginConnectionId: "p1",
-          allow: [],
-          deny: [],
+          tools: [],
           settings: { apiKey: SECRET_PLACEHOLDER },
           disabledHooks: ["run.context", "run.end"],
         },

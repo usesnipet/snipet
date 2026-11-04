@@ -9,6 +9,7 @@ import type {
   Paginated,
   PluginConnection,
   PluginManifest,
+  PluginTool,
   UpdatePluginConnection,
 } from "@snipet/shared";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
@@ -26,6 +27,15 @@ export const useListPluginConnections = (
     // Tool sync runs in the background after create; poll until it settles.
     refetchInterval: (query) =>
       query.state.data?.data.some((conn) => syncState(conn).kind === "pending") ? 5000 : false,
+  });
+
+/** A connection's tools; lastSyncedAt in the key refetches them when a sync finishes. */
+export const usePluginConnectionTools = (
+  connection: Pick<PluginConnection, "id" | "lastSyncedAt">,
+): UseQueryResult<PluginTool[], Error> =>
+  useQuery({
+    queryKey: [...listPluginConnectionsQueryKey(), connection.id, "tools", connection.lastSyncedAt],
+    queryFn: () => pluginConnectionService.listTools(connection.id),
   });
 
 export const pluginsQueryKey = () => [BASE_QUERY_KEY, "plugins"] as const;

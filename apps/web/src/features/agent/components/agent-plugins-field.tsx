@@ -1,12 +1,13 @@
-import { FormInput } from "@/components/form/input";
 import { FormSelect } from "@/components/form/select";
 import { SchemaFormFields } from "@/components/schema-form";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useListPluginConnections, usePlugins } from "@snipet/client";
+import { syncState, useListPluginConnections, usePluginConnectionTools, usePlugins } from "@snipet/client";
 import { hookHandlersOf } from "@snipet/shared";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 import { describeHandler } from "@/features/plugin-connection/capabilities";
@@ -17,8 +18,8 @@ import type { AgentFormInput } from "../schemas";
 
 /**
  * Plugin connections granted to the agent, in order (the order its hooks run
- * in): allow/deny globs on the tool name, the optional hooks it runs, and
- * the agent's settings for the plugin.
+ * in): the tools it can call, the optional hooks it runs, and the agent's
+ * settings for the plugin.
  */
 export function AgentPluginsField() {
   const form = useFormContext<AgentFormInput>();
@@ -39,7 +40,7 @@ export function AgentPluginsField() {
         <Button
           type="button"
           size="sm"
-          onClick={() => append({ pluginConnectionId: "", allow: [], deny: [], settings: {}, disabledHooks: [] })}
+          onClick={() => append({ pluginConnectionId: "", settings: {}, disabledHooks: [] })}
         >
           <Plus />
           Add plugin
@@ -58,6 +59,11 @@ export function AgentPluginsField() {
                 options={options}
                 placeholder="Select a connection"
                 fieldclassname="flex-1"
+                onValueChange={() => {
+                  // Names of the previous connection's tools mean nothing on this one.
+                  form.setValue(`pluginConnections.${index}.tools`, undefined);
+                  return undefined;
+                }}
               />
               <Button
                 type="button"
@@ -98,7 +104,88 @@ export function AgentPluginsField() {
   );
 }
 
-/** The parts of a grant that depend on its plugin: allow/deny, hooks, settings. */
+/**
+ * Checklist of the connection's tools. A grant with no list yet (undefined)
+ * starts with every tool on, once they're synced; an empty list stays empty.
+ */
+function ToolPicker({ name, connection }: { name: `pluginConnections.${number}`; connection: PluginConnection }) {
+  const form = useFormContext<AgentFormInput>();
+  const selected = useWatch({ control: form.control, name: `${name}.tools` });
+  const { data: tools } = usePluginConnectionTools(connection);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (selected === undefined && tools?.length) {
+      form.setValue(
+        `${name}.tools`,
+        tools.map((t) => t.name),
+        { shouldDirty: true },
+      );
+    }
+  }, [form, name, selected, tools]);
+
+  if (!tools?.length) {
+    const sync = syncState(connection);
+    return (
+      <p className="text-muted-foreground text-xs">
+        {sync.kind === "pending" && "Syncing tools…"}
+        {sync.kind === "error" && `Couldn't list tools: ${sync.message}`}
+        {sync.kind === "synced" && "This connection has no tools."}
+      </p>
+    );
+  }
+
+  const names = tools.map((t) => t.name);
+  // Drops tools the connection no longer has, so they don't count or get saved again.
+  const current = (selected ?? []).filter((n) => names.includes(n));
+  const setTools = (next: string[]) => form.setValue(`${name}.tools`, next, { shouldDirty: true });
+  const query = search.trim().toLowerCase();
+  const visible = tools.filter((t) => `${t.name} ${t.description}`.toLowerCase().includes(query));
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground">
+          Tools ({current.length}/{tools.length})
+        </p>
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
+          onClick={() => setTools(current.length === names.length ? [] : names)}
+        >
+          {current.length === names.length ? "Clear" : "Select all"}
+        </Button>
+      </div>
+      {tools.length > 8 && (
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search tools"
+          aria-label="Search tools"
+        />
+      )}
+      <div className="max-h-48 space-y-1 overflow-y-auto">
+        {visible.map((tool) => (
+          <label key={tool.name} className="flex items-center gap-2 text-xs">
+            <Checkbox
+              checked={current.includes(tool.name)}
+              onCheckedChange={(checked) =>
+                setTools(checked === true ? [...current, tool.name] : current.filter((n) => n !== tool.name))
+              }
+            />
+            <code className="shrink-0">{tool.name}</code>
+            <span className="truncate text-muted-foreground" title={tool.description}>
+              {tool.description}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The parts of a grant that depend on its plugin: tools, hooks, settings. */
 function PluginGrant({
   index,
   connections,
@@ -125,29 +212,7 @@ function PluginGrant({
 
   return (
     <>
-      {tools && (
-        <>
-          <div className="grid grid-cols-2 gap-2">
-            <FormInput
-              name={`${name}.allow`}
-              label="Allow"
-              placeholder="all tools"
-              split
-              className="font-mono text-xs"
-            />
-            <FormInput
-              name={`${name}.deny`}
-              label="Deny"
-              placeholder="list_*, *delete*"
-              split
-              className="font-mono text-xs"
-            />
-          </div>
-          <p className="text-muted-foreground text-xs">
-            Comma-separated glob patterns on the tool name. Deny wins over allow.
-          </p>
-        </>
-      )}
+      {tools && connection && <ToolPicker key={connection.id} name={name} connection={connection} />}
       {hooks && (
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground">Hooks</p>

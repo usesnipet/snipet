@@ -50,15 +50,12 @@ const toForm = (agent?: Agent): AgentFormInput => ({
     connectionId: llm.connectionId ?? undefined,
     extraOptions: llm.extraOptions ?? undefined,
   })) ?? [{ model: "" }],
-  pluginConnections: (agent?.pluginConnections ?? []).map(
-    ({ pluginConnectionId, allow, deny, settings, disabledHooks }) => ({
-      pluginConnectionId,
-      allow,
-      deny,
-      settings,
-      disabledHooks,
-    }),
-  ),
+  pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, tools, settings, disabledHooks }) => ({
+    pluginConnectionId,
+    tools,
+    settings,
+    disabledHooks,
+  })),
 });
 
 export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {

@@ -35,10 +35,30 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
     const instructions = resolved && (await resolved.driver.getInstructions(conn.id, resolved.options));
     if (instructions && instructions.length > MAX_PLUGIN_INSTRUCTIONS)
       this.logger.warn(`Instructions for ${conn.id} are too long`);
+    // Last, so a driver that throws above leaves the grants and stored tools in step.
+    if (tools)
+      await this.pruneGrants(
+        conn.id,
+        tools.map((t) => t.name),
+      );
     return {
       // No tools capability: the stored ones are kept.
       ...(tools && { tools: uniqueSortedBy(tools, (t) => t.name) }),
       instructions: instructions?.slice(0, MAX_PLUGIN_INSTRUCTIONS) || null,
     };
+  }
+
+  /**
+   * Drops removed tools from the agents' selections, so a later tool reusing
+   * the name stays off until selected. Raw SQL because the agent module depends
+   * on this one, not the other way around.
+   */
+  private async pruneGrants(connectionId: string, names: string[]): Promise<void> {
+    await this.connections.query(
+      `UPDATE "agent_plugin_connections"
+       SET "tools" = ARRAY(SELECT t FROM unnest("tools") AS t WHERE t = ANY($2::text[]))
+       WHERE "pluginConnectionId" = $1 AND NOT "tools" <@ $2::text[]`,
+      [connectionId, names],
+    );
   }
 }

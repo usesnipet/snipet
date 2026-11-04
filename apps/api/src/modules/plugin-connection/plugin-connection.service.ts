@@ -1,7 +1,7 @@
 import { ConnectionService } from "#src/manifest/connection.service.js";
 import { PluginDrivers, Tool, ToolResult } from "#src/plugin/driver.js";
 import { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { validateJson } from "@snipet/server-common";
 import { DeepPartial, In, QueryDeepPartialEntity, Repository } from "typeorm";
@@ -9,7 +9,7 @@ import { DeepPartial, In, QueryDeepPartialEntity, Repository } from "typeorm";
 import { PluginConnection } from "./plugin-connection.entity.js";
 import { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 
-import type { PluginManifest } from "@snipet/shared";
+import type { PluginManifest, PluginTool } from "@snipet/shared";
 
 /** A synced tool with the connection it comes from. */
 export type ConnectionTool = Tool & { connection: { id: string; name: string } };
@@ -62,6 +62,14 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
     if (!connectionIds.length) return new Map();
     const conns = await this.repo.find({ where: { id: In(connectionIds), enabled: true } });
     return new Map(conns.map((c) => [c.id, c]));
+  }
+
+  /** A connection's synced tools, enabled or not, without their schemas. */
+  async listTools(id: string): Promise<PluginTool[]> {
+    // No config: it would be decrypted for nothing.
+    const conn = await this.repo.findOne({ select: { id: true, tools: true }, where: { id } });
+    if (!conn) throw new NotFoundException(`Plugin connection ${id} not found`);
+    return conn.tools.map(({ name, description }) => ({ name, description }));
   }
 
   /**
