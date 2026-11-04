@@ -6,13 +6,13 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
 
-import { DebugDriver } from "./drivers/debug.hooks.js";
+import { DebugFsDriver } from "./drivers/debug/fs.hooks.js";
+import { DebugS3Driver } from "./drivers/debug/s3.hooks.js";
 import { McpDriver } from "./drivers/mcp.js";
 import { StaticInstructionsDriver } from "./drivers/static.instructions.js";
 import { PluginDriverRegistry, PluginRegistry } from "./plugin.registry.js";
 
 import type { HookName, HookResult } from "@snipet/shared";
-import type { Storage } from "#src/infra/storage/storage.js";
 import type { HookDriver } from "./driver.js";
 
 /** The issue messages of a capability that fails to parse. */
@@ -124,7 +124,7 @@ describe("PluginRegistry", () => {
     const real = new PluginDriverRegistry({
       tools: [mcp],
       instructions: [mcp, new StaticInstructionsDriver()],
-      hooks: [new DebugDriver({} as Storage)],
+      hooks: [new DebugFsDriver(), new DebugS3Driver()],
       healthCheck: [new HttpHealthCheckDriver()],
     });
     const registry = new PluginRegistry("plugin", builtIn, builtIn, pluginManifestSchema, real);

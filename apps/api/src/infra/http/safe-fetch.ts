@@ -1,7 +1,11 @@
 import { env } from "#src/env.js";
 import { lookup } from "node:dns/promises";
+import { Agent as HttpAgent } from "node:http";
+import { Agent as HttpsAgent } from "node:https";
 import { BlockList, isIP } from "node:net";
 import { Agent, buildConnector, fetch as undiciFetch } from "undici";
+
+import type { LookupFunction } from "node:net";
 
 /** Loopback, private, link-local, CGNAT, documentation, multicast and other non-public ranges. */
 const RESERVED_RANGES: [string, number, "ipv4" | "ipv6"][] = [
@@ -68,6 +72,28 @@ export async function resolvePublic(hostname: string): Promise<string> {
   }
   return addresses[0].address;
 }
+
+/** A socket lookup that connects to the address resolvePublic checked; Node asks for a list when `all` is set. */
+const publicLookup: LookupFunction = (hostname, options, callback) => {
+  resolvePublic(hostname).then(
+    (address) => {
+      const family = isIP(address);
+      if (options.all) callback(null, [{ address, family }]);
+      else callback(null, address, family);
+    },
+    (err: NodeJS.ErrnoException) => callback(err, "", 0),
+  );
+};
+
+/**
+ * node:http agents for clients that can't take safeFetch, like the AWS SDK.
+ * Node skips the lookup for an IP literal, so check a literal host with
+ * resolvePublic first.
+ */
+export const safeAgents = {
+  httpAgent: new HttpAgent({ lookup: publicLookup }),
+  httpsAgent: new HttpsAgent({ lookup: publicLookup }),
+};
 
 const connect = buildConnector({});
 
