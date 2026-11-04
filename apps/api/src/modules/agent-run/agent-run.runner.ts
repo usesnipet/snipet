@@ -257,14 +257,11 @@ export class AgentRunner {
     }
     if (beforeOutcome.action === "respond") return beforeOutcome.result;
     const { call } = beforeOutcome.payload;
-    const { timedOut, ...result } = await context.call(call);
-    const reason: HookToolErrorReason = signal.aborted
-      ? "cancelled"
-      : timedOut
-        ? "timeout"
-        : context.has(call.name)
-          ? "error_result"
-          : "unknown_tool";
+    const result = await context.call(call);
+    let reason: HookToolErrorReason;
+    if (signal.aborted) reason = "cancelled";
+    else if (context.has(call.name)) reason = "error_result";
+    else reason = "unknown_tool";
     return this.toolDone(hooks, call, result, reason, started);
   }
 

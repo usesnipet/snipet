@@ -13,8 +13,6 @@ export interface Tool {
 export interface ToolResult {
   content: string;
   isError: boolean;
-  /** Set when the call timed out; never sent to the model. */
-  timedOut?: boolean;
 }
 
 export interface ToolDriver<Opts = unknown> extends BaseDriver<Opts> {

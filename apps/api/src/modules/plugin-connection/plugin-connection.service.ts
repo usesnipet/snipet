@@ -1,14 +1,13 @@
-import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { ConnectionService } from "#src/manifest/connection.service.js";
-import { ToolResult, PluginDrivers } from "#src/plugin/driver.js";
+import { PluginDrivers, ToolResult } from "#src/plugin/driver.js";
 import { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { validateJson } from "@snipet/server-common";
 import { DeepPartial, In, QueryDeepPartialEntity, Repository } from "typeorm";
 
-import { PluginTool } from "./plugin-tool.entity.js";
 import { PluginConnection } from "./plugin-connection.entity.js";
+import { PluginTool } from "./plugin-tool.entity.js";
 import { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 
 import type { PluginManifest } from "@snipet/shared";
@@ -104,39 +103,18 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   /**
-   * Runs a synced tool through its connection's driver. Failures the model
-   * can act on (bad arguments, unreachable service) come back as an isError result.
+   * Runs a synced tool through its connection's driver. Throws on bad
+   * arguments or an unreachable service; the caller turns that into a result.
    */
   async executeTool(toolId: string, args: Record<string, unknown> = {}): Promise<ToolResult> {
     const tool = await this.tools.findOneByOrFail({ id: toolId });
     const conn = await this.findById(tool.pluginConnectionId);
     const manifest = this.manifests.get(conn.pluginKey);
-    if (!conn.enabled || !manifest.capabilities.tools)
+    if (!conn.enabled || !manifest.capabilities.tools) {
       return { content: "plugin connection is unavailable", isError: true };
+    }
 
-    try {
-      args = validateJson(tool.inputSchema, args);
-    } catch (err) {
-      return { content: `invalid arguments: ${describe(err)}`, isError: true };
-    }
-    try {
-      const { driver, options } = this.drivers.resolve(manifest, "tools", conn.config)!;
-      return await driver.callTool(conn.id, tool.name, args, options);
-    } catch (err) {
-      return { content: describe(err), isError: true, ...(isTimeout(err) && { timedOut: true }) };
-    }
+    const { driver, options } = this.drivers.resolve(manifest, "tools", conn.config)!;
+    return driver.callTool(conn.id, tool.name, validateJson(tool.inputSchema, args), options);
   }
-}
-
-/** The MCP error code of a timed out request; the SDK reports an abort as one too. */
-const MCP_TIMEOUT: number = ErrorCode.RequestTimeout;
-
-/** Whether the call failed by timing out. */
-function isTimeout(err: unknown): boolean {
-  return err instanceof McpError ? err.code === MCP_TIMEOUT : (err as Error)?.name === "TimeoutError";
-}
-
-function describe(err: unknown): string {
-  if (err instanceof BadRequestException) return JSON.stringify(err.getResponse());
-  return err instanceof Error ? err.message : String(err);
 }

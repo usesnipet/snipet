@@ -5,8 +5,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { MAX_PLUGIN_INSTRUCTIONS } from "@snipet/shared";
 import { Repository } from "typeorm";
 
-import { PluginTool } from "../plugin-tool.entity.js";
 import { PluginConnection } from "../plugin-connection.entity.js";
+import { PluginTool } from "../plugin-tool.entity.js";
 
 import type { PluginDrivers } from "#src/plugin/driver.js";
 import type { PluginManifest } from "@snipet/shared";
@@ -42,6 +42,8 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
   protected override async fields(conn: PluginConnection, manifest: PluginManifest) {
     const resolved = this.drivers.resolve(manifest, "instructions", conn.config);
     const instructions = resolved && (await resolved.driver.getInstructions(conn.id, resolved.options));
+    if (instructions && instructions.length > MAX_PLUGIN_INSTRUCTIONS)
+      this.logger.warn(`Instructions for ${conn.id} are too long`);
     return { instructions: instructions?.slice(0, MAX_PLUGIN_INSTRUCTIONS) || null };
   }
 }

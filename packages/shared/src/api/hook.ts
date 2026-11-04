@@ -29,7 +29,7 @@ const toolResultSchema = z.object({ content: z.string(), isError: z.boolean() })
 const durationMsSchema = z.number();
 
 /** Why a tool call ended in an error result. */
-export const hookToolErrorReasonSchema = z.enum(["cancelled", "error_result", "unknown_tool", "timeout", "denied"]);
+export const hookToolErrorReasonSchema = z.enum(["cancelled", "error_result", "unknown_tool", "denied"]);
 export type HookToolErrorReason = z.infer<typeof hookToolErrorReasonSchema>;
 
 /** What a handler's reply may do besides `continue`, which every hook accepts. */

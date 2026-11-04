@@ -1,5 +1,6 @@
 import { LlmError } from "#src/llm/errors.js";
 import { jest } from "@jest/globals";
+import { BadRequestException } from "@nestjs/common";
 import { AgentRunStatus, HOOKS, hookHandlerSchema, hookNameSchema } from "@snipet/shared";
 
 import { HookRunner } from "./hooks/hook.runner.js";
@@ -218,14 +219,15 @@ describe("AgentRunner.run", () => {
     expect(events.find((e) => e.hook === "tool.error")?.payload).toMatchObject({ reason: "denied" });
   });
 
-  it("tells tool.error a call timed out, without the flag reaching the model", async () => {
+  it("gives the model a rejected call's validation details as an error result", async () => {
     const { runner, plugins, saved, events } = setup([callTool, answer]);
-    plugins.executeTool.mockResolvedValue({ content: "Request timed out", isError: true, timedOut: true });
+    const response = { message: "validation failed", details: [{ path: ["q"] }] };
+    plugins.executeTool.mockRejectedValue(new BadRequestException(response));
     await runner.run(agent, run, owner);
 
-    expect(events.find((e) => e.hook === "tool.error")?.payload).toMatchObject({ reason: "timeout" });
+    expect(events.find((e) => e.hook === "tool.error")?.payload).toMatchObject({ reason: "error_result" });
     expect(saved[1].parts).toEqual([
-      { type: "tool_result", toolCallId: "c1", content: "Request timed out", isError: true },
+      { type: "tool_result", toolCallId: "c1", content: JSON.stringify(response), isError: true },
     ]);
   });
 

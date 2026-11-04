@@ -1,7 +1,7 @@
 import { Owner } from "#src/common/decorators/owner.decorator.js";
 import { ToolResult } from "#src/plugin/driver.js";
 import { isGranted } from "#src/utils/grant/grant.js";
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 
 import { Agent } from "../agent/agent.entity.js";
 import { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
@@ -26,6 +26,12 @@ export type RunContext = {
   /** Never throws: an unknown tool or a failed tool is an error result. */
   call(call: LlmToolCallPart): Promise<ToolResult>;
 };
+
+/** A failed tool's error as the model sees it; validation details let it fix its arguments. */
+function describeToolError(err: unknown): string {
+  if (err instanceof BadRequestException) return JSON.stringify(err.getResponse());
+  return err instanceof Error ? err.message : String(err);
+}
 
 /** Keeps a connection name from closing the attribute or tag it is put in. */
 const escapeAttr = (s: string) =>
@@ -97,7 +103,7 @@ export class AgentContext {
         try {
           return await execute((call.arguments ?? {}) as Record<string, unknown>);
         } catch (err) {
-          return { content: err instanceof Error ? err.message : String(err), isError: true };
+          return { content: describeToolError(err), isError: true };
         }
       },
     };
