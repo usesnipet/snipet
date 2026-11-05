@@ -18,7 +18,7 @@ export const GET: APIRoute = async ({ site }) => {
   const body = [
     "# Snipet",
     "",
-    "> Snipet is an open-source, self-hosted platform to build AI agents that use your tools (any LLM provider, plugins and MCP servers) and to put them in front of your users through an embeddable chat widget or the API.",
+    "> Snipet is an open-source, self-hosted platform to build AI agents that work across all your apps. Connect agents to your tools (any LLM provider, plugins and MCP servers) and call them from anywhere: the API, an embeddable chat widget, and soon channels like WhatsApp, Telegram, Slack and Discord.",
     "",
     "Snipet is one server plus a Postgres database, started with Docker Compose. Source code: https://github.com/usesnipet/snipet",
     "",
