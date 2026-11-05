@@ -73,8 +73,8 @@ describe("HookDispatcher.forRun", () => {
       agent,
       run: { id: "r1" },
     } as unknown as HookRunnerContext);
-    await runner.call("tool.before", { call: { type: "tool_call", id: "x", name: "t", arguments: {} }, tool: null });
-    await runner.call("llm.response", {
+    await runner.run("tool.before", { call: { type: "tool_call", id: "x", name: "t", arguments: {} }, tool: null });
+    await runner.run("llm.response", {
       model: null,
       message: { role: "assistant", parts: [] },
       usage: null,
@@ -97,7 +97,7 @@ describe("HookDispatcher.forRun", () => {
     const drivers = new PluginDriverRegistry({ tools: [], instructions: [], hooks: [], healthCheck: [] });
     const agent = { id: "ag1", pluginConnections: [grant("c1", 0)] };
     const runner = await new HookDispatcher(plugins, drivers).forRun({ agent } as unknown as HookRunnerContext);
-    await expect(runner.call("run.start", { input: "hi" })).resolves.toEqual({
+    await expect(runner.run("run.start", { input: "hi" })).resolves.toEqual({
       action: "continue",
       payload: { input: "hi" },
     });

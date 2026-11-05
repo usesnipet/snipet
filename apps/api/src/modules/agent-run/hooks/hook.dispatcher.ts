@@ -14,8 +14,8 @@ export class HookDispatcher {
   private readonly logger = new Logger(HookDispatcher.name);
 
   constructor(
-    private readonly plugins: PluginConnectionService,
-    private readonly drivers: PluginDriverRegistry,
+    private readonly pluginConnectionService: PluginConnectionService,
+    private readonly pluginDriverRegistry: PluginDriverRegistry,
   ) {}
 
   /**
@@ -28,13 +28,13 @@ export class HookDispatcher {
     const grants = [...(context.agent.pluginConnections ?? [])].sort((a, b) => a.position - b.position);
     const handlers: BoundHandler[] = [];
     try {
-      const conns = await this.plugins.findEnabled(grants.map((g) => g.pluginConnectionId));
+      const conns = await this.pluginConnectionService.findEnabled(grants.map((g) => g.pluginConnectionId));
       for (const grant of grants) {
         const conn = conns.get(grant.pluginConnectionId);
         if (!conn) continue;
         try {
-          const manifest = this.plugins.getManifest(conn.pluginKey);
-          const resolved = this.drivers.resolve(manifest, "hooks", conn.config);
+          const manifest = this.pluginConnectionService.getManifest(conn.pluginKey);
+          const resolved = this.pluginDriverRegistry.resolve(manifest, "hooks", conn.config);
           if (!resolved) continue;
           for (const [hook, handler] of hookHandlersOf(manifest.capabilities.hooks!)) {
             if (handler.optional && grant.disabledHooks.includes(hook)) continue;

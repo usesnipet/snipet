@@ -1,12 +1,13 @@
+import { Agent } from "#src/modules/agent/agent.entity.js";
 import { Logger } from "@nestjs/common";
 import { AgentRunStatus, HOOK_EVENT_VERSION, HOOKS } from "@snipet/shared";
 import { randomUUID } from "node:crypto";
 
+import { AgentRun } from "../agent-run.entity.js";
+
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { HookContext, HookDriver } from "#src/plugin/driver.js";
 import type {
-  Agent,
-  AgentRun,
   HookAction,
   HookEvent,
   HookHandler,
@@ -17,7 +18,6 @@ import type {
   HookResult,
   JsonObject,
 } from "@snipet/shared";
-
 /** A plugin's handler on one hook, ready to run: its driver with the connection's options resolved. */
 export interface BoundHandler {
   /** The plugin connection: its name goes in failure reasons, its id keys the run state. */
@@ -37,14 +37,25 @@ export interface HookRunnerContext {
   owner: Owner;
 }
 
-/** What the handlers made of a step; `stop` throws HookStoppedError instead. */
+/** The actions `K`'s definition accepts, so its outcome can't hold the others. */
+type AcceptedAction<K extends HookName> = (typeof HOOKS)[K]["actions"][number];
+
+/**
+ * What the handlers made of a step, narrowed to the actions the hook accepts:
+ * a hook without `deny` or `respond` only ever continues, so its caller needs
+ * no branch. `stop` throws HookStoppedError instead.
+ */
 export type HookOutcome<K extends HookName> =
   | { action: "continue"; payload: HookPayload<K> }
-  | { action: "deny"; reason: string }
-  | { action: "respond"; result: HookRespond<K> };
+  | ("deny" extends AcceptedAction<K> ? { action: "deny"; reason: string } : never)
+  | ("respond" extends AcceptedAction<K> ? { action: "respond"; result: HookRespond<K> } : never);
 
-/** What one handler made of a step. */
-type HandlerOutcome<K extends HookName> = HookOutcome<K> | { action: "stop"; reason: string };
+/** What one handler made of a step, before the hook's accepted actions narrow it. */
+type HandlerOutcome<K extends HookName> =
+  | { action: "continue"; payload: HookPayload<K> }
+  | { action: "deny"; reason: string }
+  | { action: "respond"; result: HookRespond<K> }
+  | { action: "stop"; reason: string };
 
 /** A hook stopped the run: fails it with the hook's reason. */
 export class HookStoppedError extends Error {}
@@ -91,18 +102,21 @@ export class HookRunner {
     private readonly logger: Logger = new Logger(HookRunner.name),
   ) {}
 
-  /** Fires `hook` on every handler bound to it in background; replies are ignored. */
-  emit<K extends HookName>(hook: K, payload: HookPayload<K>): void {
-    for (const bound of this.handlersFor(hook)) this.runInBackground(bound, payload);
-  }
-
   /**
    * Runs the handlers of `hook` group by group, each group getting the
    * payload the last one left, until one denies, responds or stops.
    * Background handlers then get the final payload. Throws HookStoppedError on `stop`.
+   *
+   * A hook that accepts no action is observe-only: every handler runs in
+   * background and the payload comes back untouched, so the loop never waits
+   * on one. settle() waits for them.
    */
-  async call<K extends HookName>(hook: K, payload: HookPayload<K>): Promise<HookOutcome<K>> {
+  async run<K extends HookName>(hook: K, payload: HookPayload<K>): Promise<HookOutcome<K>> {
     const handlers = this.handlersFor(hook);
+    if (HOOKS[hook].actions.length === 0) {
+      for (const bound of handlers) this.runInBackground(bound, payload);
+      return { action: "continue", payload };
+    }
     let current: HookPayload<K> = payload;
     // Set by the first handler to end the step: in a parallel group, the first to reply.
     const step: { ended?: HandlerOutcome<K> } = {};
@@ -125,14 +139,8 @@ export class HookRunner {
     for (const bound of handlers) if (bound.handler.background) this.runInBackground(bound, current);
     const outcome: HandlerOutcome<K> = step.ended ?? { action: "continue", payload: current };
     if (outcome.action === "stop") throw new HookStoppedError(outcome.reason);
-    return outcome;
-  }
-
-  /** call() for a step that can't be denied or answered: the final payload. */
-  async pass<K extends HookName>(hook: K, payload: HookPayload<K>): Promise<HookPayload<K>> {
-    const outcome = await this.call(hook, payload);
-    if (outcome.action === "continue") return outcome.payload;
-    throw new HookStoppedError(`${hook} can't be ${outcome.action === "deny" ? "denied" : "answered"}`);
+    // A reply outside the hook's actions never reaches here: send() turns it into a failure.
+    return outcome as HookOutcome<K>;
   }
 
   /** Waits for the handlers still running. */

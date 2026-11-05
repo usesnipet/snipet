@@ -37,7 +37,7 @@ const ok = (): HookResult => ({ action: "continue" });
 const modifier = { actions: ["modify"] };
 const guard = { actions: ["deny", "stop"] };
 
-describe("HookRunner.call", () => {
+describe("HookRunner.run", () => {
   it("orders by order then position, chaining the payload through modifiers", async () => {
     const log: string[] = [];
     const hooks = new HookRunner(
@@ -49,7 +49,7 @@ describe("HookRunner.call", () => {
       ],
       ctx,
     );
-    const outcome = await hooks.call("tool.before", { call, tool });
+    const outcome = await hooks.run("tool.before", { call, tool });
 
     expect(log).toEqual(['f {"q":"x"} modify', 'a {"q":"f"} modify', 'b {"q":"a"} modify', 'z {"q":"b"} modify']);
     expect(outcome).toEqual({ action: "continue", payload: { call: { ...call, arguments: { q: "z" } }, tool } });
@@ -74,19 +74,19 @@ describe("HookRunner.call", () => {
       ctx,
     );
 
-    expect(await hooks.call("tool.before", { call, tool })).toEqual({ action: "deny", reason: "no" });
+    expect(await hooks.run("tool.before", { call, tool })).toEqual({ action: "deny", reason: "no" });
     expect(slowAborted).toBe(true);
     expect(log).toEqual(['slow {"q":"x"} deny,stop', 'deny {"q":"x"} deny,stop']);
   });
 
   it("throws HookStoppedError on stop", async () => {
     const hooks = new HookRunner([handler("a", [], () => ({ action: "stop", reason: "off" }), guard)], ctx);
-    await expect(hooks.call("tool.before", { call, tool })).rejects.toEqual(new HookStoppedError("off"));
+    await expect(hooks.run("tool.before", { call, tool })).rejects.toEqual(new HookStoppedError("off"));
   });
 
   it("treats a reply outside the handler's actions as a failure, handled per onFailure", async () => {
     const run = (onFailure: string) =>
-      new HookRunner([handler("a", [], modify("a"), { ...guard, onFailure })], ctx).call("tool.before", {
+      new HookRunner([handler("a", [], modify("a"), { ...guard, onFailure })], ctx).run("tool.before", {
         call,
         tool,
       });
@@ -99,7 +99,7 @@ describe("HookRunner.call", () => {
   it("treats a payload that doesn't fit the hook as a failure", async () => {
     const bad: Reply = () => ({ action: "modify", payload: { call: { id: 1 } } });
     const hooks = new HookRunner([handler("a", [], bad, { ...modifier, onFailure: "deny" })], ctx);
-    expect(await hooks.call("tool.before", { call, tool })).toEqual({ action: "deny", reason: 'plugin "a" failed' });
+    expect(await hooks.run("tool.before", { call, tool })).toEqual({ action: "deny", reason: 'plugin "a" failed' });
   });
 
   it("gives background handlers the final payload and no actions", async () => {
@@ -108,7 +108,7 @@ describe("HookRunner.call", () => {
       [handler("log", log, ok, { background: true }), handler("github", log, modify("g"), modifier)],
       ctx,
     );
-    await hooks.call("tool.before", { call, tool });
+    await hooks.run("tool.before", { call, tool });
     await hooks.settle();
 
     expect(log).toEqual(['github {"q":"x"} modify', 'log {"q":"g"} ']);
@@ -121,8 +121,8 @@ describe("HookRunner.call", () => {
       return { action: "continue", state: { n: ((state.n as number) ?? 0) + 1 } };
     };
     const hooks = new HookRunner([handler("a", [], counter), handler("b", [], counter)], ctx);
-    await hooks.call("tool.before", { call, tool });
-    await hooks.call("tool.before", { call, tool });
+    await hooks.run("tool.before", { call, tool });
+    await hooks.run("tool.before", { call, tool });
 
     expect(seen).toEqual(["a {}", "b {}", 'a {"n":1}', 'b {"n":1}']);
   });
