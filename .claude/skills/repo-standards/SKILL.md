@@ -1,77 +1,59 @@
 ---
 name: repo-standards
-description: Coding standards for this repository, starting with how to name class properties and injected dependencies (repositories, services, registries, dispatchers). Use whenever writing or editing a class in this repo, especially a NestJS service, controller, runner, guard, or anything with a constructor that injects dependencies, even if the task never mentions naming. Also use when asked about repo patterns, conventions, or naming.
+description: Naming standards for code in this project - class properties and injected dependencies (repositories, services, registries, dispatchers), local variables, parameters, methods, functions and types. Use whenever writing or editing code, especially a class with a constructor that injects dependencies, even if the task never mentions naming. Also use when asked about project patterns, conventions, or naming.
 ---
 
-# Repository standards
+# Naming standards
 
-## Name properties after what they are
+## Name things after what they are
 
-A property's name should say what kind of thing it holds, so `this.x.find()` reads
-correctly without jumping to the constructor. `this.runs` looks like a list of runs
-but is a repository. `this.llm` could be a client, a model, or a config. In
-`AgentRunner`, `hooks` is a `HookDispatcher` on the class and a `HookRunner` in the
-method parameters, so the same word means two different types in one file.
+A name should say what it holds or does, so the line that uses it reads correctly
+without jumping back to the declaration. Properties, locals, parameters, methods and
+types alike.
 
-| Kind                   | Pattern                 | Example                                      |
-| ---------------------- | ----------------------- | -------------------------------------------- |
-| TypeORM repository     | plural entity + `Repo`  | `runsRepo: Repository<AgentRun>`             |
-| Service                | class name in camelCase | `llmConnectionService: LlmConnectionService` |
-| Any other collaborator | class name in camelCase | `hookDispatcher: HookDispatcher`             |
+Descriptive is not long. Take the shortest name that still answers "what is this?"
+where it's read, usually two or three words. A name needing a comment is too short;
+one repeating its own type or its class is too long.
 
-The `Repo` pattern already exists in the code (`runsRepo`, `messagesRepo`,
-`sessionsRepo`), so follow it instead of `runRepo` or `runRepository`.
+## Properties
 
-Shorter names are fine if the kind stays visible and the name stays unambiguous in
-that file. Drop a prefix, not the kind:
+Say what kind of thing it holds, so `this.x.find()` reads right without opening the
+constructor. A plural like `users` reads as a list but is often a repository; a bare
+`mail` could be a client, a message or a config.
 
-- `connectionService` works inside the LLM connection module.
-- `connectionService` does not work in `AgentRunner`, where it could mean the LLM or
-  the plugin connection service.
-- Avoid invented abbreviations such as `llmConnSvc`; they save nothing and have to be
-  decoded.
+| Before                       | After                                                    |
+| ---------------------------- | -------------------------------------------------------- |
+| `users: Repository<User>`    | `usersRepo` (whichever suffix the codebase already uses) |
+| `mail: MailSenderService`    | `mailSenderService` (class name in camelCase)            |
+| `drivers: DriverRegistry<D>` | `driverRegistry`                                         |
+| `client: Redis`              | `redisClient`                                            |
 
-### Before and after
+Drop a prefix, not the kind. `connectionService` is fine where one connection exists,
+wrong in a class holding two. No invented abbreviations (`mailSndSvc`).
 
-| Before                             | After                     |
-| ---------------------------------- | ------------------------- |
-| `runs: Repository<AgentRun>`       | `runsRepo`                |
-| `repo: Repository<Setting>`        | `settingsRepo`            |
-| `llm: LlmConnectionService`        | `llmConnectionService`    |
-| `plugins: PluginConnectionService` | `pluginConnectionService` |
-| `service: AuthService`             | `authService`             |
-| `users: UserService`               | `userService`             |
-| `jwt: JwtService`                  | `jwtService`              |
-| `hooks: HookDispatcher`            | `hookDispatcher`          |
-| `hooks: HookRunner` (parameter)    | `hookRunner`              |
-| `events: AgentRunEvents`           | `runEvents`               |
-| `drivers: DriverRegistry<D>`       | `driverRegistry`          |
-| `syncer: LlmConnectionSyncService` | `connectionSyncService`   |
-| `client: Redis`                    | `redisClient`             |
+Keep the name when it already states the kind (`logger`, `cache`, `config`), when it's
+plain data (`users: User[]`), when a base class or framework fixes it, or when it's
+outside the class (entity columns, DTO and API fields — renaming those breaks
+migrations or clients).
 
-### What keeps its name
+## Locals, parameters, methods, types
 
-- **Names that already state the kind:** `logger`, `reflector`, `cache`, `agentContext`.
-- **Plain data:** `runs: AgentRun[]` is right. Plural nouns belong to actual
-  collections, which is why a repository shouldn't take one.
-- **Names a base class fixes:** `override readonly service` in controllers that extend
-  `CrudController`.
-- **Names outside the class:** entity columns, DTO and API fields. Changing these
-  breaks migrations or clients, so they aren't part of this rule.
+- **Locals:** say what makes a derived value different from its source, don't restate
+  the type: `recentOrders` not `recent`, `response` not `res`, `(event)` not `(e)`. A
+  loop or one-line callback argument can stay short.
+- **Booleans:** a claim about the subject: `isCancelled`, `hasResult`, `shouldRetry`.
+- **Methods:** a verb phrase that doesn't repeat the class: `queue.push()`, not
+  `queue.pushToQueue()`. Match the verb to the return (`get`/`find`, `build`/`create`,
+  `ensure`/`sync`, `is`/`has`). A name needing "And" is two methods.
+- **Types:** the concept, no `I` prefix or `Type` suffix. A type parameter for a domain
+  thing gets a word (`K extends EventName`), not a letter.
 
 ## Fix names in the files you touch
 
-New code follows the rule from the start. When a task has you editing a class that has
-non-descriptive names, rename its properties as part of that change, along with the
-same-named parameters in that class.
+Rename as part of the change you're already making: the class's properties, the
+same-named parameters, the locals inside the functions you edit. No project-wide
+cleanup — don't open a file only to rename, don't rename what you only read past.
 
-There's no repo-wide cleanup: don't open files only to rename things in them. The
-codebase converges as files get edited, which keeps diffs tied to real work.
-
-A rename can reach past the file you're in:
-
-- `protected` and public properties are used by subclasses and callers, so update those too.
-- Specs may reach private fields through casts or strings (`service['runs']`), which
-  the compiler can't catch, so search the matching `*.spec.ts`.
-
-Typecheck afterwards. In the API, that's `pnpm --filter @snipet/api exec tsc --noEmit`.
+A rename reaches past the file: public and `protected` members have callers, and tests
+may reach private fields through casts or strings (`service['users']`), which the
+compiler can't catch. Typecheck afterwards (`tsc --noEmit` for a TypeScript package).
