@@ -6,6 +6,7 @@ import {
   paginatedPluginConnectionSchema,
   pluginConnectionSchema,
   pluginManifestSchema,
+  pluginToolSchema,
   updatePluginConnectionSchema,
 } from "@snipet/shared";
 import { z } from "zod";
@@ -16,14 +17,10 @@ import type {
   Paginated,
   PluginConnection,
   PluginManifest,
+  PluginTool,
   UpdatePluginConnection,
 } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const PLUGIN_CONNECTION_URL = "/api/plugin-connections";
 
@@ -39,12 +36,18 @@ const list = async (
     ...opts,
   });
 
-const listPlugins = async (
-  opts: ServiceGetOptions<PluginManifest[]> = {},
-): Promise<PluginManifest[]> =>
+const listPlugins = async (opts: ServiceGetOptions<PluginManifest[]> = {}): Promise<PluginManifest[]> =>
   http.get({
     url: `${PLUGIN_CONNECTION_URL}/plugins`,
     schemas: { response: z.array(pluginManifestSchema) },
+    ...opts,
+  });
+
+const listTools = async (id: string, opts: ServiceGetOptions<PluginTool[]> = {}): Promise<PluginTool[]> =>
+  http.get({
+    url: `${PLUGIN_CONNECTION_URL}/{id}/tools`,
+    params: { id },
+    schemas: { response: z.array(pluginToolSchema) },
     ...opts,
   });
 
@@ -89,6 +92,7 @@ const sync = async (id: string, opts: ServicePostOptions<void, void> = {}): Prom
 export const pluginConnectionService = {
   list,
   listPlugins,
+  listTools,
   create,
   update,
   delete: remove,

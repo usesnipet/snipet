@@ -32,7 +32,12 @@ const appFormSchema = appBodySchema
   .extend({
     allowedOrigins: z
       .string()
-      .transform((value) => value.split("\n").map((line) => line.trim()).filter(Boolean))
+      .transform((value) =>
+        value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean),
+      )
       .pipe(appBodySchema.shape.allowedOrigins.unwrap()),
   })
   .refine(anonymousHasOrigins, anonymousHasOriginsError);
@@ -66,9 +71,13 @@ export function AppFormDialog({ app, close }: AppFormDialogProps) {
       <DialogHeader>
         <DialogTitle>{isEditing ? "Edit app" : "Create app"}</DialogTitle>
         <DialogDescription>
-          {isEditing
-            ? <>Update settings for <span className="font-medium text-foreground">{app.name}</span>.</>
-            : "An app groups the API keys and sessions of one client of your agents."}
+          {isEditing ? (
+            <>
+              Update settings for <span className="font-medium text-foreground">{app.name}</span>.
+            </>
+          ) : (
+            "An app groups the API keys and sessions of one client of your agents."
+          )}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>

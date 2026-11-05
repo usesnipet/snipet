@@ -42,6 +42,11 @@ export class PluginConnectionController {
     return this.service.mask(await this.service.findById(id));
   }
 
+  @Get(":id/tools")
+  listTools(@Param("id", ParseUUIDPipe) id: string) {
+    return this.service.listTools(id);
+  }
+
   @Post()
   async create(@Body(new ZodPipe(createPluginConnectionSchema)) dto: CreatePluginConnection) {
     return this.service.mask(await this.service.create(dto));

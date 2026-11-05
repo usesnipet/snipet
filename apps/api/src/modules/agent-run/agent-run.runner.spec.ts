@@ -1,8 +1,9 @@
 import { LlmError } from "#src/llm/errors.js";
 import { jest } from "@jest/globals";
-import { AgentRunStatus, hookNameSchema } from "@snipet/shared";
+import { BadRequestException } from "@nestjs/common";
+import { AgentRunStatus, HOOKS, hookHandlerSchema, hookNameSchema } from "@snipet/shared";
 
-import { HookRunner } from "../hook-connection/hook.runner.js";
+import { HookRunner } from "./hooks/hook.runner.js";
 
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
@@ -10,9 +11,9 @@ import { AgentContext } from "./agent-context.js";
 
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { Agent } from "../agent/agent.entity.js";
-import type { HookDriver } from "#src/hook/driver.js";
-import type { HookDispatcher } from "../hook-connection/hook.dispatcher.js";
-import type { HookRunnerContext } from "../hook-connection/hook.runner.js";
+import type { HookDriver } from "#src/plugin/driver.js";
+import type { HookDispatcher } from "./hooks/hook.dispatcher.js";
+import type { HookRunnerContext } from "./hooks/hook.runner.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import type { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 import type { AgentRun } from "./agent-run.entity.js";
@@ -34,13 +35,13 @@ const agent = {
   maxTurns: 5,
   historyRuns: 10,
   llms: [{ model: "openai/gpt", connectionId: null, extraOptions: null }],
-  pluginConnections: [{ pluginConnectionId: "p1", allow: ["ask_*"], deny: [] }],
+  pluginConnections: [{ pluginConnectionId: "p1", tools: ["ask_question"] }],
 } as unknown as Agent;
 const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z") } as AgentRun;
 
 const owner: Owner = { userId: "u1", appId: null, externalUserId: null, name: null };
 
-const wiki = { pluginConnectionId: "p1", pluginConnection: { name: "Wiki" } };
+const wiki = { connection: { id: "p1", name: "Wiki" } };
 
 /**
  * replies: what the model answers on each turn; an Error is thrown instead.
@@ -74,11 +75,11 @@ function setup(
     }),
   };
   const plugins = {
-    findActions: jest.fn<Fn>().mockResolvedValue([
-      { id: "a1", name: "ask_question", description: "Asks", inputSchema: {}, ...wiki },
-      { id: "a2", name: "read_wiki", description: "", inputSchema: {}, ...wiki },
+    findTools: jest.fn<Fn>().mockResolvedValue([
+      { name: "ask_question", description: "Asks", inputSchema: {}, ...wiki },
+      { name: "read_wiki", description: "", inputSchema: {}, ...wiki },
     ]),
-    executeAction: jest.fn<Fn>().mockResolvedValue({ content: "answer", isError: false }),
+    executeTool: jest.fn<Fn>().mockResolvedValue({ content: "answer", isError: false }),
     findInstructions: jest.fn<Fn>().mockResolvedValue([]),
   };
 
@@ -90,17 +91,13 @@ function setup(
       return Promise.resolve(reply(event));
     },
   } as unknown as HookDriver;
-  const handlers = hookNameSchema.options.map((event) => ({
-    name: "rec",
-    event,
-    global: false,
-    stage: 0,
-    match: null,
-    async: false,
-    onError: "continue" as const,
+  const handlers = hookNameSchema.options.map((hook) => ({
+    plugin: { id: "p9", name: "rec" },
+    hook,
+    handler: hookHandlerSchema.parse({ hook, actions: HOOKS[hook].actions }),
     driver,
     options: {},
-    timeoutMs: 1000,
+    settings: {},
   }));
   const hooks = {
     forRun: (ctx: HookRunnerContext) => Promise.resolve(new HookRunner(handlers, ctx)),
@@ -124,7 +121,9 @@ describe("AgentRunner.run", () => {
     const { runner, runs, llm, plugins, saved } = setup([callTool, answer]);
     await runner.run(agent, run, owner);
 
-    expect(plugins.executeAction).toHaveBeenCalledWith("a1", { q: "x" });
+    expect(plugins.executeTool).toHaveBeenCalledWith("p1", expect.objectContaining({ name: "ask_question" }), {
+      q: "x",
+    });
     expect(saved.map((m) => m.role)).toEqual(["assistant", "tool", "assistant"]);
     expect(saved[1].parts).toEqual([{ type: "tool_result", toolCallId: "c1", content: "answer", isError: false }]);
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.COMPLETED, turns: 2, error: null });
@@ -133,9 +132,9 @@ describe("AgentRunner.run", () => {
       { messages: LlmMessage[]; tools: { name: string; description: string }[] },
     ];
     expect(messages.map((m) => m.role)).toEqual(["system", "system", "user", "assistant", "tool"]);
-    // read_wiki isn't in the plugin grant's allow.
+    // read_wiki isn't selected in the plugin grant.
     expect(tools.map((t) => [t.name, t.description])).toEqual([["ask_question", "[Wiki] Asks"]]);
-    expect(plugins.findActions).toHaveBeenCalledWith(["p1"]);
+    expect(plugins.findTools).toHaveBeenCalledWith(["p1"]);
   });
 
   it("adds the instructions of the plugins with granted actions after the system prompt", async () => {
@@ -177,16 +176,25 @@ describe("AgentRunner.run", () => {
       "2 llm.request",
       "2 llm.response",
       "2 run.end",
-      "2 run.completed",
     ]);
     const payload = (hook: string, n = 0) => events.filter((e) => e.hook === hook)[n].payload;
     expect(payload("run.start")).toEqual({ input: "hi" });
-    expect(payload("run.context")).toMatchObject({ tools: [{ name: "ask_question" }] });
+    expect(payload("run.context")).toMatchObject({ input: "hi", tools: [{ name: "ask_question" }] });
     // Each request holds the messages as they were sent, not the final history.
     expect((payload("llm.request", 0) as { messages: unknown[] }).messages).toHaveLength(3);
     expect((payload("llm.request", 1) as { messages: unknown[] }).messages).toHaveLength(5);
+    expect(payload("tool.before")).toMatchObject({ tool: { id: "p1", name: "Wiki" } });
     expect(payload("tool.after")).toMatchObject({ call: { name: "ask_question" }, result: { content: "answer" } });
-    expect(payload("run.end")).toMatchObject({ status: AgentRunStatus.COMPLETED, error: null, turns: 2 });
+    expect(payload("run.end")).toMatchObject({
+      status: AgentRunStatus.COMPLETED,
+      error: null,
+      rawError: null,
+      input: "hi",
+      output: (answer.parts[0] as { text: string }).text,
+      turns: 2,
+    });
+    // The user's message, then each reply and tool result.
+    expect((payload("run.end") as { messages: unknown[] }).messages).toHaveLength(4);
     expect(events.at(-1)).toMatchObject({ run: { id: "r1", sessionId: "s1", status: AgentRunStatus.COMPLETED } });
   });
 
@@ -198,23 +206,59 @@ describe("AgentRunner.run", () => {
     );
     await runner.run(agent, run, owner);
 
-    expect(plugins.executeAction).toHaveBeenCalledWith("a1", { q: "y" });
+    expect(plugins.executeTool).toHaveBeenCalledWith("p1", expect.objectContaining({ name: "ask_question" }), {
+      q: "y",
+    });
     expect(saved[1].parts).toMatchObject([{ toolCallId: "c1", content: "answer" }]);
   });
 
-  it("gives a blocked tool call the reason as an error result, without running it", async () => {
-    const { runner, plugins, saved } = setup([callTool, answer], (e) =>
-      e.hook === "tool.before" ? { action: "block", reason: "not now" } : { action: "continue" },
+  it("gives a denied tool call the reason as an error result and tool.error, without running it", async () => {
+    const { runner, plugins, saved, events } = setup([callTool, answer], (e) =>
+      e.hook === "tool.before" ? { action: "deny", reason: "not now" } : { action: "continue" },
     );
     await runner.run(agent, run, owner);
 
-    expect(plugins.executeAction).not.toHaveBeenCalled();
+    expect(plugins.executeTool).not.toHaveBeenCalled();
     expect(saved[1].parts).toEqual([{ type: "tool_result", toolCallId: "c1", content: "not now", isError: true }]);
+    expect(events.find((e) => e.hook === "tool.error")?.payload).toMatchObject({ reason: "denied" });
   });
 
-  it("fails the run with the reason when a hook blocks its start", async () => {
+  it("gives the model a rejected call's validation details as an error result", async () => {
+    const { runner, plugins, saved, events } = setup([callTool, answer]);
+    const response = { message: "validation failed", details: [{ path: ["q"] }] };
+    plugins.executeTool.mockRejectedValue(new BadRequestException(response));
+    await runner.run(agent, run, owner);
+
+    expect(events.find((e) => e.hook === "tool.error")?.payload).toMatchObject({ reason: "error_result" });
+    expect(saved[1].parts).toEqual([
+      { type: "tool_result", toolCallId: "c1", content: JSON.stringify(response), isError: true },
+    ]);
+  });
+
+  it("uses an llm.request respond as the reply, without calling the LLM", async () => {
+    const { runner, runs, llm, saved } = setup([], (e) =>
+      e.hook === "llm.request" ? { action: "respond", result: answer } : { action: "continue" },
+    );
+    await runner.run(agent, run, owner);
+
+    expect(llm.stream).not.toHaveBeenCalled();
+    expect(saved).toEqual([answer]);
+    expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.COMPLETED, turns: 1 });
+  });
+
+  it("fails the run with the reason when a hook stops a tool call", async () => {
+    const { runner, runs, plugins } = setup([callTool, answer], (e) =>
+      e.hook === "tool.before" ? { action: "stop", reason: "forbidden" } : { action: "continue" },
+    );
+    await runner.run(agent, run, owner);
+
+    expect(plugins.executeTool).not.toHaveBeenCalled();
+    expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "forbidden" });
+  });
+
+  it("fails the run with the reason when a hook stops its start", async () => {
     const { runner, runs, llm } = setup([answer], (e) =>
-      e.hook === "run.start" ? { action: "block", reason: "off topic" } : { action: "continue" },
+      e.hook === "run.start" ? { action: "stop", reason: "off topic" } : { action: "continue" },
     );
     await runner.run(agent, run, owner);
 
@@ -255,12 +299,13 @@ describe("AgentRunner.run", () => {
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "llm provider unavailable" });
   });
 
-  it("gives run.failed the raw error the client never sees", async () => {
+  it("gives run.end the raw error the client never sees", async () => {
     const { runner, events } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
     await runner.run(agent, run, owner);
 
-    expect(events.find((e) => e.hook === "run.failed")?.payload).toMatchObject({
-      error: { message: "connect ECONNREFUSED 10.0.0.1" },
+    expect(events.find((e) => e.hook === "run.end")?.payload).toMatchObject({
+      status: AgentRunStatus.FAILED,
+      rawError: { message: "connect ECONNREFUSED 10.0.0.1" },
     });
   });
 });

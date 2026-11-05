@@ -3,7 +3,7 @@ import { checkJsonSchema } from "@snipet/server-common";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { BaseManifest, ManifestDriver } from "@snipet/shared";
+import type { BaseManifest, JsonObject, ManifestDriver } from "@snipet/shared";
 import type { z } from "zod";
 import type { DriverRegistry, DriverTypes } from "./driver.registry.js";
 
@@ -69,17 +69,26 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
       if (ref && !drivers.has(type, ref.driver)) return `unknown ${String(type)} driver "${ref.driver}"`;
     }
     if (!checkJsonSchema(m.connection)) return "invalid connection schema";
+    const error = this.check(m, drivers);
+    if (error) return error;
     manifests.set(m.key, m);
+  }
+
+  /** Checks specific to a kind of manifest, run once its drivers are known to exist; returns why it's rejected. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected check(manifest: M, drivers: DriverRegistry<D>): string | undefined {
+    return undefined;
   }
 }
 
 /** The manifest's driver for a capability, if it has one. */
 export function driverOf(manifest: BaseManifest, type: PropertyKey): ManifestDriver | undefined {
-  return (manifest as unknown as Record<PropertyKey, ManifestDriver | undefined>)[type];
+  const { capabilities } = manifest as { capabilities?: Record<PropertyKey, ManifestDriver | undefined> };
+  return capabilities?.[type];
 }
 
-/** Names of the `connection` properties marked `secret: true`. */
-export function secretFields(manifest: BaseManifest): string[] {
-  const properties = (manifest.connection.properties ?? {}) as Record<string, { secret?: boolean }>;
+/** Names of the properties of a JSON Schema (`connection`, `settings`) marked `secret: true`. */
+export function secretFields(schema: JsonObject | undefined): string[] {
+  const properties = (schema?.properties ?? {}) as Record<string, { secret?: boolean }>;
   return Object.keys(properties).filter((k) => properties[k]?.secret === true);
 }

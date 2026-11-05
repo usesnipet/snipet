@@ -28,7 +28,17 @@ async function toAvatarDataUrl(file: File): Promise<string> {
   canvas.width = canvas.height = AVATAR_SIZE;
   canvas
     .getContext("2d")!
-    .drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+    .drawImage(
+      bitmap,
+      (bitmap.width - side) / 2,
+      (bitmap.height - side) / 2,
+      side,
+      side,
+      0,
+      0,
+      AVATAR_SIZE,
+      AVATAR_SIZE,
+    );
   bitmap.close();
   const webp = canvas.toDataURL("image/webp", 0.8);
   // Browsers without a WebP encoder fall back to PNG, which is too heavy.

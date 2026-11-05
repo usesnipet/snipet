@@ -3,12 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usersService } from "./service";
 
 import type { CreateUser, FindUsersParams, Paginated, UpdateUser, User } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
 const BASE_QUERY_KEY = "users";
@@ -23,10 +18,7 @@ export const useListUsers = (
   });
 
 export const userQueryKey = (id: string) => [BASE_QUERY_KEY, id] as const;
-export const useUser = (
-  id: string,
-  opts?: ServiceGetOptions<User>,
-): UseQueryResult<User, Error> =>
+export const useUser = (id: string, opts?: ServiceGetOptions<User>): UseQueryResult<User, Error> =>
   useQuery({
     queryKey: userQueryKey(id),
     queryFn: () => usersService.findById(id, opts),
@@ -46,7 +38,7 @@ export const useCreateUser = (
 
 export const useUpdateUser = (
   opts?: ServicePutOptions<UpdateUser, void>,
-): UseMutationResult<void, Error, { id: string, data: UpdateUser }> => {
+): UseMutationResult<void, Error, { id: string; data: UpdateUser }> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ data, id }) => usersService.update(id, data, opts),
@@ -58,9 +50,7 @@ export const useUpdateUser = (
   });
 };
 
-export const useDeleteUser = (
-  opts?: ServiceDeleteOptions<void>,
-): UseMutationResult<void, Error, string> => {
+export const useDeleteUser = (opts?: ServiceDeleteOptions<void>): UseMutationResult<void, Error, string> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => usersService.delete(id, opts),

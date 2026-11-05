@@ -7,11 +7,10 @@ export const ROUTES = {
   llmConnections: "/llm/connections",
   llmPlayground: "/llm/playground",
   plugins: "/plugins",
-  hooks: "/hooks",
   apps: "/apps",
   users: "/users",
   apiKey: "/api-keys",
-  settings: "/settings"
+  settings: "/settings",
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

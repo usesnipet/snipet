@@ -13,11 +13,7 @@ export const UsersPage = () => {
   };
 
   return (
-    <Page
-      title="Users"
-      description="Manage who can sign in to Snipet and what they can do."
-      documentTitle="Users"
-    >
+    <Page title="Users" description="Manage who can sign in to Snipet and what they can do." documentTitle="Users">
       <PageActions>
         <Button onClick={openCreate}>
           <Plus className="size-4" /> Add user

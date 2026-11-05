@@ -76,5 +76,4 @@ export const useChangePassword = (
 
 export const useCurrentUser = (): User | null => useAuthStore((s) => s.user);
 
-export const useIsAuthenticated = (): boolean =>
-  useAuthStore((s) => !!s.accessToken);
+export const useIsAuthenticated = (): boolean => useAuthStore((s) => !!s.accessToken);

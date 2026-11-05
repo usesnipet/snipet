@@ -14,10 +14,7 @@ type Props = {
   fieldclassname?: string;
 };
 
-export const FormAppSelect = ({
-  placeholder = "Select app",
-  ...props
-}: Props) => {
+export const FormAppSelect = ({ placeholder = "Select app", ...props }: Props) => {
   const form = useFormContext();
   const isLoading = form.formState.isSubmitting;
   const { data: apps, isLoading: isLoadingApps } = useListApps();

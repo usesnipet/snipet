@@ -87,16 +87,8 @@ async function readSseStream(
   }
 }
 
-export async function httpSse<TBody = unknown>(
-  options: HttpSseOptions<TBody>,
-): Promise<void> {
-  const {
-    url,
-    method = "POST",
-    schemas,
-    signal,
-    onEvent,
-  } = options;
+export async function httpSse<TBody = unknown>(options: HttpSseOptions<TBody>): Promise<void> {
+  const { url, method = "POST", schemas, signal, onEvent } = options;
   const { params, searchParams, headers, retry } = options;
   let { body } = options;
   const pathUrl = params ? applyPathParams(url, params) : url;
@@ -108,9 +100,7 @@ export async function httpSse<TBody = unknown>(
     throw error;
   }
 
-  const requestUrl = searchParams
-    ? applySearchParams(pathUrl, searchParams)
-    : pathUrl;
+  const requestUrl = searchParams ? applySearchParams(pathUrl, searchParams) : pathUrl;
 
   const { baseUrl = "", getAccessToken, refreshToken, onUnauthorized } = getHttpConfig();
   const accessToken = getAccessToken?.();
@@ -130,14 +120,13 @@ export async function httpSse<TBody = unknown>(
   if (!response.ok) {
     if (response.status === 401) {
       if (!retry) {
-        if (await refreshToken?.()) return httpSse({ ...options, retry: true })
+        if (await refreshToken?.()) return httpSse({ ...options, retry: true });
       } else {
         onUnauthorized?.();
       }
     }
     await handleApiError(response);
   }
-
 
   if (!response.body) {
     throw new Error("SSE response has no body");

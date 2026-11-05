@@ -3,6 +3,7 @@ import { z } from "zod";
 import { jsonObjectSchema } from "../schemas/json.js";
 import { baseManifestSchema, driverSchema } from "../schemas/manifest.js";
 
+import { hooksCapabilitySchema } from "./hook.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 /** Longest plugin instructions put in a run's context, from the driver or the user. */
@@ -10,10 +11,18 @@ export const MAX_PLUGIN_INSTRUCTIONS = 8000;
 
 /** The JSON manifest of a plugin. */
 export const pluginManifestSchema = baseManifestSchema.extend({
-  actions: driverSchema.optional(),
-  /** How the agent should use the plugin, added to the system prompt of agents granted it. */
-  instructions: driverSchema.optional(),
-  healthCheck: driverSchema.optional(),
+  /** JSON Schema of the per-agent settings; `secret: true` fields are sealed. */
+  settings: jsonObjectSchema.optional(),
+  capabilities: z
+    .object({
+      tools: driverSchema.optional(),
+      /** How the agent should use the plugin, added to the system prompt of agents granted it. */
+      instructions: driverSchema.optional(),
+      /** Handlers on the hooks of the agent loop. */
+      hooks: hooksCapabilitySchema.optional(),
+      healthCheck: driverSchema.optional(),
+    })
+    .refine((c) => c.tools || c.instructions || c.hooks, "a plugin needs tools, instructions or hooks"),
 });
 export type PluginManifest = z.infer<typeof pluginManifestSchema>;
 
@@ -37,6 +46,13 @@ export const pluginConnectionSchema = z.object({
 export type PluginConnection = z.infer<typeof pluginConnectionSchema>;
 
 export const paginatedPluginConnectionSchema = paginatedSchema(pluginConnectionSchema);
+
+/** A tool a connection offers, as listed when choosing what an agent can call. */
+export const pluginToolSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+});
+export type PluginTool = z.infer<typeof pluginToolSchema>;
 
 /** config is checked against the manifest's `connection` schema by the API. */
 export const createPluginConnectionSchema = z.object({

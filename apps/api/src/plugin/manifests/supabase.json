@@ -4,7 +4,9 @@
   "description": "Manage Supabase projects, databases, edge functions and docs",
   "icon": "https://github.com/supabase.png",
   "tags": ["database", "remote", "official"],
-  "auth": { "type": "none" },
+  "auth": {
+    "type": "none"
+  },
   "connection": {
     "type": "object",
     "properties": {
@@ -18,21 +20,23 @@
     },
     "required": ["apiKey"]
   },
-  "actions": {
-    "driver": "mcp",
-    "options": {
-      "url": "https://mcp.supabase.com/mcp",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}"
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.supabase.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
       }
-    }
-  },
-  "instructions": {
-    "driver": "mcp",
-    "options": {
-      "url": "https://mcp.supabase.com/mcp",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}"
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.supabase.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
       }
     }
   }

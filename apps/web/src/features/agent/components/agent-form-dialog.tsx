@@ -25,7 +25,6 @@ import { useForm } from "react-hook-form";
 import { agentFormSchema } from "../schemas";
 
 import { AgentAvatarField } from "./agent-avatar";
-import { AgentHooksField } from "./agent-hooks-field";
 import { AgentPluginsField } from "./agent-plugins-field";
 
 import type { AgentForm, AgentFormInput } from "../schemas";
@@ -51,20 +50,11 @@ const toForm = (agent?: Agent): AgentFormInput => ({
     connectionId: llm.connectionId ?? undefined,
     extraOptions: llm.extraOptions ?? undefined,
   })) ?? [{ model: "" }],
-  pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, allow, deny }) => ({
+  pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, tools, settings, disabledHooks }) => ({
     pluginConnectionId,
-    allow,
-    deny,
-  })),
-  hooks: (agent?.hooks ?? []).map(({ event, hookConnectionId, stage, match, timeoutMs, onError, async, enabled }) => ({
-    event,
-    hookConnectionId,
-    stage,
-    match: match ?? {},
-    timeoutMs,
-    onError,
-    async,
-    enabled,
+    tools,
+    settings,
+    disabledHooks,
   })),
 });
 
@@ -86,18 +76,17 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
   });
 
   return (
-    <DialogContent className="sm:max-w-7xl">
+    <DialogContent className="sm:max-w-5xl">
       <DialogHeader>
         <DialogTitle>{agent ? "Edit agent" : "New agent"}</DialogTitle>
         <DialogDescription>
-          An agent loops between its models and plugin actions until the task is done or it runs out of turns. Hooks run
-          on loop events.
+          An agent loops between its models and plugin tools until the task is done or it runs out of turns.
         </DialogDescription>
       </DialogHeader>
 
       <ScrollArea className="max-h-[calc(100vh-250px)]">
         <Form {...form}>
-          <form id={formId} onSubmit={onSubmit} className="grid p-1 pr-3 lg:grid-cols-3 divide-x">
+          <form id={formId} onSubmit={onSubmit} className="grid p-1 pr-3 lg:grid-cols-2 divide-x">
             <FieldGroup className="pr-4">
               <AgentAvatarField name="avatar" />
               <FormInput name="name" label="Name" placeholder="e.g. Support triage" required />
@@ -109,13 +98,10 @@ export function AgentFormDialog({ agent, close }: AgentFormDialogProps) {
               </div>
               <FormSlider name="historyRuns" label="Previous runs in history" min={0} max={100} showValue />
             </FieldGroup>
-            <div className="space-y-2 px-4">
+            <div className="space-y-2 pl-4">
               <LlmModelsField name="llms" allowedModelCapabilities={[LlmCapability.TEXT]} />
               <AgentPluginsField />
             </div>
-            <FieldGroup className="pl-4">
-              <AgentHooksField />
-            </FieldGroup>
           </form>
         </Form>
       </ScrollArea>

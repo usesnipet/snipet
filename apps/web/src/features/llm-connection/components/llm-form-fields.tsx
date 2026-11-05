@@ -56,18 +56,12 @@ export function LlmFormFields() {
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-sm font-medium leading-none">{selected.name}</span>
               {selected.tags?.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="outline"
-                  className="text-muted-foreground font-normal"
-                >
+                <Badge key={tag} variant="outline" className="text-muted-foreground font-normal">
                   {tag}
                 </Badge>
               ))}
             </div>
-            {selected.description ? (
-              <p className="text-muted-foreground text-xs">{selected.description}</p>
-            ) : null}
+            {selected.description ? <p className="text-muted-foreground text-xs">{selected.description}</p> : null}
           </div>
         </div>
       ) : null}

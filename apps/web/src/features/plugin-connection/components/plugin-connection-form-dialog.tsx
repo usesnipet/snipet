@@ -4,7 +4,12 @@ import { FormTextarea } from "@/components/form/textarea";
 import { SchemaFormFields } from "@/components/schema-form";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
@@ -15,7 +20,9 @@ import { useId } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCreatePluginConnection, useUpdatePluginConnection } from "@snipet/client";
-import { createPluginConnectionSchema } from "@snipet/shared";
+import { createPluginConnectionSchema, hookHandlersOf } from "@snipet/shared";
+
+import { describeHandler } from "../capabilities";
 
 import type { RJSFSchema } from "@rjsf/utils";
 import type { CreatePluginConnection, PluginConnection, PluginManifest } from "@snipet/shared";
@@ -66,9 +73,13 @@ export function PluginConnectionFormDialog({ plugin, connection, close }: Plugin
       <DialogHeader>
         <DialogTitle>{isEditing ? "Edit connection" : `Connect ${plugin.name}`}</DialogTitle>
         <DialogDescription>
-          {isEditing
-            ? <>Update settings for <span className="font-medium text-foreground">{connection.name}</span>.</>
-            : plugin.description || `Create a connection to ${plugin.name}.`}
+          {isEditing ? (
+            <>
+              Update settings for <span className="font-medium text-foreground">{connection.name}</span>.
+            </>
+          ) : (
+            plugin.description || `Create a connection to ${plugin.name}.`
+          )}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -85,6 +96,18 @@ export function PluginConnectionFormDialog({ plugin, connection, close }: Plugin
               }
             />
             <FormSwitch name="enabled" label="Enabled" />
+            {plugin.capabilities.hooks && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Hooks</p>
+                <ul className="space-y-0.5 text-xs">
+                  {[...hookHandlersOf(plugin.capabilities.hooks)].map(([hook, handler]) => (
+                    <li key={hook}>
+                      <code>{hook}</code> <span className="text-muted-foreground">{describeHandler(handler)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </FieldGroup>
           {hasConfig ? (
             <div className="space-y-2">

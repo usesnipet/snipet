@@ -4,23 +4,20 @@ import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import { ScrollArea } from "../ui/scroll-area";
 
-const catalogListVariants = cva(
-  "grid gap-4",
-  {
-    variants: {
-      size: {
-        sm: "sm:grid-cols-3 xl:grid-cols-4",
-        md: "sm:grid-cols-2 xl:grid-cols-3",
-        lg: "sm:grid-cols-1 xl:grid-cols-2",
-      },
+const catalogListVariants = cva("grid gap-4", {
+  variants: {
+    size: {
+      sm: "sm:grid-cols-3 xl:grid-cols-4",
+      md: "sm:grid-cols-2 xl:grid-cols-3",
+      lg: "sm:grid-cols-1 xl:grid-cols-2",
     },
-    defaultVariants: {
-      size: "sm",
-    },
-  }
-)
+  },
+  defaultVariants: {
+    size: "sm",
+  },
+});
 
-type CatalogListProps<T extends { id: string }> = VariantProps<typeof catalogListVariants> &  {
+type CatalogListProps<T extends { id: string }> = VariantProps<typeof catalogListVariants> & {
   items: T[];
   emptyMessage: string;
   renderItem: (item: T) => React.ReactNode;
@@ -44,9 +41,9 @@ export function CatalogList<T extends { id: string }>({
     <div className={cn("min-h-0", containerClassName)}>
       <ScrollArea className="h-full">
         <ul className={cn(catalogListVariants({ size, className }), "pb-1 pr-3")}>
-            {items.map((item) => (
-              <li key={item.id}>{renderItem(item)}</li>
-            ))}
+          {items.map((item) => (
+            <li key={item.id}>{renderItem(item)}</li>
+          ))}
         </ul>
       </ScrollArea>
     </div>

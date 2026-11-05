@@ -9,14 +9,10 @@ import type {
   Paginated,
   PluginConnection,
   PluginManifest,
+  PluginTool,
   UpdatePluginConnection,
 } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
 const BASE_QUERY_KEY = "plugin-connection";
@@ -28,15 +24,22 @@ export const useListPluginConnections = (
   useQuery({
     queryKey: [...listPluginConnectionsQueryKey(), opts?.searchParams],
     queryFn: () => pluginConnectionService.list(opts),
-    // Action sync runs in the background after create; poll until it settles.
+    // Tool sync runs in the background after create; poll until it settles.
     refetchInterval: (query) =>
       query.state.data?.data.some((conn) => syncState(conn).kind === "pending") ? 5000 : false,
   });
 
+/** A connection's tools; lastSyncedAt in the key refetches them when a sync finishes. */
+export const usePluginConnectionTools = (
+  connection: Pick<PluginConnection, "id" | "lastSyncedAt">,
+): UseQueryResult<PluginTool[], Error> =>
+  useQuery({
+    queryKey: [...listPluginConnectionsQueryKey(), connection.id, "tools", connection.lastSyncedAt],
+    queryFn: () => pluginConnectionService.listTools(connection.id),
+  });
+
 export const pluginsQueryKey = () => [BASE_QUERY_KEY, "plugins"] as const;
-export const usePlugins = (
-  opts?: ServiceGetOptions<PluginManifest[]>,
-): UseQueryResult<PluginManifest[], Error> =>
+export const usePlugins = (opts?: ServiceGetOptions<PluginManifest[]>): UseQueryResult<PluginManifest[], Error> =>
   useQuery({
     queryKey: pluginsQueryKey(),
     queryFn: () => pluginConnectionService.listPlugins(opts),

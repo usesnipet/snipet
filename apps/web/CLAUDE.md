@@ -11,8 +11,7 @@ Guards, shared components (`LoadingFallback`), and `ROUTES` may stay as static i
 import { AdminPage } from "./routes/admin/page";
 
 // GOOD — code-split per route
-const AdminPage = lazy(() =>
-  import("./routes/admin/page").then((m) => ({ default: m.AdminPage })));
+const AdminPage = lazy(() => import("./routes/admin/page").then((m) => ({ default: m.AdminPage })));
 ```
 
 - Wrap the `<Routes>` tree in `<Suspense fallback={<LoadingFallback />}>`.

@@ -3,14 +3,22 @@ import { SyncStatus } from "@/components/sync-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDialog } from "@/lib/dialog";
 import { Pencil, RefreshCw, Trash } from "lucide-react";
 
 import {
-  syncState, useDeletePluginConnection, useListPluginConnections, useSyncPluginConnection
+  syncState,
+  useDeletePluginConnection,
+  useListPluginConnections,
+  useSyncPluginConnection,
 } from "@snipet/client";
 
 import { PluginConnectionFormDialog } from "./plugin-connection-form-dialog";
@@ -39,9 +47,7 @@ export function PluginConnectionListDialog({ plugin }: PluginConnectionListDialo
       </DialogHeader>
       <ScrollArea className="max-h-[calc(100vh-250px)]">
         <div className="flex flex-col gap-2">
-          {connections.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No connections yet.</p>
-          ) : null}
+          {connections.length === 0 ? <p className="text-muted-foreground text-sm">No connections yet.</p> : null}
           {connections.map((connection) => (
             <div key={connection.id} className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
               <div className="flex items-center justify-between gap-3">
@@ -63,10 +69,12 @@ export function PluginConnectionListDialog({ plugin }: PluginConnectionListDialo
                     variant="outline"
                     size="icon-sm"
                     aria-label="Edit"
-                    onClick={() => openDialog({
-                      component: PluginConnectionFormDialog,
-                      props: { plugin, connection },
-                    })}
+                    onClick={() =>
+                      openDialog({
+                        component: PluginConnectionFormDialog,
+                        props: { plugin, connection },
+                      })
+                    }
                   >
                     <Pencil />
                   </Button>
@@ -74,20 +82,22 @@ export function PluginConnectionListDialog({ plugin }: PluginConnectionListDialo
                     variant="destructive"
                     size="icon-sm"
                     aria-label="Delete"
-                    onClick={() => openDialog({
-                      component: DeleteDialog,
-                      props: {
-                        title: "Delete plugin connection?",
-                        description: (
-                          <>
-                            This will permanently delete{" "}
-                            <span className="font-medium text-foreground">{connection.name}</span>.
-                            This action cannot be undone.
-                          </>
-                        ),
-                        onConfirm: () => deleteConnection(connection.id),
-                      },
-                    })}
+                    onClick={() =>
+                      openDialog({
+                        component: DeleteDialog,
+                        props: {
+                          title: "Delete plugin connection?",
+                          description: (
+                            <>
+                              This will permanently delete{" "}
+                              <span className="font-medium text-foreground">{connection.name}</span>. This action cannot
+                              be undone.
+                            </>
+                          ),
+                          onConfirm: () => deleteConnection(connection.id),
+                        },
+                      })
+                    }
                   >
                     <Trash />
                   </Button>
@@ -106,10 +116,7 @@ export function PluginConnectionListDialog({ plugin }: PluginConnectionListDialo
             Close
           </Button>
         </DialogClose>
-        <Button
-          type="button"
-          onClick={() => openDialog({ component: PluginConnectionFormDialog, props: { plugin } })}
-        >
+        <Button type="button" onClick={() => openDialog({ component: PluginConnectionFormDialog, props: { plugin } })}>
           New connection
         </Button>
       </DialogFooter>

@@ -10,25 +10,36 @@
         "type": "string",
         "title": "Base URL",
         "description": "LM Studio server URL, defaults to http://localhost:1234/v1."
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "description": "How random the replies are: lower is focused and repeatable, higher is more varied and creative. Leave empty to use the model's default.",
+        "minimum": 0,
+        "maximum": 1,
+        "step": 0.01
       }
     }
   },
-  "models": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}"
-    }
-  },
-  "chat": {
-    "driver": "openai",
-    "options": {
-      "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}"
-    }
-  },
-  "healthCheck": {
-    "driver": "http",
-    "options": {
-      "url": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}/models"
+  "capabilities": {
+    "models": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}"
+      }
+    },
+    "chat": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}",
+        "temperature": "{{ connection.temperature }}"
+      }
+    },
+    "healthCheck": {
+      "driver": "http",
+      "options": {
+        "url": "{{ connection.baseUrl || \"http://localhost:1234/v1\" }}/models"
+      }
     }
   }
 }

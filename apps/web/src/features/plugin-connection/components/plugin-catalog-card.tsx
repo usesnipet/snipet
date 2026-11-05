@@ -3,6 +3,7 @@ import { Icon } from "@/components/icon";
 import { useDialog } from "@/lib/dialog";
 import { ArrowRight, Plus } from "lucide-react";
 
+import { capabilityLabels } from "../capabilities";
 import { PluginConnectionFormDialog } from "./plugin-connection-form-dialog";
 import { PluginConnectionListDialog } from "./plugin-connection-list-dialog";
 
@@ -19,9 +20,7 @@ export function PluginCatalogCard({ plugin, view }: PluginCatalogCardProps) {
   const { openDialog } = useDialog();
 
   const countLabel =
-    connectionCount === 0
-      ? "No connections yet"
-      : `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
+    connectionCount === 0 ? "No connections yet" : `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
 
   const onClick = () => {
     if (connected) openDialog({ component: PluginConnectionListDialog, props: { plugin } });
@@ -33,7 +32,7 @@ export function PluginCatalogCard({ plugin, view }: PluginCatalogCardProps) {
       icon={<Icon name={plugin.name} icon={plugin.icon} />}
       title={plugin.name}
       description={plugin.description}
-      tags={view.tags}
+      tags={[...capabilityLabels(plugin), ...view.tags]}
       meta={countLabel}
       cta={{
         label: connected ? "Configure" : "Connect",

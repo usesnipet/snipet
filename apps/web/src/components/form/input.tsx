@@ -18,7 +18,7 @@ export const FormInput = ({ split, ...props }: Props = { split: false } as Props
 
   let splitOptions: { separator: string; type?: "string" | "number" } | undefined;
   if (typeof split === "boolean") {
-    if (split) splitOptions = { separator: ",", type: "string" }
+    if (split) splitOptions = { separator: ",", type: "string" };
   } else if (typeof split === "object") {
     splitOptions = { type: split?.type ?? "string", separator: split?.separator ?? "," };
   }
@@ -38,7 +38,7 @@ export const FormInput = ({ split, ...props }: Props = { split: false } as Props
               value={
                 splitOptions && Array.isArray(field.value)
                   ? field.value.join(splitOptions.separator)
-                  : field.value ?? ""
+                  : (field.value ?? "")
               }
               onChange={(e) => {
                 const val = e.target.value;
@@ -47,7 +47,7 @@ export const FormInput = ({ split, ...props }: Props = { split: false } as Props
                   const arr = val
                     .split(splitOptions.separator)
                     .map((v) => v.trim())
-                    .map((v) => splitOptions!.type === "number" ? Number(v) : v);
+                    .map((v) => (splitOptions!.type === "number" ? Number(v) : v));
 
                   field.onChange(arr);
                 } else {

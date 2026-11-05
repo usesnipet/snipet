@@ -1,9 +1,7 @@
 import type { PluginConnection } from "@snipet/shared";
 
 export type SyncState =
-  | { kind: "pending" }
-  | { kind: "error"; message: string; at?: Date }
-  | { kind: "synced"; at: Date };
+  { kind: "pending" } | { kind: "error"; message: string; at?: Date } | { kind: "synced"; at: Date };
 
 export function syncState(plugin: Pick<PluginConnection, "lastSyncedAt" | "lastSyncedError">): SyncState {
   const at = plugin.lastSyncedAt ?? undefined;

@@ -17,12 +17,7 @@ import type {
   Paginated,
   UpdateLlmConnection,
 } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
 const BASE_QUERY_KEY = "llm-connection";
@@ -37,9 +32,7 @@ export const useListLlmConnections = (
   });
 
 export const llmsQueryKey = () => [BASE_QUERY_KEY, "llms"] as const;
-export const useLLMs = (
-  opts?: ServiceGetOptions<LlmManifest[]>,
-): UseQueryResult<LlmManifest[], Error> =>
+export const useLLMs = (opts?: ServiceGetOptions<LlmManifest[]>): UseQueryResult<LlmManifest[], Error> =>
   useQuery({
     queryKey: llmsQueryKey(),
     queryFn: () => llmConnectionService.listLLMs(opts),
@@ -92,7 +85,7 @@ export const useCreateLlmConnection = (
 
 export const useUpdateLlmConnection = (
   opts?: ServicePutOptions<UpdateLlmConnection, void>,
-): UseMutationResult<void, Error, { id: string, data: UpdateLlmConnection }> => {
+): UseMutationResult<void, Error, { id: string; data: UpdateLlmConnection }> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ data, id }) => llmConnectionService.update(id, data, opts),
@@ -104,9 +97,7 @@ export const useUpdateLlmConnection = (
   });
 };
 
-export const useDeleteLlmConnection = (
-  opts?: ServiceDeleteOptions<void>,
-): UseMutationResult<void, Error, string> => {
+export const useDeleteLlmConnection = (opts?: ServiceDeleteOptions<void>): UseMutationResult<void, Error, string> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => llmConnectionService.delete(id, opts),
@@ -116,9 +107,7 @@ export const useDeleteLlmConnection = (
 };
 
 /** Re-syncs a connection's models; everything cached under the connection is refetched. */
-export const useSyncLlmConnection = (
-  opts?: ServicePostOptions<void, void>,
-): UseMutationResult<void, Error, string> => {
+export const useSyncLlmConnection = (opts?: ServicePostOptions<void, void>): UseMutationResult<void, Error, string> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => llmConnectionService.sync(id, opts),

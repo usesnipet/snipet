@@ -5,10 +5,10 @@ import {
   GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
-  S3Client,
 } from "@aws-sdk/client-s3";
 import { Injectable } from "@nestjs/common";
 
+import { createS3Client } from "./s3-client.js";
 import { Storage } from "./storage.js";
 import { assertKey, storagePath } from "./utils.js";
 
@@ -18,17 +18,12 @@ import type { StoredFile } from "./storage.js";
 /** Objects under STORAGE_S3_PREFIX + <prefix>/ of one bucket. */
 @Injectable()
 export class S3Storage extends Storage {
-  private readonly client = new S3Client({
+  private readonly client = createS3Client({
     region: env.STORAGE_S3_REGION,
     endpoint: env.STORAGE_S3_ENDPOINT || undefined,
     forcePathStyle: env.STORAGE_S3_FORCE_PATH_STYLE,
-    credentials: env.STORAGE_S3_ACCESS_KEY_ID
-      ? { accessKeyId: env.STORAGE_S3_ACCESS_KEY_ID, secretAccessKey: env.STORAGE_S3_SECRET_ACCESS_KEY ?? "" }
-      : undefined,
-    // Many S3-compatible services reject the SDK's default CRC checksums.
-    ...(env.STORAGE_S3_ENDPOINT
-      ? { requestChecksumCalculation: "WHEN_REQUIRED", responseChecksumValidation: "WHEN_REQUIRED" }
-      : {}),
+    accessKeyId: env.STORAGE_S3_ACCESS_KEY_ID,
+    secretAccessKey: env.STORAGE_S3_SECRET_ACCESS_KEY,
   });
   private readonly bucket = env.STORAGE_S3_BUCKET;
 

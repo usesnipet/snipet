@@ -3,6 +3,7 @@ import validator from "@rjsf/validator-ajv8";
 import { useMemo } from "react";
 
 import { buildPasswordUiSchema } from "./password-ui-schema";
+import { widgets } from "./text-widget";
 
 import type { ErrorSchema, RJSFSchema, UiSchema } from "@rjsf/utils";
 
@@ -36,6 +37,7 @@ export function SchemaFormFields({ schema, defaultData, onChange, extraErrors }:
       formData={defaultData}
       validator={validator}
       uiSchema={uiSchema}
+      widgets={widgets}
       onChange={(e) => onChange(e.formData ?? {})}
       extraErrors={extraErrors}
       liveValidate={false}

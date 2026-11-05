@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router";
 
-export const useDocumentTitle = (
-  getTitle: () => string,
-  dependencies: React.DependencyList
-) => {
+export const useDocumentTitle = (getTitle: () => string, dependencies: React.DependencyList) => {
   const location = useLocation();
 
   useEffect(() => {

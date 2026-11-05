@@ -18,7 +18,7 @@ type Fn = (...args: unknown[]) => Promise<unknown>;
 class Echo extends Driver(z.strictObject({ url: z.url(), token: z.string().optional() })) {
   readonly key = "echo";
 }
-type Drivers = { actions: Echo };
+type Drivers = { tools: Echo };
 
 type Conn = ConnectionEntity & { pluginKey: string };
 
@@ -35,7 +35,9 @@ const manifest = (key: string) =>
       properties: { url: { type: "string" }, token: { type: "string", secret: true }, retries: { default: 3 } },
       required: ["url"],
     },
-    actions: { driver: "echo", options: { url: "{{ connection.url }}", token: "{{ connection.token }}" } },
+    capabilities: {
+      tools: { driver: "echo", options: { url: "{{ connection.url }}", token: "{{ connection.token }}" } },
+    },
   });
 
 const stored: Conn = {
@@ -58,7 +60,7 @@ function setup() {
   const service = new TestService(
     repo as unknown as Repository<Conn>,
     manifests as unknown as ManifestRegistry<PluginManifest, Drivers>,
-    new DriverRegistry<Drivers>({ actions: [new Echo()] }),
+    new DriverRegistry<Drivers>({ tools: [new Echo()] }),
   );
   return { service, repo };
 }

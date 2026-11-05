@@ -46,7 +46,11 @@ export function GetStarted({ waitlistKey }: { waitlistKey: string }) {
           <p className="mt-3 text-muted-foreground">
             Snipet Cloud is coming. Join the waitlist and we'll email you when it opens.
           </p>
-          <form action="https://api.web3forms.com/submit" method="POST" className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <form
+            action="https://api.web3forms.com/submit"
+            method="POST"
+            className="mt-6 flex flex-col gap-3 sm:flex-row"
+          >
             <input type="hidden" name="access_key" value={waitlistKey} />
             <input type="hidden" name="subject" value="Snipet Cloud waitlist" />
             {/* Web3Forms needs an absolute URL; without JS it falls back to its own success page. */}

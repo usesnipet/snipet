@@ -2,14 +2,29 @@ import { FormTextarea } from "@/components/form/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
-  Check, ChevronDown, ChevronUp, CircleAlert, CircleCheck, Clock, GripVertical, Loader2, Plus, Send,
-  SkipForward, Square, X, Zap
+  Check,
+  ChevronDown,
+  ChevronUp,
+  CircleAlert,
+  CircleCheck,
+  Clock,
+  GripVertical,
+  Loader2,
+  Plus,
+  Send,
+  SkipForward,
+  Square,
+  X,
+  Zap,
 } from "lucide-react";
 import { useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
@@ -224,9 +239,7 @@ function ResultStatus({ mode, stream, runSync }: ResultStatusProps) {
   if (runSync.isIdle) return <IdleStatus />;
   if (runSync.isPending) return <StatusRow icon={<Loader2 className="animate-spin" />}>Running…</StatusRow>;
   if (runSync.isError) return <ErrorStatus message={runSync.error.message} />;
-  return (
-    <StatusRow icon={<CircleCheck />}>{extractText(runSync.data.message) || "(empty response)"}</StatusRow>
-  );
+  return <StatusRow icon={<CircleCheck />}>{extractText(runSync.data.message) || "(empty response)"}</StatusRow>;
 }
 
 function SkippedList({ skipped }: { skipped: LlmSkippedEvent[] }) {
@@ -254,9 +267,22 @@ function ErrorStatus({ message }: { message: string }) {
   );
 }
 
-function StatusRow({ icon, className, children }: { icon: React.ReactNode; className?: string; children: React.ReactNode }) {
+function StatusRow({
+  icon,
+  className,
+  children,
+}: {
+  icon: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className={cn("text-muted-foreground flex items-start gap-2 text-xs [&_svg]:mt-0.5 [&_svg]:size-3.5 [&_svg]:shrink-0", className)}>
+    <div
+      className={cn(
+        "text-muted-foreground flex items-start gap-2 text-xs [&_svg]:mt-0.5 [&_svg]:size-3.5 [&_svg]:shrink-0",
+        className,
+      )}
+    >
       {icon}
       <p className="whitespace-pre-wrap">{children}</p>
     </div>

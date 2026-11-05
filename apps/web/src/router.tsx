@@ -9,36 +9,28 @@ import { SettingsProvider } from "./context/settings-provider";
 import { ROUTES } from "./routes";
 
 import type { RoutePath } from "./routes";
-const Layout = lazy(() =>
-  import("./routes/layout").then((m) => ({ default: m.Layout })));
-const LoginPage = lazy(() =>
-  import("./routes/login/page").then((m) => ({ default: m.LoginPage })));
-const HomePage = lazy(() =>
-  import("./routes/page").then((m) => ({ default: m.HomePage })));
-const AgentsPage = lazy(() =>
-  import("./routes/agents/page").then((m) => ({ default: m.AgentsPage })));
+const Layout = lazy(() => import("./routes/layout").then((m) => ({ default: m.Layout })));
+const LoginPage = lazy(() => import("./routes/login/page").then((m) => ({ default: m.LoginPage })));
+const HomePage = lazy(() => import("./routes/page").then((m) => ({ default: m.HomePage })));
+const AgentsPage = lazy(() => import("./routes/agents/page").then((m) => ({ default: m.AgentsPage })));
 const AgentPlaygroundPage = lazy(() =>
-  import("./routes/agent-playground/page").then((m) => ({ default: m.AgentPlaygroundPage })));
+  import("./routes/agent-playground/page").then((m) => ({ default: m.AgentPlaygroundPage })),
+);
 const LlmConnectionsPage = lazy(() =>
-  import("./routes/llm-connections/page").then((m) => ({ default: m.LlmConnectionsPage })));
+  import("./routes/llm-connections/page").then((m) => ({ default: m.LlmConnectionsPage })),
+);
 const LlmPlaygroundPage = lazy(() =>
-  import("./routes/llm-playground/page").then((m) => ({ default: m.LlmPlaygroundPage })));
-const PluginsPage = lazy(() =>
-  import("./routes/plugins/page").then((m) => ({ default: m.PluginsPage })));
-const HooksPage = lazy(() =>
-  import("./routes/hooks/page").then((m) => ({ default: m.HooksPage })));
-const AppsPage = lazy(() =>
-  import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
-const UsersPage = lazy(() =>
-  import("./routes/users/page").then((m) => ({ default: m.UsersPage })));
-const SettingsPage = lazy(() =>
-  import("./routes/settings/page").then((m) => ({ default: m.SettingsPage })));
-const ApiKeysPage = lazy(() =>
-  import("./routes/api-keys/page").then((m) => ({ default: m.ApiKeysPage })));
+  import("./routes/llm-playground/page").then((m) => ({ default: m.LlmPlaygroundPage })),
+);
+const PluginsPage = lazy(() => import("./routes/plugins/page").then((m) => ({ default: m.PluginsPage })));
+const AppsPage = lazy(() => import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
+const UsersPage = lazy(() => import("./routes/users/page").then((m) => ({ default: m.UsersPage })));
+const SettingsPage = lazy(() => import("./routes/settings/page").then((m) => ({ default: m.SettingsPage })));
+const ApiKeysPage = lazy(() => import("./routes/api-keys/page").then((m) => ({ default: m.ApiKeysPage })));
 
 const toReactRouterPath = (path: RoutePath) => {
   return path.replaceAll(/{([^}]+)}/g, (_, p1) => `:${p1}`);
-}
+};
 
 export const Router = () => {
   return (
@@ -50,7 +42,10 @@ export const Router = () => {
             <Route element={<SettingsProvider />}>
               <Route element={<RequireRole role={Role.Admin} />}>
                 {/* One optional-param route, so starting a chat doesn't remount the page. */}
-                <Route path={`${toReactRouterPath(ROUTES.agentPlaygroundSession)}?`} element={<AgentPlaygroundPage />} />
+                <Route
+                  path={`${toReactRouterPath(ROUTES.agentPlaygroundSession)}?`}
+                  element={<AgentPlaygroundPage />}
+                />
               </Route>
               <Route element={<Layout />}>
                 <Route path={toReactRouterPath(ROUTES.home)} element={<HomePage />} />
@@ -59,7 +54,6 @@ export const Router = () => {
                 <Route element={<RequireRole role={Role.Admin} />}>
                   <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
                   <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
-                  <Route path={toReactRouterPath(ROUTES.hooks)} element={<HooksPage />} />
                   <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
                   <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
                   <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
@@ -71,5 +65,5 @@ export const Router = () => {
         </Routes>
       </Suspense>
     </BrowserRouter>
-  )
-}
+  );
+};

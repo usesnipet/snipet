@@ -4,13 +4,21 @@
   "description": "Web search and code context search powered by Exa",
   "icon": "https://github.com/exa-labs.png",
   "tags": ["search", "web", "remote"],
-  "auth": { "type": "none" },
-  "actions": {
-    "driver": "mcp",
-    "options": { "url": "https://mcp.exa.ai/mcp" }
+  "auth": {
+    "type": "none"
   },
-  "instructions": {
-    "driver": "mcp",
-    "options": { "url": "https://mcp.exa.ai/mcp" }
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.exa.ai/mcp"
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.exa.ai/mcp"
+      }
+    }
   }
 }

@@ -14,15 +14,7 @@ type Props = {
   showValue?: boolean;
 };
 
-export const FormSlider = ({
-  name,
-  label,
-  fieldclassname,
-  min = 0,
-  max = 100,
-  step = 1,
-  showValue = false,
-}: Props) => {
+export const FormSlider = ({ name, label, fieldclassname, min = 0, max = 100, step = 1, showValue = false }: Props) => {
   const form = useFormContext();
   const isLoading = form.formState.isSubmitting;
   const value = form.watch(name) as number | undefined;
@@ -35,9 +27,7 @@ export const FormSlider = ({
         <FormItem className={cn("relative space-y-2", fieldclassname)}>
           {label ? <FormLabel>{label}</FormLabel> : null}
           {showValue && typeof value === "number" ? (
-            <span className="absolute right-0 top-0 text-sm text-muted-foreground">
-              {value}
-            </span>
+            <span className="absolute right-0 top-0 text-sm text-muted-foreground">{value}</span>
           ) : null}
           <FormControl>
             <Slider

@@ -7,10 +7,10 @@ import { Switch } from "../ui/switch";
 import { cn } from "@/lib/utils";
 
 type Props = React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root> & {
-  label?: string
-  name: string
-  fieldclassname?: string
-}
+  label?: string;
+  name: string;
+  fieldclassname?: string;
+};
 export const FormSwitch = (props: Props) => {
   const form = useFormContext();
   const isLoading = form.formState.isSubmitting;
@@ -21,14 +21,9 @@ export const FormSwitch = (props: Props) => {
       name={props.name}
       render={({ field }) => (
         <FormItem className={cn("flex items-center gap-2", props.fieldclassname)}>
-          {props.label && (<FormLabel>{props.label}</FormLabel>)}
+          {props.label && <FormLabel>{props.label}</FormLabel>}
           <FormControl>
-            <Switch
-              disabled={isLoading}
-              checked={!!field.value}
-              onCheckedChange={field.onChange}
-              {...props}
-            />
+            <Switch disabled={isLoading} checked={!!field.value} onCheckedChange={field.onChange} {...props} />
           </FormControl>
           <FormMessage />
         </FormItem>

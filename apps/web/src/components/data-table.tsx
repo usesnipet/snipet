@@ -12,28 +12,28 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import type { Key, ReactNode } from "react";
 
 export type DataTableColumn<T> = {
-  id: string
-  header: ReactNode
-  cell: (row: T) => ReactNode
-  className?: string
-  headerClassName?: string
-}
+  id: string;
+  header: ReactNode;
+  cell: (row: T) => ReactNode;
+  className?: string;
+  headerClassName?: string;
+};
 
 export type DataTablePagination = {
-  skip: number
-  take: number
-}
+  skip: number;
+  take: number;
+};
 
 export type DataTableProps<T> = {
-  columns: DataTableColumn<T>[]
-  useQuery: (pagination: DataTablePagination) => UseQueryResult<Paginated<T>, Error>
-  pageSize?: number
-  getRowKey?: (row: T, index: number) => Key
-  emptyMessage?: ReactNode
-  className?: string
-}
+  columns: DataTableColumn<T>[];
+  useQuery: (pagination: DataTablePagination) => UseQueryResult<Paginated<T>, Error>;
+  pageSize?: number;
+  getRowKey?: (row: T, index: number) => Key;
+  emptyMessage?: ReactNode;
+  className?: string;
+};
 
-const DEFAULT_PAGE_SIZE = 50
+const DEFAULT_PAGE_SIZE = 50;
 
 export function DataTable<T>({
   columns,
@@ -43,38 +43,30 @@ export function DataTable<T>({
   emptyMessage = "No results.",
   className,
 }: DataTableProps<T>) {
-  const [page, setPage] = useState(0)
+  const [page, setPage] = useState(0);
   const pagination: DataTablePagination = {
     skip: page * pageSize,
     take: pageSize,
-  }
-  const query = useQuery(pagination)
-  const rows = query.data?.data ?? []
-  const total = query.data?.total ?? 0
-  const loading = query.isLoading || query.isFetching
+  };
+  const query = useQuery(pagination);
+  const rows = query.data?.data ?? [];
+  const total = query.data?.total ?? 0;
+  const loading = query.isLoading || query.isFetching;
 
-  const from = total === 0 ? 0 : pagination.skip + 1
-  const to = Math.min(pagination.skip + rows.length, total)
-  const hasPrevious = page > 0
-  const hasNext = pagination.skip + pageSize < total
-  const showFooter = total > 0
+  const from = total === 0 ? 0 : pagination.skip + 1;
+  const to = Math.min(pagination.skip + rows.length, total);
+  const hasPrevious = page > 0;
+  const hasNext = pagination.skip + pageSize < total;
+  const showFooter = total > 0;
 
   return (
-    <div
-      className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card",
-        className,
-      )}
-    >
+    <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card", className)}>
       <ScrollArea className="min-h-0 flex-1 **:data-[slot=table-container]:overflow-visible">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow>
               {columns.map((column) => (
-                <TableHead
-                  key={column.id}
-                  className={column.headerClassName}
-                >
+                <TableHead key={column.id} className={column.headerClassName}>
                   {column.header}
                 </TableHead>
               ))}
@@ -89,10 +81,7 @@ export function DataTable<T>({
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
                   {emptyMessage}
                 </TableCell>
               </TableRow>
@@ -140,5 +129,5 @@ export function DataTable<T>({
         </div>
       ) : null}
     </div>
-  )
+  );
 }

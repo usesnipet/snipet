@@ -4,13 +4,17 @@ import { listApiKeyQueryKey } from "../api-key/hooks";
 
 import { appService } from "./service";
 
-import type { App, AppTokenResponse, CreateApp, FindAppsParams, IssueAppToken, Paginated, PublicApp, UpdateApp } from "@snipet/shared";
 import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+  App,
+  AppTokenResponse,
+  CreateApp,
+  FindAppsParams,
+  IssueAppToken,
+  Paginated,
+  PublicApp,
+  UpdateApp,
+} from "@snipet/shared";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
 const BASE_QUERY_KEY = "app";
@@ -40,9 +44,7 @@ export const usePublicApp = (id: string | undefined): UseQueryResult<PublicApp, 
     enabled: !!id,
   });
 
-export const useCreateApp = (
-  opts?: ServicePostOptions<CreateApp, App>,
-): UseMutationResult<App, Error, CreateApp> => {
+export const useCreateApp = (opts?: ServicePostOptions<CreateApp, App>): UseMutationResult<App, Error, CreateApp> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateApp) => appService.create(data, opts),
@@ -67,9 +69,7 @@ export const useUpdateApp = (
 };
 
 /** Deletes an app; the server also deletes its API keys (and sessions) on the server. */
-export const useDeleteApp = (
-  opts?: ServiceDeleteOptions<void>,
-): UseMutationResult<void, Error, string> => {
+export const useDeleteApp = (opts?: ServiceDeleteOptions<void>): UseMutationResult<void, Error, string> => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => appService.delete(id, opts),

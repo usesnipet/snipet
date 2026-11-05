@@ -1,20 +1,17 @@
 import type {
   Agent as AgentContract,
   AgentLlm as AgentLlmContract,
-  AgentHook as AgentHookContract,
   AgentPluginConnection as AgentPluginConnectionContract,
   HookName,
-  HookMatch,
-  HookOnError,
   JsonObject,
 } from "@snipet/shared";
 import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
+import { sealConfig } from "#src/manifest/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
 import {
   AfterLoad,
   Column,
   Entity,
-  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -23,7 +20,6 @@ import {
   ValueTransformer,
 } from "typeorm";
 
-import { HookConnection } from "../hook-connection/hook-connection.entity.js";
 import { LlmConnection } from "../llm-connection/llm-connection.entity.js";
 import { PluginConnection } from "../plugin-connection/plugin-connection.entity.js";
 
@@ -31,6 +27,15 @@ import { PluginConnection } from "../plugin-connection/plugin-connection.entity.
 export const storagePathTransformer: ValueTransformer = {
   from: (path: string | null) => path && toStorageUrl(path),
   to: (url: string | null | undefined) => url && fromStorageUrl(url),
+};
+
+/**
+ * sealConfig, reading a missing value (rows added by SQL, which can't seal)
+ * as no settings.
+ */
+const sealSettings: ValueTransformer = {
+  to: (value?: JsonObject | null) => sealConfig.to(value ?? {}) as string,
+  from: (value?: string | null) => (value ? (sealConfig.from(value) as JsonObject) : {}),
 };
 
 @Entity("agents")
@@ -64,15 +69,11 @@ export class Agent extends BaseEntity implements AgentContract {
   @OneToMany(() => AgentPluginConnection, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
   pluginConnections: AgentPluginConnection[];
 
-  /** Only the agent's own hooks; global ones (agentId null) aren't listed here. */
-  @OneToMany(() => AgentHook, (hook) => hook.agent, { eager: true, cascade: ["insert"] })
-  hooks: AgentHook[];
-
-  /** Puts llms in the order they run and hooks by position; eager relations load unordered. */
+  /** Puts llms in the order they run and plugins by position; eager relations load unordered. */
   @AfterLoad()
   sortByOrder() {
     this.llms?.sort((a, b) => a.order - b.order);
-    this.hooks?.sort((a, b) => a.position - b.position);
+    this.pluginConnections?.sort((a, b) => a.position - b.position);
   }
 }
 
@@ -123,52 +124,17 @@ export class AgentPluginConnection extends BaseEntity implements AgentPluginConn
   @JoinColumn({ name: "pluginConnectionId" })
   pluginConnection?: PluginConnection;
 
+  /** Names of the tools the agent can call; a tool added by a later sync stays off until selected. */
   @Column({ type: "text", array: true, default: [] })
-  allow: string[];
-
-  @Column({ type: "text", array: true, default: [] })
-  deny: string[];
-}
-
-@Entity("agent_hooks")
-export class AgentHook extends BaseEntity implements AgentHookContract {
-  /** null: applies to every agent. */
-  @Index()
-  @Column({ type: "uuid", nullable: true })
-  agentId: string | null;
-
-  @ManyToOne(() => Agent, (agent) => agent.hooks, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "agentId" })
-  agent?: Agent;
-
-  @Column({ type: "uuid" })
-  hookConnectionId: string;
-
-  @ManyToOne(() => HookConnection, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "hookConnectionId" })
-  hookConnection?: HookConnection;
-
-  @Column({ type: "varchar", length: 64 })
-  event: HookName;
-
-  @Column({ type: "int", default: 0 })
-  stage: number;
+  tools: string[];
 
   @Column({ type: "int", default: 0 })
   position: number;
 
-  @Column({ type: "jsonb", nullable: true })
-  match: HookMatch | null;
+  /** Sealed whole, like connection configs: settings may hold secrets. */
+  @Column({ type: "text", nullable: true, transformer: sealSettings })
+  settings: JsonObject;
 
-  @Column({ type: "int", nullable: true })
-  timeoutMs: number | null;
-
-  @Column({ type: "varchar", length: 16, default: "continue" })
-  onError: HookOnError;
-
-  @Column({ default: false })
-  async: boolean;
-
-  @Column({ default: true })
-  enabled: boolean;
+  @Column({ type: "text", array: true, default: [] })
+  disabledHooks: HookName[];
 }

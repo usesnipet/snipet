@@ -13,13 +13,13 @@ import { useCurrentUser, useLogout } from "@/features/auth/hooks";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
 import { hasRole, Role } from "@snipet/shared";
-import { AppWindow, Home, Key, LogOut, MessageSquare, Plug, Server, Settings, Users, Webhook } from "lucide-react";
+import { AppWindow, Home, Key, LogOut, MessageSquare, Plug, Server, Settings, Users } from "lucide-react";
 
 import { Version } from "./version";
 
 import type { NavEntry } from "@/components/sidebar/types";
 
-const isAdmin = () => hasRole(useAuthStore.getState().user?.role, [Role.Admin]) ;
+const isAdmin = () => hasRole(useAuthStore.getState().user?.role, [Role.Admin]);
 
 const navItems: NavEntry[] = [
   {
@@ -44,7 +44,6 @@ const navItems: NavEntry[] = [
         ],
       },
       { title: "Plugins", href: ROUTES.plugins, icon: Plug, visible: isAdmin },
-      { title: "Hooks", href: ROUTES.hooks, icon: Webhook, visible: isAdmin, experimental: true },
       { title: "Apps", href: ROUTES.apps, icon: AppWindow, visible: isAdmin },
     ],
   },
@@ -121,7 +120,6 @@ function UserMenu() {
 }
 
 function SidebarFooterInfo() {
-
   return (
     <SidebarFooter className="flex-row items-center justify-between border-sidebar-border border-t group-data-[collapsible=icon]:hidden">
       <Version />

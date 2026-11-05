@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { buildPasswordUiSchema } from "./password-ui-schema";
+import { widgets } from "./text-widget";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
 import type { IChangeEvent } from "@rjsf/core";
@@ -28,14 +29,7 @@ export type SchemaFormDialogProps = DialogInstanceProps<{
 
 const FORM_ID_PREFIX = "schema-form-dialog";
 
-export function SchemaFormDialog({
-  title,
-  description,
-  schema,
-  formData,
-  onSubmit,
-  close,
-}: SchemaFormDialogProps) {
+export function SchemaFormDialog({ title, description, schema, formData, onSubmit, close }: SchemaFormDialogProps) {
   const formId = `${FORM_ID_PREFIX}-${useId()}`;
 
   const uiSchema = useMemo<UiSchema>(() => {
@@ -57,9 +51,7 @@ export function SchemaFormDialog({
         {description ? (
           <DialogDescription>{description}</DialogDescription>
         ) : (
-          <DialogDescription className="sr-only">
-            Configure {title}
-          </DialogDescription>
+          <DialogDescription className="sr-only">Configure {title}</DialogDescription>
         )}
       </DialogHeader>
 
@@ -69,6 +61,7 @@ export function SchemaFormDialog({
         formData={formData}
         validator={validator}
         uiSchema={uiSchema}
+        widgets={widgets}
         onSubmit={handleSubmit}
         liveValidate={false}
         showErrorList={false}

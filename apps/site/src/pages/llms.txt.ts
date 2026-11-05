@@ -28,7 +28,10 @@ export const GET: APIRoute = async ({ site }) => {
       // The section's overview page (e.g. docs/widget) sorts before its subpages; the introduction opens
       // "Get started", as in the sidebar.
       ...docs
-        .filter((d) => d.id === `docs/${key}` || d.id.startsWith(`docs/${key}/`) || (key === "get-started" && d.id === "docs"))
+        .filter(
+          (d) =>
+            d.id === `docs/${key}` || d.id.startsWith(`docs/${key}/`) || (key === "get-started" && d.id === "docs"),
+        )
         .map(line),
       "",
     ]),

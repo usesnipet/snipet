@@ -38,13 +38,13 @@ column on a populated table needs a default or backfill.
 
 ## What you get for free
 
-| Route | Service method | Status |
-|---|---|---|
-| `GET /<name>?take&skip&<filters>` | `filter(query)` returns `Paginated<T>` | 200 |
-| `GET /<name>/:id` | `findById(id)` | 200 / 404 |
-| `POST /<name>` | `create(dto)` | 201 |
-| `PUT /<name>/:id` | `updateById(id, dto)` partial | 204 / 404 |
-| `DELETE /<name>/:id` | `deleteById(id)` | 204 / 404 |
+| Route                             | Service method                         | Status    |
+| --------------------------------- | -------------------------------------- | --------- |
+| `GET /<name>?take&skip&<filters>` | `filter(query)` returns `Paginated<T>` | 200       |
+| `GET /<name>/:id`                 | `findById(id)`                         | 200 / 404 |
+| `POST /<name>`                    | `create(dto)`                          | 201       |
+| `PUT /<name>/:id`                 | `updateById(id, dto)` partial          | 204 / 404 |
+| `DELETE /<name>/:id`              | `deleteById(id)`                       | 204 / 404 |
 
 - Every route needs `Authorization: Bearer <access token>` (global `AuthGuard`,
   401 without it). Mark a route/controller `@Public()` to open it, or

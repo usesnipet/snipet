@@ -6,6 +6,9 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db/snipet
       PLUGINS_DIR: "/app/plugins"
+    # host.docker.internal is the host, for a local Ollama or LM Studio; Linux needs it declared.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     depends_on:
       - db
@@ -29,6 +32,17 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       retries: 10
+    restart: unless-stopped
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs-server
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Console Web
+    environment:
+      - RUSTFS_ACCESS_KEY=admin
+      - RUSTFS_SECRET_KEY=admin
     restart: unless-stopped
 
 volumes:

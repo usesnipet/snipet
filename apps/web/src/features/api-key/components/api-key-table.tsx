@@ -22,7 +22,7 @@ import type { DataTableColumn, DataTablePagination } from "@/components/data-tab
 import type { ApiKey, ApiKeyWithSecret } from "@snipet/shared";
 
 function useApiKeyTableQuery(pagination: DataTablePagination) {
-  return useListApiKey({ searchParams: { ...pagination, includeApp: true } })
+  return useListApiKey({ searchParams: { ...pagination, includeApp: true } });
 }
 
 export function ApiKeyTable() {
@@ -55,9 +55,8 @@ export function ApiKeyTable() {
         title: "Roll API key?",
         description: (
           <>
-            This will generate a new secret for{" "}
-            <span className="font-medium text-foreground">{apiKey.name}</span>.
-            The previous secret will stop working immediately.
+            This will generate a new secret for <span className="font-medium text-foreground">{apiKey.name}</span>. The
+            previous secret will stop working immediately.
           </>
         ),
         confirmLabel: "Roll key",
@@ -74,9 +73,8 @@ export function ApiKeyTable() {
         title: "Delete API key?",
         description: (
           <>
-            This will permanently delete{" "}
-            <span className="font-medium text-foreground">{apiKey.name}</span>.
-            This action cannot be undone.
+            This will permanently delete <span className="font-medium text-foreground">{apiKey.name}</span>. This action
+            cannot be undone.
           </>
         ),
         onConfirm: () => deleteApiKey({ id: apiKey.id }),
@@ -98,32 +96,22 @@ export function ApiKeyTable() {
     {
       id: "app",
       header: "App",
-      cell: (row) => (
-        <span className="font-medium">{row.app?.name}</span>
-      ),
+      cell: (row) => <span className="font-medium">{row.app?.name}</span>,
     },
     {
       id: "status",
       header: "Status",
-      cell: (row) => (
-        <Badge variant={row.active ? "default" : "secondary"}>
-          {row.active ? "Active" : "Disabled"}
-        </Badge>
-      ),
+      cell: (row) => <Badge variant={row.active ? "default" : "secondary"}>{row.active ? "Active" : "Disabled"}</Badge>,
     },
     {
       id: "expires_at",
       header: "Expires",
-      cell: (row) => (
-        <DateFormat className="text-muted-foreground" emptyValue="Never" date={row.expiresAt} />
-      ),
+      cell: (row) => <DateFormat className="text-muted-foreground" emptyValue="Never" date={row.expiresAt} />,
     },
     {
       id: "created_at",
       header: "Created",
-      cell: (row) => (
-        <DateFormat className="text-muted-foreground" date={row.createdAt} />
-      ),
+      cell: (row) => <DateFormat className="text-muted-foreground" date={row.createdAt} />,
     },
     {
       id: "actions",
@@ -148,10 +136,7 @@ export function ApiKeyTable() {
               Roll key
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={() => openDelete(row)}
-            >
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openDelete(row)}>
               <Trash2 />
               Delete
             </DropdownMenuItem>
@@ -168,5 +153,5 @@ export function ApiKeyTable() {
       getRowKey={(row) => row.id}
       emptyMessage="No API keys yet."
     />
-  )
+  );
 }

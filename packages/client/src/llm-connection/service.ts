@@ -28,12 +28,7 @@ import type {
   Paginated,
   UpdateLlmConnection,
 } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const LLM_CONNECTION_URL = "/api/llm-connections";
 
@@ -49,19 +44,14 @@ const list = async (
     ...opts,
   });
 
-const listLLMs = async (
-  opts: ServiceGetOptions<LlmManifest[]> = {},
-): Promise<LlmManifest[]> =>
+const listLLMs = async (opts: ServiceGetOptions<LlmManifest[]> = {}): Promise<LlmManifest[]> =>
   http.get({
     url: `${LLM_CONNECTION_URL}/llms`,
     schemas: { response: z.array(llmManifestSchema) },
     ...opts,
   });
 
-const findById = async (
-  id: string,
-  opts: ServiceGetOptions<LlmConnection> = {},
-): Promise<LlmConnection> =>
+const findById = async (id: string, opts: ServiceGetOptions<LlmConnection> = {}): Promise<LlmConnection> =>
   http.get({
     url: `${LLM_CONNECTION_URL}/{id}`,
     params: { id },

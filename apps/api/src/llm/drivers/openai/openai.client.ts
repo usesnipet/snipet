@@ -1,3 +1,4 @@
+import { safeFetch } from "#src/infra/http/safe-fetch.js";
 import OpenAI, { APIConnectionError, APIError, APIUserAbortError } from "openai";
 import z from "zod";
 
@@ -12,6 +13,9 @@ export const openAiOptionsSchema = z.strictObject({
   apiKey: z.string().default(""),
   organization: z.string().default(""),
   headers: z.record(z.string(), z.string()).default({}),
+  // "" is an unset `{{ connection.temperature }}`; left out, the model's own
+  // default applies (reasoning models reject any other).
+  temperature: z.preprocess((v) => (v === "" ? undefined : v), z.number().optional()),
 });
 export type OpenAiOptions = z.infer<typeof openAiOptionsSchema>;
 
@@ -22,6 +26,7 @@ export function openAiClient({ baseUrl, apiKey, headers, organization }: OpenAiO
     organization: organization,
     defaultHeaders: headers,
     maxRetries: 0,
+    fetch: safeFetch,
   });
 }
 

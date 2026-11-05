@@ -120,55 +120,58 @@ export const useRunStream = (): UseRunStreamResult => {
     setError(null);
   }, []);
 
-  const follow = useCallback((run: AgentRun, lastId: number) => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+  const follow = useCallback(
+    (run: AgentRun, lastId: number) => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-    setStatus("streaming");
-    setRunId(run.id);
-    setDraft("");
-    setError(null);
+      setStatus("streaming");
+      setRunId(run.id);
+      setDraft("");
+      setError(null);
 
-    const finish = (finished: AgentRun) => {
-      queryClient.setQueryData(latestRunQueryKey(finished.sessionId), finished);
-      queryClient.invalidateQueries({ queryKey: sessionMessagesQueryKey(finished.sessionId) });
-      queryClient.invalidateQueries({ queryKey: listSessionsQueryKey() });
-    };
+      const finish = (finished: AgentRun) => {
+        queryClient.setQueryData(latestRunQueryKey(finished.sessionId), finished);
+        queryClient.invalidateQueries({ queryKey: sessionMessagesQueryKey(finished.sessionId) });
+        queryClient.invalidateQueries({ queryKey: listSessionsQueryKey() });
+      };
 
-    agentRunService
-      .events(
-        run.id,
-        lastId,
-        (event) => {
-          switch (event.event) {
-            case "text_delta":
-              setDraft((prev) => prev + event.data.text);
-              break;
-            case "message": {
-              const message = event.data;
-              setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
-              if (message.role === "assistant") setDraft("");
-              break;
+      agentRunService
+        .events(
+          run.id,
+          lastId,
+          (event) => {
+            switch (event.event) {
+              case "text_delta":
+                setDraft((prev) => prev + event.data.text);
+                break;
+              case "message": {
+                const message = event.data;
+                setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
+                if (message.role === "assistant") setDraft("");
+                break;
+              }
+              case "run_finished":
+                finish(event.data);
+                break;
             }
-            case "run_finished":
-              finish(event.data);
-              break;
-          }
-        },
-        { signal: controller.signal },
-      )
-      .then(() => {
-        if (controller.signal.aborted) return;
-        setDraft("");
-        setStatus((prev) => (prev === "streaming" ? "idle" : prev));
-      })
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        setError(err instanceof Error ? err : new Error(String(err)));
-        setStatus("error");
-      });
-  }, [queryClient]);
+          },
+          { signal: controller.signal },
+        )
+        .then(() => {
+          if (controller.signal.aborted) return;
+          setDraft("");
+          setStatus((prev) => (prev === "streaming" ? "idle" : prev));
+        })
+        .catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setStatus("error");
+        });
+    },
+    [queryClient],
+  );
 
   useEffect(() => () => abortRef.current?.abort(), []);
 

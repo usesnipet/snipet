@@ -9,11 +9,10 @@ import { splitModelRef } from "#src/llm/model-ref.js";
 import { ConnectionService } from "#src/manifest/connection.service.js";
 
 import { LlmConnection } from "./llm-connection.entity.js";
-import { LlmModel } from "./llm-model.entity.js";
 import { LlmConnectionSyncService } from "./sync/llm-connection-sync.service.js";
 
 import type { LLMDrivers } from "#src/llm/driver.js";
-import type { ExecuteLlm, ExecuteLlmTarget, LlmManifest, LlmResponse, LlmStreamEvent } from "@snipet/shared";
+import type { ExecuteLlm, ExecuteLlmTarget, LlmManifest, LlmModel, LlmResponse, LlmStreamEvent } from "@snipet/shared";
 
 /**
  * Service for managing LLM connections and running conversations.
@@ -24,7 +23,6 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
 
   constructor(
     @InjectRepository(LlmConnection) repo: Repository<LlmConnection>,
-    @InjectRepository(LlmModel) private readonly models: Repository<LlmModel>,
     llms: LLMRegistry,
     drivers: LLMDriverRegistry,
     private readonly syncer: LlmConnectionSyncService,
@@ -74,9 +72,11 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
     return this.syncer.sync(id);
   }
 
-  /** The connection's models as last synced. */
-  findModels(connectionId: string): Promise<LlmModel[]> {
-    return this.models.find({ where: { llmConnectionId: connectionId }, order: { key: "ASC" } });
+  /** The connection's models as last synced, by key. */
+  async findModels(connectionId: string): Promise<LlmModel[]> {
+    // No config: it would be decrypted for nothing.
+    const conn = await this.repo.findOne({ select: { id: true, models: true }, where: { id: connectionId } });
+    return conn?.models ?? [];
   }
 
   /** Models of connectionId, else of the llm's default connection. */
@@ -101,7 +101,7 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
       targets.map(async (t) => {
         const [llmKey, model] = splitModelRef(t.model);
         const conn = await this.connectionFor(llmKey, t.connectionId);
-        if (!(await this.models.existsBy({ llmConnectionId: conn.id, key: model }))) {
+        if (!(await this.findModels(conn.id)).some((m) => m.key === model)) {
           throw new LlmError("model_not_found", `model "${t.model}" not found`);
         }
         return { model: t.model, connection: conn.config, extraOptions: t.extraOptions };

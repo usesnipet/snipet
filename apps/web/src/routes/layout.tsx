@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { AnimatedOutlet } from "@/components/animated-outlet";
 import { Sidebar } from "@/components/sidebar";
@@ -12,5 +12,5 @@ export function Layout() {
         <AnimatedOutlet />
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

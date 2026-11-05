@@ -21,19 +21,20 @@ function RowActions({ user }: { user: User }) {
   const { openDialog } = useDialog();
   const { mutateAsync: deleteUser } = useDeleteUser();
 
-  const openDelete = () => openDialog({
-    component: DeleteDialog,
-    props: {
-      title: "Delete user?",
-      description: (
-        <>
-          This will permanently delete <span className="font-medium text-foreground">{user.name}</span>.
-          This action cannot be undone.
-        </>
-      ),
-      onConfirm: () => deleteUser(user.id),
-    },
-  });
+  const openDelete = () =>
+    openDialog({
+      component: DeleteDialog,
+      props: {
+        title: "Delete user?",
+        description: (
+          <>
+            This will permanently delete <span className="font-medium text-foreground">{user.name}</span>. This action
+            cannot be undone.
+          </>
+        ),
+        onConfirm: () => deleteUser(user.id),
+      },
+    });
 
   return (
     <div className="flex items-center justify-end gap-1">
@@ -46,13 +47,7 @@ function RowActions({ user }: { user: User }) {
       >
         <PencilIcon />
       </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Delete user"
-        onClick={openDelete}
-      >
+      <Button type="button" variant="ghost" size="icon-sm" aria-label="Delete user" onClick={openDelete}>
         <Trash2Icon />
       </Button>
     </div>

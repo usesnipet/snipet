@@ -4,13 +4,21 @@
   "description": "Search models, datasets, Spaces and papers on the Hugging Face Hub",
   "icon": "https://github.com/huggingface.png",
   "tags": ["ai", "remote", "official"],
-  "auth": { "type": "none" },
-  "actions": {
-    "driver": "mcp",
-    "options": { "url": "https://huggingface.co/mcp" }
+  "auth": {
+    "type": "none"
   },
-  "instructions": {
-    "driver": "mcp",
-    "options": { "url": "https://huggingface.co/mcp" }
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://huggingface.co/mcp"
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://huggingface.co/mcp"
+      }
+    }
   }
 }

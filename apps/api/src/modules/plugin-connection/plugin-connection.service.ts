@@ -1,19 +1,21 @@
 import { ConnectionService } from "#src/manifest/connection.service.js";
-import { ActionResult, PluginDrivers } from "#src/plugin/driver.js";
+import { PluginDrivers, Tool, ToolResult } from "#src/plugin/driver.js";
 import { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { validateJson } from "@snipet/server-common";
 import { DeepPartial, In, QueryDeepPartialEntity, Repository } from "typeorm";
 
-import { PluginAction } from "./plugin-action.entity.js";
 import { PluginConnection } from "./plugin-connection.entity.js";
 import { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 
-import type { PluginManifest } from "@snipet/shared";
+import type { PluginManifest, PluginTool } from "@snipet/shared";
+
+/** A synced tool with the connection it comes from. */
+export type ConnectionTool = Tool & { connection: { id: string; name: string } };
 
 /**
- * Service for managing plugin connections and executing actions.
+ * Service for managing plugin connections and executing tools.
  */
 @Injectable()
 export class PluginConnectionService extends ConnectionService<PluginConnection, PluginManifest, PluginDrivers> {
@@ -21,7 +23,6 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
 
   constructor(
     @InjectRepository(PluginConnection) repo: Repository<PluginConnection>,
-    @InjectRepository(PluginAction) private readonly actions: Repository<PluginAction>,
     plugins: PluginRegistry,
     drivers: PluginDriverRegistry,
     private readonly syncer: PluginConnectionSyncService,
@@ -45,25 +46,47 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   /**
-   * Synced actions of the enabled connections among connectionIds, with the
-   * connection's name.
+   * The manifest of each existing connection among connectionIds; null when
+   * its plugin is no longer in the catalog. Missing ids aren't in the map.
    */
-  findActions(connectionIds: string[]): Promise<PluginAction[]> {
-    if (!connectionIds.length) return Promise.resolve([]);
-    return this.actions.find({
-      // No config: it would be decrypted once per action.
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        inputSchema: true,
-        pluginConnectionId: true,
-        pluginConnection: { id: true, name: true },
-      },
-      relations: { pluginConnection: true },
-      where: { pluginConnectionId: In(connectionIds), pluginConnection: { enabled: true } },
-      order: { name: "ASC", pluginConnectionId: "ASC" },
+  async manifestsOf(connectionIds: string[]): Promise<Map<string, PluginManifest | null>> {
+    if (!connectionIds.length) return new Map();
+    // No config: it would be decrypted for nothing.
+    const conns = await this.repo.find({ select: { id: true, pluginKey: true }, where: { id: In(connectionIds) } });
+    const manifestOf = (key: string) => this.manifests.getAll().find((m) => m.key === key) ?? null;
+    return new Map(conns.map((c) => [c.id, manifestOf(c.pluginKey)]));
+  }
+
+  /** The enabled connections among connectionIds, config unsealed, by id. */
+  async findEnabled(connectionIds: string[]): Promise<Map<string, PluginConnection>> {
+    if (!connectionIds.length) return new Map();
+    const conns = await this.repo.find({ where: { id: In(connectionIds), enabled: true } });
+    return new Map(conns.map((c) => [c.id, c]));
+  }
+
+  /** A connection's synced tools, enabled or not, without their schemas. */
+  async listTools(id: string): Promise<PluginTool[]> {
+    // No config: it would be decrypted for nothing.
+    const conn = await this.repo.findOne({ select: { id: true, tools: true }, where: { id } });
+    if (!conn) throw new NotFoundException(`Plugin connection ${id} not found`);
+    return conn.tools.map(({ name, description }) => ({ name, description }));
+  }
+
+  /**
+   * Synced tools of the enabled connections among connectionIds, by name then
+   * connection id so prompts stay cacheable.
+   */
+  async findTools(connectionIds: string[]): Promise<ConnectionTool[]> {
+    if (!connectionIds.length) return [];
+    const conns = await this.repo.find({
+      // No config: it would be decrypted for nothing.
+      select: { id: true, name: true, tools: true },
+      where: { id: In(connectionIds), enabled: true },
+      order: { id: "ASC" },
     });
+    return conns
+      .flatMap(({ id, name, tools }) => tools.map((tool) => ({ ...tool, connection: { id, name } })))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
@@ -84,30 +107,17 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   /**
-   * Runs a synced action through its connection's driver. Failures the model
-   * can act on (bad arguments, unreachable service) come back as an isError result.
+   * Runs a synced tool through its connection's driver. Throws on bad
+   * arguments or an unreachable service; the caller turns that into a result.
    */
-  async executeAction(actionId: string, args: Record<string, unknown> = {}): Promise<ActionResult> {
-    const action = await this.actions.findOneByOrFail({ id: actionId });
-    const conn = await this.findById(action.pluginConnectionId);
+  async executeTool(connectionId: string, tool: Tool, args: Record<string, unknown> = {}): Promise<ToolResult> {
+    const conn = await this.findById(connectionId);
     const manifest = this.manifests.get(conn.pluginKey);
-    if (!conn.enabled || !manifest.actions) return { content: "plugin connection is unavailable", isError: true };
+    if (!conn.enabled || !manifest.capabilities.tools) {
+      return { content: "plugin connection is unavailable", isError: true };
+    }
 
-    try {
-      args = validateJson(action.inputSchema, args);
-    } catch (err) {
-      return { content: `invalid arguments: ${describe(err)}`, isError: true };
-    }
-    try {
-      const { driver, options } = this.drivers.resolve(manifest, "actions", conn.config)!;
-      return await driver.callAction(conn.id, action.name, args, options);
-    } catch (err) {
-      return { content: describe(err), isError: true };
-    }
+    const { driver, options } = this.drivers.resolve(manifest, "tools", conn.config)!;
+    return driver.callTool(conn.id, tool.name, validateJson(tool.inputSchema, args), options);
   }
-}
-
-function describe(err: unknown): string {
-  if (err instanceof BadRequestException) return JSON.stringify(err.getResponse());
-  return err instanceof Error ? err.message : String(err);
 }

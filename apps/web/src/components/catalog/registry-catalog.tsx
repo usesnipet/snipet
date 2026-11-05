@@ -6,7 +6,11 @@ import { useMemo, useState } from "react";
 
 import { CatalogList } from "./catalog-list";
 import {
-  buildRegistryViews, filterRegistryViews, REGISTRY_SORTS, registryStats, sortRegistryViews
+  buildRegistryViews,
+  filterRegistryViews,
+  REGISTRY_SORTS,
+  registryStats,
+  sortRegistryViews,
 } from "./registry-view";
 
 import type { ReactNode } from "react";
@@ -27,20 +31,11 @@ function StatToggle({ active, count, label, onClick }: StatToggleProps) {
       aria-pressed={active}
       className={cn(
         "flex items-center gap-2.5 rounded-lg border px-3.5 py-2 text-left transition-colors",
-        active
-          ? "border-primary bg-primary/5"
-          : "border-border hover:border-primary/40",
+        active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
       )}
     >
       <span className="text-lg font-semibold tabular-nums">{count}</span>
-      <span
-        className={cn(
-          "text-xs",
-          active ? "text-foreground" : "text-muted-foreground",
-        )}
-      >
-        {label}
-      </span>
+      <span className={cn("text-xs", active ? "text-foreground" : "text-muted-foreground")}>{label}</span>
     </button>
   );
 }
@@ -59,16 +54,19 @@ type RegistryCatalogProps<C> = {
 
 /** Searchable, sortable grid of registry entries, filterable to the ones that already have connections. */
 export function RegistryCatalog<C>({
-  registry, connections, keyOf, isLoading, isError, noun, renderItem,
+  registry,
+  connections,
+  keyOf,
+  isLoading,
+  isError,
+  noun,
+  renderItem,
 }: RegistryCatalogProps<C>) {
   const [filter, setFilter] = useState<RegistryFilter>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<RegistrySort>("connected-first");
 
-  const views = useMemo(
-    () => buildRegistryViews(registry, connections, keyOf),
-    [registry, connections, keyOf],
-  );
+  const views = useMemo(() => buildRegistryViews(registry, connections, keyOf), [registry, connections, keyOf]);
 
   const stats = useMemo(() => registryStats(views), [views]);
 
@@ -130,11 +128,7 @@ export function RegistryCatalog<C>({
             items={visible.map((view) => ({ id: view.key, view }))}
             size="lg"
             containerClassName="h-full"
-            emptyMessage={
-              search || filter === "connected"
-                ? `No ${noun} match your filters.`
-                : `No ${noun} available.`
-            }
+            emptyMessage={search || filter === "connected" ? `No ${noun} match your filters.` : `No ${noun} available.`}
             renderItem={({ view }) => renderItem(view)}
           />
         )}

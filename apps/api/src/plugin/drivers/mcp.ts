@@ -1,11 +1,12 @@
 import { env } from "#src/env.js";
+import { safeFetch } from "#src/infra/http/safe-fetch.js";
 import { Driver } from "#src/manifest/driver.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { StreamableHTTPClientTransport, StreamableHTTPError } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import z from "zod";
 
 import type { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol";
-import type { Action, ActionDriver, ActionResult, InstructionsDriver } from "../driver.js";
+import type { Tool, ToolDriver, ToolResult, InstructionsDriver } from "../driver.js";
 const optionsSchema = z.strictObject({
   url: z.url({ protocol: /^https?$/ }),
   headers: z.record(z.string(), z.string()).optional(),
@@ -14,23 +15,20 @@ const optionsSchema = z.strictObject({
 type McpOptions = z.infer<typeof optionsSchema>;
 
 /**
- * Actions are the tools of a remote MCP server and instructions the ones it
+ * Tools are the ones of a remote MCP server and instructions the ones it
  * sends on initialize. Only the http transport is supported.
  */
-export class McpDriver
-  extends Driver(optionsSchema)
-  implements ActionDriver<McpOptions>, InstructionsDriver<McpOptions>
-{
+export class McpDriver extends Driver(optionsSchema) implements ToolDriver<McpOptions>, InstructionsDriver<McpOptions> {
   readonly key = "mcp";
 
-  async listActions(_connectionId: string, options: McpOptions): Promise<Action[]> {
+  async listTools(_connectionId: string, options: McpOptions): Promise<Tool[]> {
     return this.withSession(options, async (client, opts) => {
-      const actions: Action[] = [];
+      const tools: Tool[] = [];
       let cursor: string | undefined;
       do {
         const page = await client.listTools({ cursor }, opts);
         for (const t of page.tools) {
-          actions.push({
+          tools.push({
             name: t.name,
             description: t.description ?? "",
             inputSchema: t.inputSchema,
@@ -38,16 +36,16 @@ export class McpDriver
         }
         cursor = page.nextCursor;
       } while (cursor);
-      return actions;
+      return tools;
     });
   }
 
-  callAction(
+  callTool(
     _connectionId: string,
     name: string,
     parameters: Record<string, unknown>,
     options: McpOptions,
-  ): Promise<ActionResult> {
+  ): Promise<ToolResult> {
     return this.withSession(options, async (client, opts) => {
       const result = await client.callTool(
         {
@@ -74,6 +72,7 @@ export class McpDriver
   ): Promise<T> {
     const transport = new StreamableHTTPClientTransport(new URL(options.url), {
       requestInit: { headers: options.headers },
+      fetch: safeFetch,
     });
     const ms = options.timeout * 1000;
     const opts: RequestOptions = { signal: AbortSignal.timeout(ms), timeout: ms };
@@ -81,6 +80,10 @@ export class McpDriver
     try {
       await client.connect(transport, opts);
       return await fn(client, opts);
+    } catch (err) {
+      // Its message holds the response body, which ends up in tool results and lastSyncedError.
+      if (err instanceof StreamableHTTPError) throw new Error(`MCP server answered HTTP ${err.code}`, { cause: err });
+      throw err;
     } finally {
       await client.close(); // also kills a stdio process
     }

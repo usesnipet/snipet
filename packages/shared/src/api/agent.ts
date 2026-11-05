@@ -3,8 +3,7 @@ import { z } from "zod";
 import { dataUrlSchema } from "../schemas/data-url.js";
 import { jsonObjectSchema } from "../schemas/json.js";
 
-import { agentHookSchema, createAgentHookSchema } from "./hook.js";
-
+import { hookNameSchema } from "./hook.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 /**
@@ -22,12 +21,14 @@ export const agentLlmSchema = z.object({
 });
 export type AgentLlm = z.infer<typeof agentLlmSchema>;
 
-/** Grants an agent a plugin connection's actions. */
+/** Adds a plugin connection to an agent: its actions, hooks and settings. */
 export const agentPluginConnectionSchema = z.object({
   agentId: z.uuid(),
   pluginConnectionId: z.uuid(),
-  allow: z.array(z.string()),
-  deny: z.array(z.string()),
+  position: z.number().int(),
+  tools: z.array(z.string()),
+  settings: jsonObjectSchema,
+  disabledHooks: z.array(hookNameSchema),
 });
 export type AgentPluginConnection = z.infer<typeof agentPluginConnectionSchema>;
 
@@ -43,8 +44,6 @@ export const agentSchema = z.object({
   enabled: z.boolean(),
   llms: z.array(agentLlmSchema),
   pluginConnections: z.array(agentPluginConnectionSchema),
-  /** The agent's own hooks, by position. */
-  hooks: z.array(agentHookSchema),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -52,12 +51,8 @@ export type Agent = z.infer<typeof agentSchema>;
 
 export const paginatedAgentSchema = paginatedSchema(agentSchema);
 
-/** Glob patterns; blanks are dropped. */
-const patternsSchema = z.array(z.string().trim()).transform((patterns) => patterns.filter(Boolean));
-
 /**
- * The position in llms is the order, in hooks the tie-break within a stage. llms, pluginConnections and
- * hooks replace the whole list when sent.
+ * The position in llms and pluginConnections is the order; both replace the whole list when sent.
  */
 export const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(255),
@@ -93,12 +88,12 @@ export const createAgentSchema = z.object({
     .array(
       z.object({
         pluginConnectionId: z.uuid("Select a connection"),
-        allow: patternsSchema,
-        deny: patternsSchema,
+        tools: z.array(z.string()).default([]),
+        settings: jsonObjectSchema.default({}),
+        disabledHooks: z.array(hookNameSchema).default([]),
       }),
     )
     .optional(),
-  hooks: z.array(createAgentHookSchema.omit({ agentId: true, position: true })).optional(),
 });
 export type CreateAgent = z.infer<typeof createAgentSchema>;
 

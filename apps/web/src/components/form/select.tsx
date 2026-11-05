@@ -21,7 +21,7 @@ type Props = {
   action?: Parameters<typeof Button>[0] & {
     icon?: React.ReactNode;
     label?: string;
-  }
+  };
 };
 
 export const FormSelect = (props: Props) => {
@@ -32,12 +32,7 @@ export const FormSelect = (props: Props) => {
     if (!props.action) return null;
     const { icon, label, size, variant, type, ...actionProps } = props.action;
     return (
-      <Button
-        type={type ?? "button"}
-        size={size ?? "default"}
-        variant={variant ?? "outline"}
-        {...actionProps}
-      >
+      <Button type={type ?? "button"} size={size ?? "default"} variant={variant ?? "outline"} {...actionProps}>
         {icon}
         {label}
       </Button>
@@ -72,11 +67,11 @@ export const FormSelect = (props: Props) => {
                   <SelectValue placeholder={props.placeholder ?? "Select an option"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {
-                    props.options.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))
-                  }
+                  {props.options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <ActionButton />

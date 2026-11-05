@@ -19,4 +19,8 @@ export class AgentController extends CrudController<Agent>({
   constructor(override readonly service: AgentService) {
     super(service);
   }
+
+  override serialize(agent: Agent) {
+    return this.service.mask(agent);
+  }
 }

@@ -1,7 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
-} from "@/components/ui/dialog";
+import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Check, Copy } from "lucide-react";
@@ -10,9 +8,9 @@ import { useState } from "react";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
 type SecretKeyDialogProps = DialogInstanceProps<{
-  secret: string
-  title?: string
-  description?: string
+  secret: string;
+  title?: string;
+  description?: string;
 }>;
 
 export function SecretKeyDialog({
@@ -49,5 +47,5 @@ export function SecretKeyDialog({
         </Button>
       </DialogFooter>
     </DialogContent>
-  )
+  );
 }

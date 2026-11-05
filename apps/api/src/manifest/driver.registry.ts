@@ -5,8 +5,8 @@ import type { BaseManifest, JsonObject } from "@snipet/shared";
 import type { BaseDriver } from "./driver.js";
 
 /**
- * Driver interface per capability; the keys are the manifest fields that
- * hold a driver, e.g. { actions: ActionDriver; healthCheck: HealthCheckDriver }.
+ * Driver interface per capability; the keys are the keys of a manifest's
+ * `capabilities`, e.g. { tools: ToolDriver; healthCheck: HealthCheckDriver }.
  */
 export type DriverTypes = Record<string, BaseDriver>;
 

@@ -15,7 +15,7 @@ function shouldLog(method: LogLevel) {
 
 export const logger = {
   debug: (...args: unknown[]) => shouldLog("debug") && console.debug(...args),
-  info:  (...args: unknown[]) => shouldLog("info")  && console.info(...args),
-  warn:  (...args: unknown[]) => shouldLog("warn")  && console.warn(...args),
+  info: (...args: unknown[]) => shouldLog("info") && console.info(...args),
+  warn: (...args: unknown[]) => shouldLog("warn") && console.warn(...args),
   error: (...args: unknown[]) => shouldLog("error") && console.error(...args),
 };

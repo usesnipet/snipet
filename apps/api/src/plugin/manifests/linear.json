@@ -4,7 +4,9 @@
   "description": "Manage Linear issues, projects and comments",
   "icon": "https://github.com/linear.png",
   "tags": ["issues", "remote", "official"],
-  "auth": { "type": "none" },
+  "auth": {
+    "type": "none"
+  },
   "connection": {
     "type": "object",
     "properties": {
@@ -18,21 +20,23 @@
     },
     "required": ["apiKey"]
   },
-  "actions": {
-    "driver": "mcp",
-    "options": {
-      "url": "https://mcp.linear.app/mcp",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}"
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.linear.app/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
       }
-    }
-  },
-  "instructions": {
-    "driver": "mcp",
-    "options": {
-      "url": "https://mcp.linear.app/mcp",
-      "headers": {
-        "Authorization": "Bearer {{ connection.apiKey }}"
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.linear.app/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
       }
     }
   }

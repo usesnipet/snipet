@@ -1,11 +1,13 @@
 ---
-import { createHighlighter } from "shiki";
+import { codeToHtml } from "shiki";
 import { snippets } from "./channel-snippets";
 import { SnippetTabs } from "./snippet-tabs";
 
-// Highlighted on the server so shiki's engine and grammars stay out of the client bundle.
-const highlighter = await createHighlighter({ themes: ["github-dark"], langs: ["html", "jsx", "typescript"] });
-const highlighted = snippets.map((s) => ({ ...s, html: highlighter.codeToHtml(s.code, { lang: s.lang, theme: "github-dark" }) }));
+// Highlighted on the server so shiki's engine and grammars stay out of the client bundle. This frontmatter runs on
+// every render, so it uses shiki's shared highlighter: creating one here leaks WASM memory until the server crashes.
+const highlighted = await Promise.all(
+  snippets.map(async (s) => ({ ...s, html: await codeToHtml(s.code, { lang: s.lang, theme: "github-dark" }) })),
+);
 
 /** Channels on the roadmap, shown as coming next. */
 const next = ["WhatsApp", "Telegram", "Slack", "Discord"];

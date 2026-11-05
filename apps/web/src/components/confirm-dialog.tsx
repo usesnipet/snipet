@@ -2,7 +2,12 @@ import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,10 +27,12 @@ type ConfirmDialogOptions = {
 
 export type ConfirmDialogProps = DialogInstanceProps<ConfirmDialogOptions>;
 
-export type ConfirmPromptDialogProps = DialogInstanceProps<ConfirmDialogOptions & {
-  /** Text the user must type exactly to enable the confirm button. */
-  confirmationText: string;
-}>;
+export type ConfirmPromptDialogProps = DialogInstanceProps<
+  ConfirmDialogOptions & {
+    /** Text the user must type exactly to enable the confirm button. */
+    confirmationText: string;
+  }
+>;
 
 function BaseConfirmDialog({
   title,
@@ -86,11 +93,7 @@ function BaseConfirmDialog({
               {cancelLabel}
             </Button>
           </DialogClose>
-          <Button
-            type="submit"
-            variant={destructive ? "destructive" : "default"}
-            disabled={isPending || !canConfirm}
-          >
+          <Button type="submit" variant={destructive ? "destructive" : "default"} disabled={isPending || !canConfirm}>
             {isPending && <Spinner size="sm" />}
             {confirmLabel}
           </Button>

@@ -15,11 +15,15 @@ class Echo extends Driver(z.object({})) {
   }
 }
 
-type Drivers = { actions: Echo; healthCheck: Echo };
+type Drivers = { tools: Echo; healthCheck: Echo };
 
-const drivers = new DriverRegistry<Drivers>({ actions: [new Echo("mcp")], healthCheck: [new Echo("http")] });
+const drivers = new DriverRegistry<Drivers>({ tools: [new Echo("mcp")], healthCheck: [new Echo("http")] });
 
-const base = { name: "X", connection: { type: "object", properties: {} } };
+const base = {
+  name: "X",
+  connection: { type: "object", properties: {} },
+  capabilities: { tools: { driver: "mcp" } },
+};
 
 describe("ManifestRegistry", () => {
   let dir: string;
@@ -27,11 +31,15 @@ describe("ManifestRegistry", () => {
   beforeAll(() => {
     dir = mkdtempSync(join(tmpdir(), "manifests-"));
     const files: Record<string, unknown> = {
-      "b.json": { ...base, key: "beta", actions: { driver: "mcp" } },
-      "a.json": { ...base, key: "alpha", healthCheck: { driver: "http" } },
+      "b.json": { ...base, key: "beta", capabilities: { tools: { driver: "mcp" } } },
+      "a.json": {
+        ...base,
+        key: "alpha",
+        capabilities: { tools: { driver: "mcp" }, healthCheck: { driver: "http" } },
+      },
       "dup.json": { ...base, key: "alpha" },
       "bad-key.json": { ...base, key: "Not A Key" },
-      "unknown-driver.json": { ...base, key: "gamma", actions: { driver: "nope" } },
+      "unknown-driver.json": { ...base, key: "gamma", capabilities: { tools: { driver: "nope" } } },
       "bad-schema.json": { ...base, key: "delta", connection: { type: "nope" } },
       "ignored.txt": "not a manifest",
     };
@@ -50,7 +58,11 @@ describe("ManifestRegistry", () => {
 
   it("applies the schema defaults", () => {
     const registry = new ManifestRegistry("plugin", dir, dir, pluginManifestSchema, drivers);
-    expect(registry.get("beta")).toMatchObject({ description: "", tags: [], actions: { driver: "mcp", options: {} } });
+    expect(registry.get("beta")).toMatchObject({
+      description: "",
+      tags: [],
+      capabilities: { tools: { driver: "mcp", options: {} } },
+    });
   });
 
   it("throws NotFoundException for an unknown key", () => {
@@ -69,7 +81,8 @@ describe("secretFields", () => {
         type: "object",
         properties: { url: { type: "string" }, token: { type: "string", secret: true } },
       },
+      capabilities: { tools: { driver: "mcp" } },
     });
-    expect(secretFields(manifest)).toEqual(["token"]);
+    expect(secretFields(manifest.connection)).toEqual(["token"]);
   });
 });

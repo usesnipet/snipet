@@ -46,14 +46,12 @@ export abstract class ConnectionService<
     return this.manifests.get(key);
   }
 
-  /** Secret fields come back as placeholders. */
+  /** Secret fields come back as placeholders; every field when the manifest left the catalog. */
   mask(conn: E): E {
     const config = conn.config;
-    const secrets = Object.fromEntries(
-      secretFields(this.manifests.get(this.keyOf(conn)))
-        .filter((k) => k in config)
-        .map((k) => [k, config[k]]),
-    );
+    const manifest = this.manifests.getAll().find((m) => m.key === this.keyOf(conn));
+    const fields = manifest ? secretFields(manifest.connection) : Object.keys(config);
+    const secrets = Object.fromEntries(fields.filter((k) => k in config).map((k) => [k, config[k]]));
     return { ...conn, config: { ...config, ...maskSecrets(secrets) } };
   }
 

@@ -2,7 +2,12 @@ import { resolveDurationExpiresAt } from "@/components/duration-select";
 import { FormDurationSelect } from "@/components/form/duration-select";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
@@ -28,7 +33,7 @@ function toDatetimeLocalValue(date?: Date | null) {
 }
 
 type UpdateApiKeyExpirationDialogProps = DialogInstanceProps<{
-  apiKey: ApiKey
+  apiKey: ApiKey;
 }>;
 
 export function UpdateApiKeyExpirationDialog({ apiKey, close }: UpdateApiKeyExpirationDialogProps) {
@@ -56,19 +61,14 @@ export function UpdateApiKeyExpirationDialog({ apiKey, close }: UpdateApiKeyExpi
       <DialogHeader>
         <DialogTitle>Update expiration</DialogTitle>
         <DialogDescription>
-          Set a new expiration date for{" "}
-          <span className="font-medium text-foreground">{apiKey.name}</span>.
-          Leave empty to remove expiration.
+          Set a new expiration date for <span className="font-medium text-foreground">{apiKey.name}</span>. Leave empty
+          to remove expiration.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <FieldGroup>
-            <FormDurationSelect
-              name="expires_at"
-              label="Expiration"
-              placeholder="Select duration"
-            />
+            <FormDurationSelect name="expires_at" label="Expiration" placeholder="Select duration" />
           </FieldGroup>
           <DialogFooter>
             <DialogClose asChild>
@@ -84,5 +84,5 @@ export function UpdateApiKeyExpirationDialog({ apiKey, close }: UpdateApiKeyExpi
         </form>
       </Form>
     </DialogContent>
-  )
+  );
 }

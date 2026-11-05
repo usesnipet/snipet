@@ -34,7 +34,9 @@ export function SnipetWidget({ src, onOpen, onClose, onMessage, onError, ...conf
   useEffect(() => snipet.init(config, src));
   useEffect(() => {
     const offs = (Object.keys(EVENT_PROPS) as WidgetEvent[]).map((event) =>
-      snipet.on(event, (payload) => (handlers.current[EVENT_PROPS[event]] as ((p: unknown) => void) | undefined)?.(payload)),
+      snipet.on(event, (payload) =>
+        (handlers.current[EVENT_PROPS[event]] as ((p: unknown) => void) | undefined)?.(payload),
+      ),
     );
     return () => {
       offs.forEach((off) => off());

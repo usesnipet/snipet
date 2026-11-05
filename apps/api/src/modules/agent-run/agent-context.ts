@@ -1,28 +1,36 @@
 import { Owner } from "#src/common/decorators/owner.decorator.js";
-import { ActionResult } from "#src/plugin/driver.js";
-import { isGranted } from "#src/utils/grant/grant.js";
-import { Injectable } from "@nestjs/common";
+import { ToolResult } from "#src/plugin/driver.js";
+import { BadRequestException, Injectable } from "@nestjs/common";
 
 import { Agent } from "../agent/agent.entity.js";
 import { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 
 import type { LlmMessage, LlmTool, LlmToolCallPart } from "@snipet/shared";
 
-type Executor = (args: Record<string, unknown>) => Promise<ActionResult>;
-export type DeniedAction = { action: string; pluginConnectionId: string };
+type Executor = (args: Record<string, unknown>) => Promise<ToolResult>;
+type ToolSource = { id: string; name: string };
+export type DeniedTool = { tool: string; pluginConnectionId: string };
 
 /** What one run gives the models: system messages and tools, and how to run their calls. */
 export type RunContext = {
   /** The agent's name and prompt, then the instructions of its plugins. */
   system: LlmMessage[];
   tools?: LlmTool[];
-  denied: DeniedAction[];
-  /** Instructions of the plugin connections with at least one granted action. */
+  denied: DeniedTool[];
+  /** Instructions of the plugin connections with at least one granted tool. */
   instructions: { name: string; text: string }[];
   has(name: string): boolean;
-  /** Never throws: an unknown tool or a failed action is an error result. */
-  call(call: LlmToolCallPart): Promise<ActionResult>;
+  /** The plugin connection a tool comes from; null for an unknown tool. */
+  toolOf(name: string): { id: string; name: string } | null;
+  /** Never throws: an unknown tool or a failed tool is an error result. */
+  call(call: LlmToolCallPart): Promise<ToolResult>;
 };
+
+/** A failed tool's error as the model sees it; validation details let it fix its arguments. */
+function describeToolError(err: unknown): string {
+  if (err instanceof BadRequestException) return JSON.stringify(err.getResponse());
+  return err instanceof Error ? err.message : String(err);
+}
 
 /** Keeps a connection name from closing the attribute or tag it is put in. */
 const escapeAttr = (s: string) =>
@@ -30,38 +38,48 @@ const escapeAttr = (s: string) =>
 
 const systemText = (text: string): LlmMessage => ({ role: "system", parts: [{ type: "text", text }] });
 
-/** Builds a run's context from the agent and its plugin connections; plugin actions become LLM tools. */
+/** Builds a run's context from the agent and its plugin connections; plugin tools become LLM tools. */
 @Injectable()
 export class AgentContext {
   constructor(private readonly plugins: PluginConnectionService) {}
 
   /**
-   * The tools of the agent's actions of its plugin connections that pass the
-   * grant's allow/deny; the others are returned as denied. Names are made
-   * unique and provider-safe; executors maps them back.
+   * The tools of the agent's plugin connections selected in the grant; the
+   * others are returned as denied. Names are made unique and provider-safe;
+   * executors maps them back.
    */
   async build(agent: Agent, owner: Owner): Promise<RunContext> {
-    const denied: DeniedAction[] = [];
+    const denied: DeniedTool[] = [];
     const executors = new Map<string, Executor>();
+    const sources = new Map<string, ToolSource>();
     const tools: LlmTool[] = [];
-    const add = (rawName: string, description: string, parameters: Record<string, unknown>, execute: Executor) => {
+    const add = (
+      rawName: string,
+      description: string,
+      parameters: Record<string, unknown>,
+      source: ToolSource,
+      execute: Executor,
+    ) => {
       const base = rawName.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60);
       let name = base;
       for (let n = 2; executors.has(name); n++) name = `${base}_${n}`;
       executors.set(name, execute);
+      sources.set(name, source);
       tools.push({ name, description, parameters });
     };
 
     const pluginGrants = new Map((agent.pluginConnections ?? []).map((g) => [g.pluginConnectionId, g]));
     const used = new Set<string>();
-    for (const action of await this.plugins.findActions([...pluginGrants.keys()])) {
-      if (!isGranted(action.name, pluginGrants.get(action.pluginConnectionId)!)) {
-        denied.push({ action: action.name, pluginConnectionId: action.pluginConnectionId });
+    for (const tool of await this.plugins.findTools([...pluginGrants.keys()])) {
+      if (!pluginGrants.get(tool.connection.id)!.tools.includes(tool.name)) {
+        denied.push({ tool: tool.name, pluginConnectionId: tool.connection.id });
         continue;
       }
-      used.add(action.pluginConnectionId);
-      const description = `[${action.pluginConnection!.name}] ${action.description}`.trim();
-      add(action.name, description, action.inputSchema, (args) => this.plugins.executeAction(action.id, args));
+      used.add(tool.connection.id);
+      const description = `[${tool.connection.name}] ${tool.description}`.trim();
+      add(tool.name, description, tool.inputSchema, tool.connection, (args) =>
+        this.plugins.executeTool(tool.connection.id, tool, args),
+      );
     }
 
     const instructions = await this.plugins.findInstructions([...used]);
@@ -78,13 +96,14 @@ export class AgentContext {
       denied,
       instructions,
       has: (name) => executors.has(name),
+      toolOf: (name) => sources.get(name) ?? null,
       call: async (call) => {
         const execute = executors.get(call.name);
         if (!execute) return { content: `unknown tool "${call.name}"`, isError: true };
         try {
           return await execute((call.arguments ?? {}) as Record<string, unknown>);
         } catch (err) {
-          return { content: err instanceof Error ? err.message : String(err), isError: true };
+          return { content: describeToolError(err), isError: true };
         }
       },
     };

@@ -25,18 +25,11 @@ import type {
   PublicApp,
   UpdateApp,
 } from "@snipet/shared";
-import type {
-  ServiceDeleteOptions,
-  ServiceGetOptions,
-  ServicePostOptions,
-  ServicePutOptions,
-} from "../http";
+import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const APP_URL = "/api/apps";
 
-const list = async (
-  opts: ServiceGetOptions<Paginated<App>, Partial<FindAppsParams>> = {},
-): Promise<Paginated<App>> =>
+const list = async (opts: ServiceGetOptions<Paginated<App>, Partial<FindAppsParams>> = {}): Promise<Paginated<App>> =>
   http.get({
     url: APP_URL,
     schemas: {
@@ -54,10 +47,7 @@ const findById = async (id: string, opts: ServiceGetOptions<App> = {}): Promise<
     ...opts,
   });
 
-const create = async (
-  body: CreateApp,
-  opts: ServicePostOptions<CreateApp, App> = {},
-): Promise<App> =>
+const create = async (body: CreateApp, opts: ServicePostOptions<CreateApp, App> = {}): Promise<App> =>
   http.post({
     url: APP_URL,
     body,
@@ -65,11 +55,7 @@ const create = async (
     ...opts,
   });
 
-const update = async (
-  id: string,
-  body: UpdateApp,
-  opts: ServicePutOptions<UpdateApp, void> = {},
-): Promise<void> =>
+const update = async (id: string, body: UpdateApp, opts: ServicePutOptions<UpdateApp, void> = {}): Promise<void> =>
   http.put({
     url: `${APP_URL}/{id}`,
     params: { id },
