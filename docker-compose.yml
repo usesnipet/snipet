@@ -1,11 +1,12 @@
 services:
   app:
-    image: snipet/snipet:0.2.1
+    image: snipet/snipet:0.5.0
     ports:
       - "8852:8852"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db/snipet
       PLUGINS_DIR: "/app/plugins"
+      CORS_ORIGINS: "*"
     # host.docker.internal is the host, for a local Ollama or LM Studio; Linux needs it declared.
     extra_hosts:
       - "host.docker.internal:host-gateway"
