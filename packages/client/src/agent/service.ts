@@ -2,13 +2,14 @@ import http from "../http";
 
 import {
   agentSchema,
+  availableAgentSchema,
   createAgentSchema,
   findAgentsParamsSchema,
   paginatedAgentSchema,
   updateAgentSchema,
 } from "@snipet/shared";
 
-import type { Agent, CreateAgent, FindAgentsParams, Paginated, UpdateAgent } from "@snipet/shared";
+import type { Agent, AvailableAgent, CreateAgent, FindAgentsParams, Paginated, UpdateAgent } from "@snipet/shared";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const AGENT_URL = "/api/agents";
@@ -21,6 +22,9 @@ const list = async (
     schemas: { response: paginatedAgentSchema, searchParams: findAgentsParamsSchema },
     ...opts,
   });
+
+const listAvailable = async (): Promise<AvailableAgent[]> =>
+  http.get({ url: `${AGENT_URL}/available`, schemas: { response: availableAgentSchema.array() } });
 
 const create = async (body: CreateAgent, opts: ServicePostOptions<CreateAgent, Agent> = {}): Promise<Agent> =>
   http.post({
@@ -42,4 +46,4 @@ const update = async (id: string, body: UpdateAgent, opts: ServicePutOptions<Upd
 const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promise<void> =>
   http.delete({ url: `${AGENT_URL}/{id}`, params: { id }, ...opts });
 
-export const agentService = { list, create, update, delete: remove };
+export const agentService = { list, listAvailable, create, update, delete: remove };
