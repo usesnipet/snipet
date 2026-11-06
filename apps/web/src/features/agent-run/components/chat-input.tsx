@@ -21,7 +21,6 @@ type Props = {
 
 export function ChatInput({ agents, agentId, onAgentChange, agentLocked, running, sending, onSend, onStop }: Props) {
   const [value, setValue] = useState("");
-  const selectedAgent = agents.find((agent) => agent.id === agentId);
   const canSend = !!agentId && value.trim().length > 0 && !running && !sending;
 
   const submit = () => {
@@ -42,13 +41,16 @@ export function ChatInput({ agents, agentId, onAgentChange, agentLocked, running
               onClick={(event) => event.stopPropagation()}
               aria-label="Agent"
             >
-              <AgentAvatar avatar={selectedAgent?.avatar} name={selectedAgent?.name} className="size-5" />
               <SelectValue placeholder="Select an agent" />
             </SelectTrigger>
             <SelectContent>
               {agents.map((agent) => (
                 <SelectItem key={agent.id} value={agent.id}>
-                  {agent.name}
+                  {/* The selected option's content also fills the trigger, avatar included. */}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <AgentAvatar avatar={agent.avatar} name={agent.name} className="size-5 shrink-0" />
+                    <span className="truncate">{agent.name}</span>
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>

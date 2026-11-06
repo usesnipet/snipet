@@ -36,7 +36,8 @@ export const ChatPage = () => {
   const start = useStartRun();
   const cancelRun = useCancelRun();
 
-  const [pickedAgentId, setPickedAgentId] = useState<string>();
+  // Remembers the filter it was picked under: choosing another filter starts over from that agent.
+  const [picked, setPicked] = useState<{ agentId: string; agentParam: string | null }>();
   const [pending, setPending] = useState<PendingInput | null>(null);
 
   useDocumentTitle(() => `${session.data?.title || "New chat"} · Snipet`, [session.data?.title]);
@@ -67,7 +68,9 @@ export const ChatPage = () => {
     !messages.some((m) => m.role === "user" && m.runId === pending.runId);
 
   // Only an agent the user can chat with: a link can name a disabled or deleted one.
-  const linkedAgentId = agents.find((agent) => agent.id === searchParams.get("agent"))?.id;
+  const agentParam = searchParams.get("agent");
+  const linkedAgentId = agents.find((agent) => agent.id === agentParam)?.id;
+  const pickedAgentId = picked?.agentParam === agentParam ? picked.agentId : undefined;
   const agentId = session.data?.agentId ?? pickedAgentId ?? linkedAgentId ?? agents[0]?.id;
   const running = stream.status === "streaming" && stream.runId === run?.id;
 
@@ -79,7 +82,8 @@ export const ChatPage = () => {
       {
         onSuccess: (started) => {
           setPending({ sessionId: started.sessionId, text: input, runId: started.id });
-          if (!sessionId) navigate(sessionPath(started.sessionId));
+          // A filter follows the agent actually used, so the new chat shows up in the list.
+          if (!sessionId) navigate(sessionPath(started.sessionId, linkedAgentId && agentId));
         },
         onError: () => setPending(null),
       },
@@ -95,7 +99,7 @@ export const ChatPage = () => {
       key={sessionId}
       agents={agents}
       agentId={agentId}
-      onAgentChange={setPickedAgentId}
+      onAgentChange={(pickedId) => setPicked({ agentId: pickedId, agentParam })}
       agentLocked={!!sessionId}
       running={running}
       sending={start.isPending}

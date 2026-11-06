@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
+import { initials, readableTextColor } from "@/lib/avatar-fallback";
 import { cn } from "@/lib/utils";
 import { BotIcon, ImageUpIcon, XIcon } from "lucide-react";
 import { useRef } from "react";
@@ -12,20 +13,30 @@ const AVATAR_SIZE = 256;
 
 type AgentAvatarProps = {
   avatar?: string | null;
-  /** Gives the fallback a color of its own, to tell agents without an avatar apart. */
+  /** Gives the fallback initials and a color of its own, to tell agents without an avatar apart. */
   name?: string;
   className?: string;
   onClick?: () => void;
 };
 export function AgentAvatar({ avatar, name, className, onClick }: AgentAvatarProps) {
+  const background = name && stc(name);
   return (
     <Avatar className={cn("size-9 rounded-lg after:rounded-lg", className)} onClick={onClick}>
       {avatar && <AvatarImage src={avatar} alt="" className="rounded-lg" />}
       <AvatarFallback
-        className={cn("rounded-lg", name && "text-white")}
-        style={name ? { backgroundColor: stc(name) } : undefined}
+        className="@container rounded-lg"
+        style={background ? { backgroundColor: background } : undefined}
       >
-        <BotIcon className="size-1/2" />
+        {/* Sized against the avatar, which ranges from a chat row to a form field. */}
+        {background ? (
+          // Hidden from screen readers: the name is always next to it or in a label, so "EM EMS" would be read out.
+          // Colored here because parents like a focused select item force a text color on their descendants.
+          <span aria-hidden className="text-[40cqw] font-semibold" style={{ color: readableTextColor(background) }}>
+            {initials(name)}
+          </span>
+        ) : (
+          <BotIcon className="size-1/2" />
+        )}
       </AvatarFallback>
     </Avatar>
   );

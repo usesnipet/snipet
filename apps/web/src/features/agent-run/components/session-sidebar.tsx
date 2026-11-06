@@ -31,9 +31,13 @@ import { useDeleteSession, useListAvailableAgents, useListSessions } from "@snip
 import { hasRole, Role } from "@snipet/shared";
 import { MoreHorizontal, Settings, SquarePen, Trash2 } from "lucide-react";
 import moment from "moment";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
+
+import { agentChatPath } from "@/features/agent/lib/agent-path";
 
 import { sessionPath } from "../lib/session-path";
+
+import { AgentFilterBar } from "./agent-filter-bar";
 
 import type { AgentSession } from "@snipet/shared";
 type Props = {
@@ -64,14 +68,25 @@ function groupByDate(sessions: AgentSession[]): SessionGroup[] {
 }
 
 export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
-  const { data, isLoading, isError } = useListSessions();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const agentParam = searchParams.get("agent");
   const { data: agents } = useListAvailableAgents();
   const agentOf = new Map(agents?.map((agent) => [agent.id, agent]));
+  // Only an agent from the list: a link can name a disabled or deleted one, or not even an id.
+  const activeAgent = agentParam ? agentOf.get(agentParam) : undefined;
+  const { data: sessionsPage, isLoading, isError } = useListSessions(activeAgent?.id);
+  // Until the agents arrive the param can't be checked, and showing every chat would flash the wrong list.
+  const isAwaitingFilter = !!agentParam && !agents;
+  const data = isAwaitingFilter ? undefined : sessionsPage;
+  const newChatPath = activeAgent ? agentChatPath(activeAgent.id) : ROUTES.chat;
   const user = useCurrentUser();
   const isAdmin = hasRole(user?.role, [Role.Admin]);
   const { openDialog } = useDialog();
   const navigate = useNavigate();
   const { mutateAsync: deleteSession } = useDeleteSession();
+
+  const toggleFilter = (agentId: string) =>
+    setSearchParams(agentId === activeAgent?.id ? {} : { agent: agentId }, { replace: true });
 
   const openDelete = (session: AgentSession) => {
     openDialog({
@@ -87,7 +102,7 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
         ),
         onConfirm: async () => {
           await deleteSession(session.id);
-          if (session.id === activeSessionId) navigate(ROUTES.chat);
+          if (session.id === activeSessionId) navigate(newChatPath);
         },
       },
     });
@@ -99,17 +114,18 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href={ROUTES.chat}>
+              <Link href={newChatPath}>
                 <SquarePen />
                 New chat
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <AgentFilterBar agents={agents ?? []} activeAgentId={activeAgent?.id} onToggle={toggleFilter} />
       </SidebarBrand>
 
       <SidebarContent>
-        {isLoading && (
+        {(isLoading || isAwaitingFilter) && (
           <SidebarGroup>
             <SidebarMenu>
               {Array.from({ length: 6 }, (_, i) => (
@@ -122,7 +138,18 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
         )}
         {isError && <p className="text-destructive px-4 text-xs">Failed to load chats.</p>}
         {data && data.data.length === 0 && (
-          <p className="text-muted-foreground px-4 text-xs">No chats yet. Start one to see it here.</p>
+          <p className="text-muted-foreground px-4 text-xs">
+            {activeAgent ? (
+              <>
+                No chats with {activeAgent.name} yet.{" "}
+                <Link href={newChatPath} className="text-sidebar-foreground underline">
+                  Start a chat
+                </Link>
+              </>
+            ) : (
+              "No chats yet. Start one to see it here."
+            )}
+          </p>
         )}
         {data &&
           groupByDate(data.data).map((group) => (
@@ -133,7 +160,7 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
                   {group.sessions.map((session) => (
                     <SidebarMenuItem key={session.id}>
                       <SidebarMenuButton asChild isActive={session.id === activeSessionId}>
-                        <Link href={sessionPath(session.id)} title={session.title || undefined}>
+                        <Link href={sessionPath(session.id, activeAgent?.id)} title={session.title || undefined}>
                           <AgentAvatar
                             avatar={agentOf.get(session.agentId)?.avatar}
                             name={agentOf.get(session.agentId)?.name}

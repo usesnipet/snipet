@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { agentRunService } from "./service";
@@ -13,10 +13,12 @@ const SESSIONS_TAKE = 100;
 const MESSAGES_TAKE = 100;
 
 export const listSessionsQueryKey = () => [BASE_QUERY_KEY, "list"] as const;
-export const useListSessions = (): UseQueryResult<Paginated<AgentSession>, Error> =>
+/** The newest sessions, of one agent when agentId is set; the list stays on screen while switching. */
+export const useListSessions = (agentId?: string): UseQueryResult<Paginated<AgentSession>, Error> =>
   useQuery({
-    queryKey: listSessionsQueryKey(),
-    queryFn: () => agentRunService.listSessions({ searchParams: { take: SESSIONS_TAKE } }),
+    queryKey: [...listSessionsQueryKey(), agentId],
+    queryFn: () => agentRunService.listSessions({ searchParams: { take: SESSIONS_TAKE, agentId } }),
+    placeholderData: keepPreviousData,
   });
 
 export const sessionQueryKey = (id: string) => [BASE_QUERY_KEY, id] as const;
