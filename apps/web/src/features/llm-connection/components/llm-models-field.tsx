@@ -15,6 +15,8 @@ import { Plus } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, useFormContext, useFormState, useWatch } from "react-hook-form";
 
+import { splitModelRef } from "../utils/split-model-ref";
+
 import type { LlmCapability, LlmConnection, LlmManifest } from "@snipet/shared";
 type Props = {
   /** Field-array path holding `ExecuteLlmTarget[]` (`ExecuteLlmTarget` in @snipet/shared). */
@@ -22,13 +24,6 @@ type Props = {
   /** If set, only models with these capabilities will be shown. */
   allowedModelCapabilities?: LlmCapability[];
 };
-
-/** Splits "llm-key/model" on the first "/", like the backend; a missing side reads as "". */
-function splitModelRef(ref: string): [llmKey: string, modelKey: string] {
-  const i = ref.indexOf("/");
-  if (i <= 0) return ["", ""];
-  return [ref.slice(0, i), ref.slice(i + 1)];
-}
 
 /**
  * Drag-to-reorder list of LLM targets (connection + model) tried in order by a

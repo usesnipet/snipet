@@ -10,36 +10,68 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InputSearch } from "@/components/ui/input-search";
+import { splitModelRef } from "@/features/llm-connection/utils/split-model-ref";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useDialog } from "@/lib/dialog";
-import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { ROUTES } from "@/routes";
+import { useDeleteAgent, useListAgents } from "@snipet/client";
+import { Copy, MessageSquare, MoreHorizontal, Pencil, Plug, Plus, Server, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-import { useDeleteAgent, useListAgents } from "@snipet/client";
-
-import { agentPath } from "../lib/agent-path";
+import { agentChatPath, agentPath } from "../lib/agent-path";
 
 import { AgentAvatar } from "./agent-avatar";
 
-import type { Agent } from "@snipet/shared";
-
-const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+import type { AgentSummary } from "@snipet/shared";
 
 export function AgentCatalog() {
   // ponytail: first 500 only, paginate if anyone gets near that.
   const agentsQuery = useListAgents({ searchParams: { take: 500 } });
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
   if (agentsQuery.isLoading) return <LoadingFallback className="min-h-40" />;
-  if (agentsQuery.isError) return <p className="text-destructive text-sm">Failed to load agents.</p>;
+  if (agentsQuery.isError) {
+    return (
+      <div className="flex items-center gap-3">
+        <p className="text-destructive text-sm">Failed to load agents.</p>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={agentsQuery.isFetching}
+          onClick={() => void agentsQuery.refetch()}
+        >
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  const allAgents = agentsQuery.data?.data ?? [];
+  if (allAgents.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 pb-24 text-center">
+        <div>
+          <p className="font-medium">No agents yet</p>
+          <p className="text-muted-foreground text-sm">
+            Create one to choose its models and plugins, then chat with it.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate(ROUTES.agentNew)}>
+          <Plus />
+          New agent
+        </Button>
+      </div>
+    );
+  }
 
   const query = search.trim().toLowerCase();
-  const agents = (agentsQuery.data?.data ?? []).filter((agent) => !query || agent.name.toLowerCase().includes(query));
+  const agents = allAgents.filter((agent) => !query || agent.name.toLowerCase().includes(query));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5">
-      <div className="flex shrink-0 sm:justify-end">
+      <div className="shrink-0 sm:flex sm:justify-end">
         <InputSearch
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -52,7 +84,7 @@ export function AgentCatalog() {
           items={agents}
           size="md"
           containerClassName="h-full"
-          emptyMessage={query ? "No agents match your search." : "No agents yet."}
+          emptyMessage="No agents match your search."
           renderItem={(agent) => <AgentCard agent={agent} />}
         />
       </div>
@@ -60,7 +92,27 @@ export function AgentCatalog() {
   );
 }
 
-function AgentCard({ agent }: { agent: Agent }) {
+/** What the agent is made of: its main model, how many fall back behind it, and its plugins. */
+function AgentComposition({ agent }: { agent: AgentSummary }) {
+  const [mainModel, ...fallbacks] = agent.llms.map((llm) => splitModelRef(llm.model)[1]);
+  const pluginNames = agent.pluginConnections.map((grant) => grant.name).join(", ");
+
+  return (
+    <span className="flex flex-col gap-1">
+      <span className="flex items-center gap-1.5" title={[mainModel, ...fallbacks].join(", ")}>
+        <Server className="size-3.5 shrink-0" aria-label="Models" />
+        <span className="truncate">{mainModel}</span>
+        {fallbacks.length > 0 && <span className="shrink-0">+{fallbacks.length}</span>}
+      </span>
+      <span className="flex items-center gap-1.5" title={pluginNames || undefined}>
+        <Plug className="size-3.5 shrink-0" aria-label="Plugins" />
+        <span className="truncate">{pluginNames || "No plugins"}</span>
+      </span>
+    </span>
+  );
+}
+
+function AgentCard({ agent }: { agent: AgentSummary }) {
   const navigate = useNavigate();
   const { openDialog } = useDialog();
   const { copy } = useClipboard();
@@ -85,44 +137,50 @@ function AgentCard({ agent }: { agent: Agent }) {
 
   return (
     <CatalogCard
-      icon={<AgentAvatar avatar={agent.avatar} />}
+      className={agent.enabled ? undefined : "border-dashed bg-transparent shadow-none"}
+      icon={
+        <AgentAvatar
+          avatar={agent.avatar}
+          name={agent.name}
+          className={agent.enabled ? undefined : "opacity-50 grayscale"}
+        />
+      }
       title={agent.name}
-      description={agent.description}
+      description={agent.description || "No description"}
       tags={agent.enabled ? undefined : ["Disabled"]}
-      updatedAt={agent.updatedAt.toISOString()}
-      meta={`${plural(agent.llms.length, "model")} · ${plural(agent.pluginConnections.length, "plugin")}`}
+      meta={<AgentComposition agent={agent} />}
+      cta={
+        agent.enabled
+          ? { label: "Chat", icon: <MessageSquare />, onClick: () => navigate(agentChatPath(agent.id)) }
+          : undefined
+      }
       onClick={openEdit}
       headerActions={
-        <>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Copy agent ID"
-            title="Copy agent ID"
-            onClick={() => copy(agent.id, { successTitle: "Agent ID copied", errorTitle: "Failed to copy agent ID" })}
-          >
-            <Copy />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={openEdit}>
-                <Pencil />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={openDelete}>
-                <Trash2 />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={openEdit}>
+              <Pencil />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => copy(agent.id, { successTitle: "Agent ID copied", errorTitle: "Failed to copy agent ID" })}
+            >
+              <Copy />
+              Copy agent ID
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={openDelete}>
+              <Trash2 />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       }
     />
   );

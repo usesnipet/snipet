@@ -11,7 +11,17 @@ import { PluginConnectionService } from "../plugin-connection/plugin-connection.
 
 import { Agent, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
 
-import type { AvailableAgent, CreateAgent, HookHandler, HookName, JsonObject, UpdateAgent } from "@snipet/shared";
+import type { FilterQuery } from "@snipet/server-common";
+import type {
+  AgentSummary,
+  AvailableAgent,
+  CreateAgent,
+  HookHandler,
+  HookName,
+  JsonObject,
+  Paginated,
+  UpdateAgent,
+} from "@snipet/shared";
 
 type PluginGrant = NonNullable<CreateAgent["pluginConnections"]>[number];
 
@@ -35,6 +45,47 @@ export class AgentService extends CrudService<Agent> {
       order: { name: "ASC" },
       loadEagerRelations: false,
     });
+  }
+
+  /**
+   * A page of agents for listing. Selects only what a summary shows, so no
+   * settings or configs get unsealed; order and position let the entity sort.
+   */
+  async findSummaries({ where, order, take, skip }: FilterQuery<Agent>): Promise<Paginated<AgentSummary>> {
+    const total = await this.repo.count({ where });
+    const agents = await this.repo.find({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        avatar: true,
+        enabled: true,
+        createdAt: true,
+        updatedAt: true,
+        llms: { id: true, model: true, order: true },
+        pluginConnections: {
+          id: true,
+          pluginConnectionId: true,
+          position: true,
+          pluginConnection: { id: true, name: true },
+        },
+      },
+      relations: { llms: true, pluginConnections: { pluginConnection: true } },
+      loadEagerRelations: false,
+      where,
+      order,
+      take,
+      skip,
+    });
+    const data = agents.map(({ llms, pluginConnections, ...agent }) => ({
+      ...agent,
+      llms: llms.map(({ model }) => ({ model })),
+      pluginConnections: pluginConnections.map((grant) => ({
+        pluginConnectionId: grant.pluginConnectionId,
+        name: grant.pluginConnection!.name,
+      })),
+    }));
+    return { data, total, skip, take };
   }
 
   /** The agent as the API returns it: secret settings come back as placeholders. */

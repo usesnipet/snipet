@@ -6,19 +6,25 @@ import { cn } from "@/lib/utils";
 import { BotIcon, ImageUpIcon, XIcon } from "lucide-react";
 import { useRef } from "react";
 import { useFormContext } from "react-hook-form";
+import stc from "string-to-color";
 
 const AVATAR_SIZE = 256;
 
 type AgentAvatarProps = {
   avatar?: string | null;
+  /** Gives the fallback a color of its own, to tell agents without an avatar apart. */
+  name?: string;
   className?: string;
   onClick?: () => void;
 };
-export function AgentAvatar({ avatar, className, onClick }: AgentAvatarProps) {
+export function AgentAvatar({ avatar, name, className, onClick }: AgentAvatarProps) {
   return (
     <Avatar className={cn("size-9 rounded-lg after:rounded-lg", className)} onClick={onClick}>
       {avatar && <AvatarImage src={avatar} alt="" className="rounded-lg" />}
-      <AvatarFallback className="rounded-lg">
+      <AvatarFallback
+        className={cn("rounded-lg", name && "text-white")}
+        style={name ? { backgroundColor: stc(name) } : undefined}
+      >
         <BotIcon className="size-1/2" />
       </AvatarFallback>
     </Avatar>

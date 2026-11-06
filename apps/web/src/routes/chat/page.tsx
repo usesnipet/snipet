@@ -15,7 +15,7 @@ import {
   useStartRun,
 } from "@snipet/client";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 
 import type { AgentMessage } from "@snipet/shared";
 
@@ -25,6 +25,7 @@ type PendingInput = { sessionId: string | undefined; text: string; runId?: strin
 export const ChatPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const agentsQuery = useListAvailableAgents();
   const agents = agentsQuery.data ?? [];
@@ -65,7 +66,9 @@ export const ChatPage = () => {
     pending.sessionId === sessionId &&
     !messages.some((m) => m.role === "user" && m.runId === pending.runId);
 
-  const agentId = session.data?.agentId ?? pickedAgentId ?? agents[0]?.id;
+  // Only an agent the user can chat with: a link can name a disabled or deleted one.
+  const linkedAgentId = agents.find((agent) => agent.id === searchParams.get("agent"))?.id;
+  const agentId = session.data?.agentId ?? pickedAgentId ?? linkedAgentId ?? agents[0]?.id;
   const running = stream.status === "streaming" && stream.runId === run?.id;
 
   const send = (input: string) => {

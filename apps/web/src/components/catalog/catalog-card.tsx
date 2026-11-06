@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { useCallback } from "react";
 
 import { formatUpdatedAt } from "./format-updated-at";
-import { truncateDescription } from "./truncate-description";
 
 export type CatalogCardAction = {
   label: string;
@@ -69,16 +68,26 @@ export function CatalogCard({
     <Card
       className={cn(
         "flex h-full flex-col gap-0 p-5",
-        onClick && "cursor-pointer transition-colors hover:border-primary/40",
+        onClick &&
+          "cursor-pointer transition-colors hover:border-primary/40 has-[h2_button:focus-visible]:border-ring has-[h2_button:focus-visible]:ring-1 has-[h2_button:focus-visible]:ring-ring",
         className,
       )}
       onClick={onClick}
     >
-      <CardHeader className="flex flex-row items-start gap-3 space-y-0 p-0 pb-3">
+      <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-0 pb-3">
         {renderIcon()}
-        <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <h2 className="truncate text-sm font-semibold leading-tight">{title}</h2>
+            <h2 className="min-w-0 truncate text-sm font-semibold leading-tight">
+              {/* Keyboard access to the card's action: its click bubbles up to the card's onClick. */}
+              {onClick ? (
+                <button type="button" className="block w-full truncate text-left outline-none">
+                  {title}
+                </button>
+              ) : (
+                title
+              )}
+            </h2>
             {badge ? (
               <Badge variant="secondary" className="shrink-0 font-normal">
                 {badge}
@@ -109,7 +118,12 @@ export function CatalogCard({
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-3 p-0">
-        {description ? <p className="text-muted-foreground text-sm">{truncateDescription(description)}</p> : null}
+        {/* Clamped so one long description doesn't stretch every card in its row. */}
+        {description ? (
+          <p className="text-muted-foreground line-clamp-2 text-sm" title={description}>
+            {description}
+          </p>
+        ) : null}
         {updatedAt ? (
           <p className="text-muted-foreground mt-auto pt-1 text-xs">Updated {formatUpdatedAt(updatedAt)}</p>
         ) : null}

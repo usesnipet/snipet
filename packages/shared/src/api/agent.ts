@@ -49,7 +49,29 @@ export const agentSchema = z.object({
 });
 export type Agent = z.infer<typeof agentSchema>;
 
-export const paginatedAgentSchema = paginatedSchema(agentSchema);
+/**
+ * What GET /agents returns per agent. No prompt, limits, tools or settings:
+ * those come from GET /agents/:id, when the agent is opened.
+ */
+export const agentSummarySchema = agentSchema
+  .pick({
+    id: true,
+    name: true,
+    description: true,
+    avatar: true,
+    enabled: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    /** In the order they run. */
+    llms: z.array(agentLlmSchema.pick({ model: true })),
+    /** In the order their hooks run; name is the connection's. */
+    pluginConnections: z.array(z.object({ pluginConnectionId: z.uuid(), name: z.string() })),
+  });
+export type AgentSummary = z.infer<typeof agentSummarySchema>;
+
+export const paginatedAgentSummarySchema = paginatedSchema(agentSummarySchema);
 
 /** What GET /agents/available shows users who can't manage agents. */
 export const availableAgentSchema = agentSchema.pick({ id: true, name: true, description: true, avatar: true });

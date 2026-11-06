@@ -187,4 +187,29 @@ describe("AgentService.mask", () => {
       { token: SECRET_PLACEHOLDER },
     ]);
   });
+
+  describe("findSummaries", () => {
+    it("takes the total from a count of agents, not from the joined rows", async () => {
+      const find = jest.fn(() =>
+        Promise.resolve([
+          {
+            id: "a1",
+            name: "Helper",
+            systemPrompt: "not for the list",
+            llms: [{ id: "l1", model: "x/first", order: 0 }],
+            pluginConnections: [{ pluginConnectionId: "p1", pluginConnection: { name: "GitHub" }, settings: { k: 1 } }],
+          },
+        ]),
+      );
+      const repo = { find, count: jest.fn(() => Promise.resolve(7)) } as unknown as Repository<Agent>;
+      const service = new AgentService(repo, {} as FilesStorage, {} as PluginConnectionService);
+
+      const page = await service.findSummaries({ take: 1, skip: 0 });
+
+      expect(page.total).toBe(7);
+      expect(page.data[0]).not.toHaveProperty("systemPrompt");
+      expect(page.data[0].llms).toEqual([{ model: "x/first" }]);
+      expect(page.data[0].pluginConnections).toEqual([{ pluginConnectionId: "p1", name: "GitHub" }]);
+    });
+  });
 });

@@ -4,7 +4,7 @@ import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import { ScrollArea } from "../ui/scroll-area";
 
-const catalogListVariants = cva("grid gap-4", {
+const catalogListVariants = cva("grid grid-cols-1 gap-4", {
   variants: {
     size: {
       sm: "sm:grid-cols-3 xl:grid-cols-4",
@@ -38,8 +38,10 @@ export function CatalogList<T extends { id: string }>({
   }
 
   return (
-    <div className={cn("min-h-0", containerClassName)}>
-      <ScrollArea className="h-full">
+    // The negative margin puts the scrollbar in the page's gutter, past the ul's padding, so cards align with the page.
+    <div className={cn("-mr-3 min-h-0", containerClassName)}>
+      {/* Radix wraps the content in a display:table that grows with it, which would stop long card text truncating. */}
+      <ScrollArea className="h-full [&>[data-radix-scroll-area-viewport]>div]:block!">
         <ul className={cn(catalogListVariants({ size, className }), "pb-1 pr-3")}>
           {items.map((item) => (
             <li key={item.id}>{renderItem(item)}</li>

@@ -5,21 +5,29 @@ import {
   availableAgentSchema,
   createAgentSchema,
   findAgentsParamsSchema,
-  paginatedAgentSchema,
+  paginatedAgentSummarySchema,
   updateAgentSchema,
 } from "@snipet/shared";
 
-import type { Agent, AvailableAgent, CreateAgent, FindAgentsParams, Paginated, UpdateAgent } from "@snipet/shared";
+import type {
+  Agent,
+  AgentSummary,
+  AvailableAgent,
+  CreateAgent,
+  FindAgentsParams,
+  Paginated,
+  UpdateAgent,
+} from "@snipet/shared";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const AGENT_URL = "/api/agents";
 
 const list = async (
-  opts: ServiceGetOptions<Paginated<Agent>, Partial<FindAgentsParams>> = {},
-): Promise<Paginated<Agent>> =>
+  opts: ServiceGetOptions<Paginated<AgentSummary>, Partial<FindAgentsParams>> = {},
+): Promise<Paginated<AgentSummary>> =>
   http.get({
     url: AGENT_URL,
-    schemas: { response: paginatedAgentSchema, searchParams: findAgentsParamsSchema },
+    schemas: { response: paginatedAgentSummarySchema, searchParams: findAgentsParamsSchema },
     ...opts,
   });
 
