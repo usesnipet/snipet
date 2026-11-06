@@ -47,9 +47,9 @@ const router = createBrowserRouter(
           {/* One optional-param route, so starting a chat doesn't remount the page. */}
           <Route path={`${toReactRouterPath(ROUTES.chatSession)}?`} element={<ChatPage />} />
           <Route element={<Layout />}>
-            <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
-            <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
             <Route element={<RequireRole role={Role.Admin} />}>
+              <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
+              <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
               <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
               <Route path={toReactRouterPath(ROUTES.agentNew)} element={<AgentEditorPage />} />
               <Route path={toReactRouterPath(ROUTES.agent)} element={<AgentEditorPage />} />

@@ -20,6 +20,7 @@ const navItems: NavEntry[] = [
       {
         title: "LLMs",
         icon: Server,
+        visible: isAdmin,
         items: [
           { title: "Connections", href: ROUTES.llmConnections },
           { title: "Playground", href: ROUTES.llmPlayground },
