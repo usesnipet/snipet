@@ -2,6 +2,7 @@ import { useLatestRun, useRunStream, useSessionMessages, useStartRun } from "@sn
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { emit } from "../events";
+
 import { Composer } from "./composer";
 import { Message } from "./message";
 
@@ -112,7 +113,7 @@ export function Chat({
         )}
       </div>
 
-      <Composer disabled={running} onSend={send} />
+      <Composer key={sessionId} disabled={running} onSend={send} />
     </>
   );
 }

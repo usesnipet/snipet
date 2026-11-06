@@ -31,7 +31,7 @@ export function ChatInput({ agents, agentId, onAgentChange, agentLocked, running
   return (
     <div className="flex flex-col gap-2">
       <PromptInput value={value} onValueChange={setValue} onSubmit={submit} isLoading={running || sending}>
-        <PromptInputTextarea placeholder="Message the agent…" className="px-3 text-base" />
+        <PromptInputTextarea autoFocus placeholder="Message the agent…" className="px-3 text-base" />
         <PromptInputActions className="justify-between px-1 pt-2">
           <Select value={agentId ?? ""} onValueChange={onAgentChange} disabled={agentLocked}>
             <SelectTrigger

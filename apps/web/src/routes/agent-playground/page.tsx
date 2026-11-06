@@ -3,10 +3,17 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { ChatInput } from "@/features/agent-run/components/chat-input";
 import { ChatMessages } from "@/features/agent-run/components/chat-messages";
 import { SessionSidebar } from "@/features/agent-run/components/session-sidebar";
-import { useCancelRun, useLatestRun, useRunStream, useSession, useSessionMessages, useStartRun } from "@snipet/client";
 import { sessionPath } from "@/features/agent-run/lib/session-path";
-import { useListAgents } from "@snipet/client";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import {
+  useCancelRun,
+  useLatestRun,
+  useListAgents,
+  useRunStream,
+  useSession,
+  useSessionMessages,
+  useStartRun,
+} from "@snipet/client";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
@@ -82,6 +89,7 @@ export const AgentPlaygroundPage = () => {
 
   const input = (
     <ChatInput
+      key={sessionId}
       agents={agents}
       agentId={agentId}
       onAgentChange={setPickedAgentId}
