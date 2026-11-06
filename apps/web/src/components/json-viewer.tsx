@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export type JsonViewerProps = {
@@ -91,15 +90,11 @@ function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
 
 export function JsonViewer({ value, title, className }: JsonViewerProps) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
-      {title ? (
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">{title}</CardTitle>
-        </CardHeader>
-      ) : null}
-      <CardContent className={cn(!title && "pt-6")}>
+    <div className={cn("overflow-hidden rounded-lg border text-sm", className)}>
+      {title && <div className="text-muted-foreground border-b px-3 py-1.5 text-xs font-medium">{title}</div>}
+      <div className="max-h-[50vh] overflow-auto p-3">
         <JsonNode value={value} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
