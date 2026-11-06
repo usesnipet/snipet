@@ -21,6 +21,7 @@ import { AppFormDialog } from "./app-form-dialog";
 import { AppTokenDialog } from "./app-token-dialog";
 
 import type { App } from "@snipet/shared";
+
 export function AppCatalog() {
   const appsQuery = useListApps({ searchParams: { take: 500 } });
   const [search, setSearch] = useState("");
@@ -75,6 +76,8 @@ function AppCard({ app }: { app: App }) {
       },
     });
 
+  const openEdit = () => openDialog({ component: AppFormDialog, props: { app } });
+  const openTokenGenerate = () => openDialog({ component: AppTokenDialog, props: { app } });
   const origins = app.allowedOrigins.length;
 
   return (
@@ -90,6 +93,7 @@ function AppCard({ app }: { app: App }) {
       title={app.name}
       updatedAt={app.updatedAt.toISOString()}
       meta={origins ? `${origins} allowed origin${origins === 1 ? "" : "s"}` : "Any origin"}
+      onClick={openEdit}
       headerActions={
         <>
           <Button
@@ -109,11 +113,11 @@ function AppCard({ app }: { app: App }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => openDialog({ component: AppFormDialog, props: { app } })}>
+              <DropdownMenuItem onClick={openEdit}>
                 <Pencil />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openDialog({ component: AppTokenDialog, props: { app } })}>
+              <DropdownMenuItem onClick={openTokenGenerate}>
                 <KeyRound />
                 Generate token
               </DropdownMenuItem>
