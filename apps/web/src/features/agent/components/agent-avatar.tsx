@@ -9,9 +9,14 @@ import { useFormContext } from "react-hook-form";
 
 const AVATAR_SIZE = 256;
 
-export function AgentAvatar({ avatar, className }: { avatar?: string | null; className?: string }) {
+type AgentAvatarProps = {
+  avatar?: string | null;
+  className?: string;
+  onClick?: () => void;
+};
+export function AgentAvatar({ avatar, className, onClick }: AgentAvatarProps) {
   return (
-    <Avatar className={cn("size-9 rounded-lg after:rounded-lg", className)}>
+    <Avatar className={cn("size-9 rounded-lg after:rounded-lg", className)} onClick={onClick}>
       {avatar && <AvatarImage src={avatar} alt="" className="rounded-lg" />}
       <AvatarFallback className="rounded-lg">
         <BotIcon className="size-1/2" />
@@ -66,19 +71,32 @@ export function AgentAvatarField({ name }: { name: string }) {
         };
 
         return (
-          <FormItem>
+          <FormItem className="w-24 shrink-0">
             <FormLabel>Avatar</FormLabel>
-            <div className="flex items-center gap-3">
-              <AgentAvatar avatar={field.value} className="size-14" />
-              <FormControl>
-                <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFile} />
-              </FormControl>
-              <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
-                <ImageUpIcon /> {field.value ? "Change" : "Upload"}
+            <AgentAvatar avatar={field.value} className="size-24" onClick={() => inputRef.current?.click()} />
+            <FormControl>
+              <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFile} />
+            </FormControl>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-w-0 flex-1"
+                onClick={() => inputRef.current?.click()}
+              >
+                {!field.value && <ImageUpIcon />}
+                {field.value ? "Change" : "Upload"}
               </Button>
               {field.value && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => field.onChange(null)}>
-                  <XIcon /> Remove
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Remove avatar"
+                  onClick={() => field.onChange(null)}
+                >
+                  <XIcon />
                 </Button>
               )}
             </div>

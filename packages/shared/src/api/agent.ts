@@ -82,7 +82,7 @@ export const createAgentSchema = z.object({
   llms: z
     .array(
       z.object({
-        model: z.string().regex(/^[^/]+\/.+$/, "Select an LLM and a model"),
+        model: z.string().regex(/^[^/]+\/.+$/, "Select a connection and a model"),
         connectionId: z.uuid().optional(),
         extraOptions: z.record(z.string(), z.unknown()).optional(),
       }),

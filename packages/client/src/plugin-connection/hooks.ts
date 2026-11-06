@@ -32,10 +32,12 @@ export const useListPluginConnections = (
 /** A connection's tools; lastSyncedAt in the key refetches them when a sync finishes. */
 export const usePluginConnectionTools = (
   connection: Pick<PluginConnection, "id" | "lastSyncedAt">,
+  opts?: { enabled?: boolean },
 ): UseQueryResult<PluginTool[], Error> =>
   useQuery({
     queryKey: [...listPluginConnectionsQueryKey(), connection.id, "tools", connection.lastSyncedAt],
     queryFn: () => pluginConnectionService.listTools(connection.id),
+    enabled: opts?.enabled,
   });
 
 export const pluginsQueryKey = () => [BASE_QUERY_KEY, "plugins"] as const;

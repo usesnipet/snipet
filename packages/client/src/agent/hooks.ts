@@ -23,6 +23,18 @@ export const useListAvailableAgents = (): UseQueryResult<AvailableAgent[], Error
     queryFn: () => agentService.listAvailable(),
   });
 
+/**
+ * One agent, for seeding a form. Not cached after unmount: a form reads its
+ * values once, so reopening it on a stale copy would hide the last save.
+ */
+export const useAgent = (id: string | undefined): UseQueryResult<Agent, Error> =>
+  useQuery({
+    queryKey: [...listAgentsQueryKey(), id],
+    queryFn: () => agentService.find(id!),
+    enabled: !!id,
+    gcTime: 0,
+  });
+
 /** Wraps an agent write with outcome messages and a list refresh. */
 const useAgentMutation = <TVariables, TData>(
   fn: (vars: TVariables) => Promise<TData>,

@@ -63,7 +63,7 @@ export const FormSelect = (props: Props) => {
                   field.onChange(nextValue);
                 }}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder={props.placeholder ?? "Select an option"} />
                 </SelectTrigger>
                 <SelectContent>

@@ -3,6 +3,8 @@ export const ROUTES = {
   chat: "/",
   chatSession: "/{sessionId}",
   agents: "/admin/agents",
+  agentNew: "/admin/agents/new",
+  agent: "/admin/agents/{agentId}",
   llmConnections: "/admin/llm/connections",
   llmPlayground: "/admin/llm/playground",
   plugins: "/admin/plugins",

@@ -1,3 +1,4 @@
+import { OrderedRows } from "@/components/form/ordered-rows";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -10,9 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useListLlmConnections, useLLMModels, useLLMs } from "@snipet/client";
-import { ChevronDown, ChevronUp, GripVertical, Plus, X } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { Plus } from "lucide-react";
+import { useEffect } from "react";
+import { useFieldArray, useFormContext, useFormState, useWatch } from "react-hook-form";
 
 import type { LlmCapability, LlmConnection, LlmManifest } from "@snipet/shared";
 type Props = {
@@ -40,20 +41,11 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
   const { data: llms = [] } = useLLMs();
   const { data: connectionsPage } = useListLlmConnections();
   const connections = (connectionsPage?.data ?? []).filter((connection) => connection.enabled);
-  const dragIndexRef = useRef<number | null>(null);
 
   // Keeps at least one row on screen so there's always something to fill in.
   useEffect(() => {
     if (fields.length === 0) append({ model: "" });
   }, [fields.length, append]);
-
-  const handleDrop = (index: number) => (e: React.DragEvent) => {
-    e.preventDefault();
-    const from = dragIndexRef.current;
-    dragIndexRef.current = null;
-    if (from === null || from === index) return;
-    move(from, index);
-  };
 
   return (
     <div className="space-y-2">
@@ -64,34 +56,22 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
             Tried top to bottom — if one errors, Snipet falls back to the next.
           </p>
         </div>
-        <Button type="button" size="sm" onClick={() => append({ model: "" })}>
+        <Button type="button" variant="outline" size="sm" onClick={() => append({ model: "" })}>
           <Plus />
           Add model
         </Button>
       </div>
-      <div className="space-y-2">
-        {fields.map((field, index) => (
-          <div
-            key={field.id}
-            draggable
-            onDragStart={() => (dragIndexRef.current = index)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop(index)}
-          >
-            <LlmModelTargetRow
-              name={name}
-              index={index}
-              llms={llms}
-              connections={connections}
-              total={fields.length}
-              onRemove={() => remove(index)}
-              onMoveUp={() => move(index, index - 1)}
-              onMoveDown={() => move(index, index + 1)}
-              allowedModelCapabilities={allowedModelCapabilities}
-            />
-          </div>
-        ))}
-      </div>
+      <OrderedRows rows={fields} rowLabel="model" onMove={move} onRemove={remove} minRows={1}>
+        {(_field, index) => (
+          <LlmModelTargetRow
+            name={name}
+            index={index}
+            llms={llms}
+            connections={connections}
+            allowedModelCapabilities={allowedModelCapabilities}
+          />
+        )}
+      </OrderedRows>
     </div>
   );
 }
@@ -102,28 +82,16 @@ type RowProps = {
   llms: LlmManifest[];
   connections: LlmConnection[];
   allowedModelCapabilities?: LlmCapability[];
-  total: number;
-  onRemove: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
 };
 
-function LlmModelTargetRow({
-  name,
-  index,
-  llms,
-  connections,
-  total,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
-  allowedModelCapabilities,
-}: RowProps) {
+function LlmModelTargetRow({ name, index, llms, connections, allowedModelCapabilities }: RowProps) {
   const form = useFormContext();
   const fieldPath = `${name}.${index}`;
   const modelRef = (useWatch({ control: form.control, name: `${fieldPath}.model` }) as string | undefined) ?? "";
   const connectionId = useWatch({ control: form.control, name: `${fieldPath}.connectionId` }) as string | undefined;
   const [llmKey, modelKey] = splitModelRef(modelRef);
+  const formState = useFormState({ control: form.control, name: `${fieldPath}.model` });
+  const modelError = form.getFieldState(`${fieldPath}.model`, formState).error;
   const { data: models = [], isLoading: isLoadingModels } = useLLMModels(llmKey, {
     searchParams: connectionId ? { connectionId } : undefined,
   });
@@ -143,60 +111,62 @@ function LlmModelTargetRow({
   };
 
   const handleModelChange = (nextModelKey: string) => {
-    form.setValue(`${fieldPath}.model`, `${llmKey}/${nextModelKey}`, { shouldDirty: true, shouldTouch: true });
+    // Revalidating only when already invalid clears the error without flagging untouched rows.
+    form.setValue(`${fieldPath}.model`, `${llmKey}/${nextModelKey}`, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: !!modelError,
+    });
   };
 
   return (
-    <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
-      <div className="flex items-center gap-2">
-        <GripVertical className="text-muted-foreground/60 size-4 shrink-0 cursor-grab" />
-        <span className="bg-muted text-muted-foreground flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-medium">
-          {index + 1}
-        </span>
-        <div className="flex-1" />
-        <Button type="button" variant="ghost" size="icon-sm" disabled={index === 0} onClick={onMoveUp}>
-          <ChevronUp />
-        </Button>
-        <Button type="button" variant="ghost" size="icon-sm" disabled={index === total - 1} onClick={onMoveDown}>
-          <ChevronDown />
-        </Button>
-        <Button type="button" variant="ghost" size="icon-sm" disabled={total <= 1} onClick={onRemove}>
-          <X />
-        </Button>
-      </div>
+    // Model names run longer than connection names, so they get the wider column.
+    <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2">
+      <Select value={connectionId || undefined} onValueChange={handleConnectionChange}>
+        <SelectTrigger
+          className="w-full min-w-0"
+          aria-label={`Connection for model ${index + 1}`}
+          aria-invalid={!!modelError && !connectionId}
+        >
+          <SelectValue placeholder="Connection" />
+        </SelectTrigger>
+        <SelectContent>
+          {groups.map(({ llm, items }) => (
+            <SelectGroup key={llm.key}>
+              <SelectLabel>{llm.name}</SelectLabel>
+              {items.map((connection) => (
+                <SelectItem key={connection.id} value={connection.id}>
+                  {connection.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Select value={connectionId || undefined} onValueChange={handleConnectionChange}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a connection" />
-          </SelectTrigger>
-          <SelectContent>
-            {groups.map(({ llm, items }) => (
-              <SelectGroup key={llm.key}>
-                <SelectLabel>{llm.name}</SelectLabel>
-                {items.map((connection) => (
-                  <SelectItem key={connection.id} value={connection.id}>
-                    {connection.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ))}
-          </SelectContent>
-        </Select>
+      <Select value={modelKey || undefined} onValueChange={handleModelChange} disabled={!connectionId}>
+        <SelectTrigger
+          className="w-full min-w-0"
+          aria-label={`Model ${index + 1}`}
+          aria-invalid={!!modelError && !!connectionId}
+          title={modelKey || undefined}
+        >
+          <SelectValue placeholder={isLoadingModels ? "Loading…" : "Model"} />
+        </SelectTrigger>
+        <SelectContent>
+          {filteredModels.map((model) => (
+            <SelectItem key={model.key} value={model.key}>
+              {model.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-        <Select value={modelKey || undefined} onValueChange={handleModelChange} disabled={!connectionId}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={isLoadingModels ? "Loading…" : "Select a model"} />
-          </SelectTrigger>
-          <SelectContent>
-            {filteredModels.map((model) => (
-              <SelectItem key={model.key} value={model.key}>
-                {model.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {modelError && (
+        <p role="alert" className="text-destructive col-span-2 text-sm">
+          {modelError.message}
+        </p>
+      )}
     </div>
   );
 }

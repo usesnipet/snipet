@@ -1,7 +1,7 @@
 import { createAgentSchema } from "@snipet/shared";
 import { z } from "zod";
 
-/** Form shape behind the create/edit dialog; max turns is typed as text and coerced. */
+/** Form shape behind the agent editor; max turns is typed as text and coerced. */
 export const agentFormSchema = createAgentSchema.extend({
   maxTurns: z.coerce
     .number<string | number>()

@@ -1,6 +1,7 @@
 import { Role } from "@snipet/shared";
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from "react-router";
+import { RouterProvider } from "react-router/dom";
 
 import { LoadingFallback } from "./components/loading-fallback";
 import { RequireAuth } from "./components/require-auth";
@@ -12,6 +13,7 @@ import type { RoutePath } from "./routes";
 const Layout = lazy(() => import("./routes/layout").then((m) => ({ default: m.Layout })));
 const LoginPage = lazy(() => import("./routes/login/page").then((m) => ({ default: m.LoginPage })));
 const AgentsPage = lazy(() => import("./routes/agents/page").then((m) => ({ default: m.AgentsPage })));
+const AgentEditorPage = lazy(() => import("./routes/agents/editor/page").then((m) => ({ default: m.AgentEditorPage })));
 const ChatPage = lazy(() => import("./routes/chat/page").then((m) => ({ default: m.ChatPage })));
 const LlmConnectionsPage = lazy(() =>
   import("./routes/llm-connections/page").then((m) => ({ default: m.LlmConnectionsPage })),
@@ -29,32 +31,39 @@ const toReactRouterPath = (path: RoutePath) => {
   return path.replaceAll(/{([^}]+)}/g, (_, p1) => `:${p1}`);
 };
 
-export const Router = () => {
-  return (
-    <BrowserRouter>
-      <Suspense fallback={<LoadingFallback className="min-h-svh" />}>
-        <Routes>
-          <Route path={toReactRouterPath(ROUTES.login)} element={<LoginPage />} />
-          <Route element={<RequireAuth />}>
-            <Route element={<SettingsProvider />}>
-              {/* One optional-param route, so starting a chat doesn't remount the page. */}
-              <Route path={`${toReactRouterPath(ROUTES.chatSession)}?`} element={<ChatPage />} />
-              <Route element={<Layout />}>
-                <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
-                <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
-                <Route element={<RequireRole role={Role.Admin} />}>
-                  <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
-                  <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
-                  <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
-                  <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
-                  <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
-                  <Route path={toReactRouterPath(ROUTES.settings)} element={<SettingsPage />} />
-                </Route>
-              </Route>
+/** A data router, because blocking navigation (useBlocker) doesn't work under BrowserRouter. */
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route
+      element={
+        <Suspense fallback={<LoadingFallback className="min-h-svh" />}>
+          <Outlet />
+        </Suspense>
+      }
+    >
+      <Route path={toReactRouterPath(ROUTES.login)} element={<LoginPage />} />
+      <Route element={<RequireAuth />}>
+        <Route element={<SettingsProvider />}>
+          {/* One optional-param route, so starting a chat doesn't remount the page. */}
+          <Route path={`${toReactRouterPath(ROUTES.chatSession)}?`} element={<ChatPage />} />
+          <Route element={<Layout />}>
+            <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
+            <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
+            <Route element={<RequireRole role={Role.Admin} />}>
+              <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
+              <Route path={toReactRouterPath(ROUTES.agentNew)} element={<AgentEditorPage />} />
+              <Route path={toReactRouterPath(ROUTES.agent)} element={<AgentEditorPage />} />
+              <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
+              <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
+              <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
+              <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
+              <Route path={toReactRouterPath(ROUTES.settings)} element={<SettingsPage />} />
             </Route>
           </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
-  );
-};
+        </Route>
+      </Route>
+    </Route>,
+  ),
+);
+
+export const Router = () => <RouterProvider router={router} />;

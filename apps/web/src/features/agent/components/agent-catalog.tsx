@@ -14,11 +14,13 @@ import { useClipboard } from "@/hooks/use-clipboard";
 import { useDialog } from "@/lib/dialog";
 import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 import { useDeleteAgent, useListAgents } from "@snipet/client";
 
+import { agentPath } from "../lib/agent-path";
+
 import { AgentAvatar } from "./agent-avatar";
-import { AgentFormDialog } from "./agent-form-dialog";
 
 import type { Agent } from "@snipet/shared";
 
@@ -59,11 +61,12 @@ export function AgentCatalog() {
 }
 
 function AgentCard({ agent }: { agent: Agent }) {
+  const navigate = useNavigate();
   const { openDialog } = useDialog();
   const { copy } = useClipboard();
   const { mutateAsync: deleteAgent } = useDeleteAgent();
 
-  const openEdit = () => openDialog({ component: AgentFormDialog, props: { agent } });
+  const openEdit = () => navigate(agentPath(agent.id));
 
   const openDelete = () =>
     openDialog({

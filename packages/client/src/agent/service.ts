@@ -26,6 +26,9 @@ const list = async (
 const listAvailable = async (): Promise<AvailableAgent[]> =>
   http.get({ url: `${AGENT_URL}/available`, schemas: { response: availableAgentSchema.array() } });
 
+const find = async (id: string): Promise<Agent> =>
+  http.get({ url: `${AGENT_URL}/{id}`, params: { id }, schemas: { response: agentSchema } });
+
 const create = async (body: CreateAgent, opts: ServicePostOptions<CreateAgent, Agent> = {}): Promise<Agent> =>
   http.post({
     url: AGENT_URL,
@@ -46,4 +49,4 @@ const update = async (id: string, body: UpdateAgent, opts: ServicePutOptions<Upd
 const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promise<void> =>
   http.delete({ url: `${AGENT_URL}/{id}`, params: { id }, ...opts });
 
-export const agentService = { list, listAvailable, create, update, delete: remove };
+export const agentService = { list, listAvailable, find, create, update, delete: remove };
