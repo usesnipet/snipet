@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { LlmModelsField } from "@/features/llm-connection/components/llm-models-field";
 import { toast } from "@/hooks/use-toast";
@@ -136,6 +137,7 @@ export function AgentEditor({ agent }: { agent?: Agent }) {
             </FieldGroup>
             <div className="space-y-6">
               <LlmModelsField name="llms" allowedModelCapabilities={[LlmCapability.TEXT]} />
+              <Separator />
               <AgentPluginsField />
             </div>
           </form>

@@ -14,7 +14,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { syncState, useListPluginConnections, usePluginConnectionTools, usePlugins } from "@snipet/client";
 import { hookHandlersOf } from "@snipet/shared";
@@ -53,32 +52,29 @@ export function AgentPluginsField() {
   }));
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label>Plugins</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => append({ pluginConnectionId: "", settings: {}, disabledHooks: [] })}
-        >
-          <Plus />
-          Add plugin
-        </Button>
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-sm font-medium">Plugins</h2>
+        <p className="text-muted-foreground text-sm">Tools and hooks the agent can use. Hooks run in this order.</p>
       </div>
-      {fields.length === 0 ? (
-        <p className="text-muted-foreground text-xs">
-          No plugins. Add a connection to give the agent its tools and hooks.
-        </p>
-      ) : (
+      {fields.length > 0 && (
         <OrderedRows rows={fields} rowLabel="plugin" onMove={move} onRemove={remove}>
           {(_field, index) => (
             <PluginRow index={index} options={options} connections={connections} manifestOf={manifestOf} />
           )}
         </OrderedRows>
       )}
-      {fields.length > 1 && <p className="text-muted-foreground text-xs">Hooks run in this order.</p>}
-    </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className={cn("text-muted-foreground", fields.length > 0 && "sm:ml-12.5")}
+        onClick={() => append({ pluginConnectionId: "", settings: {}, disabledHooks: [] })}
+      >
+        <Plus />
+        Add plugin
+      </Button>
+    </section>
   );
 }
 
@@ -115,7 +111,7 @@ function PluginRow({
       {connection && manifest ? (
         <PluginConfigure key={connection.id} name={name} connection={connection} manifest={manifest} />
       ) : (
-        <Button type="button" variant="outline" disabled>
+        <Button type="button" variant="ghost" disabled>
           Configure
         </Button>
       )}
@@ -156,7 +152,7 @@ function PluginConfigure({
 
   if (!hasTools && !hooks && !hasSettings) {
     return (
-      <Button type="button" variant="outline" disabled title="This plugin has nothing to configure">
+      <Button type="button" variant="ghost" disabled title="This plugin has nothing to configure">
         Configure
       </Button>
     );
@@ -168,7 +164,7 @@ function PluginConfigure({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline">
+        <Button type="button" variant="ghost">
           Configure
         </Button>
       </DialogTrigger>

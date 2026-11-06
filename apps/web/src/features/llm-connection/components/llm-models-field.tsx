@@ -1,6 +1,5 @@
 import { OrderedRows } from "@/components/form/ordered-rows";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -43,20 +42,12 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
   }, [fields.length, append]);
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div>
-          <Label>Models</Label>
-          <p className="text-muted-foreground text-xs">
-            Tried top to bottom — if one errors, Snipet falls back to the next.
-          </p>
-        </div>
-        <Button type="button" variant="outline" size="sm" onClick={() => append({ model: "" })}>
-          <Plus />
-          Add model
-        </Button>
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-sm font-medium">Models</h2>
+        <p className="text-muted-foreground text-sm">The agent uses the first one. If it fails, it tries the next.</p>
       </div>
-      <OrderedRows rows={fields} rowLabel="model" onMove={move} onRemove={remove} minRows={1}>
+      <OrderedRows rows={fields} rowLabel="model" onMove={move} onRemove={remove} minRows={1} chained>
         {(_field, index) => (
           <LlmModelTargetRow
             name={name}
@@ -67,7 +58,17 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
           />
         )}
       </OrderedRows>
-    </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="text-muted-foreground sm:ml-12.5"
+        onClick={() => append({ model: "" })}
+      >
+        <Plus />
+        Add fallback model
+      </Button>
+    </section>
   );
 }
 
