@@ -1,15 +1,15 @@
 import { DeleteDialog } from "@/components/confirm-dialog";
-import { Link } from "@/components/ui/link";
+import { SidebarFooter } from "@/components/sidebar/footer";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Link } from "@/components/ui/link";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -23,15 +23,14 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useDialog } from "@/lib/dialog";
 import { ROUTES } from "@/routes";
-import { ArrowLeft, MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
+import { useDeleteSession, useListSessions } from "@snipet/client";
+import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
 import moment from "moment";
 import { useNavigate } from "react-router";
 
-import { useDeleteSession, useListSessions } from "@snipet/client";
 import { sessionPath } from "../lib/session-path";
 
 import type { AgentSession } from "@snipet/shared";
-
 type Props = {
   activeSessionId?: string;
   /** Session whose run is streaming right now. */
@@ -79,7 +78,7 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
         ),
         onConfirm: async () => {
           await deleteSession(session.id);
-          if (session.id === activeSessionId) navigate(ROUTES.agentPlayground);
+          if (session.id === activeSessionId) navigate(ROUTES.chat);
         },
       },
     });
@@ -91,7 +90,7 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href={ROUTES.agentPlayground}>
+              <Link href={ROUTES.chat}>
                 <SquarePen />
                 New chat
               </Link>
@@ -154,18 +153,7 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
           ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-sidebar-border border-t">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link href={ROUTES.home}>
-                <ArrowLeft />
-                Back to Snipet
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+      <SidebarFooter />
     </Sidebar>
   );
 }

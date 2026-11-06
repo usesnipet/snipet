@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Headers, HttpCode, Param, ParseUUIDPipe, Post, Query, Res } from "@nestjs/common";
 import { ZodPipe } from "@snipet/server-common";
-import { Role } from "@snipet/shared";
 
 import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
 import { CurrentOwner } from "#src/common/decorators/owner.decorator.js";
@@ -13,10 +12,10 @@ import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { FindAgentRunsParams, StartAgentRun } from "@snipet/shared";
 import type { Response } from "express";
 /**
- * Admins, API keys, or app end users (scoped to their own sessions by
+ * Logged-in users, API keys, or app end users (scoped to their own sessions by
  * CurrentOwner). Running an agent runs its actions on the host.
  */
-@Private(UserAuth(Role.Admin), ApiKeyAuth(), AppTokenAuth())
+@Private(UserAuth(), ApiKeyAuth(), AppTokenAuth())
 @Controller("agent-runs")
 export class AgentRunController {
   constructor(private readonly service: AgentRunService) {}

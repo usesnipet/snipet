@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { agentService } from "./service";
 
-import type { Agent, CreateAgent, FindAgentsParams, Paginated, UpdateAgent } from "@snipet/shared";
+import type { Agent, AvailableAgent, CreateAgent, FindAgentsParams, Paginated, UpdateAgent } from "@snipet/shared";
 import type { ServiceGetOptions } from "../http";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
@@ -15,6 +15,12 @@ export const useListAgents = (
   useQuery({
     queryKey: [...listAgentsQueryKey(), opts?.searchParams],
     queryFn: () => agentService.list(opts),
+  });
+
+export const useListAvailableAgents = (): UseQueryResult<AvailableAgent[], Error> =>
+  useQuery({
+    queryKey: [...listAgentsQueryKey(), "available"],
+    queryFn: () => agentService.listAvailable(),
   });
 
 /** Wraps an agent write with outcome messages and a list refresh. */

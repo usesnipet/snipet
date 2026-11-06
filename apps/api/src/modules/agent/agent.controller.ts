@@ -1,4 +1,4 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Get } from "@nestjs/common";
 import { CrudController } from "@snipet/server-common";
 import { Role } from "@snipet/shared";
 
@@ -22,5 +22,12 @@ export class AgentController extends CrudController<Agent>({
 
   override serialize(agent: Agent) {
     return this.service.mask(agent);
+  }
+
+  /** What the chat's agent picker shows any logged-in user: no prompt, LLMs or plugin settings. */
+  @Private(UserAuth())
+  @Get("available")
+  findAvailable() {
+    return this.service.findAvailable();
   }
 }

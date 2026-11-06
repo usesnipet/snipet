@@ -51,6 +51,10 @@ export type Agent = z.infer<typeof agentSchema>;
 
 export const paginatedAgentSchema = paginatedSchema(agentSchema);
 
+/** What GET /agents/available shows users who can't manage agents. */
+export const availableAgentSchema = agentSchema.pick({ id: true, name: true, description: true, avatar: true });
+export type AvailableAgent = z.infer<typeof availableAgentSchema>;
+
 /**
  * The position in llms and pluginConnections is the order; both replace the whole list when sent.
  */

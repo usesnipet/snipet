@@ -4,10 +4,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowUp, Bot, Square } from "lucide-react";
 import { useState } from "react";
 
-import type { Agent } from "@snipet/shared";
+import type { AvailableAgent } from "@snipet/shared";
 
 type Props = {
-  agents: Agent[];
+  agents: AvailableAgent[];
   agentId: string | undefined;
   onAgentChange: (agentId: string) => void;
   /** Locks the agent select, e.g. while a session is open. */

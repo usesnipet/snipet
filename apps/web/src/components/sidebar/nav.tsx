@@ -120,7 +120,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
   );
 }
 
-export function SidebarContent({ navItems }: Props) {
+export function SidebarNav({ navItems }: Props) {
   const { pathname } = useLocation();
   const buildPath = usePathBuilder();
 

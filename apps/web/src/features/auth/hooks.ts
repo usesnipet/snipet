@@ -30,7 +30,7 @@ export const useLogin = (
       });
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get("redirect");
-      navigate((redirect || ROUTES.home) as RoutePath, { replace: true });
+      navigate((redirect || ROUTES.chat) as RoutePath, { replace: true });
     },
     onError: () => {
       toast({ title: "Invalid username or password", variant: "destructive" });

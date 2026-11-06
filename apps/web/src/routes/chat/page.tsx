@@ -8,7 +8,7 @@ import { useDocumentTitle } from "@/hooks/use-document-title";
 import {
   useCancelRun,
   useLatestRun,
-  useListAgents,
+  useListAvailableAgents,
   useRunStream,
   useSession,
   useSessionMessages,
@@ -22,12 +22,12 @@ import type { AgentMessage } from "@snipet/shared";
 /** The input shown as a user bubble until the stream echoes it back. */
 type PendingInput = { sessionId: string | undefined; text: string; runId?: string };
 
-export const AgentPlaygroundPage = () => {
+export const ChatPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
 
-  const agentsQuery = useListAgents({ searchParams: { take: 100 } });
-  const agents = useMemo(() => (agentsQuery.data?.data ?? []).filter((agent) => agent.enabled), [agentsQuery.data]);
+  const agentsQuery = useListAvailableAgents();
+  const agents = agentsQuery.data ?? [];
   const session = useSession(sessionId);
   const history = useSessionMessages(sessionId);
   const latestRun = useLatestRun(sessionId);
@@ -38,7 +38,7 @@ export const AgentPlaygroundPage = () => {
   const [pickedAgentId, setPickedAgentId] = useState<string>();
   const [pending, setPending] = useState<PendingInput | null>(null);
 
-  useDocumentTitle(() => `${session.data?.title || "New chat"} · Playground · Snipet`, [session.data?.title]);
+  useDocumentTitle(() => `${session.data?.title || "New chat"} · Snipet`, [session.data?.title]);
 
   const { reset, follow } = stream;
   useEffect(() => reset(), [sessionId, reset]);
@@ -117,7 +117,7 @@ export const AgentPlaygroundPage = () => {
             <h2 className="text-center text-3xl font-semibold tracking-tight">How can I help?</h2>
             {agentsQuery.isSuccess && agents.length === 0 ? (
               <p className="text-muted-foreground text-center text-sm">
-                There are no enabled agents yet. Create one on the Agents page first.
+                There are no enabled agents yet. An admin can create one on the Agents page.
               </p>
             ) : (
               input

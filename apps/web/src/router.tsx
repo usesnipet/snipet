@@ -11,11 +11,8 @@ import { ROUTES } from "./routes";
 import type { RoutePath } from "./routes";
 const Layout = lazy(() => import("./routes/layout").then((m) => ({ default: m.Layout })));
 const LoginPage = lazy(() => import("./routes/login/page").then((m) => ({ default: m.LoginPage })));
-const HomePage = lazy(() => import("./routes/page").then((m) => ({ default: m.HomePage })));
 const AgentsPage = lazy(() => import("./routes/agents/page").then((m) => ({ default: m.AgentsPage })));
-const AgentPlaygroundPage = lazy(() =>
-  import("./routes/agent-playground/page").then((m) => ({ default: m.AgentPlaygroundPage })),
-);
+const ChatPage = lazy(() => import("./routes/chat/page").then((m) => ({ default: m.ChatPage })));
 const LlmConnectionsPage = lazy(() =>
   import("./routes/llm-connections/page").then((m) => ({ default: m.LlmConnectionsPage })),
 );
@@ -40,15 +37,9 @@ export const Router = () => {
           <Route path={toReactRouterPath(ROUTES.login)} element={<LoginPage />} />
           <Route element={<RequireAuth />}>
             <Route element={<SettingsProvider />}>
-              <Route element={<RequireRole role={Role.Admin} />}>
-                {/* One optional-param route, so starting a chat doesn't remount the page. */}
-                <Route
-                  path={`${toReactRouterPath(ROUTES.agentPlaygroundSession)}?`}
-                  element={<AgentPlaygroundPage />}
-                />
-              </Route>
+              {/* One optional-param route, so starting a chat doesn't remount the page. */}
+              <Route path={`${toReactRouterPath(ROUTES.chatSession)}?`} element={<ChatPage />} />
               <Route element={<Layout />}>
-                <Route path={toReactRouterPath(ROUTES.home)} element={<HomePage />} />
                 <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
                 <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
                 <Route element={<RequireRole role={Role.Admin} />}>

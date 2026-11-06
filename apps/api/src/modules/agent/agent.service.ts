@@ -11,7 +11,7 @@ import { PluginConnectionService } from "../plugin-connection/plugin-connection.
 
 import { Agent, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
 
-import type { CreateAgent, HookHandler, HookName, JsonObject, UpdateAgent } from "@snipet/shared";
+import type { AvailableAgent, CreateAgent, HookHandler, HookName, JsonObject, UpdateAgent } from "@snipet/shared";
 
 type PluginGrant = NonNullable<CreateAgent["pluginConnections"]>[number];
 
@@ -21,15 +21,27 @@ export class AgentService extends CrudService<Agent> {
 
   constructor(
     @InjectRepository(Agent) repo: Repository<Agent>,
-    private readonly files: FilesStorage,
-    private readonly plugins: PluginConnectionService,
+    private readonly filesStorage: FilesStorage,
+    private readonly pluginConnectionService: PluginConnectionService,
   ) {
     super(repo);
   }
 
+  /** Enabled agents, with only the fields safe to show users who can't manage them. */
+  findAvailable(): Promise<AvailableAgent[]> {
+    return this.repo.find({
+      select: { id: true, name: true, description: true, avatar: true },
+      where: { enabled: true },
+      order: { name: "ASC" },
+      loadEagerRelations: false,
+    });
+  }
+
   /** The agent as the API returns it: secret settings come back as placeholders. */
   async mask(agent: Agent): Promise<Agent> {
-    const manifests = await this.plugins.manifestsOf(agent.pluginConnections.map((g) => g.pluginConnectionId));
+    const manifests = await this.pluginConnectionService.manifestsOf(
+      agent.pluginConnections.map((g) => g.pluginConnectionId),
+    );
     const pluginConnections = agent.pluginConnections.map((grant) => {
       const manifest = manifests.get(grant.pluginConnectionId);
       // A plugin gone from the catalog: which fields are secret is unknown.
@@ -108,7 +120,7 @@ export class AgentService extends CrudService<Agent> {
    * values), and only hooks with an optional handler kept as disabled.
    */
   private async preparePlugins(grants: PluginGrant[], stored: AgentPluginConnection[] = []) {
-    const manifests = await this.plugins.manifestsOf(grants.map((g) => g.pluginConnectionId));
+    const manifests = await this.pluginConnectionService.manifestsOf(grants.map((g) => g.pluginConnectionId));
     return grants.map((grant, position) => {
       if (!manifests.has(grant.pluginConnectionId)) {
         throw new BadRequestException(`plugin connection ${grant.pluginConnectionId} not found`);
@@ -131,13 +143,13 @@ export class AgentService extends CrudService<Agent> {
    * avatar, and anything else (the current avatar's URL) leaves it as is.
    */
   private async storeAvatar(avatar: string | null | undefined): Promise<string | null | undefined> {
-    if (avatar?.startsWith("data:")) return this.files.putDataUrl("agents", avatar);
+    if (avatar?.startsWith("data:")) return this.filesStorage.putDataUrl("agents", avatar);
     return avatar === null ? null : undefined;
   }
 
   /** An orphaned file is harmless; a failed cleanup must not fail the request. */
   private async removeFile(pathOrUrl: string) {
-    await this.files.delete(storageKeyOf(pathOrUrl)).catch((error: unknown) => {
+    await this.filesStorage.delete(storageKeyOf(pathOrUrl)).catch((error: unknown) => {
       this.logger.warn(`Could not delete ${pathOrUrl}: ${String(error)}`);
     });
   }

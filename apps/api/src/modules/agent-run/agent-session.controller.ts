@@ -2,7 +2,6 @@ import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "#src/common/decorat
 import { CurrentOwner } from "#src/common/decorators/owner.decorator.js";
 import { Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Query } from "@nestjs/common";
 import { ZodPipe } from "@snipet/server-common";
-import { Role } from "@snipet/shared";
 
 import { findAgentMessagesParamsSchema, findAgentSessionsSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
@@ -12,7 +11,7 @@ import type { FilterQuery } from "@snipet/server-common";
 import type { AgentSession } from "./agent-run.entity.js";
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
 import type { FindAgentMessagesParams } from "@snipet/shared";
-@Private(UserAuth(Role.Admin), ApiKeyAuth(), AppTokenAuth())
+@Private(UserAuth(), ApiKeyAuth(), AppTokenAuth())
 @Controller("agent-sessions")
 export class AgentSessionController {
   constructor(private readonly service: AgentRunService) {}

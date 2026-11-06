@@ -6,7 +6,7 @@ import { Navigate } from "react-router";
 export function LoginPage() {
   const isAuthenticated = useIsAuthenticated();
 
-  if (isAuthenticated) return <Navigate to={ROUTES.home} replace />;
+  if (isAuthenticated) return <Navigate to={ROUTES.chat} replace />;
 
   return (
     <div className="flex min-h-svh items-center justify-center px-4">
