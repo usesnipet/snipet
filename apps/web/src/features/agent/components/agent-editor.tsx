@@ -127,7 +127,7 @@ export function AgentEditor({ agent }: { agent?: Agent }) {
               />
               <FormSlider
                 name="historyRuns"
-                label="Previous runs in history"
+                label="Chat history"
                 min={0}
                 max={100}
                 showValue

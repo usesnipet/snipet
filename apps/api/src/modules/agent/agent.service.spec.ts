@@ -190,14 +190,13 @@ describe("AgentService.mask", () => {
 
   describe("findSummaries", () => {
     it("takes the total from a count of agents, not from the joined rows", async () => {
-      const find = jest.fn(() =>
+      const find = jest.fn<(options: { select: object }) => Promise<unknown[]>>(() =>
         Promise.resolve([
           {
             id: "a1",
             name: "Helper",
-            systemPrompt: "not for the list",
             llms: [{ id: "l1", model: "x/first", order: 0 }],
-            pluginConnections: [{ pluginConnectionId: "p1", pluginConnection: { name: "GitHub" }, settings: { k: 1 } }],
+            pluginConnections: [{ pluginConnectionId: "p1", pluginConnection: { name: "GitHub" } }],
           },
         ]),
       );
@@ -207,7 +206,7 @@ describe("AgentService.mask", () => {
       const page = await service.findSummaries({ take: 1, skip: 0 });
 
       expect(page.total).toBe(7);
-      expect(page.data[0]).not.toHaveProperty("systemPrompt");
+      expect(find.mock.calls[0][0].select).not.toHaveProperty("systemPrompt");
       expect(page.data[0].llms).toEqual([{ model: "x/first" }]);
       expect(page.data[0].pluginConnections).toEqual([{ pluginConnectionId: "p1", name: "GitHub" }]);
     });

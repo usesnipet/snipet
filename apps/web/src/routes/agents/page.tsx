@@ -10,7 +10,7 @@ export const AgentsPage = () => {
   return (
     <Page
       title="Agents"
-      description="Agents loop between LLMs and tools until the task is done."
+      description="Build agents from models and plugins, then chat with them."
       documentTitle="Agents"
     >
       <CatalogPageContent createLabel="New agent" onCreate={() => navigate(ROUTES.agentNew)}>

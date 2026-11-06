@@ -20,7 +20,12 @@ function GithubIcon({ className }: { className?: string }) {
   );
 }
 
-export function SidebarFooter() {
+type SidebarFooterProps = {
+  /** Shown first among the system actions, next to the theme toggle. */
+  systemAction?: React.ReactNode;
+};
+
+export function SidebarFooter({ systemAction }: SidebarFooterProps) {
   const user = useCurrentUser();
   const { mutate: logout, isPending } = useLogout();
 
@@ -59,6 +64,7 @@ export function SidebarFooter() {
       <SidebarFooterBase className="flex-row items-center justify-between border-sidebar-border border-t group-data-[collapsible=icon]:hidden">
         <Version />
         <div className="flex items-center gap-0.5">
+          {systemAction}
           <ToggleTheme />
           <a
             href="https://github.com/usesnipet/snipet"

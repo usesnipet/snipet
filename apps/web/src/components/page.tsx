@@ -35,7 +35,7 @@ export function Page({ title, description, documentTitle, children, actions, lef
   return (
     <PageActionsContext.Provider value={{ setActions: setSlotActions, setLeftActions: setSlotLeftActions }}>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-8 lg:px-10">
-        <header className="flex w-full max-w-6xl mx-auto shrink-0 items-start justify-between gap-4 pb-8">
+        <header className="flex w-full max-w-6xl mx-auto shrink-0 flex-col items-start justify-between gap-4 pb-8 sm:flex-row">
           <div className="flex items-start gap-3">
             {headerLeftActions && <div>{headerLeftActions}</div>}
             <div className="space-y-1.5">

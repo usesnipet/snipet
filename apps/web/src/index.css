@@ -7,6 +7,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Inherited by every native scroller; Radix ScrollArea hides its own native bar regardless. */
+@layer base {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 50%, transparent) transparent;
+  }
+}
+
 /* prompt-kit loader keyframes */
 @keyframes typing {
   0%, 100% { transform: translateY(0); opacity: 0.5; }

@@ -6,16 +6,19 @@ import { Loader } from "@/components/ui/loader";
 import { Markdown } from "@/components/ui/markdown";
 import { MessageAction, MessageActions } from "@/components/ui/message";
 import { ScrollButton } from "@/components/ui/scroll-button";
+import { AgentAvatar } from "@/features/agent/components/agent-avatar";
 import { cn } from "@/lib/utils";
 import { Brain, Check, ChevronRight, CircleAlert, Copy, Wrench, X } from "lucide-react";
 import { useState } from "react";
 
-import type { AgentMessage, AgentRun, LlmPart } from "@snipet/shared";
+import type { AgentMessage, AgentRun, AvailableAgent, LlmPart } from "@snipet/shared";
 
 type ToolCallPart = Extract<LlmPart, { type: "tool_call" }>;
 type ToolResultPart = Extract<LlmPart, { type: "tool_result" }>;
 
 type Props = {
+  /** The agent replying, when the user can see it. */
+  agent: AvailableAgent | undefined;
   messages: AgentMessage[];
   /** Input sent but not yet echoed back by the stream. */
   pendingInput: string | null;
@@ -27,7 +30,7 @@ type Props = {
 };
 
 const RUN_NOTICES: Partial<Record<AgentRun["status"], string>> = {
-  failed: "The run failed",
+  failed: "The agent couldn't finish",
   cancelled: "Stopped",
   max_turns: "The agent hit its turn limit before finishing",
 };
@@ -37,18 +40,50 @@ const MARKDOWN_CLASS = cn(
   "space-y-3 leading-7 break-words",
   "[&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold",
   "[&_ul]:list-disc [&_ol]:list-decimal [&_ul,&_ol]:space-y-1 [&_ul,&_ol]:pl-6",
-  "[&_a]:text-primary [&_a]:underline [&_strong]:font-semibold",
+  "[&_a]:text-link [&_a]:underline [&_strong]:font-semibold",
   "[&_blockquote]:text-muted-foreground [&_blockquote]:border-l-2 [&_blockquote]:pl-4",
   "[&_table]:w-full [&_td,&_th]:border [&_td,&_th]:px-2 [&_td,&_th]:py-1 [&_th]:text-left [&_hr]:my-4",
 );
 
-const textOf = (message: AgentMessage) =>
-  message.parts
+const textOf = (parts: LlmPart[]) =>
+  parts
     .filter((part): part is { type: "text"; text: string } => part.type === "text")
     .map((part) => part.text)
     .join("\n");
 
-export function ChatMessages({ messages, pendingInput, draft, streaming, run, error }: Props) {
+/** A stretch of the conversation as shown on screen. */
+type Block =
+  | { kind: "user"; key: string; text: string }
+  | { kind: "assistant"; key: string; messageId: number; parts: LlmPart[] }
+  | { kind: "tools"; key: string; calls: ToolCallPart[] };
+
+/**
+ * Turns messages into blocks. Tool calls in a row join one block even across
+ * messages: each turn of a long run is its own message, so split by message
+ * they'd read as a wall of unevenly spaced chips.
+ */
+function toBlocks(messages: AgentMessage[]): Block[] {
+  const blocks: Block[] = [];
+  for (const message of messages) {
+    if (message.role === "user") {
+      blocks.push({ kind: "user", key: String(message.id), text: textOf(message.parts) });
+    } else if (message.role === "assistant") {
+      message.parts.forEach((part, index) => {
+        const last = blocks.at(-1);
+        if (part.type === "tool_call") {
+          if (last?.kind === "tools") last.calls.push(part);
+          else blocks.push({ kind: "tools", key: part.id, calls: [part] });
+        } else if ((part.type === "text" || part.type === "thinking") && part.text) {
+          if (last?.kind === "assistant" && last.messageId === message.id) last.parts.push(part);
+          else blocks.push({ kind: "assistant", key: `${message.id}-${index}`, messageId: message.id, parts: [part] });
+        }
+      });
+    }
+  }
+  return blocks;
+}
+
+export function ChatMessages({ agent, messages, pendingInput, draft, streaming, run, error }: Props) {
   // Tool results are rendered inside their call, keyed by toolCallId.
   const results = new Map<string, ToolResultPart>();
   for (const message of messages) {
@@ -57,24 +92,38 @@ export function ChatMessages({ messages, pendingInput, draft, streaming, run, er
     }
   }
 
+  const blocks = toBlocks(messages);
   const last = messages.at(-1);
   const waiting =
     streaming && !draft && (pendingInput !== null || last?.role !== "assistant" || hasOpenCalls(last, results));
   const notice = !streaming && run ? RUN_NOTICES[run.status] : undefined;
+  const replyStartsAtEnd = pendingInput !== null || blocks.length === 0 || blocks.at(-1)?.kind === "user";
 
   return (
     <ChatContainerRoot className="relative flex-1">
       <ChatContainerContent className="mx-auto max-w-3xl gap-6 px-4 py-8">
-        {messages.map((message) => {
-          if (message.role === "user") return <UserBubble key={message.id} text={textOf(message)} />;
-          if (message.role === "assistant") {
-            return <AssistantMessage key={message.id} message={message} results={results} streaming={streaming} />;
-          }
-          return null;
+        {blocks.map((block, index) => {
+          if (block.kind === "user") return <UserBubble key={block.key} text={block.text} />;
+          const startsReply = index === 0 || blocks[index - 1].kind === "user";
+          return (
+            <div key={block.key} className="flex flex-col gap-2">
+              {startsReply && <AgentName agent={agent} />}
+              {block.kind === "assistant" ? (
+                <AssistantText parts={block.parts} />
+              ) : (
+                <ToolCalls calls={block.calls} results={results} running={streaming} />
+              )}
+            </div>
+          );
         })}
         {pendingInput !== null && <UserBubble text={pendingInput} />}
-        {draft && <Markdown className={MARKDOWN_CLASS}>{draft}</Markdown>}
-        {waiting && <Loader variant="typing" size="sm" />}
+        {(draft || waiting) && (
+          <div className="flex flex-col gap-2">
+            {replyStartsAtEnd && <AgentName agent={agent} />}
+            {draft && <Markdown className={MARKDOWN_CLASS}>{draft}</Markdown>}
+            {waiting && <Loader variant="typing" size="sm" />}
+          </div>
+        )}
         {notice && (
           <Notice muted={run?.status === "cancelled"}>
             {notice}
@@ -95,6 +144,17 @@ function hasOpenCalls(message: AgentMessage, results: Map<string, ToolResultPart
   return message.parts.some((part) => part.type === "tool_call" && !results.has(part.id));
 }
 
+/** Who is replying; nothing for an agent the user can no longer see, like a disabled one. */
+function AgentName({ agent }: { agent: AvailableAgent | undefined }) {
+  if (!agent) return null;
+  return (
+    <div className="flex items-center gap-2 text-sm font-medium">
+      <AgentAvatar avatar={agent.avatar} name={agent.name} className="size-6" />
+      {agent.name}
+    </div>
+  );
+}
+
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
@@ -103,28 +163,19 @@ function UserBubble({ text }: { text: string }) {
   );
 }
 
-type AssistantMessageProps = {
-  message: AgentMessage;
-  results: Map<string, ToolResultPart>;
-  streaming: boolean;
-};
-
-function AssistantMessage({ message, results, streaming }: AssistantMessageProps) {
-  const text = textOf(message);
+function AssistantText({ parts }: { parts: LlmPart[] }) {
+  const text = textOf(parts);
   return (
     <div className="group flex flex-col gap-2">
-      {message.parts.map((part, i) => {
-        if (part.type === "text" && part.text) {
+      {parts.map((part, i) => {
+        if (part.type === "text") {
           return (
             <Markdown key={i} className={MARKDOWN_CLASS}>
               {part.text}
             </Markdown>
           );
         }
-        if (part.type === "thinking" && part.text) return <Thinking key={i} text={part.text} />;
-        if (part.type === "tool_call") {
-          return <ToolCall key={part.id} call={part} result={results.get(part.id)} running={streaming} />;
-        }
+        if (part.type === "thinking") return <Thinking key={i} text={part.text} />;
         return null;
       })}
       {text && (
@@ -169,31 +220,90 @@ function Thinking({ text }: { text: string }) {
   );
 }
 
+const TOOL_CHIP_CLASS =
+  "bg-background hover:bg-accent flex w-fit max-w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors [&_svg]:size-4 [&_svg]:shrink-0";
+
+/** The state of one call or a group: the worst outcome wins. A call with no result is live only while the run is. */
+function ToolStatusIcon({ results, running }: { results: (ToolResultPart | undefined)[]; running: boolean }) {
+  const hasOpen = results.some((result) => !result);
+  if (hasOpen && running) return <Loader variant="circular" size="sm" />;
+  if (results.some((result) => result?.isError)) return <X className="text-destructive" />;
+  if (hasOpen) return <CircleAlert className="text-muted-foreground" />;
+  return <Check className="text-emerald-600 dark:text-emerald-400" />;
+}
+
+/** The call's plain argument values, to tell apart calls of the same tool. */
+function summarizeArguments(args: unknown): string {
+  if (typeof args !== "object" || args === null) return "";
+  return Object.values(args)
+    .filter((value) => ["string", "number", "boolean"].includes(typeof value))
+    .join(", ");
+}
+
+/** "issue_read ×4, get_me": what a group of calls did. */
+function summarizeCalls(calls: ToolCallPart[]): string {
+  const countOf = new Map<string, number>();
+  for (const call of calls) countOf.set(call.name, (countOf.get(call.name) ?? 0) + 1);
+  return [...countOf].map(([name, count]) => (count > 1 ? `${name} ×${count}` : name)).join(", ");
+}
+
+type ToolCallsProps = {
+  calls: ToolCallPart[];
+  results: Map<string, ToolResultPart>;
+  /** The run is live, so a call without a result is still executing. */
+  running: boolean;
+};
+
+/** One call as a chip; several in a row collapsed behind a summary. */
+function ToolCalls({ calls, results, running }: ToolCallsProps) {
+  const [open, setOpen] = useState(false);
+
+  if (calls.length === 1) {
+    return <ToolCall call={calls[0]} result={results.get(calls[0].id)} running={running} />;
+  }
+
+  const summary = summarizeCalls(calls);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger aria-label={`${calls.length} tool calls: ${summary}`} className={TOOL_CHIP_CLASS}>
+        <Wrench className="text-muted-foreground" />
+        <code className="min-w-0 truncate font-mono text-[0.8125rem]" title={summary}>
+          {summary}
+        </code>
+        <ToolStatusIcon results={calls.map((call) => results.get(call.id))} running={running} />
+        <ChevronRight className={cn("text-muted-foreground transition-transform", open && "rotate-90")} />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-2 space-y-2 border-l pl-4">
+        {calls.map((call) => (
+          <ToolCall key={call.id} call={call} result={results.get(call.id)} running={running} />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 type ToolCallProps = {
   call: ToolCallPart;
   result: ToolResultPart | undefined;
-  /** The run is live, so a call without a result is still executing. */
   running: boolean;
 };
 
 function ToolCall({ call, result, running }: ToolCallProps) {
   const [open, setOpen] = useState(false);
   const pending = !result && running;
-
-  let icon = <Loader variant="circular" size="sm" />;
-  if (result?.isError) icon = <X className="text-destructive" />;
-  else if (result) icon = <Check className="text-emerald-600 dark:text-emerald-400" />;
-  else if (!running) icon = <CircleAlert className="text-muted-foreground" />;
+  const argumentSummary = summarizeArguments(call.arguments);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger
-        aria-label={`${pending ? "Using" : "Used"} ${call.name}`}
-        className="bg-background hover:bg-accent flex w-fit max-w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors [&_svg]:size-4 [&_svg]:shrink-0"
-      >
+      <CollapsibleTrigger aria-label={`${pending ? "Using" : "Used"} ${call.name}`} className={TOOL_CHIP_CLASS}>
         <Wrench className="text-muted-foreground" />
-        <code className="min-w-0 truncate font-mono text-[0.8125rem]">{call.name}</code>
-        {icon}
+        <code className="shrink-0 font-mono text-[0.8125rem]">{call.name}</code>
+        {argumentSummary && (
+          <span className="text-muted-foreground min-w-0 truncate text-xs" title={argumentSummary}>
+            {argumentSummary}
+          </span>
+        )}
+        <ToolStatusIcon results={[result]} running={running} />
         <ChevronRight className={cn("text-muted-foreground transition-transform", open && "rotate-90")} />
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-2 space-y-2 border-l pl-4">

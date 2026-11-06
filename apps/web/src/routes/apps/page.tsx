@@ -10,7 +10,7 @@ export const AppsPage = () => {
   return (
     <Page
       title="Apps"
-      description="Register the clients that talk to your agents. Each app owns its API keys and sessions, and can be locked to the origins it runs on."
+      description="Register the clients that talk to your agents. Each app owns its API keys and chats, and can be locked to the origins it runs on."
       documentTitle="Apps"
     >
       <CatalogPageContent createLabel="Create app" onCreate={() => openDialog({ component: AppFormDialog, props: {} })}>

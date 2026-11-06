@@ -33,6 +33,7 @@
     --color-secondary-foreground: var(--secondary-foreground);
     --color-secondary: var(--secondary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-link: var(--link);
     --color-primary: var(--primary);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
@@ -62,6 +63,7 @@
     --popover-foreground: light-dark(oklch(0.208 0.009 255.618), oklch(0.944 0.008 114.224));
     --primary: light-dark(oklch(0.616 0.117 76.014), oklch(0.766 0.134 85.744));        /* accent gold #AD7A22 | #D9AC3F */
     --primary-foreground: light-dark(oklch(0.215 0.006 236.851), oklch(0.204 0.009 264.367)); /* accent-ink #171A1C | #15171B */
+    --link: light-dark(oklch(0.519 0.102 75.432), oklch(0.766 0.134 85.744));           /* gold readable as text: #8A5F14 | #D9AC3F */
     --secondary: light-dark(oklch(0.928 0.009 113.169), oklch(0.282 0.008 240.134));    /* surface #E7E8E1 | surface-strong #262A2D */
     --secondary-foreground: light-dark(oklch(0.208 0.009 255.618), oklch(0.944 0.008 114.224));
     --muted: light-dark(oklch(0.928 0.009 113.169), oklch(0.282 0.008 240.134));        /* surface #E7E8E1 | surface-strong #262A2D */

@@ -33,6 +33,10 @@ type NavSection = {
   items: NavLeafEntry[];
 };
 
+/** Shared by plain items and groups, so both line up in the list. */
+const NAV_BUTTON_CLASS =
+  "text-sidebar-foreground/70 relative my-0.5 h-9 gap-3 rounded-lg text-[13px] [&_svg]:size-4.5 [&_svg]:text-sidebar-foreground/55 data-[active=true]:text-sidebar-foreground data-[active=true]:[&_svg]:text-sidebar-foreground data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:-left-2 data-[active=true]:before:w-0.5 data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-sidebar-primary";
+
 function NavTag({ children }: { children: React.ReactNode }) {
   return (
     <span className="ml-2 rounded-md bg-sidebar-foreground/10 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-foreground/50">
@@ -65,7 +69,11 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
               >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title} isActive={isNavGroupActive(pathname, item.items)}>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      isActive={isNavGroupActive(pathname, item.items)}
+                      className={NAV_BUTTON_CLASS}
+                    >
                       <item.icon />
                       <span>{item.title}</span>
                       <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -104,7 +112,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
                   asChild
                   isActive={isNavActive(pathname, item.href, item.exact) && toBoolean(item.visible)}
                   tooltip={item.title}
-                  className="text-sidebar-foreground/70 relative my-0.5 h-9 gap-3 rounded-lg text-[13px] [&_svg]:size-4.5 [&_svg]:text-sidebar-foreground/55 data-[active=true]:text-sidebar-foreground data-[active=true]:[&_svg]:text-sidebar-foreground data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:-left-2 data-[active=true]:before:w-0.5 data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-sidebar-primary"
+                  className={NAV_BUTTON_CLASS}
                 >
                   <Link href={item.href}>
                     <item.icon />

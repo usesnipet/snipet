@@ -59,7 +59,7 @@ export function AppFormDialog({ app, close }: AppFormDialogProps) {
               Update settings for <span className="font-medium text-foreground">{app.name}</span>.
             </>
           ) : (
-            "An app groups the API keys and sessions of one client of your agents."
+            "An app groups the API keys and chats of one client of your agents."
           )}
         </DialogDescription>
       </DialogHeader>

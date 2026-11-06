@@ -127,8 +127,8 @@ function AgentCard({ agent }: { agent: AgentSummary }) {
         title: "Delete agent?",
         description: (
           <>
-            <span className="font-medium text-foreground">{agent.name}</span> and all of its sessions will be deleted.
-            This action cannot be undone.
+            <span className="font-medium text-foreground">{agent.name}</span> and all of its chats will be deleted. This
+            action cannot be undone.
           </>
         ),
         onConfirm: () => deleteAgent(agent.id),

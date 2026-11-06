@@ -133,6 +133,7 @@ export const ChatPage = () => {
             ) : (
               <ChatMessages
                 messages={messages}
+                agent={agents.find((agent) => agent.id === agentId)}
                 pendingInput={showPending ? pending.text : null}
                 draft={stream.draft}
                 streaming={running || start.isPending}

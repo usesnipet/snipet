@@ -1,5 +1,7 @@
 import { DeleteDialog } from "@/components/confirm-dialog";
+import { SidebarBrand } from "@/components/sidebar/brand";
 import { SidebarFooter } from "@/components/sidebar/footer";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +15,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuButton,
@@ -21,10 +22,14 @@ import {
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AgentAvatar } from "@/features/agent/components/agent-avatar";
+import { useCurrentUser } from "@/features/auth/hooks";
 import { useDialog } from "@/lib/dialog";
 import { ROUTES } from "@/routes";
-import { useDeleteSession, useListSessions } from "@snipet/client";
-import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
+import { useDeleteSession, useListAvailableAgents, useListSessions } from "@snipet/client";
+import { hasRole, Role } from "@snipet/shared";
+import { MoreHorizontal, Settings, SquarePen, Trash2 } from "lucide-react";
 import moment from "moment";
 import { useNavigate } from "react-router";
 
@@ -60,6 +65,10 @@ function groupByDate(sessions: AgentSession[]): SessionGroup[] {
 
 export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
   const { data, isLoading, isError } = useListSessions();
+  const { data: agents } = useListAvailableAgents();
+  const agentOf = new Map(agents?.map((agent) => [agent.id, agent]));
+  const user = useCurrentUser();
+  const isAdmin = hasRole(user?.role, [Role.Admin]);
   const { openDialog } = useDialog();
   const navigate = useNavigate();
   const { mutateAsync: deleteSession } = useDeleteSession();
@@ -86,7 +95,7 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="gap-1 px-2 py-3">
+      <SidebarBrand>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
@@ -97,7 +106,7 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarHeader>
+      </SidebarBrand>
 
       <SidebarContent>
         {isLoading && (
@@ -124,7 +133,12 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
                   {group.sessions.map((session) => (
                     <SidebarMenuItem key={session.id}>
                       <SidebarMenuButton asChild isActive={session.id === activeSessionId}>
-                        <Link href={sessionPath(session.id)}>
+                        <Link href={sessionPath(session.id)} title={session.title || undefined}>
+                          <AgentAvatar
+                            avatar={agentOf.get(session.agentId)?.avatar}
+                            name={agentOf.get(session.agentId)?.name}
+                            className="size-5 shrink-0"
+                          />
                           <span className="truncate">{session.title || "Untitled chat"}</span>
                           {session.id === runningSessionId && <Spinner size="sm" className="ml-auto" />}
                         </Link>
@@ -153,7 +167,25 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
           ))}
       </SidebarContent>
 
-      <SidebarFooter />
+      <SidebarFooter
+        systemAction={
+          isAdmin && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm" aria-label="Manage agents" asChild>
+                  <Link
+                    className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+                    href={ROUTES.agents}
+                  >
+                    <Settings />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Manage agents</TooltipContent>
+            </Tooltip>
+          )
+        }
+      />
     </Sidebar>
   );
 }

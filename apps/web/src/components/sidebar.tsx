@@ -1,6 +1,6 @@
+import { SidebarBrand } from "@/components/sidebar/brand";
 import { SidebarNav } from "@/components/sidebar/nav";
-import { Link } from "@/components/ui/link";
-import { Sidebar as SidebarContainer, SidebarHeader } from "@/components/ui/sidebar";
+import { Sidebar as SidebarContainer } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
 import { hasRole, Role } from "@snipet/shared";
@@ -40,7 +40,7 @@ const navItems: NavEntry[] = [
       },
 
       {
-        title: "Api Key",
+        title: "API keys",
         href: ROUTES.apiKey,
         icon: Key,
         visible: isAdmin,
@@ -58,17 +58,7 @@ const navItems: NavEntry[] = [
 export function Sidebar() {
   return (
     <SidebarContainer>
-      <SidebarHeader className="px-3 py-4">
-        <Link
-          href="/"
-          className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-        >
-          <span className="bg-sidebar-primary text-sidebar-primary-foreground flex size-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold">
-            Sn
-          </span>
-          <span className="text-[15px] font-semibold group-data-[collapsible=icon]:hidden">Snipet</span>
-        </Link>
-      </SidebarHeader>
+      <SidebarBrand />
       <SidebarNav navItems={navItems} />
       {/* <UserMenu /> */}
       <SidebarFooter />

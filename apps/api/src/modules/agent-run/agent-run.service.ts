@@ -14,6 +14,7 @@ import { AgentService } from "../agent/agent.service.js";
 import { AgentMessage, AgentRun, AgentSession } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
+import { sessionTitleOf } from "./session-title.js";
 
 import type { FilterQuery } from "@snipet/server-common";
 import type { Owner } from "#src/common/decorators/owner.decorator.js";
@@ -24,8 +25,6 @@ import type {
   Paginated,
   StartAgentRun,
 } from "@snipet/shared";
-
-const TITLE_LENGTH = 80;
 
 const ownedBy = (owner: Owner) => ({
   userId: owner.userId ?? IsNull(),
@@ -133,7 +132,7 @@ export class AgentRunService implements OnApplicationBootstrap {
       const sessions = m.getRepository(AgentSession);
       let id = sessionId;
       if (id) await sessions.update(id, { updatedAt: new Date() });
-      else ({ id } = await sessions.save({ agentId, ...owner, title: input.split("\n")[0].slice(0, TITLE_LENGTH) }));
+      else ({ id } = await sessions.save({ agentId, ...owner, title: sessionTitleOf(input) }));
       const run = await m.getRepository(AgentRun).save({ sessionId: id, status: AgentRunStatus.RUNNING });
       await m.getRepository(AgentMessage).save({
         sessionId: id,

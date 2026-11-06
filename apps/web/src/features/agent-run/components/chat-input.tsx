@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { PromptInput, PromptInputAction, PromptInputActions, PromptInputTextarea } from "@/components/ui/prompt-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUp, Bot, Square } from "lucide-react";
+import { AgentAvatar } from "@/features/agent/components/agent-avatar";
+import { ArrowUp, Square } from "lucide-react";
 import { useState } from "react";
 
 import type { AvailableAgent } from "@snipet/shared";
@@ -20,6 +21,7 @@ type Props = {
 
 export function ChatInput({ agents, agentId, onAgentChange, agentLocked, running, sending, onSend, onStop }: Props) {
   const [value, setValue] = useState("");
+  const selectedAgent = agents.find((agent) => agent.id === agentId);
   const canSend = !!agentId && value.trim().length > 0 && !running && !sending;
 
   const submit = () => {
@@ -40,7 +42,7 @@ export function ChatInput({ agents, agentId, onAgentChange, agentLocked, running
               onClick={(event) => event.stopPropagation()}
               aria-label="Agent"
             >
-              <Bot />
+              <AgentAvatar avatar={selectedAgent?.avatar} name={selectedAgent?.name} className="size-5" />
               <SelectValue placeholder="Select an agent" />
             </SelectTrigger>
             <SelectContent>
