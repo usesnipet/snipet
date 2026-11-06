@@ -66,13 +66,13 @@ export class LlmConnectionController extends CrudController<LlmConnection>({
     return this.service.listManifests();
   }
 
-  @Private(ApiKeyAuth())
+  @Private(UserAuth(Role.Admin), ApiKeyAuth())
   @Get("llms/:key/models")
   listLLMModels(@Param("key") key: string, @Query(new ZodPipe(listLLMModelsParamsSchema)) query: ListLLMModelsParams) {
     return this.service.listLLMModels(key, query.connectionId);
   }
 
-  @Private(ApiKeyAuth())
+  @Private(UserAuth(Role.Admin), ApiKeyAuth())
   @Post("execute")
   @HttpCode(200)
   execute(@Body(new ZodPipe(executeLlmSchema)) dto: ExecuteLlm) {
@@ -83,7 +83,7 @@ export class LlmConnectionController extends CrudController<LlmConnection>({
    * Server-Sent Events. Errors before the first event (bad input, unknown
    * model...) are plain HTTP errors; after that they arrive as an "error" event.
    */
-  @Private(ApiKeyAuth())
+  @Private(UserAuth(Role.Admin), ApiKeyAuth())
   @Post("execute/stream")
   async executeStream(@Body(new ZodPipe(executeLlmSchema)) dto: ExecuteLlm, @Res() res: Response) {
     const abort = new AbortController();
