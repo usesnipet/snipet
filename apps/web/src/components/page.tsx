@@ -14,6 +14,7 @@ const PageActionsContext = createContext<PageActionsContextType | null>(null);
 export type PageProps = {
   title: string;
   description: string;
+  /** Browser tab title; " · Snipet" is appended. */
   documentTitle: string;
   children: React.ReactNode;
   /** Prefer {@link PageActions} inside `content.tsx` when actions need colocation. */
@@ -29,7 +30,7 @@ export function Page({ title, description, documentTitle, children, actions, lef
   const headerLeftActions = leftActions ?? slotLeftActions;
 
   useEffect(() => {
-    document.title = documentTitle;
+    document.title = `${documentTitle} · Snipet`;
   }, [documentTitle]);
 
   return (

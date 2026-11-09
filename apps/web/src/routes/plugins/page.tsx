@@ -26,6 +26,10 @@ export const PluginsPage = () => {
         keyOf={pluginKeyOf}
         isLoading={plugins.isLoading || connections.isLoading}
         isError={plugins.isError || connections.isError}
+        onRetry={() => {
+          void plugins.refetch();
+          void connections.refetch();
+        }}
         noun="plugins"
         renderItem={(view) => <PluginCatalogCard plugin={byKey.get(view.key)!} view={view} />}
       />

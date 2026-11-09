@@ -1,6 +1,7 @@
 import { InputSearch } from "@/components/ui/input-search";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMemo, useState } from "react";
 
 import { CatalogList, CatalogListSkeleton } from "./catalog-list";
@@ -15,30 +16,6 @@ import {
 import type { ReactNode } from "react";
 import type { RegistryEntry, RegistryFilter, RegistrySort, RegistryView } from "./registry-view";
 
-type StatToggleProps = {
-  active: boolean;
-  count: number;
-  label: string;
-  onClick: () => void;
-};
-
-function StatToggle({ active, count, label, onClick }: StatToggleProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "flex items-center gap-2.5 rounded-lg border px-3.5 py-2 text-left transition-colors",
-        active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
-      )}
-    >
-      <span className="text-lg font-semibold tabular-nums">{count}</span>
-      <span className={cn("text-xs", active ? "text-foreground" : "text-muted-foreground")}>{label}</span>
-    </button>
-  );
-}
-
 type RegistryCatalogProps<C> = {
   registry: RegistryEntry[];
   connections: C[];
@@ -46,7 +23,9 @@ type RegistryCatalogProps<C> = {
   keyOf: (connection: C) => string;
   isLoading: boolean;
   isError: boolean;
-  /** Plural, lowercase name of what the registry lists, e.g. "providers". */
+  /** Refetches after a failed load. */
+  onRetry: () => void;
+  /** Plural display name of what the registry lists, used mid-sentence, e.g. "plugins" or "LLMs". */
   noun: string;
   renderItem: (view: RegistryView<C>) => ReactNode;
 };
@@ -58,6 +37,7 @@ export function RegistryCatalog<C>({
   keyOf,
   isLoading,
   isError,
+  onRetry,
   noun,
   renderItem,
 }: RegistryCatalogProps<C>) {
@@ -76,20 +56,16 @@ export function RegistryCatalog<C>({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5">
-      <div className="flex shrink-0 flex-wrap gap-2">
-        <StatToggle
-          active={filter === "all"}
-          count={stats.available}
-          label={`Available ${noun}`}
-          onClick={() => setFilter("all")}
-        />
-        <StatToggle
-          active={filter === "connected"}
-          count={stats.connected}
-          label="Connected"
-          onClick={() => setFilter("connected")}
-        />
-      </div>
+      <Tabs value={filter} onValueChange={(value) => setFilter(value as RegistryFilter)} className="shrink-0">
+        <TabsList>
+          <TabsTrigger value="all" className="gap-1.5">
+            All <span className="text-muted-foreground tabular-nums">{stats.available}</span>
+          </TabsTrigger>
+          <TabsTrigger value="connected" className="gap-1.5">
+            Connected <span className="text-muted-foreground tabular-nums">{stats.connected}</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
         <div className="sm:w-72">
@@ -121,7 +97,12 @@ export function RegistryCatalog<C>({
         {isLoading ? (
           <CatalogListSkeleton size="lg" count={4} />
         ) : isError ? (
-          <p className="text-destructive text-sm">Failed to load {noun}.</p>
+          <div className="flex items-center gap-3">
+            <p className="text-destructive text-sm">Failed to load {noun}.</p>
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              Try again
+            </Button>
+          </div>
         ) : (
           <CatalogList
             items={visible.map((view) => ({ id: view.key, view }))}
