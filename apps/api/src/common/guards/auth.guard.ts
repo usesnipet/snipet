@@ -1,20 +1,22 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 
+import { AppContext } from "../context/app-context.js";
+
 import { ApiKeyStrategy } from "./strategies/api-key.strategy.js";
 import { AppTokenStrategy } from "./strategies/app-token.strategy.js";
 import { AUTH, bearerToken } from "./strategies/auth-strategy.js";
 import { UserStrategy } from "./strategies/user.strategy.js";
 
 import type { Request } from "express";
-import type { AuthStrategy, AuthStrategyHandler, RequestAuth } from "./strategies/auth-strategy.js";
+import type { AuthStrategy, AuthStrategyHandler } from "./strategies/auth-strategy.js";
 
 /** Every strategy type has a handler, so adding a type without one fails to compile. */
 type Handlers = { [T in AuthStrategy["type"]]: AuthStrategyHandler<T> };
 
 /**
  * Global: @Public() routes pass; @Private(...) routes need a credential for one
- * of their strategies, tried in order (sets request.auth); anything else is
+ * of their strategies, tried in order (sets request.ctx.auth); anything else is
  * denied, so a forgotten decorator fails closed.
  */
 @Injectable()
@@ -38,7 +40,7 @@ export class AuthGuard implements CanActivate {
     if (!strategies) throw new ForbiddenException("route is neither @Public nor @Private");
     if (!strategies.length) return true;
 
-    const request = context.switchToHttp().getRequest<Request & { auth?: RequestAuth }>();
+    const request = context.switchToHttp().getRequest<Request & { ctx: AppContext }>();
 
     // User and app tokens share the Bearer header but not the signing key: a
     // token that fails one is tried against the next strategy.
@@ -46,7 +48,8 @@ export class AuthGuard implements CanActivate {
       const handler = this.handlers[strategy.type] as AuthStrategyHandler<typeof strategy.type>;
       const auth = await handler.authenticate(request, strategy);
       if (auth) {
-        request.auth = auth;
+        // The context is immutable: withAuth returns a new one.
+        request.ctx = request.ctx.withAuth(auth);
         return true;
       }
     }

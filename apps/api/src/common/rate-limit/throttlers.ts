@@ -3,11 +3,11 @@ import { Request } from "express";
 
 import type { ExecutionContext } from "@nestjs/common";
 import type { ThrottlerOptions } from "@nestjs/throttler";
-import type { RequestAuth } from "../guards/strategies/auth-strategy.js";
+import type { AppContext } from "../context/app-context.js";
 /** A named limit: applies where @RateLimit lists it, or on every route when `global`. */
 export type ThrottlerConfig = Omit<ThrottlerOptions, "name"> & { global?: boolean };
 
-type Req = Request & { auth?: RequestAuth };
+type Req = Request & { ctx: AppContext };
 const request = (ctx: ExecutionContext) => ctx.switchToHttp().getRequest<Req>();
 
 const SECOND = 1000;
@@ -23,10 +23,10 @@ export const throttlers = {
   "agent-run": {
     limit: env.AGENT_RUNS_PER_END_USER_PER_MINUTE,
     ttl: MINUTE,
-    skipIf: (ctx) => request(ctx).auth?.type !== "appToken",
+    skipIf: (ctx) => request(ctx).ctx.auth?.type !== "appToken",
     getTracker: (req: Record<string, any>) => {
-      const r = req as Req;
-      return r.auth?.type === "appToken" ? `${r.auth.token.app.id}:${r.auth.token.sub}` : "";
+      const auth = (req as Req).ctx.auth;
+      return auth?.type === "appToken" ? `${auth.token.app.id}:${auth.token.sub}` : "";
     },
   },
 } satisfies Record<string, ThrottlerConfig>;

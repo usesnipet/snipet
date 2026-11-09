@@ -3,6 +3,7 @@ import { createParamDecorator, ExecutionContext, InternalServerErrorException, S
 import { AUTH } from "../guards/strategies/auth-strategy.js";
 
 import type { Role } from "@snipet/shared";
+import type { AppContext } from "../context/app-context.js";
 import type { AuthStrategy, RequestAuth } from "../guards/strategies/auth-strategy.js";
 
 /** `Authorization: Bearer <access token>`, optionally limited to these roles. */
@@ -20,7 +21,7 @@ export const Public = () => SetMetadata(AUTH, []);
 
 /** Throws when the route isn't @Private: reading the caller there is a bug. */
 export function requestAuth(ctx: ExecutionContext): RequestAuth {
-  const auth = ctx.switchToHttp().getRequest<{ auth?: RequestAuth }>().auth;
+  const auth = ctx.switchToHttp().getRequest<{ ctx: AppContext }>().ctx.auth;
   if (!auth) throw new InternalServerErrorException("route reads the caller but isn't @Private");
   return auth;
 }

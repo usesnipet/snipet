@@ -22,12 +22,16 @@ import { APP_GUARD } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { ensureDatabase } from "@snipet/server-common";
+import { ContextModule, ensureDatabase } from "@snipet/server-common";
+import { randomUUID } from "node:crypto";
+
+import { AppContext } from "./common/context/app-context.js";
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     RateLimitModule,
+    ContextModule.forRoot({ create: () => AppContext.create(randomUUID()) }),
     TypeOrmModule.forRootAsync({
       useFactory: async () => {
         await ensureDatabase(env.DATABASE_URL);
