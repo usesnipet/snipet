@@ -14,6 +14,7 @@ import { InputSearch } from "@/components/ui/input-search";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useDialog } from "@/lib/dialog";
 import { useDeleteApp, useListApiKey, useListApps } from "@snipet/client";
+import { MAX_TAKE } from "@snipet/shared";
 import { AppWindow, Copy, KeyRound, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import stc from "string-to-color";
@@ -29,7 +30,7 @@ export function AppCatalog() {
   const { openDialog } = useDialog();
   const appsQuery = useListApps({ searchParams: { take: 500 } });
   // One request for every app's key count instead of one per card.
-  const apiKeysQuery = useListApiKey();
+  const apiKeysQuery = useListApiKey({ searchParams: { take: MAX_TAKE, skip: 0 } });
   const [search, setSearch] = useState("");
 
   if (appsQuery.isLoading) {
