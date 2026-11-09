@@ -1,4 +1,6 @@
 import { DeleteDialog } from "@/components/confirm-dialog";
+import { ConnectionListBody } from "@/components/connection-list-body";
+import { IconAction } from "@/components/icon-action";
 import { SyncStatus } from "@/components/sync-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,8 +20,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDialog } from "@/lib/dialog";
 import { cn } from "@/lib/utils";
 import {
@@ -35,7 +35,6 @@ import { FlaskConical, MoreHorizontal, Pencil, RefreshCw, Star, Trash2 } from "l
 import { CreateLlmConnectionDialog, TestLlmConnectionDialog } from "./dialogs";
 
 import type { LlmConnection } from "@snipet/shared";
-import type { ReactNode } from "react";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
 type LlmConnectionListDialogProps = DialogInstanceProps<{
@@ -55,48 +54,19 @@ export function LlmConnectionListDialog({ llm: { key, name } }: LlmConnectionLis
     });
   };
 
-  const renderBody = () => {
-    if (connectionsQuery.isLoading) {
-      return [0, 1].map((index) => <Skeleton key={index} className="h-16.5 w-full rounded-lg" />);
-    }
-    if (connectionsQuery.isError) {
-      return (
-        <div className="flex items-center gap-3 py-2">
-          <p className="text-destructive text-sm">Failed to load connections.</p>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={connectionsQuery.isFetching}
-            onClick={() => void connectionsQuery.refetch()}
-          >
-            Try again
-          </Button>
-        </div>
-      );
-    }
-    if (isEmpty) {
-      return (
-        <div className="flex flex-col items-center gap-3 py-8 text-center">
-          <div>
-            <p className="font-medium">No {name} connections</p>
-            <p className="text-muted-foreground text-sm">Add one so your agents can use {name}.</p>
-          </div>
-          <Button type="button" onClick={addNewConnection}>
-            New connection
-          </Button>
-        </div>
-      );
-    }
-    return connections.map((connection) => <LlmConnectionRow key={connection.id} connection={connection} />);
-  };
-
   return (
     <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-lg">
       <DialogHeader>
         <DialogTitle>{name} connections</DialogTitle>
         <DialogDescription>Agents use the default one when they don't pick a connection.</DialogDescription>
       </DialogHeader>
-      <DialogBody className="flex flex-col gap-2">{renderBody()}</DialogBody>
+      <DialogBody className="flex flex-col gap-2">
+        <ConnectionListBody query={connectionsQuery} isEmpty={isEmpty} name={name} onAdd={addNewConnection}>
+          {connections.map((connection) => (
+            <LlmConnectionRow key={connection.id} connection={connection} />
+          ))}
+        </ConnectionListBody>
+      </DialogBody>
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
@@ -208,15 +178,5 @@ function LlmConnectionRow({ connection }: { connection: LlmConnection }) {
         )}
       </div>
     </div>
-  );
-}
-
-/** Tooltip for an icon-only button; the button keeps its own aria-label. */
-function IconAction({ tooltip, children }: { tooltip: string; children: ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
   );
 }
