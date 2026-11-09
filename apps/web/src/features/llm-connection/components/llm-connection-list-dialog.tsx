@@ -57,7 +57,7 @@ export function LlmConnectionListDialog({ llm: { key, name } }: LlmConnectionLis
 
   const renderBody = () => {
     if (connectionsQuery.isLoading) {
-      return [0, 1].map((index) => <Skeleton key={index} className="h-[66px] w-full rounded-lg" />);
+      return [0, 1].map((index) => <Skeleton key={index} className="h-16.5 w-full rounded-lg" />);
     }
     if (connectionsQuery.isError) {
       return (

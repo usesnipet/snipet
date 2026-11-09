@@ -11,11 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { CircleAlert, Loader2, Play, Square } from "lucide-react";
-import { useId, useState } from "react";
-
 import { useExecuteLlmStream, useLLMModels } from "@snipet/client";
 import { LlmCapability } from "@snipet/shared";
+import { CircleAlert, Loader2, Play, Square } from "lucide-react";
+import { useId, useState } from "react";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
 import type { LlmConnection } from "@snipet/shared";
@@ -148,7 +147,7 @@ function TestResult({ status, text, error, durationMs, usage }: TestResultProps)
           <CircleAlert className="size-4 shrink-0" />
           The model didn't answer
         </p>
-        <p className="text-muted-foreground break-words">{error ?? "The request failed."}</p>
+        <p className="text-muted-foreground wrap-break-word">{error ?? "The request failed."}</p>
         <p className="text-muted-foreground text-xs">Check the API key, base URL or model access in Edit.</p>
       </div>
     );
