@@ -3,7 +3,7 @@
   "name": "Stripe",
   "description": "Manage Stripe customers, payments, invoices and products",
   "icon": "https://github.com/stripe.png",
-  "tags": ["payments", "remote", "official"],
+  "tags": ["payments"],
   "auth": {
     "type": "none"
   },

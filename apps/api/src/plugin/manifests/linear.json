@@ -3,7 +3,7 @@
   "name": "Linear",
   "description": "Manage Linear issues, projects and comments",
   "icon": "https://github.com/linear.png",
-  "tags": ["issues", "remote", "official"],
+  "tags": ["issues"],
   "auth": {
     "type": "none"
   },

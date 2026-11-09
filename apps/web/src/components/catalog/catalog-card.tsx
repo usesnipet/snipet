@@ -24,7 +24,7 @@ export type CatalogCardCta = {
 
 export type CatalogCardProps = {
   icon?: string | React.ReactNode;
-  badge?: string;
+  badges?: string[];
   title: string;
   updatedAt?: string;
   description?: string;
@@ -43,7 +43,7 @@ export type CatalogCardProps = {
 
 export function CatalogCard({
   icon,
-  badge,
+  badges,
   title,
   updatedAt,
   actions,
@@ -88,12 +88,12 @@ export function CatalogCard({
                 title
               )}
             </h2>
-            {badge ? (
-              <Badge variant="secondary" className="shrink-0 font-normal">
-                {badge}
+            {badges?.map((label) => (
+              <Badge key={label} variant="secondary" className="shrink-0 font-normal">
+                {label}
               </Badge>
-            ) : null}
-            {tags?.map((tag) => (
+            ))}
+            {tags?.slice(0, 4).map((tag) => (
               <Badge key={tag} variant="outline" className="text-muted-foreground shrink-0 font-normal">
                 {tag}
               </Badge>

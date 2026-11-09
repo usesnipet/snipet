@@ -3,7 +3,7 @@
   "name": "AWS Knowledge",
   "description": "Search AWS documentation, API references and best practices",
   "icon": "https://github.com/aws.png",
-  "tags": ["docs", "remote", "official"],
+  "tags": ["docs"],
   "auth": {
     "type": "none"
   },

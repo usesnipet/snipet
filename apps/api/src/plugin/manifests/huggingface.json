@@ -3,7 +3,7 @@
   "name": "Hugging Face",
   "description": "Search models, datasets, Spaces and papers on the Hugging Face Hub",
   "icon": "https://github.com/huggingface.png",
-  "tags": ["ai", "remote", "official"],
+  "tags": ["ai"],
   "auth": {
     "type": "none"
   },

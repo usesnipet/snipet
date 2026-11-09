@@ -3,7 +3,7 @@
   "name": "Neon",
   "description": "Manage Neon Postgres projects, branches and run SQL",
   "icon": "https://github.com/neondatabase.png",
-  "tags": ["database", "postgres", "remote", "official"],
+  "tags": ["database", "postgres"],
   "auth": {
     "type": "none"
   },

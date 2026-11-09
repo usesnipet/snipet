@@ -3,7 +3,7 @@
   "name": "Context7",
   "description": "Up-to-date documentation and code examples for libraries and frameworks",
   "icon": "https://github.com/upstash.png",
-  "tags": ["docs", "remote"],
+  "tags": ["docs"],
   "auth": {
     "type": "none"
   },

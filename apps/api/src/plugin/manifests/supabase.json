@@ -3,7 +3,7 @@
   "name": "Supabase",
   "description": "Manage Supabase projects, databases, edge functions and docs",
   "icon": "https://github.com/supabase.png",
-  "tags": ["database", "remote", "official"],
+  "tags": ["database"],
   "auth": {
     "type": "none"
   },

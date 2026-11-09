@@ -3,7 +3,7 @@
   "name": "Firecrawl",
   "description": "Scrape, crawl and search websites, returning clean markdown",
   "icon": "https://github.com/firecrawl.png",
-  "tags": ["scraping", "web", "remote", "official"],
+  "tags": ["scraping", "web"],
   "auth": {
     "type": "none"
   },

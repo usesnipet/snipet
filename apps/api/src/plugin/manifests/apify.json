@@ -3,7 +3,7 @@
   "name": "Apify",
   "description": "Run Apify Actors to scrape and automate thousands of websites",
   "icon": "https://github.com/apify.png",
-  "tags": ["scraping", "web", "remote", "official"],
+  "tags": ["scraping", "web"],
   "auth": {
     "type": "none"
   },

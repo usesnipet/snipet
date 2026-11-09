@@ -3,7 +3,7 @@
   "name": "GitHub",
   "description": "Manage repositories, issues and pull requests through GitHub's hosted MCP server",
   "icon": "https://github.com/github.png",
-  "tags": ["git", "remote", "official"],
+  "tags": ["git"],
   "auth": {
     "type": "none"
   },

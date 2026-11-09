@@ -1,9 +1,7 @@
-import { CatalogCard } from "@/components/catalog";
+import { CatalogCard, ConnectionCount } from "@/components/catalog";
 import { Icon } from "@/components/icon";
 import { useDialog } from "@/lib/dialog";
 import { ArrowRight, Plus } from "lucide-react";
-
-import { syncState } from "@snipet/client";
 
 import { CreateLlmConnectionDialog, LlmConnectionListDialog } from "./dialogs";
 
@@ -15,19 +13,8 @@ export type LlmConnectionCatalogCardProps = {
 };
 
 export function LlmConnectionCatalogCard({ view }: LlmConnectionCatalogCardProps) {
-  const { name, key, description, icon, tags, instances, connectionCount, connected } = view;
+  const { name, key, description, icon, tags, instances, connected } = view;
   const { openDialog } = useDialog();
-
-  const failedCount = instances.filter((connection) => syncState(connection).kind === "error").length;
-  const countLabel =
-    connectionCount === 0 ? "No connections yet" : `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
-  const meta = failedCount ? (
-    <span className="text-destructive">
-      {countLabel}, {failedCount} failed to sync
-    </span>
-  ) : (
-    countLabel
-  );
 
   const onClick = () => {
     if (connected) {
@@ -49,7 +36,7 @@ export function LlmConnectionCatalogCard({ view }: LlmConnectionCatalogCardProps
       title={name}
       description={description}
       tags={tags}
-      meta={meta}
+      meta={<ConnectionCount connections={instances} />}
       onClick={onClick}
       cta={{
         label: connected ? "Manage" : "Connect",

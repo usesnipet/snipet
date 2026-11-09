@@ -3,7 +3,7 @@
   "name": "Cloudflare Docs",
   "description": "Search Cloudflare's developer documentation",
   "icon": "https://github.com/cloudflare.png",
-  "tags": ["docs", "remote", "official"],
+  "tags": ["docs"],
   "auth": {
     "type": "none"
   },

@@ -3,7 +3,7 @@
   "name": "Tavily",
   "description": "Web search, extraction and crawling optimized for AI agents",
   "icon": "https://github.com/tavily-ai.png",
-  "tags": ["search", "web", "remote", "official"],
+  "tags": ["search", "web"],
   "auth": {
     "type": "none"
   },
