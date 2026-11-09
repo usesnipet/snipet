@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from "react-router";
 import { RouterProvider } from "react-router/dom";
 
+import { RouteError } from "./components/error-fallback";
 import { LoadingFallback } from "./components/loading-fallback";
 import { RequireAuth } from "./components/require-auth";
 import { RequireRole } from "./components/require-role";
@@ -22,6 +23,7 @@ const PluginsPage = lazy(() => import("./routes/plugins/page").then((m) => ({ de
 const AppsPage = lazy(() => import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
 const UsersPage = lazy(() => import("./routes/users/page").then((m) => ({ default: m.UsersPage })));
 const SettingsPage = lazy(() => import("./routes/settings/page").then((m) => ({ default: m.SettingsPage })));
+const NotFoundPage = lazy(() => import("./routes/not-found/page").then((m) => ({ default: m.NotFoundPage })));
 const ApiKeysPage = lazy(() => import("./routes/api-keys/page").then((m) => ({ default: m.ApiKeysPage })));
 
 const toReactRouterPath = (path: RoutePath) => {
@@ -37,6 +39,7 @@ const router = createBrowserRouter(
           <Outlet />
         </Suspense>
       }
+      errorElement={<RouteError className="min-h-svh" />}
     >
       <Route path={toReactRouterPath(ROUTES.login)} element={<LoginPage />} />
       <Route element={<RequireAuth />}>
@@ -44,16 +47,20 @@ const router = createBrowserRouter(
           {/* One optional-param route, so starting a chat doesn't remount the page. */}
           <Route path={`${toReactRouterPath(ROUTES.chatSession)}?`} element={<ChatPage />} />
           <Route element={<Layout />}>
-            <Route element={<RequireRole role={Role.Admin} />}>
-              <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
-              <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
-              <Route path={toReactRouterPath(ROUTES.agentNew)} element={<AgentEditorPage />} />
-              <Route path={toReactRouterPath(ROUTES.agent)} element={<AgentEditorPage />} />
-              <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
-              <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
-              <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
-              <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
-              <Route path={toReactRouterPath(ROUTES.settings)} element={<SettingsPage />} />
+            {/* Catches errors below the layout, so the sidebar stays usable around the error. */}
+            <Route errorElement={<RouteError />}>
+              <Route element={<RequireRole role={Role.Admin} />}>
+                <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
+                <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
+                <Route path={toReactRouterPath(ROUTES.agentNew)} element={<AgentEditorPage />} />
+                <Route path={toReactRouterPath(ROUTES.agent)} element={<AgentEditorPage />} />
+                <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
+                <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
+                <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
+                <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
+                <Route path={toReactRouterPath(ROUTES.settings)} element={<SettingsPage />} />
+              </Route>
+              <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Route>
         </Route>

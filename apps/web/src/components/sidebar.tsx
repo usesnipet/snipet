@@ -17,15 +17,7 @@ const navItems: NavEntry[] = [
     items: [
       { title: "Chat", href: ROUTES.chat, icon: MessageSquare, exact: true },
       { title: "Agents", href: ROUTES.agents, icon: Bot, visible: isAdmin },
-      {
-        title: "LLMs",
-        icon: Server,
-        visible: isAdmin,
-        items: [
-          { title: "Connections", href: ROUTES.llmConnections },
-          { title: "Playground", href: ROUTES.llmPlayground },
-        ],
-      },
+      { title: "LLMs", href: ROUTES.llmConnections, icon: Server, visible: isAdmin },
       { title: "Plugins", href: ROUTES.plugins, icon: Plug, visible: isAdmin },
       { title: "Apps", href: ROUTES.apps, icon: AppWindow, visible: isAdmin },
     ],
