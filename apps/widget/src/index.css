@@ -169,7 +169,6 @@ button {
 }
 
 .sw-user {
-  white-space: pre-wrap;
   align-self: flex-end;
   background: var(--sw-accent);
   color: var(--sw-accent-text);
@@ -181,27 +180,27 @@ button {
   border: 1px solid var(--sw-border);
 }
 
-/* Markdown in assistant replies; the reset above zeroes every margin. */
+/* Markdown in messages; the reset above zeroes every margin. */
 
-.sw-assistant > * + * {
+.sw-message > * + * {
   margin-top: calc(8px * var(--sw-scale));
 }
 
-.sw-assistant :is(ul, ol) {
+.sw-message :is(ul, ol) {
   padding-left: calc(20px * var(--sw-scale));
 }
 
-.sw-assistant :is(h1, h2, h3, h4, h5, h6) {
+.sw-message :is(h1, h2, h3, h4, h5, h6) {
   font-size: 1em;
   font-weight: 600;
 }
 
-.sw-assistant a {
+.sw-message a {
   color: inherit;
   text-decoration: underline;
 }
 
-.sw-assistant code {
+.sw-message code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.9em;
   padding: 0.1em 0.3em;
@@ -209,31 +208,31 @@ button {
   background: var(--sw-border);
 }
 
-.sw-assistant pre {
+.sw-message pre {
   padding: calc(8px * var(--sw-scale));
   border-radius: calc(var(--sw-radius) / 3);
   background: var(--sw-border);
   overflow-x: auto;
 }
 
-.sw-assistant pre code {
+.sw-message pre code {
   padding: 0;
   background: none;
 }
 
-.sw-assistant blockquote {
+.sw-message blockquote {
   padding-left: calc(8px * var(--sw-scale));
   border-left: 3px solid var(--sw-border);
   color: var(--sw-muted);
 }
 
-.sw-assistant table {
+.sw-message table {
   border-collapse: collapse;
   display: block;
   overflow-x: auto;
 }
 
-.sw-assistant :is(th, td) {
+.sw-message :is(th, td) {
   padding: calc(4px * var(--sw-scale)) calc(8px * var(--sw-scale));
   border: 1px solid var(--sw-border);
 }

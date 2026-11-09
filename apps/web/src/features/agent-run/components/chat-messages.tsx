@@ -158,7 +158,7 @@ function AgentName({ agent }: { agent: AvailableAgent | undefined }) {
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
-      <div className="bg-muted max-w-[80%] rounded-3xl px-5 py-2.5 whitespace-pre-wrap wrap-break-word">{text}</div>
+      <Markdown className={cn("bg-muted max-w-[80%] rounded-3xl px-5 py-2.5", MARKDOWN_CLASS)}>{text}</Markdown>
     </div>
   );
 }

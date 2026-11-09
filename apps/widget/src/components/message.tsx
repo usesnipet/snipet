@@ -5,7 +5,7 @@ import { useMemo } from "react";
 const escapeHtml = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-// GFM + single newlines as <br>, like the web app's markdown. Raw HTML in model output stays text.
+// GFM + single newlines as <br>, like the web app's markdown. Raw HTML in a message stays text.
 const marked = new Marked({
   gfm: true,
   breaks: true,
@@ -20,17 +20,13 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
   node.setAttribute("rel", "noopener noreferrer");
 });
 
-// Model output is untrusted: DOMPurify also catches what escaping doesn't, like javascript: link URLs.
+// Message text is untrusted: DOMPurify also catches what escaping doesn't, like javascript: link URLs.
 const toHtml = (markdown: string) => DOMPurify.sanitize(marked.parse(markdown) as string);
 
-// Assistant replies render as markdown; user input stays plain text.
+/** A chat bubble; user and assistant text both render as markdown. */
 export function Message({ role, children }: { role: "user" | "assistant"; children: string }) {
-  const html = useMemo(() => (role === "assistant" ? toHtml(children) : ""), [role, children]);
-  return role === "assistant" ? (
+  const html = useMemo(() => toHtml(children), [children]);
+  return (
     <div className={`sw-message sw-${role}`} part={`message ${role}`} dangerouslySetInnerHTML={{ __html: html }} />
-  ) : (
-    <div className={`sw-message sw-${role}`} part={`message ${role}`}>
-      {children}
-    </div>
   );
 }
