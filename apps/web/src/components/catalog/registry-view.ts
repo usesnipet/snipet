@@ -27,10 +27,9 @@ export type RegistryView<C = unknown> = {
 
 export type RegistryFilter = "all" | "connected";
 
-export type RegistrySort = "connected-first" | "name-asc" | "name-desc" | "connections-desc";
+export type RegistrySort = "name-asc" | "name-desc" | "connections-desc";
 
 export const REGISTRY_SORTS: { value: RegistrySort; label: string }[] = [
-  { value: "connected-first", label: "Connected first" },
   { value: "name-asc", label: "Name (A–Z)" },
   { value: "name-desc", label: "Name (Z–A)" },
   { value: "connections-desc", label: "Most connections" },
@@ -82,15 +81,13 @@ export function sortRegistryViews<V extends RegistryView>(views: V[], sort: Regi
   const sorted = [...views];
 
   switch (sort) {
-    case "name-asc":
-      return sorted.sort(byName);
     case "name-desc":
       return sorted.sort((a, b) => byName(b, a));
     case "connections-desc":
       return sorted.sort((a, b) => b.connectionCount - a.connectionCount || byName(a, b));
-    case "connected-first":
+    case "name-asc":
     default:
-      return sorted.sort((a, b) => Number(b.connected) - Number(a.connected) || byName(a, b));
+      return sorted.sort(byName);
   }
 }
 

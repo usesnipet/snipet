@@ -1,9 +1,9 @@
 ---
 title: Agents
-description: A prompt, the models it runs on and the plugin actions it may call.
+description: A prompt, the models it runs on and the plugin tools it may call.
 ---
 
-An agent answers messages by calling models and, when it needs to, plugin actions. Create and edit agents in **Agents**.
+An agent answers messages by calling models and, when it needs to, plugin tools. Create and edit agents in **Agents**.
 
 ![Agent form](/images/docs/agents-form.png)
 
@@ -17,13 +17,13 @@ An agent has an ordered list of models. Snipet tries the first one; if that call
 
 ## Plugins
 
-Pick the [plugin connections](/docs/concepts/plugins/) the agent may use. By default it gets every action of a connection; narrow it down with allow and deny patterns, like `search_*` or `delete_*`.
+Pick the [plugin connections](/docs/concepts/plugins/) the agent may use. By default it gets every tool of a connection; narrow it down with allow and deny patterns, like `search_*` or `delete_*`.
 
 For plugins with hooks, turn off the optional hooks you don't want and fill in the plugin's settings for this agent, if it has any. The order of the list is the order their hooks run in; use the arrows to change it.
 
 ## Turns
 
-Each time the agent calls a model is a turn. When the model asks for plugin actions, Snipet runs them and calls the model again with the results, until it answers in plain text. **Max turns** (20 by default) stops an agent that keeps calling actions.
+Each time the agent calls a model is a turn. When the model asks for plugin tools, Snipet runs them and calls the model again with the results, until it answers in plain text. **Max turns** (20 by default) stops an agent that keeps calling tools.
 
 ## Chat
 

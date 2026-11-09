@@ -2,6 +2,7 @@ import { InputSearch } from "@/components/ui/input-search";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useMemo, useState } from "react";
 
 import { CatalogList, CatalogListSkeleton } from "./catalog-list";
@@ -25,7 +26,7 @@ type RegistryCatalogProps<C> = {
   isError: boolean;
   /** Refetches after a failed load. */
   onRetry: () => void;
-  /** Plural display name of what the registry lists, used mid-sentence, e.g. "plugins" or "LLMs". */
+  /** Plural display name of what the registry lists, used mid-sentence, e.g. "plugins" or "LLMs". Also keys the remembered filter. */
   noun: string;
   renderItem: (view: RegistryView<C>) => ReactNode;
 };
@@ -41,9 +42,10 @@ export function RegistryCatalog<C>({
   noun,
   renderItem,
 }: RegistryCatalogProps<C>) {
-  const [filter, setFilter] = useState<RegistryFilter>("all");
+  // Remembered per catalog: people who only manage what they connected keep landing on "Connected".
+  const [filter, setFilter] = useLocalStorage<RegistryFilter>(`registry-filter:${noun}`, "all");
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<RegistrySort>("connected-first");
+  const [sort, setSort] = useState<RegistrySort>("name-asc");
 
   const views = useMemo(() => buildRegistryViews(registry, connections, keyOf), [registry, connections, keyOf]);
 

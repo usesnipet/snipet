@@ -17,7 +17,7 @@ export const PluginsPage = () => {
   return (
     <Page
       title="Plugins"
-      description="Connect external services to give your agents new actions."
+      description="Give your agents tools from the services you use, or hook into their runs."
       documentTitle="Plugins"
     >
       <RegistryCatalog
