@@ -23,10 +23,14 @@ import { AppFormDialog } from "./dialogs";
 import type { App } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
 
-type AppDialogProps = DialogInstanceProps<{ app: App }>;
+type AppDialogProps = DialogInstanceProps<{
+  app: App;
+  /** Opened right after creating the app: the title says so and points to the next step. */
+  isNew?: boolean;
+}>;
 
 /** One app at a glance: its ID, where it runs, who can chat, and the API keys its backend uses. */
-export function AppDialog({ app }: AppDialogProps) {
+export function AppDialog({ app, isNew }: AppDialogProps) {
   const { openDialog } = useDialog();
   const { copy } = useClipboard();
   const apiKeysQuery = useListApiKey({ searchParams: { appId: app.id, take: MAX_TAKE, skip: 0 } });
@@ -39,8 +43,12 @@ export function AppDialog({ app }: AppDialogProps) {
   return (
     <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-lg">
       <DialogHeader>
-        <DialogTitle>{app.name}</DialogTitle>
-        <DialogDescription>Where the app runs, who can chat, and the keys your backend uses.</DialogDescription>
+        <DialogTitle>{isNew ? `${app.name} created` : app.name}</DialogTitle>
+        <DialogDescription>
+          {isNew
+            ? "Next, create an API key for your backend, or copy the app ID for the widget."
+            : "Where the app runs, who can chat, and the keys your backend uses."}
+        </DialogDescription>
       </DialogHeader>
       <DialogBody className="flex flex-col gap-6">
         <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-3 text-sm">

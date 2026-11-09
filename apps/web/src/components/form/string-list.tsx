@@ -3,18 +3,20 @@ import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 
 import { Button } from "../ui/button";
-import { FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
+import { FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import { Input } from "../ui/input";
 
 type Props = {
   name: string;
   label: string;
+  /** Shown under the label. */
+  description?: React.ReactNode;
   placeholder?: string;
   addLabel?: string;
 };
 
 /** Edits a string array as one text input per item, each showing its own validation error. */
-export const FormStringList = ({ name, label, placeholder, addLabel = "Add" }: Props) => {
+export const FormStringList = ({ name, label, description, placeholder, addLabel = "Add" }: Props) => {
   const form = useFormContext();
   const isSubmitting = form.formState.isSubmitting;
   // Only a row the user just added takes focus, not every row when the form opens.
@@ -32,6 +34,7 @@ export const FormStringList = ({ name, label, placeholder, addLabel = "Add" }: P
         return (
           <FormItem role="group" aria-label={label}>
             <FormLabel>{label}</FormLabel>
+            {description && <FormDescription>{description}</FormDescription>}
             {items.map((item, index) => {
               const itemError = itemErrors?.[index]?.message;
               return (
@@ -39,11 +42,13 @@ export const FormStringList = ({ name, label, placeholder, addLabel = "Add" }: P
                   <div className="flex items-center gap-2">
                     <Input
                       value={item}
+                      containerclassname="flex-1"
                       placeholder={placeholder}
                       disabled={isSubmitting}
                       autoFocus={index === addedIndex}
                       aria-label={`${label} ${index + 1}`}
                       aria-invalid={!!itemError}
+                      onBlur={field.onBlur}
                       onChange={(event) =>
                         field.onChange(items.map((other, i) => (i === index ? event.target.value.trim() : other)))
                       }

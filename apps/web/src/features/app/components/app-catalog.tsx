@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InputSearch } from "@/components/ui/input-search";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useDialog } from "@/lib/dialog";
 import { useDeleteApp, useListApiKey, useListApps } from "@snipet/client";
@@ -23,7 +22,11 @@ import { AppDialog, AppFormDialog, AppTokenDialog } from "./dialogs";
 
 import type { App } from "@snipet/shared";
 
+/** Below this many apps the search box is noise: every card fits on screen. */
+const SEARCH_MIN_APPS = 7;
+
 export function AppCatalog() {
+  const { openDialog } = useDialog();
   const appsQuery = useListApps({ searchParams: { take: 500 } });
   // One request for every app's key count instead of one per card.
   const apiKeysQuery = useListApiKey();
@@ -32,16 +35,38 @@ export function AppCatalog() {
   if (appsQuery.isLoading) {
     return (
       <div className="flex min-h-0 flex-1 flex-col gap-5">
-        {/* Same toolbar slot as the loaded view, so the grid doesn't shift when the search box appears. */}
-        <Skeleton className="h-10 w-full shrink-0 sm:ml-auto sm:w-72" />
         <CatalogListSkeleton size="md" />
       </div>
     );
   }
-  if (appsQuery.isError) return <p className="text-destructive text-sm">Failed to load apps.</p>;
+  if (appsQuery.isError) {
+    return (
+      <div className="flex items-center gap-3">
+        <p className="text-destructive text-sm">Failed to load apps.</p>
+        <Button variant="outline" size="sm" disabled={appsQuery.isFetching} onClick={() => void appsQuery.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  const allApps = appsQuery.data?.data ?? [];
+  if (allApps.length === 0) {
+    return (
+      <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed p-6">
+        <div>
+          <p className="font-medium">Create your first app</p>
+          <p className="text-muted-foreground text-sm">
+            The chat widget and the API both need an app. Make one for each site or product your agents run on.
+          </p>
+        </div>
+        <Button onClick={() => openDialog({ component: AppFormDialog, props: {} })}>Create app</Button>
+      </div>
+    );
+  }
 
   const query = search.trim().toLowerCase();
-  const apps = (appsQuery.data?.data ?? []).filter((app) => !query || app.name.toLowerCase().includes(query));
+  const apps = allApps.filter((app) => !query || app.name.toLowerCase().includes(query));
   const apiKeyCounts = new Map<string, number>();
   for (const apiKey of apiKeysQuery.data?.data ?? []) {
     apiKeyCounts.set(apiKey.appId, (apiKeyCounts.get(apiKey.appId) ?? 0) + 1);
@@ -49,20 +74,22 @@ export function AppCatalog() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5">
-      <div className="flex shrink-0 sm:justify-end">
-        <InputSearch
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search apps…"
-          className="w-full sm:w-72"
-        />
-      </div>
+      {(allApps.length >= SEARCH_MIN_APPS || search) && (
+        <div className="flex shrink-0 sm:justify-end">
+          <InputSearch
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search apps…"
+            className="w-full sm:w-72"
+          />
+        </div>
+      )}
       <div className="min-h-0 flex-1">
         <CatalogList
           items={apps}
           size="md"
           containerClassName="h-full"
-          emptyMessage={query ? "No apps match your search." : "No apps yet."}
+          emptyMessage="No apps match your search."
           renderItem={(app) => (
             <AppCard app={app} apiKeyCount={apiKeysQuery.isSuccess ? (apiKeyCounts.get(app.id) ?? 0) : undefined} />
           )}
