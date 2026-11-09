@@ -14,9 +14,9 @@ import type { CanActivate, ExecutionContext, INestApplication } from "@nestjs/co
 @Injectable()
 class FakeAuthGuard implements CanActivate {
   canActivate(ctx: ExecutionContext) {
-    const req = ctx.switchToHttp().getRequest<{ headers: Record<string, string>; auth?: unknown }>();
+    const req = ctx.switchToHttp().getRequest<{ headers: Record<string, string>; ctx: unknown }>();
     const sub = req.headers["x-sub"];
-    req.auth = sub ? { type: "appToken", token: { sub, app: { id: "app-1" } } } : { type: "apiKey" };
+    req.ctx = { auth: sub ? { type: "appToken", token: { sub, app: { id: "app-1" } } } : { type: "apiKey" } };
     return true;
   }
 }

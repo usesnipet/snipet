@@ -20,7 +20,10 @@ export interface AuthUser {
 
 /** How the request authenticated, set by AuthGuard on @Private routes. */
 export type RequestAuth =
-  { type: "user"; user: AuthUser } | { type: "apiKey"; apiKey: ApiKey } | { type: "appToken"; token: AppTokenPayload };
+  | { type: "user"; user: AuthUser }
+  /** `externalUserId`: the app's end user the key's backend acts for, from X-External-User-Id. */
+  | { type: "apiKey"; apiKey: ApiKey; externalUserId: string | null }
+  | { type: "appToken"; token: AppTokenPayload };
 
 /** The route's config for one strategy type, e.g. the roles of `UserAuth(...)`. */
 export type StrategyOptions<T extends AuthStrategy["type"]> = Extract<AuthStrategy, { type: T }>;

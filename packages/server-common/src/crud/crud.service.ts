@@ -26,8 +26,8 @@ export abstract class CrudService<T extends BaseEntity, C extends BaseContext = 
   ) {}
 
   // The only way to reach the table: uses the context's transaction when there is one.
-  protected repository(ctx: C): Repository<T> {
-    return (ctx.tx ?? this.manager).getRepository(this.target);
+  protected repository(ctx?: C): Repository<T> {
+    return (ctx?.tx ?? this.manager).getRepository(this.target);
   }
 
   // Runs fn in a transaction, reusing the context's one if it's already in one.

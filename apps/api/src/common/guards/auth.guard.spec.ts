@@ -1,10 +1,12 @@
 import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "#src/modules/app/app.service.js";
-import { ExecutionContext, ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ExecutionContext, ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Role } from "@snipet/shared";
 
 import { ApiKeyAuth, AppTokenAuth, Private, Public, UserAuth } from "../decorators/auth.decorator.js";
+
+import { AppContext } from "../context/app-context.js";
 
 import { AuthGuard } from "./auth.guard.js";
 import { ApiKeyStrategy } from "./strategies/api-key.strategy.js";
@@ -38,13 +40,13 @@ function run(
     const descriptor = Object.getOwnPropertyDescriptor(Controller.prototype, "handler")!;
     decorators.method(Controller.prototype, "handler", descriptor);
   }
-  const request: Record<string, unknown> = { headers };
+  const request = { headers, ctx: AppContext.create("test") };
   const ctx = {
     getHandler: () => Object.getOwnPropertyDescriptor(Controller.prototype, "handler")!.value as () => void,
     getClass: () => Controller,
     switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
-  return guard.canActivate(ctx).then(() => request.auth);
+  return guard.canActivate(ctx).then(() => request.ctx.auth);
 }
 
 const bearer = (role: Role) => ({ authorization: `Bearer ${jwt.sign({ sub: "u-1", role })}` });
@@ -81,7 +83,18 @@ describe("AuthGuard", () => {
   it("accepts an API key when the route allows it", async () => {
     await expect(run({ cls: Private(UserAuth(), ApiKeyAuth()) }, { "x-api-key": "k" })).resolves.toMatchObject({
       type: "apiKey",
+      externalUserId: null,
     });
+  });
+
+  it("takes the API key's end user from X-External-User-Id", async () => {
+    const route = { cls: Private(ApiKeyAuth()) };
+    await expect(run(route, { "x-api-key": "k", "x-external-user-id": "eu-1" })).resolves.toMatchObject({
+      externalUserId: "eu-1",
+    });
+    await expect(run(route, { "x-api-key": "k", "x-external-user-id": "" })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it("method decorators override the class's", async () => {
