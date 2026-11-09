@@ -21,10 +21,9 @@ Many plugins come with instructions that tell the model how to use their tools w
 
 ## Hooks
 
-Some plugins act on the run itself instead of offering tools: they hook into moments of the agent loop, like before each model call or each tool call, and can change what goes through, block a tool call, answer in the model's place or stop the run. A plugin card shows what each of its hooks can do.
+Some plugins act on the run itself instead of offering tools: they hook into moments of the agent loop, like before each model call or each tool call, and can change what goes through, block a tool call, answer in the model's place or stop the run. The connection form shows what each of its hooks can do.
 
-- **Debug** saves every event of the agent's runs as a JSON file in storage, to inspect what goes in and out. The files hold whole conversations: add it only while debugging.
-- **Webhook** sends each event to a URL and uses its JSON reply, so any service of yours can act on the run. Set a signing secret to have each request signed in the `X-Snipet-Signature` header.
+- **Debug (disk)** and **Debug (S3)** save every event of the agent's runs as a JSON file, in a directory of the API server or in an S3 bucket, to inspect what goes in and out. The files hold whole conversations: add them only while debugging.
 
 ## Any MCP server
 
