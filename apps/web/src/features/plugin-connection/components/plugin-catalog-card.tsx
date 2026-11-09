@@ -20,7 +20,7 @@ export function PluginCatalogCard({ plugin, view }: PluginCatalogCardProps) {
 
   const onClick = () => {
     if (connected) openDialog({ component: PluginConnectionListDialog, props: { plugin } });
-    else openDialog({ component: PluginConnectionFormDialog, props: { plugin } });
+    else openDialog({ component: PluginConnectionFormDialog, props: { plugin, openListOnCreate: true } });
   };
 
   return (

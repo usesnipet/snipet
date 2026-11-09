@@ -49,8 +49,8 @@
       },
       "timeout": {
         "type": "integer",
-        "title": "Timeout",
-        "description": "Seconds to wait for the bucket to answer, when saving an event or on the health check.",
+        "title": "Timeout (seconds)",
+        "description": "How long to wait for the bucket to answer, when saving an event or on the health check.",
         "minimum": 1,
         "maximum": 60,
         "default": 10

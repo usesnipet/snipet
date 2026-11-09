@@ -24,8 +24,8 @@
       },
       "timeout": {
         "type": "number",
-        "title": "Timeout",
-        "description": "The timeout in seconds for the MCP server",
+        "title": "Timeout (seconds)",
+        "description": "How long to wait for the MCP server to answer.",
         "default": 10
       }
     },

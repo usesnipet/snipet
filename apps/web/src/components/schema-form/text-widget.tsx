@@ -1,4 +1,8 @@
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
+
+import { ariaDescribedByIds, descriptionId } from "@rjsf/utils";
 
 import type { WidgetProps } from "@rjsf/utils";
 
@@ -31,6 +35,8 @@ export function PasswordWidget(props: WidgetProps) {
     <BaseInputTemplate
       {...props}
       type="password"
+      // The empty field stands for the saved value, so the browser mustn't block submit on a required secret.
+      required={false}
       value={props.value === SECRET_PLACEHOLDER ? "" : props.value}
       placeholder="Saved. Leave empty to keep the current value."
       onChange={(value: string | undefined) => props.onChange(value ? value : SECRET_PLACEHOLDER)}
@@ -38,5 +44,42 @@ export function PasswordWidget(props: WidgetProps) {
   );
 }
 
+/** RJSF's checkbox puts the description above the box; this one puts it below the label, like every other field. */
+export function CheckboxWidget({
+  id,
+  value,
+  disabled,
+  readonly,
+  label,
+  hideLabel,
+  schema,
+  options,
+  onChange,
+}: WidgetProps) {
+  const description = (options.description as string | undefined) || schema.description;
+  return (
+    <div className="flex flex-col gap-2" aria-describedby={ariaDescribedByIds(id)}>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={id}
+          checked={Boolean(value)}
+          disabled={disabled || readonly}
+          onCheckedChange={(checked) => onChange(checked === true)}
+        />
+        {!hideLabel && label && (
+          <Label htmlFor={id} className="leading-tight">
+            {label}
+          </Label>
+        )}
+      </div>
+      {!hideLabel && description && (
+        <span id={descriptionId(id)} className="text-muted-foreground text-xs font-medium">
+          {description}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /** Widget overrides shared by the schema forms. */
-export const widgets = { TextWidget, PasswordWidget };
+export const widgets = { TextWidget, PasswordWidget, CheckboxWidget };
