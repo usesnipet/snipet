@@ -18,8 +18,7 @@ import { useMemo } from "react";
 
 import { syncState, useDeleteLlmConnection, useListLlmConnections, useSyncLlmConnection } from "@snipet/client";
 
-import { CreateLlmConnectionDialog } from "./create-llm-connection-dialog";
-import { TestLlmConnectionDialog } from "./test-llm-connection-dialog";
+import { CreateLlmConnectionDialog, TestLlmConnectionDialog } from "./dialogs";
 
 import type { LlmConnection } from "@snipet/shared";
 

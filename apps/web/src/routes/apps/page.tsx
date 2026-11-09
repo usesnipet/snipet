@@ -1,7 +1,7 @@
 import { CatalogPageContent } from "@/components/catalog";
 import { Page } from "@/components/page";
 import { AppCatalog } from "@/features/app/components/app-catalog";
-import { AppFormDialog } from "@/features/app/components/app-form-dialog";
+import { AppFormDialog } from "@/features/app/components/dialogs";
 import { useDialog } from "@/lib/dialog";
 
 export const AppsPage = () => {

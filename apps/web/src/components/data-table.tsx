@@ -4,7 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "./ui/button";
-import { Loading } from "./ui/loading";
+import { Skeleton } from "./ui/skeleton";
 import { ScrollArea } from "./ui/scroll-area";
 
 import type { Paginated } from "@/schemas/paginated";
@@ -35,6 +35,10 @@ export type DataTableProps<T> = {
 
 const DEFAULT_PAGE_SIZE = 50;
 
+/** Placeholder rows while the first page loads: enough to suggest a table without filling the screen. */
+const SKELETON_ROWS = 5;
+/** Varied bar widths per column, so the placeholder reads as text rather than a grid of boxes. */
+const SKELETON_WIDTHS = ["w-3/4", "w-1/2", "w-2/3", "w-1/3"];
 export function DataTable<T>({
   columns,
   useQuery,
@@ -74,11 +78,16 @@ export function DataTable<T>({
           </TableHeader>
           <TableBody>
             {loading && rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  <Loading />
-                </TableCell>
-              </TableRow>
+              Array.from({ length: Math.min(pageSize, SKELETON_ROWS) }, (_, rowIndex) => (
+                <TableRow key={rowIndex} aria-hidden={rowIndex > 0}>
+                  {columns.map((column, columnIndex) => (
+                    <TableCell key={column.id} className={column.className}>
+                      {rowIndex === 0 && columnIndex === 0 && <span className="sr-only">Loading</span>}
+                      <Skeleton className={cn("h-4", SKELETON_WIDTHS[columnIndex % SKELETON_WIDTHS.length])} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">

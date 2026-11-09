@@ -1,6 +1,6 @@
-import { CatalogCard, CatalogList } from "@/components/catalog";
+import { CatalogCard, CatalogList, CatalogListSkeleton } from "@/components/catalog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DeleteDialog } from "@/components/confirm-dialog";
-import { LoadingFallback } from "@/components/loading-fallback";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,7 +31,15 @@ export function AgentCatalog() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
-  if (agentsQuery.isLoading) return <LoadingFallback className="min-h-40" />;
+  if (agentsQuery.isLoading) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-5">
+        {/* Same toolbar slot as the loaded view, so the grid doesn't shift when the search box appears. */}
+        <Skeleton className="h-10 w-full shrink-0 sm:ml-auto sm:w-72" />
+        <CatalogListSkeleton size="md" />
+      </div>
+    );
+  }
   if (agentsQuery.isError) {
     return (
       <div className="flex items-center gap-3">

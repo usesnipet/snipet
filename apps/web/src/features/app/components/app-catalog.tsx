@@ -1,6 +1,6 @@
-import { CatalogCard, CatalogList } from "@/components/catalog";
+import { CatalogCard, CatalogList, CatalogListSkeleton } from "@/components/catalog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DeleteDialog } from "@/components/confirm-dialog";
-import { LoadingFallback } from "@/components/loading-fallback";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,8 +17,7 @@ import { AppWindow, Copy, KeyRound, MoreHorizontal, Pencil, Trash2 } from "lucid
 import { useState } from "react";
 import stc from "string-to-color";
 
-import { AppFormDialog } from "./app-form-dialog";
-import { AppTokenDialog } from "./app-token-dialog";
+import { AppFormDialog, AppTokenDialog } from "./dialogs";
 
 import type { App } from "@snipet/shared";
 
@@ -26,7 +25,15 @@ export function AppCatalog() {
   const appsQuery = useListApps({ searchParams: { take: 500 } });
   const [search, setSearch] = useState("");
 
-  if (appsQuery.isLoading) return <LoadingFallback className="min-h-40" />;
+  if (appsQuery.isLoading) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-5">
+        {/* Same toolbar slot as the loaded view, so the grid doesn't shift when the search box appears. */}
+        <Skeleton className="h-10 w-full shrink-0 sm:ml-auto sm:w-72" />
+        <CatalogListSkeleton size="md" />
+      </div>
+    );
+  }
   if (appsQuery.isError) return <p className="text-destructive text-sm">Failed to load apps.</p>;
 
   const query = search.trim().toLowerCase();

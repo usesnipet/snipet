@@ -2,7 +2,7 @@ import { Page, PageActions } from "@/components/page";
 import { SecretKeyDialog } from "@/components/secret-key-dialog";
 import { Button } from "@/components/ui/button";
 import { ApiKeyTable } from "@/features/api-key/components/api-key-table";
-import { CreateApiKeyDialog } from "@/features/api-key/components/create-api-key-dialog";
+import { CreateApiKeyDialog } from "@/features/api-key/components/dialogs";
 import { useDialog } from "@/lib/dialog/use-dialog";
 import { Plus } from "lucide-react";
 

@@ -1,6 +1,6 @@
 import { CatalogPageContent, RegistryCatalog } from "@/components/catalog";
 import { Page } from "@/components/page";
-import { CreateLlmConnectionDialog } from "@/features/llm-connection/components/create-llm-connection-dialog";
+import { CreateLlmConnectionDialog } from "@/features/llm-connection/components/dialogs";
 import { LlmConnectionCatalogCard } from "@/features/llm-connection/components/llm-connection-catalog-card";
 import { useDialog } from "@/lib/dialog";
 

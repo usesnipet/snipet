@@ -21,7 +21,7 @@ import {
   useSyncPluginConnection,
 } from "@snipet/client";
 
-import { PluginConnectionFormDialog } from "./plugin-connection-form-dialog";
+import { PluginConnectionFormDialog } from "./dialogs";
 
 import type { PluginManifest } from "@snipet/shared";
 

@@ -1,10 +1,9 @@
-import { LoadingFallback } from "@/components/loading-fallback";
 import { InputSearch } from "@/components/ui/input-search";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 
-import { CatalogList } from "./catalog-list";
+import { CatalogList, CatalogListSkeleton } from "./catalog-list";
 import {
   buildRegistryViews,
   filterRegistryViews,
@@ -120,7 +119,7 @@ export function RegistryCatalog<C>({
 
       <div className="min-h-0 flex-1">
         {isLoading ? (
-          <LoadingFallback className="min-h-40" />
+          <CatalogListSkeleton size="lg" count={4} />
         ) : isError ? (
           <p className="text-destructive text-sm">Failed to load {noun}.</p>
         ) : (

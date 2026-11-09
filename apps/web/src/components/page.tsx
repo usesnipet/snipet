@@ -2,7 +2,7 @@ import { createContext, Suspense, useContext, useEffect, useLayoutEffect, useSta
 import { ErrorBoundary } from "react-error-boundary";
 
 import { ErrorFallback } from "./error-fallback";
-import { LoadingFallback } from "./loading-fallback";
+import { PageBodySkeleton } from "./page-skeleton";
 
 type PageActionsContextType = {
   setActions: (node: React.ReactNode) => void;
@@ -47,7 +47,7 @@ export function Page({ title, description, documentTitle, children, actions, lef
         </header>
         <div className="flex w-full max-w-6xl mx-auto min-h-0 flex-1 flex-col">
           <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error as Error} />}>
-            <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
+            <Suspense fallback={<PageBodySkeleton />}>{children}</Suspense>
           </ErrorBoundary>
         </div>
       </div>

@@ -16,7 +16,7 @@ import { CalendarClock, MoreHorizontal, RefreshCw, Trash2 } from "lucide-react";
 
 import { useDeleteApiKey, useListApiKey, useRollApiKey } from "@snipet/client";
 
-import { UpdateApiKeyExpirationDialog } from "./update-api-key-expiration-dialog";
+import { UpdateApiKeyExpirationDialog } from "./dialogs";
 
 import type { DataTableColumn, DataTablePagination } from "@/components/data-table";
 import type { ApiKey, ApiKeyWithSecret } from "@snipet/shared";

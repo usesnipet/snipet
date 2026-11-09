@@ -15,6 +15,12 @@
   }
 }
 
+/* Route loading bar: a third-width bar crossing the full track. */
+@keyframes route-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
 /* prompt-kit loader keyframes */
 @keyframes typing {
   0%, 100% { transform: translateY(0); opacity: 0.5; }

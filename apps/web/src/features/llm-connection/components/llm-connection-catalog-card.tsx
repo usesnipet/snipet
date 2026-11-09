@@ -3,8 +3,7 @@ import { Icon } from "@/components/icon";
 import { useDialog } from "@/lib/dialog";
 import { ArrowRight, Plus } from "lucide-react";
 
-import { LlmConnectionListDialog } from "./llm-connection-list-dialog";
-import { CreateLlmConnectionDialog } from "./create-llm-connection-dialog";
+import { CreateLlmConnectionDialog, LlmConnectionListDialog } from "./dialogs";
 
 import type { RegistryView } from "@/components/catalog";
 import type { LlmConnection } from "@snipet/shared";

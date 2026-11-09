@@ -1,6 +1,6 @@
 import { Page, PageActions } from "@/components/page";
 import { Button } from "@/components/ui/button";
-import { CreateUserDialog } from "@/features/users/components/create-user-dialog";
+import { CreateUserDialog } from "@/features/users/components/dialogs";
 import { UsersTable } from "@/features/users/components/users-table";
 import { useDialog } from "@/lib/dialog";
 import { Plus } from "lucide-react";

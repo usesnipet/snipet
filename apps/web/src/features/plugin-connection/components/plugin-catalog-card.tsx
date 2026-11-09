@@ -4,8 +4,7 @@ import { useDialog } from "@/lib/dialog";
 import { ArrowRight, Plus } from "lucide-react";
 
 import { capabilityLabels } from "../capabilities";
-import { PluginConnectionFormDialog } from "./plugin-connection-form-dialog";
-import { PluginConnectionListDialog } from "./plugin-connection-list-dialog";
+import { PluginConnectionFormDialog, PluginConnectionListDialog } from "./dialogs";
 
 import type { RegistryView } from "@/components/catalog";
 import type { PluginConnection, PluginManifest } from "@snipet/shared";

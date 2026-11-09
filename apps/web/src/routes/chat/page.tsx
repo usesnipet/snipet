@@ -1,5 +1,5 @@
-import { LoadingFallback } from "@/components/loading-fallback";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChatInput } from "@/features/agent-run/components/chat-input";
 import { ChatMessages } from "@/features/agent-run/components/chat-messages";
 import { SessionSidebar } from "@/features/agent-run/components/session-sidebar";
@@ -133,7 +133,7 @@ export const ChatPage = () => {
         ) : (
           <>
             {history.isLoading ? (
-              <LoadingFallback />
+              <ChatHistorySkeleton />
             ) : (
               <ChatMessages
                 messages={messages}
@@ -152,3 +152,33 @@ export const ChatPage = () => {
     </SidebarProvider>
   );
 };
+
+/**
+ * A chat's shape while its history loads: a user bubble on the right, then an
+ * agent reply with its avatar and a few lines, on the same column as `ChatMessages`.
+ */
+function ChatHistorySkeleton() {
+  return (
+    <div role="status" className="flex-1 overflow-hidden">
+      <span className="sr-only">Loading chat</span>
+      <div aria-hidden className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
+        {[0, 1].map((turn) => (
+          <div key={turn} className="flex flex-col gap-6">
+            <div className="flex justify-end">
+              <Skeleton className="h-11 w-1/2 rounded-3xl" />
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="size-6 rounded-lg" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-11/12" />
+              <Skeleton className="h-4 w-3/5" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

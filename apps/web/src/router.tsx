@@ -4,9 +4,9 @@ import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from "re
 import { RouterProvider } from "react-router/dom";
 
 import { RouteError } from "./components/error-fallback";
-import { LoadingFallback } from "./components/loading-fallback";
 import { RequireAuth } from "./components/require-auth";
 import { RequireRole } from "./components/require-role";
+import { SnipetLoader } from "./components/snipet-loader";
 import { SettingsProvider } from "./context/settings-provider";
 import { ROUTES } from "./routes";
 
@@ -35,7 +35,7 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route
       element={
-        <Suspense fallback={<LoadingFallback className="min-h-svh" />}>
+        <Suspense fallback={<SnipetLoader className="min-h-svh" />}>
           <Outlet />
         </Suspense>
       }
