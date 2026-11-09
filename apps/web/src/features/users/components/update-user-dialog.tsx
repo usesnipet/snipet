@@ -1,6 +1,7 @@
 import { FormInput } from "@/components/form/input";
 import { Button } from "@/components/ui/button";
 import {
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -59,26 +60,28 @@ export function UpdateUserDialog({ user, close }: UpdateUserDialogProps) {
   });
 
   return (
-    <DialogContent className="sm:max-w-md">
+    <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Edit user</DialogTitle>
         <DialogDescription>
           Update settings for <span className="font-medium text-foreground">{user.name}</span>.
         </DialogDescription>
       </DialogHeader>
-      <Form {...form}>
-        <form id={formId} onSubmit={onSubmit} className="space-y-4">
-          <FormInput name="name" label="Name" />
-          <FormInput
-            name="password"
-            label="Password"
-            type="password"
-            placeholder="Leave blank to keep current password"
-            description="Leave blank to keep the current password."
-          />
-          <RoleSelect name="role" />
-        </form>
-      </Form>
+      <DialogBody>
+        <Form {...form}>
+          <form id={formId} onSubmit={onSubmit} className="space-y-4">
+            <FormInput name="name" label="Name" />
+            <FormInput
+              name="password"
+              label="Password"
+              type="password"
+              placeholder="Leave blank to keep current password"
+              description="Leave blank to keep the current password."
+            />
+            <RoleSelect name="role" />
+          </form>
+        </Form>
+      </DialogBody>
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline" disabled={isPending}>

@@ -3,6 +3,7 @@ import { FormDurationSelect } from "@/components/form/duration-select";
 import { FormInput } from "@/components/form/input";
 import { Button } from "@/components/ui/button";
 import {
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -17,6 +18,7 @@ import { SecretKeyDialog } from "@/components/secret-key-dialog";
 import { useDialog } from "@/lib/dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createApiKeySchema } from "@snipet/shared";
+import { useId } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCreateApiKey } from "@snipet/client";
@@ -35,6 +37,7 @@ type CreateApiKeyDialogProps = DialogInstanceProps<{
 /** Creates a key for one app, then shows its secret once. */
 export function CreateApiKeyDialog({ app, close }: CreateApiKeyDialogProps) {
   const { openDialog } = useDialog();
+  const formId = `create-api-key-${useId()}`;
   const form = useForm<CreateApiKeyInput, unknown, CreateApiKey>({
     resolver: zodResolver(createApiKeySchema),
     defaultValues: { name: "", expiresAt: null, appId: app.id },
@@ -62,7 +65,7 @@ export function CreateApiKeyDialog({ app, close }: CreateApiKeyDialogProps) {
   });
 
   return (
-    <DialogContent className="sm:max-w-md">
+    <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-md">
       <DialogHeader>
         <DialogTitle>New API key</DialogTitle>
         <DialogDescription>
@@ -70,25 +73,27 @@ export function CreateApiKeyDialog({ app, close }: CreateApiKeyDialogProps) {
           users. The secret is shown only once.
         </DialogDescription>
       </DialogHeader>
-      <Form {...form}>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <FieldGroup>
-            <FormInput name="name" label="Name" placeholder="Production" required />
-            <FormDurationSelect name="expiresAt" label="Expiration" placeholder="Select duration" />
-          </FieldGroup>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isPending}>
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Spinner size="sm" />}
-              Create key
-            </Button>
-          </DialogFooter>
-        </form>
-      </Form>
+      <DialogBody>
+        <Form {...form}>
+          <form id={formId} onSubmit={onSubmit} className="flex flex-col gap-4">
+            <FieldGroup>
+              <FormInput name="name" label="Name" placeholder="Production" required />
+              <FormDurationSelect name="expiresAt" label="Expiration" placeholder="Select duration" />
+            </FieldGroup>
+          </form>
+        </Form>
+      </DialogBody>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button type="button" variant="outline" disabled={isPending}>
+            Cancel
+          </Button>
+        </DialogClose>
+        <Button type="submit" form={formId} disabled={isPending}>
+          {isPending && <Spinner size="sm" />}
+          Create key
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 }

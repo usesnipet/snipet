@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -168,12 +169,12 @@ function PluginConfigure({
           Configure
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Configure {connection.name}</DialogTitle>
           <DialogDescription>Choose what this agent can use. Changes apply when you save the agent.</DialogDescription>
         </DialogHeader>
-        <div className="max-h-[70vh] space-y-5 overflow-y-auto p-1">
+        <DialogBody className="space-y-5">
           {hasTools && <ToolPicker name={name} connection={connection} tools={tools} current={current} />}
           {hooks && <HookList name={name} hooks={hooks} />}
           {hasSettings && settings && (
@@ -186,7 +187,7 @@ function PluginConfigure({
               />
             </div>
           )}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button">Done</Button>

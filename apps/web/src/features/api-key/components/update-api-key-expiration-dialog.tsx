@@ -2,6 +2,7 @@ import { resolveDurationExpiresAt } from "@/components/duration-select";
 import { FormDurationSelect } from "@/components/form/duration-select";
 import { Button } from "@/components/ui/button";
 import {
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -13,6 +14,7 @@ import { FieldGroup } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useId } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -37,6 +39,7 @@ type UpdateApiKeyExpirationDialogProps = DialogInstanceProps<{
 }>;
 
 export function UpdateApiKeyExpirationDialog({ apiKey, close }: UpdateApiKeyExpirationDialogProps) {
+  const formId = `update-api-key-expiration-${useId()}`;
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { expires_at: toDatetimeLocalValue(apiKey.expiresAt) },
@@ -57,7 +60,7 @@ export function UpdateApiKeyExpirationDialog({ apiKey, close }: UpdateApiKeyExpi
   });
 
   return (
-    <DialogContent className="sm:max-w-md">
+    <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Update expiration</DialogTitle>
         <DialogDescription>
@@ -65,24 +68,26 @@ export function UpdateApiKeyExpirationDialog({ apiKey, close }: UpdateApiKeyExpi
           to remove expiration.
         </DialogDescription>
       </DialogHeader>
-      <Form {...form}>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <FieldGroup>
-            <FormDurationSelect name="expires_at" label="Expiration" placeholder="Select duration" />
-          </FieldGroup>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isPending}>
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Spinner size="sm" />}
-              Save
-            </Button>
-          </DialogFooter>
-        </form>
-      </Form>
+      <DialogBody>
+        <Form {...form}>
+          <form id={formId} onSubmit={onSubmit} className="flex flex-col gap-4">
+            <FieldGroup>
+              <FormDurationSelect name="expires_at" label="Expiration" placeholder="Select duration" />
+            </FieldGroup>
+          </form>
+        </Form>
+      </DialogBody>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button type="button" variant="outline" disabled={isPending}>
+            Cancel
+          </Button>
+        </DialogClose>
+        <Button type="submit" form={formId} disabled={isPending}>
+          {isPending && <Spinner size="sm" />}
+          Save
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 }

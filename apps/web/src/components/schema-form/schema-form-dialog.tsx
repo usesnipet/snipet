@@ -4,6 +4,7 @@ import validator from "@rjsf/validator-ajv8";
 
 import { Button } from "@/components/ui/button";
 import {
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -45,7 +46,7 @@ export function SchemaFormDialog({ title, description, schema, formData, onSubmi
   };
 
   return (
-    <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+    <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-lg">
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
         {description ? (
@@ -55,17 +56,19 @@ export function SchemaFormDialog({ title, description, schema, formData, onSubmi
         )}
       </DialogHeader>
 
-      <Form
-        id={formId}
-        schema={schema}
-        formData={formData}
-        validator={validator}
-        uiSchema={uiSchema}
-        widgets={widgets}
-        onSubmit={handleSubmit}
-        liveValidate={false}
-        showErrorList={false}
-      />
+      <DialogBody>
+        <Form
+          id={formId}
+          schema={schema}
+          formData={formData}
+          validator={validator}
+          uiSchema={uiSchema}
+          widgets={widgets}
+          onSubmit={handleSubmit}
+          liveValidate={false}
+          showErrorList={false}
+        />
+      </DialogBody>
 
       <DialogFooter>
         <DialogClose asChild>
