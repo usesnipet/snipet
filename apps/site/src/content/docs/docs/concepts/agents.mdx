@@ -3,7 +3,7 @@ title: Agents
 description: A prompt, the models it runs on and the plugin actions it may call.
 ---
 
-An agent answers messages by calling models and, when it needs to, plugin actions. Create and edit agents in **Agents > Browse**.
+An agent answers messages by calling models and, when it needs to, plugin actions. Create and edit agents in **Agents**.
 
 ![Agent form](/images/docs/agents-form.png)
 
@@ -25,11 +25,11 @@ For plugins with hooks, turn off the optional hooks you don't want and fill in t
 
 Each time the agent calls a model is a turn. When the model asks for plugin actions, Snipet runs them and calls the model again with the results, until it answers in plain text. **Max turns** (20 by default) stops an agent that keeps calling actions.
 
-## Playground
+## Chat
 
-**Agents > Playground** is a chat with any of your agents. Every conversation is saved as a session, and you can open the arguments and result of each plugin call.
+**Chat** talks to any of your agents. Every conversation is saved as a session, and you can open the arguments and result of each plugin call.
 
-![Agent playground with a tool call](/images/docs/agents-playground.png)
+![Chat with a tool call](/images/docs/agents-playground.png)
 
 ## Debug mode
 

@@ -3,6 +3,7 @@ import { SyncStatus } from "@/components/sync-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -17,7 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDialog } from "@/lib/dialog";
@@ -91,14 +91,12 @@ export function LlmConnectionListDialog({ llm: { key, name } }: LlmConnectionLis
   };
 
   return (
-    <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+    <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-lg">
       <DialogHeader>
         <DialogTitle>{name} connections</DialogTitle>
         <DialogDescription>Agents use the default one when they don't pick a connection.</DialogDescription>
       </DialogHeader>
-      <ScrollArea className="max-h-[calc(100vh-250px)]">
-        <div className="flex flex-col gap-2">{renderBody()}</div>
-      </ScrollArea>
+      <DialogBody className="flex flex-col gap-2">{renderBody()}</DialogBody>
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">

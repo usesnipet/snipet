@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import {
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -11,16 +12,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useExecuteLlmStream, useLLMModels } from "@snipet/client";
+import { syncState, useExecuteLlmStream, useListLlmConnections, useLLMModels } from "@snipet/client";
 import { LlmCapability } from "@snipet/shared";
 import { CircleAlert, Loader2, Play, Square } from "lucide-react";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
 import type { LlmConnection } from "@snipet/shared";
 
 type TestLlmConnectionDialogProps = DialogInstanceProps<{
   connection: LlmConnection;
+  /** Just created: its first sync may still be running, and the title says it was saved. */
+  isNew?: boolean;
 }>;
 
 /** Short enough to answer fast and cheap, specific enough to show the model actually generated text. */
@@ -31,12 +34,30 @@ const DEFAULT_PROMPT = "Reply with one short sentence saying which model you are
  * text. A sync only proves the key can list models; quota, model access or a
  * broken compatible endpoint only show up here.
  */
-export function TestLlmConnectionDialog({ connection }: TestLlmConnectionDialogProps) {
+export function TestLlmConnectionDialog({
+  connection: initialConnection,
+  isNew = false,
+}: TestLlmConnectionDialogProps) {
   const promptId = useId();
   const modelId = useId();
-  const { data: models = [], isLoading: isLoadingModels } = useLLMModels(connection.llmKey, {
+  // The list polls while a sync is pending, so this follows a sync that finishes with the dialog open.
+  const { data: connections } = useListLlmConnections();
+  const connection = connections?.data.find((item) => item.id === initialConnection.id) ?? initialConnection;
+  const isSyncPending = syncState(connection).kind === "pending";
+  const {
+    data: models = [],
+    isLoading: isLoadingModels,
+    refetch: refetchModels,
+  } = useLLMModels(connection.llmKey, {
     searchParams: { connectionId: connection.id },
   });
+  const lastSyncedAt = connection.lastSyncedAt?.getTime();
+  const seenSyncedAt = useRef(lastSyncedAt);
+  useEffect(() => {
+    if (seenSyncedAt.current === lastSyncedAt) return;
+    seenSyncedAt.current = lastSyncedAt;
+    void refetchModels();
+  }, [lastSyncedAt, refetchModels]);
   const textModels = models.filter((model) => model.capabilities.includes(LlmCapability.TEXT));
   const [pickedModelKey, setPickedModelKey] = useState<string>();
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
@@ -60,18 +81,22 @@ export function TestLlmConnectionDialog({ connection }: TestLlmConnectionDialogP
   };
 
   return (
-    <DialogContent className="sm:max-w-lg">
+    <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-lg">
       <DialogHeader>
-        <DialogTitle>Test {connection.name}</DialogTitle>
+        <DialogTitle>{isNew ? `${connection.name} created. Test it?` : `Test ${connection.name}`}</DialogTitle>
         <DialogDescription>Send a prompt to one of its models to check it answers.</DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-4">
+      <DialogBody className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor={modelId}>Model</Label>
           <Select value={modelKey} onValueChange={setPickedModelKey} disabled={isStreaming || textModels.length === 0}>
             <SelectTrigger id={modelId} className="w-full">
-              <SelectValue placeholder={isLoadingModels ? "Loading models…" : "No text models synced"} />
+              <SelectValue
+                placeholder={
+                  isLoadingModels ? "Loading models…" : isSyncPending ? "Syncing models…" : "No text models synced"
+                }
+              />
             </SelectTrigger>
             <SelectContent>
               {textModels.map((model) => (
@@ -81,7 +106,7 @@ export function TestLlmConnectionDialog({ connection }: TestLlmConnectionDialogP
               ))}
             </SelectContent>
           </Select>
-          {!isLoadingModels && textModels.length === 0 && (
+          {!isLoadingModels && !isSyncPending && textModels.length === 0 && (
             <p className="text-muted-foreground text-xs">Sync the connection to load its models, then test again.</p>
           )}
         </div>
@@ -104,7 +129,7 @@ export function TestLlmConnectionDialog({ connection }: TestLlmConnectionDialogP
           durationMs={durationMs}
           usage={usage}
         />
-      </div>
+      </DialogBody>
 
       <DialogFooter>
         <DialogClose asChild>

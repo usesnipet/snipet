@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { syncState } from "../plugin-connection/utils";
 import { llmConnectionService } from "./service";
 
 import type {
@@ -29,6 +30,9 @@ export const useListLlmConnections = (
   useQuery({
     queryKey: [...listLlmConnectionsQueryKey(), opts?.searchParams],
     queryFn: () => llmConnectionService.list(opts),
+    // Model sync runs in the background after create; poll until it settles.
+    refetchInterval: (query) =>
+      query.state.data?.data.some((conn) => syncState(conn).kind === "pending") ? 5000 : false,
   });
 
 export const llmsQueryKey = () => [BASE_QUERY_KEY, "llms"] as const;
