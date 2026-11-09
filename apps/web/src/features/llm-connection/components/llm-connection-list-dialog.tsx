@@ -13,12 +13,13 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDialog } from "@/lib/dialog";
 import { cn } from "@/lib/utils";
-import { Pencil, RefreshCw, Trash } from "lucide-react";
+import { FlaskConical, Pencil, RefreshCw, Trash } from "lucide-react";
 import { useMemo } from "react";
 
 import { syncState, useDeleteLlmConnection, useListLlmConnections, useSyncLlmConnection } from "@snipet/client";
 
 import { CreateLlmConnectionDialog } from "./create-llm-connection-dialog";
+import { TestLlmConnectionDialog } from "./test-llm-connection-dialog";
 
 import type { LlmConnection } from "@snipet/shared";
 
@@ -70,7 +71,7 @@ export function LlmConnectionListDialog({ llm: { key, name } }: LlmConnectionLis
                   <Button
                     variant="outline"
                     size="icon-sm"
-                    aria-label="Sync"
+                    aria-label={`Sync ${connection.name}`}
                     disabled={isSyncing && syncingId === connection.id}
                     onClick={() => sync(connection.id)}
                   >
@@ -79,6 +80,21 @@ export function LlmConnectionListDialog({ llm: { key, name } }: LlmConnectionLis
                   <Button
                     variant="outline"
                     size="icon-sm"
+                    aria-label={`Test ${connection.name}`}
+                    title="Test"
+                    onClick={() =>
+                      openDialog({
+                        component: TestLlmConnectionDialog,
+                        props: { connection },
+                      })
+                    }
+                  >
+                    <FlaskConical />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={`Edit ${connection.name}`}
                     onClick={() =>
                       openDialog({
                         component: CreateLlmConnectionDialog,
@@ -91,6 +107,7 @@ export function LlmConnectionListDialog({ llm: { key, name } }: LlmConnectionLis
                   <Button
                     variant="destructive"
                     size="icon-sm"
+                    aria-label={`Delete ${connection.name}`}
                     onClick={() =>
                       openDialog({
                         component: DeleteDialog,

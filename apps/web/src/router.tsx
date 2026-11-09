@@ -18,9 +18,6 @@ const ChatPage = lazy(() => import("./routes/chat/page").then((m) => ({ default:
 const LlmConnectionsPage = lazy(() =>
   import("./routes/llm-connections/page").then((m) => ({ default: m.LlmConnectionsPage })),
 );
-const LlmPlaygroundPage = lazy(() =>
-  import("./routes/llm-playground/page").then((m) => ({ default: m.LlmPlaygroundPage })),
-);
 const PluginsPage = lazy(() => import("./routes/plugins/page").then((m) => ({ default: m.PluginsPage })));
 const AppsPage = lazy(() => import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
 const UsersPage = lazy(() => import("./routes/users/page").then((m) => ({ default: m.UsersPage })));
@@ -49,7 +46,6 @@ const router = createBrowserRouter(
           <Route element={<Layout />}>
             <Route element={<RequireRole role={Role.Admin} />}>
               <Route path={toReactRouterPath(ROUTES.llmConnections)} element={<LlmConnectionsPage />} />
-              <Route path={toReactRouterPath(ROUTES.llmPlayground)} element={<LlmPlaygroundPage />} />
               <Route path={toReactRouterPath(ROUTES.agents)} element={<AgentsPage />} />
               <Route path={toReactRouterPath(ROUTES.agentNew)} element={<AgentEditorPage />} />
               <Route path={toReactRouterPath(ROUTES.agent)} element={<AgentEditorPage />} />
