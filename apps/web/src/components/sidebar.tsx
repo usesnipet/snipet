@@ -4,7 +4,7 @@ import { Sidebar as SidebarContainer } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
 import { hasRole, Role } from "@snipet/shared";
-import { AppWindow, Bot, Key, MessageSquare, Plug, Server, Settings, Users } from "lucide-react";
+import { AppWindow, Bot, MessageSquare, Plug, Server, Settings, Users } from "lucide-react";
 
 import { SidebarFooter } from "./sidebar/footer";
 
@@ -29,13 +29,6 @@ const navItems: NavEntry[] = [
         title: "Users",
         href: ROUTES.users,
         icon: Users,
-        visible: isAdmin,
-      },
-
-      {
-        title: "API keys",
-        href: ROUTES.apiKey,
-        icon: Key,
         visible: isAdmin,
       },
       {

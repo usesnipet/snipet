@@ -7,3 +7,4 @@ import { lazyNamed } from "@/lib/lazy-named";
  */
 export const AppFormDialog = lazyNamed(() => import("./app-form-dialog"), "AppFormDialog");
 export const AppTokenDialog = lazyNamed(() => import("./app-token-dialog"), "AppTokenDialog");
+export const AppDialog = lazyNamed(() => import("./app-dialog"), "AppDialog");

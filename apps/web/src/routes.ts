@@ -9,7 +9,6 @@ export const ROUTES = {
   plugins: "/admin/plugins",
   apps: "/admin/apps",
   users: "/admin/users",
-  apiKey: "/admin/api-keys",
   settings: "/admin/settings",
 } as const;
 

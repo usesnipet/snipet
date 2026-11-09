@@ -24,7 +24,6 @@ const AppsPage = lazy(() => import("./routes/apps/page").then((m) => ({ default:
 const UsersPage = lazy(() => import("./routes/users/page").then((m) => ({ default: m.UsersPage })));
 const SettingsPage = lazy(() => import("./routes/settings/page").then((m) => ({ default: m.SettingsPage })));
 const NotFoundPage = lazy(() => import("./routes/not-found/page").then((m) => ({ default: m.NotFoundPage })));
-const ApiKeysPage = lazy(() => import("./routes/api-keys/page").then((m) => ({ default: m.ApiKeysPage })));
 
 const toReactRouterPath = (path: RoutePath) => {
   return path.replaceAll(/{([^}]+)}/g, (_, p1) => `:${p1}`);
@@ -57,7 +56,6 @@ const router = createBrowserRouter(
                 <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
                 <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
                 <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
-                <Route path={toReactRouterPath(ROUTES.apiKey)} element={<ApiKeysPage />} />
                 <Route path={toReactRouterPath(ROUTES.settings)} element={<SettingsPage />} />
               </Route>
               <Route path="*" element={<NotFoundPage />} />
