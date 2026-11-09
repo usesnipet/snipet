@@ -1,0 +1,58 @@
+{
+  "key": "9router",
+  "name": "9Router",
+  "description": "9Router runs locally and routes requests to your AI subscriptions and providers behind an OpenAI-compatible endpoint.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "9Router server URL, defaults to http://localhost:20128/v1.",
+        "default": "http://localhost:20128/v1"
+      },
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Optional, only needed when 9Router requires an API key (create one in its dashboard)."
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "description": "How random the replies are: lower is focused and repeatable, higher is more varied and creative. Leave empty to use the model's default.",
+        "minimum": 0,
+        "maximum": 1,
+        "step": 0.01
+      }
+    },
+    "required": ["baseUrl"]
+  },
+  "capabilities": {
+    "models": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl || \"http://localhost:20128/v1\" }}",
+        "apiKey": "{{ connection.apiKey }}"
+      }
+    },
+    "chat": {
+      "driver": "openai",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl || \"http://localhost:20128/v1\" }}",
+        "apiKey": "{{ connection.apiKey }}",
+        "temperature": "{{ connection.temperature }}"
+      }
+    },
+    "healthCheck": {
+      "driver": "http",
+      "options": {
+        "url": "{{ connection.baseUrl || \"http://localhost:20128/v1\" }}/models",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
+      }
+    }
+  }
+}
