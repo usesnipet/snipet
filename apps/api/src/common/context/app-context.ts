@@ -4,14 +4,7 @@ import { BaseContext } from "@snipet/server-common";
 import type { AppTokenPayload } from "@snipet/shared";
 import type { ApiKey } from "#src/modules/api-key/api-key.entity.js";
 import type { AuthUser, RequestAuth } from "../guards/strategies/auth-strategy.js";
-
-/**
- * Who a session belongs to: the logged-in user, or an app, optionally on
- * behalf of one of its end users (the app token's, or the API key's pick).
- */
-export type Owner =
-  | { userId: string; appId: null; externalUserId: null; name: string | null }
-  | { userId: null; appId: string; externalUserId: string | null; name: string | null };
+import type { CoreContext, Owner } from "#src/core/context.js";
 
 /**
  * The API's context. New fields go here, readonly, each with its own `withX`.
@@ -20,7 +13,7 @@ export type Owner =
  * without the route's credential, so reaching one with the wrong (or no) auth
  * means the route's @Private doesn't match what its code reads.
  */
-export class AppContext extends BaseContext {
+export class AppContext extends BaseContext implements CoreContext {
   /** How the request authenticated, set by AuthGuard on @Private routes. */
   readonly auth?: RequestAuth;
 

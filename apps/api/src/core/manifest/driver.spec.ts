@@ -1,6 +1,6 @@
-import { BadRequestException } from "@nestjs/common";
 import { z } from "zod";
 
+import { CoreError } from "../error.js";
 import { Driver } from "./driver.js";
 
 class TestDriver extends Driver(z.strictObject({ url: z.url(), timeout: z.number().default(10) })) {
@@ -12,13 +12,14 @@ describe("Driver", () => {
     expect(new TestDriver().validateOptions({ url: "https://x.dev" })).toEqual({ url: "https://x.dev", timeout: 10 });
   });
 
-  it("throws a BadRequestException without the input in it", () => {
+  it("throws a CoreError without the input in it", () => {
     const run = () => new TestDriver().validateOptions({ url: "secret-value" });
-    expect(run).toThrow(BadRequestException);
+    expect(run).toThrow(CoreError);
     try {
       run();
     } catch (err) {
-      expect(JSON.stringify((err as BadRequestException).getResponse())).not.toContain("secret-value");
+      const { message, details } = err as CoreError;
+      expect(JSON.stringify({ message, details })).not.toContain("secret-value");
     }
   });
 });

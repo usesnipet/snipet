@@ -17,6 +17,26 @@ export default defineConfig([
 
   // Node side: type-checked rules and prettier.
   {
+    files: ["apps/api/src/core/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@nestjs/*", "typeorm", "express", "@snipet/server-common"],
+              message: "core must not depend on frameworks or server-common.",
+            },
+            {
+              regex: "^(#src/|(\\.\\./)+)(modules|infra|drivers|common|env)(/|\\.|$)",
+              message: "core must not import from outside src/core.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["apps/api/**/*.ts", "packages/shared/**/*.ts", "packages/server-common/**/*.ts"],
     extends: [tseslint.configs.recommendedTypeChecked, eslintPluginPrettierRecommended],
     languageOptions: {

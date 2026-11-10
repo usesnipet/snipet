@@ -1,19 +1,18 @@
+import { AppContext } from "#src/common/context/app-context.js";
 import { uniqueSortedBy } from "#src/utils/sort/index.js";
 import { jest } from "@jest/globals";
-
-import { AppContext } from "#src/common/context/app-context.js";
 import { pluginManifestSchema } from "@snipet/shared";
 import { z } from "zod";
 
 import { ConnectionSyncService } from "./connection-sync.service.js";
-import { Driver } from "./driver.js";
-import { DriverRegistry } from "./driver.registry.js";
+import { Driver } from "#src/core/manifest/driver.js";
+import { DriverRegistry } from "#src/core/manifest/driver.registry.js";
 
 import type { PluginManifest } from "@snipet/shared";
 import type { EntityManager } from "typeorm";
 import type { SyncedConnectionEntity } from "./connection-sync.service.js";
-import type { HealthCheckDriver, HealthCheckResult } from "./health-check.js";
-import type { ManifestRegistry } from "./manifest.registry.js";
+import type { HealthCheckDriver, HealthCheckResult } from "#src/core/manifest/health-check.js";
+import type { ManifestRegistry } from "#src/core/manifest/manifest.registry.js";
 
 type Fn = (...args: unknown[]) => Promise<unknown>;
 

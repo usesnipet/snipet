@@ -1,5 +1,5 @@
 import type { JsonObject, LlmConnection as LlmConnectionContract, LlmModel } from "@snipet/shared";
-import { sealConfig } from "#src/manifest/seal-config.js";
+import { sealConfig } from "#src/infra/database/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
 import { Column, Entity, Index } from "typeorm";
 

@@ -56,6 +56,6 @@ describe("DriverRegistry", () => {
     const m = manifest({
       capabilities: { tools: { driver: "mcp", options: { url: "{{ connection.url }}", extra: 1 } } },
     });
-    expect(() => registry.resolve(m, "tools", { url: "x" })).toThrow("invalid options");
+    expect(() => registry.resolve(m, "tools", { url: "x" })).toThrow("invalid driver options");
   });
 });

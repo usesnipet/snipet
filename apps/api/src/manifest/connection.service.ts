@@ -1,13 +1,13 @@
 import { BaseEntity, CrudService, maskSecrets, restoreSecrets, validateJson } from "@snipet/server-common";
 
-import { secretFields } from "./manifest.registry.js";
+import { secretFields } from "#src/core/manifest/manifest.registry.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
 
 import type { BaseManifest, JsonObject } from "@snipet/shared";
 import type { DeepPartial, EntityManager, EntityTarget, QueryDeepPartialEntity } from "typeorm";
-import type { DriverRegistry, DriverTypes } from "./driver.registry.js";
-import type { ManifestRegistry } from "./manifest.registry.js";
+import type { DriverRegistry, DriverTypes } from "#src/core/manifest/driver.registry.js";
+import type { ManifestRegistry } from "#src/core/manifest/manifest.registry.js";
 
 export type ConnectionEntity = BaseEntity & { config: JsonObject };
 

@@ -1,14 +1,13 @@
+import { AppContext } from "#src/common/context/app-context.js";
 import { Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-
-import { AppContext } from "#src/common/context/app-context.js";
 
 import type { BaseManifest } from "@snipet/shared";
 import type { EntityManager, EntityTarget, FindOptionsWhere, Repository } from "typeorm";
 import type { ConnectionEntity } from "./connection.service.js";
-import type { DriverRegistry, DriverTypes } from "./driver.registry.js";
-import type { HealthCheckDriver } from "./health-check.js";
-import type { ManifestRegistry } from "./manifest.registry.js";
+import type { DriverRegistry, DriverTypes } from "#src/core/manifest/driver.registry.js";
+import type { HealthCheckDriver } from "#src/core/manifest/health-check.js";
+import type { ManifestRegistry } from "#src/core/manifest/manifest.registry.js";
 
 const MAX_ERROR_LENGTH = 255;
 

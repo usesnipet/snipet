@@ -6,7 +6,7 @@ import type {
   JsonObject,
 } from "@snipet/shared";
 import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
-import { sealConfig } from "#src/manifest/seal-config.js";
+import { sealConfig } from "#src/infra/database/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
 import {
   AfterLoad,
