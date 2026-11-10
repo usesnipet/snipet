@@ -16,7 +16,11 @@ class FakeAuthGuard implements CanActivate {
   canActivate(ctx: ExecutionContext) {
     const req = ctx.switchToHttp().getRequest<{ headers: Record<string, string>; ctx: unknown }>();
     const sub = req.headers["x-sub"];
-    req.ctx = { auth: sub ? { type: "appToken", token: { sub, app: { id: "app-1" } } } : { type: "apiKey" } };
+    req.ctx = {
+      auth: sub
+        ? { type: "appToken", token: { sub, app: { id: "app-1" } } }
+        : { type: "apiKey", apiKey: { id: "key-1" } },
+    };
     return true;
   }
 }
@@ -75,5 +79,12 @@ describe("RateLimit", () => {
     await post("/run", {}, "anon:a").expect(429);
     await post("/run", {}, "anon:b").expect(200);
     for (let i = 0; i <= env.AGENT_RUNS_PER_END_USER_PER_MINUTE; i++) await post("/run").expect(200);
+  });
+
+  it("limits every route per caller with the global throttler", async () => {
+    for (let i = 0; i < env.REQUESTS_PER_CALLER_PER_MINUTE; i++) await post("/open", {}, "anon:a").expect(200);
+
+    await post("/open", {}, "anon:a").expect(429);
+    await post("/open", {}, "anon:b").expect(200);
   });
 });
