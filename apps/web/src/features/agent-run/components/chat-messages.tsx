@@ -1,3 +1,4 @@
+import { CopyIcon } from "@/components/copy-icon";
 import { JsonViewer } from "@/components/json-viewer";
 import { Button } from "@/components/ui/button";
 import { ChatContainerContent, ChatContainerRoot, ChatContainerScrollAnchor } from "@/components/ui/chat-container";
@@ -7,8 +8,10 @@ import { Markdown } from "@/components/ui/markdown";
 import { MessageAction, MessageActions } from "@/components/ui/message";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { AgentAvatar } from "@/features/agent/components/agent-avatar";
+import { enterUp } from "@/lib/motion";
 import { cn } from "@/lib/utils";
-import { Brain, Check, ChevronRight, CircleAlert, Copy, Wrench, X } from "lucide-react";
+import { Brain, Check, ChevronRight, CircleAlert, Wrench, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
 import type { AgentMessage, AgentRun, AvailableAgent, LlmPart } from "@snipet/shared";
@@ -102,35 +105,53 @@ export function ChatMessages({ agent, messages, pendingInput, draft, streaming, 
   return (
     <ChatContainerRoot className="relative flex-1">
       <ChatContainerContent className="mx-auto max-w-3xl gap-6 px-4 py-8">
-        {blocks.map((block, index) => {
-          if (block.kind === "user") return <UserBubble key={block.key} text={block.text} />;
-          const startsReply = index === 0 || blocks[index - 1].kind === "user";
-          return (
-            <div key={block.key} className="flex flex-col gap-2">
-              {startsReply && <AgentName agent={agent} />}
-              {block.kind === "assistant" ? (
-                <AssistantText parts={block.parts} />
-              ) : (
-                <ToolCalls calls={block.calls} results={results} running={streaming} />
-              )}
-            </div>
-          );
-        })}
-        {pendingInput !== null && <UserBubble text={pendingInput} />}
-        {(draft || waiting) && (
-          <div className="flex flex-col gap-2">
-            {replyStartsAtEnd && <AgentName agent={agent} />}
-            {draft && <Markdown className={MARKDOWN_CLASS}>{draft}</Markdown>}
-            {waiting && <Loader variant="typing" size="sm" />}
-          </div>
-        )}
-        {notice && (
-          <Notice muted={run?.status === "cancelled"}>
-            {notice}
-            {run?.error ? `: ${run.error}` : "."}
-          </Notice>
-        )}
-        {error && <Notice>{error.message}</Notice>}
+        {/*
+          The history on screen at mount stays still; only what arrives later enters.
+          Echoed user messages and finished replies don't animate: they replace the
+          pending bubble and the streamed draft in place, so animating them would flash.
+        */}
+        <AnimatePresence initial={false}>
+          {blocks.map((block, index) => {
+            if (block.kind === "user") return <UserBubble key={block.key} text={block.text} />;
+            const startsReply = index === 0 || blocks[index - 1].kind === "user";
+            const Wrapper = block.kind === "tools" ? motion.div : "div";
+            return (
+              <Wrapper key={block.key} className="flex flex-col gap-2" {...(block.kind === "tools" && enterUp)}>
+                {startsReply && <AgentName agent={agent} />}
+                {block.kind === "assistant" ? (
+                  <AssistantText parts={block.parts} />
+                ) : (
+                  <ToolCalls calls={block.calls} results={results} running={streaming} />
+                )}
+              </Wrapper>
+            );
+          })}
+          {pendingInput !== null && (
+            <motion.div key="pending" {...enterUp}>
+              <UserBubble text={pendingInput} />
+            </motion.div>
+          )}
+          {(draft || waiting) && (
+            <motion.div key="reply" className="flex flex-col gap-2" {...enterUp}>
+              {replyStartsAtEnd && <AgentName agent={agent} />}
+              {draft && <Markdown className={MARKDOWN_CLASS}>{draft}</Markdown>}
+              {waiting && <Loader variant="typing" size="sm" />}
+            </motion.div>
+          )}
+          {notice && (
+            <motion.div key="notice" {...enterUp}>
+              <Notice muted={run?.status === "cancelled"}>
+                {notice}
+                {run?.error ? `: ${run.error}` : "."}
+              </Notice>
+            </motion.div>
+          )}
+          {error && (
+            <motion.div key="error" {...enterUp}>
+              <Notice>{error.message}</Notice>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <ChatContainerScrollAnchor />
       </ChatContainerContent>
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
@@ -197,7 +218,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <MessageAction tooltip={copied ? "Copied" : "Copy"}>
       <Button variant="ghost" size="icon-sm" onClick={copy} aria-label="Copy message">
-        {copied ? <Check /> : <Copy />}
+        <CopyIcon copied={copied} />
       </Button>
     </MessageAction>
   );

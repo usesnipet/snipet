@@ -1,8 +1,8 @@
+import { CopyIcon } from "@/components/copy-icon";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
@@ -40,7 +40,7 @@ export function SecretKeyDialog({
       <div className="flex gap-2">
         <Input readOnly value={secret} className="font-mono text-xs" containerclassname="w-full" />
         <Button type="button" variant="outline" size="icon-lg" onClick={handleCopy}>
-          {copied ? <Check /> : <Copy />}
+          <CopyIcon copied={copied} />
           <span className="sr-only">Copy</span>
         </Button>
       </div>

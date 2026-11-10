@@ -11,10 +11,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { transitions } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { syncState, useExecuteLlmStream, useListLlmConnections, useLLMModels } from "@snipet/client";
 import { LlmCapability } from "@snipet/shared";
 import { CircleAlert, Loader2, Play, Square } from "lucide-react";
+import { motion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
@@ -161,25 +163,37 @@ type TestResultProps = {
   usage?: { inputTokens: number; outputTokens: number };
 };
 
+/** Settles into place when the result first shows and when it flips between reply and error. */
+const resultEnter = {
+  initial: { opacity: 0, scale: 0.98 },
+  animate: { opacity: 1, scale: 1 },
+  transition: transitions.base,
+} as const;
+
 /** The reply as it streams in, then how long it took; on failure, the provider's error and where to fix it. */
 function TestResult({ status, text, error, durationMs, usage }: TestResultProps) {
   if (status === "idle") return null;
 
   if (status === "error") {
     return (
-      <div role="alert" className="border-destructive/40 bg-destructive/5 space-y-1 rounded-lg border p-3 text-sm">
+      <motion.div
+        key="error"
+        {...resultEnter}
+        role="alert"
+        className="border-destructive/40 bg-destructive/5 space-y-1 rounded-lg border p-3 text-sm"
+      >
         <p className="text-destructive flex items-center gap-2 font-medium">
           <CircleAlert className="size-4 shrink-0" />
           The model didn't answer
         </p>
         <p className="text-muted-foreground wrap-break-word">{error ?? "The request failed."}</p>
         <p className="text-muted-foreground text-xs">Check the API key, base URL or model access in Edit.</p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div aria-live="polite" className="bg-muted/30 space-y-2 rounded-lg border p-3">
+    <motion.div key="reply" {...resultEnter} aria-live="polite" className="bg-muted/30 space-y-2 rounded-lg border p-3">
       <p className={cn("max-h-48 overflow-y-auto text-sm whitespace-pre-wrap", !text && "text-muted-foreground")}>
         {text || (status === "streaming" ? "Waiting for the first token…" : "The model answered with no text.")}
         {status === "streaming" && text && <Loader2 className="ml-1 inline size-3.5 animate-spin" />}
@@ -190,6 +204,6 @@ function TestResult({ status, text, error, durationMs, usage }: TestResultProps)
           {usage && `, ${usage.inputTokens} tokens in and ${usage.outputTokens} out`}
         </p>
       )}
-    </div>
+    </motion.div>
   );
 }
