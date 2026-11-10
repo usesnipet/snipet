@@ -1,12 +1,12 @@
 import { AppContext } from "#src/common/context/app-context.js";
+import { Driver } from "#src/core/manifest/driver.js";
+import { DriverRegistry } from "#src/core/manifest/driver.registry.js";
 import { uniqueSortedBy } from "#src/utils/sort/index.js";
 import { jest } from "@jest/globals";
 import { pluginManifestSchema } from "@snipet/shared";
 import { z } from "zod";
 
 import { ConnectionSyncService } from "./connection-sync.service.js";
-import { Driver } from "#src/core/manifest/driver.js";
-import { DriverRegistry } from "#src/core/manifest/driver.registry.js";
 
 import type { PluginManifest } from "@snipet/shared";
 import type { EntityManager } from "typeorm";

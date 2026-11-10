@@ -1,17 +1,16 @@
 import { AppContext } from "#src/common/context/app-context.js";
+import { Driver } from "#src/core/manifest/driver.js";
+import { DriverRegistry } from "#src/core/manifest/driver.registry.js";
 import { jest } from "@jest/globals";
 import { BadRequestException } from "@nestjs/common";
 import { SECRET_PLACEHOLDER } from "@snipet/server-common";
 import { pluginManifestSchema } from "@snipet/shared";
 import { z } from "zod";
 
-import { ConnectionService } from "./connection.service.js";
-import { Driver } from "#src/core/manifest/driver.js";
-import { DriverRegistry } from "#src/core/manifest/driver.registry.js";
+import { ConnectionEntity, ConnectionService } from "./connection.service.js";
 
 import type { PluginManifest } from "@snipet/shared";
 import type { EntityManager, QueryDeepPartialEntity } from "typeorm";
-import type { ConnectionEntity } from "./connection.service.js";
 import type { ManifestRegistry } from "#src/core/manifest/manifest.registry.js";
 
 type Fn = (...args: unknown[]) => Promise<unknown>;
