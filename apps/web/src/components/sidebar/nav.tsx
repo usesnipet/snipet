@@ -17,6 +17,7 @@ import {
 import { usePathBuilder } from "@/hooks/use-path-builder";
 import { resolve } from "@/lib/resolve";
 import { ChevronRight } from "lucide-react";
+import { motion } from "motion/react";
 import { useCallback, useMemo } from "react";
 import { useLocation } from "react-router";
 
@@ -35,7 +36,22 @@ type NavSection = {
 
 /** Shared by plain items and groups, so both line up in the list. */
 const NAV_BUTTON_CLASS =
-  "text-sidebar-foreground/70 relative my-0.5 h-9 gap-3 rounded-lg text-[13px] [&_svg]:size-4.5 [&_svg]:text-sidebar-foreground/55 data-[active=true]:text-sidebar-foreground data-[active=true]:[&_svg]:text-sidebar-foreground data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:-left-2 data-[active=true]:before:w-0.5 data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-sidebar-primary";
+  "text-sidebar-foreground/70 relative my-0.5 h-9 gap-3 rounded-lg text-[13px] [&_svg]:size-4.5 [&_svg]:text-sidebar-foreground/55 data-[active=true]:bg-transparent data-[active=true]:text-sidebar-foreground data-[active=true]:[&_svg]:text-sidebar-foreground";
+
+/**
+ * The active item's background; one shared `layoutId`, so it slides from the old item to the new one.
+ * Rendered in the `<li>`, not the button: the button clips its overflow, which would hide the slide.
+ * Sized like the button (h-9 after its my-0.5) so a group's highlight doesn't cover its sub-items.
+ */
+function ActiveHighlight() {
+  return (
+    <motion.span
+      layoutId="nav-active-highlight"
+      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+      className="bg-sidebar-accent pointer-events-none absolute inset-x-0 top-0.5 h-9 rounded-lg group-data-[collapsible=icon]:size-8"
+    />
+  );
+}
 
 function NavTag({ children }: { children: React.ReactNode }) {
   return (
@@ -68,6 +84,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
                 disabled={toBoolean(item.disabled, false)}
               >
                 <SidebarMenuItem>
+                  {isNavGroupActive(pathname, item.items) && <ActiveHighlight />}
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       tooltip={item.title}
@@ -108,6 +125,7 @@ function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: st
             )
           : toBoolean(item.visible) && (
               <SidebarMenuItem key={item.href}>
+                {isNavActive(pathname, item.href, item.exact) && <ActiveHighlight />}
                 <SidebarMenuButton
                   asChild
                   isActive={isNavActive(pathname, item.href, item.exact) && toBoolean(item.visible)}

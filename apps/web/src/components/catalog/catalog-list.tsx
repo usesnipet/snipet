@@ -1,5 +1,7 @@
+import { transitions } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { cva } from "class-variance-authority";
+import { AnimatePresence, motion } from "motion/react";
 
 import type { VariantProps } from "class-variance-authority";
 import { Card } from "../ui/card";
@@ -44,10 +46,22 @@ export function CatalogList<T extends { id: string }>({
     <div className={cn("-mr-3 min-h-0", containerClassName)}>
       {/* Radix wraps the content in a display:table that grows with it, which would stop long card text truncating. */}
       <ScrollArea className="h-full [&>[data-radix-scroll-area-viewport]>div]:block!">
-        <ul className={cn(catalogListVariants({ size, className }), "pb-1 pr-3")}>
-          {items.map((item) => (
-            <li key={item.id}>{renderItem(item)}</li>
-          ))}
+        {/* Searching, filtering or sorting: leaving cards fade out, the rest slide to their new cells. */}
+        <ul className={cn(catalogListVariants({ size, className }), "relative pb-1 pr-3")}>
+          <AnimatePresence initial={false} mode="popLayout">
+            {items.map((item) => (
+              <motion.li
+                key={item.id}
+                layout
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98, transition: transitions.fast }}
+                transition={transitions.base}
+              >
+                {renderItem(item)}
+              </motion.li>
+            ))}
+          </AnimatePresence>
         </ul>
       </ScrollArea>
     </div>

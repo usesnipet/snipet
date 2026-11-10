@@ -1,9 +1,29 @@
+import { transitions } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import moment from "moment";
+import { AnimatePresence, motion } from "motion/react";
 
 import type { SyncState } from "@snipet/client";
 
+/** Crossfades when the state changes (pending to synced, synced to error), so the change gets noticed. */
 export function SyncStatus({ sync }: { sync: SyncState }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span
+        key={sync.kind}
+        className="flex min-w-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={transitions.fast}
+      >
+        <SyncStatusContent sync={sync} />
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
+function SyncStatusContent({ sync }: { sync: SyncState }) {
   const dot = (className: string) => <span className={cn("size-1.5 shrink-0 rounded-full", className)} />;
 
   if (sync.kind === "error") {

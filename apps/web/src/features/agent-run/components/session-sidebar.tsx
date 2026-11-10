@@ -29,8 +29,10 @@ import { useDialog } from "@/lib/dialog";
 import { ROUTES } from "@/routes";
 import { useDeleteSession, useListAvailableAgents, useListSessions } from "@snipet/client";
 import { hasRole, Role } from "@snipet/shared";
+import { transitions } from "@/lib/motion";
 import { MoreHorizontal, Settings, SquarePen, Trash2 } from "lucide-react";
 import moment from "moment";
+import { AnimatePresence, motion } from "motion/react";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { agentChatPath } from "@/features/agent/lib/agent-path";
@@ -47,6 +49,9 @@ type Props = {
 };
 
 type SessionGroup = { label: string; sessions: AgentSession[] };
+
+/** A sidebar row that can fade in, fade out and slide to its new place when the list reorders. */
+const MotionMenuItem = motion.create(SidebarMenuItem);
 
 /** Buckets sessions (already newest first) into Today, Yesterday, Previous 7 days and Older; empty groups are dropped. */
 function groupByDate(sessions: AgentSession[]): SessionGroup[] {
@@ -157,37 +162,47 @@ export function SessionSidebar({ activeSessionId, runningSessionId }: Props) {
               <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {group.sessions.map((session) => (
-                    <SidebarMenuItem key={session.id}>
-                      <SidebarMenuButton asChild isActive={session.id === activeSessionId}>
-                        <Link href={sessionPath(session.id, activeAgent?.id)} title={session.title || undefined}>
-                          <AgentAvatar
-                            avatar={agentOf.get(session.agentId)?.avatar}
-                            name={agentOf.get(session.agentId)?.name}
-                            className="size-5 shrink-0"
-                          />
-                          <span className="truncate">{session.title || "Untitled chat"}</span>
-                          {session.id === runningSessionId && <Spinner size="sm" className="ml-auto" />}
-                        </Link>
-                      </SidebarMenuButton>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction showOnHover aria-label="Chat options">
-                            <MoreHorizontal />
-                          </SidebarMenuAction>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent side="right" align="start">
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onSelect={() => openDelete(session)}
-                          >
-                            <Trash2 />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </SidebarMenuItem>
-                  ))}
+                  {/* Rows on screen at mount stay still; a new chat fades in at the top and the rest slide down. */}
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {group.sessions.map((session) => (
+                      <MotionMenuItem
+                        key={session.id}
+                        layout="position"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, transition: transitions.fast }}
+                        transition={transitions.base}
+                      >
+                        <SidebarMenuButton asChild isActive={session.id === activeSessionId}>
+                          <Link href={sessionPath(session.id, activeAgent?.id)} title={session.title || undefined}>
+                            <AgentAvatar
+                              avatar={agentOf.get(session.agentId)?.avatar}
+                              name={agentOf.get(session.agentId)?.name}
+                              className="size-5 shrink-0"
+                            />
+                            <span className="truncate">{session.title || "Untitled chat"}</span>
+                            {session.id === runningSessionId && <Spinner size="sm" className="ml-auto" />}
+                          </Link>
+                        </SidebarMenuButton>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <SidebarMenuAction showOnHover aria-label="Chat options">
+                              <MoreHorizontal />
+                            </SidebarMenuAction>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent side="right" align="start">
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={() => openDelete(session)}
+                            >
+                              <Trash2 />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </MotionMenuItem>
+                    ))}
+                  </AnimatePresence>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

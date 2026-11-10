@@ -14,9 +14,11 @@ import { ApiKeyRow } from "@/features/api-key/components/api-key-row";
 import { CreateApiKeyDialog } from "@/features/api-key/components/dialogs";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useDialog } from "@/lib/dialog";
+import { transitions } from "@/lib/motion";
 import { useListApiKey } from "@snipet/client";
 import { MAX_TAKE } from "@snipet/shared";
 import { Copy } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 
 import { AppFormDialog } from "./dialogs";
 
@@ -117,9 +119,25 @@ export function AppDialog({ app, isNew }: AppDialogProps) {
               </Button>
             </div>
           )}
-          {apiKeys.map((apiKey) => (
-            <ApiKeyRow key={apiKey.id} apiKey={apiKey} />
-          ))}
+          {/* Spacing lives inside each row (pt-2, offset by -mt-2) so it collapses with the row instead of jumping. */}
+          <div className="-mt-2">
+            <AnimatePresence initial={false}>
+              {apiKeys.map((apiKey) => (
+                <motion.div
+                  key={apiKey.id}
+                  className="overflow-hidden"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0, transition: transitions.fast }}
+                  transition={transitions.base}
+                >
+                  <div className="pt-2">
+                    <ApiKeyRow apiKey={apiKey} />
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         </section>
       </DialogBody>
       <DialogFooter>
