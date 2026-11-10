@@ -1,4 +1,4 @@
-import { CopyIcon } from "@/components/copy-icon";
+import { CopyIcon } from "@/components/swap-icon";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";

@@ -1,4 +1,4 @@
-import { CopyIcon } from "@/components/copy-icon";
+import { CopyIcon } from "@/components/swap-icon";
 import { JsonViewer } from "@/components/json-viewer";
 import { Button } from "@/components/ui/button";
 import { ChatContainerContent, ChatContainerRoot, ChatContainerScrollAnchor } from "@/components/ui/chat-container";

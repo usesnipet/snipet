@@ -121,7 +121,17 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
     }
 
     return (
-      <p ref={ref} id={formMessageId} className={cn("text-sm font-medium text-destructive", className)} {...props}>
+      <p
+        ref={ref}
+        id={formMessageId}
+        // An error eases in from just above, so it reads as appearing under the field rather than shifting the form.
+        className={cn(
+          "text-sm font-medium text-destructive",
+          error && "animate-in fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none",
+          className,
+        )}
+        {...props}
+      >
         {body}
       </p>
     );
