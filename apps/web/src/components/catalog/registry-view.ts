@@ -23,6 +23,8 @@ export type RegistryView<C = unknown> = {
   connectionCount: number;
   /** True when at least one connection is configured for this entry. */
   connected: boolean;
+  /** False when connections point at a key the registry no longer lists (its manifest is gone), so they can't run. */
+  installed: boolean;
 };
 
 export type RegistryFilter = "all" | "connected";
@@ -46,8 +48,9 @@ export function buildRegistryViews<C>(
     byKey.set(key, [...(byKey.get(key) ?? []), connection]);
   }
 
-  return registry.map((entry) => {
+  const views: RegistryView<C>[] = registry.map((entry) => {
     const instances = byKey.get(entry.key) ?? [];
+    byKey.delete(entry.key);
     return {
       key: entry.key,
       name: entry.name,
@@ -57,8 +60,24 @@ export function buildRegistryViews<C>(
       instances,
       connectionCount: instances.length,
       connected: instances.length > 0,
+      installed: true,
     };
   });
+
+  // Whatever is left has connections but no manifest: keep it visible so it can be cleaned up.
+  for (const [key, instances] of byKey) {
+    views.push({
+      key,
+      name: key,
+      description: "",
+      tags: [],
+      instances,
+      connectionCount: instances.length,
+      connected: true,
+      installed: false,
+    });
+  }
+  return views;
 }
 
 export function filterRegistryViews<V extends RegistryView>(views: V[], filter: RegistryFilter, search: string): V[] {

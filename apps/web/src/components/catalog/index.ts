@@ -5,3 +5,4 @@ export * from "./connection-count";
 export * from "./format-updated-at";
 export * from "./registry-catalog";
 export * from "./registry-view";
+export * from "./uninstalled-catalog-card";

@@ -1,11 +1,11 @@
-import { RegistryCatalog } from "@/components/catalog";
+import { RegistryCatalog, UninstalledCatalogCard } from "@/components/catalog";
 import { Icon } from "@/components/icon";
 import { Page } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { CreateLlmConnectionDialog } from "@/features/llm-connection/components/dialogs";
 import { LlmConnectionCatalogCard } from "@/features/llm-connection/components/llm-connection-catalog-card";
 import { useDialog } from "@/lib/dialog";
-import { useListLlmConnections, useLLMs } from "@snipet/client";
+import { useDeleteLlmConnection, useListLlmConnections, useLLMs } from "@snipet/client";
 
 import type { LlmConnection, LlmManifest } from "@snipet/shared";
 
@@ -17,6 +17,7 @@ const COMMON_LLM_KEYS = ["openai", "gemini", "openrouter", "ollama"];
 export const LlmConnectionsPage = () => {
   const llms = useLLMs();
   const connections = useListLlmConnections();
+  const { mutateAsync: deleteConnection } = useDeleteLlmConnection();
   const hasNoConnections = connections.isSuccess && connections.data.data.length === 0;
 
   return (
@@ -38,7 +39,13 @@ export const LlmConnectionsPage = () => {
             void connections.refetch();
           }}
           noun="LLMs"
-          renderItem={(view) => <LlmConnectionCatalogCard view={view} />}
+          renderItem={(view) =>
+            view.installed ? (
+              <LlmConnectionCatalogCard view={view} />
+            ) : (
+              <UninstalledCatalogCard view={view} noun="LLM" onDelete={deleteConnection} />
+            )
+          }
         />
       </div>
     </Page>
