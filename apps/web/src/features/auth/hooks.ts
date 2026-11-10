@@ -9,18 +9,16 @@ import { authService } from "@snipet/client";
 import { useAuthStore } from "./store";
 
 import type { AuthResponse, ChangeOwnPassword, Login, User } from "@snipet/shared";
-import type { ServicePostOptions, ServicePutOptions } from "@snipet/client";
+import type { ServicePutOptions } from "@snipet/client";
 import type { RoutePath } from "@/routes";
 import type { UseMutationResult } from "@tanstack/react-query";
 
-export const useLogin = (
-  opts?: ServicePostOptions<Login, AuthResponse>,
-): UseMutationResult<AuthResponse, Error, Login> => {
+export const useLogin = (): UseMutationResult<AuthResponse, Error, Login> => {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
 
   return useMutation({
-    mutationFn: (data) => authService.login(data, opts),
+    mutationFn: (data) => authService.login(data),
     onSuccess: (result) => {
       setSession({
         accessToken: result.accessToken,
@@ -30,7 +28,8 @@ export const useLogin = (
       });
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get("redirect");
-      navigate((redirect || ROUTES.chat) as RoutePath, { replace: true });
+      // Crossfades into the app where the browser supports view transitions; a plain cut elsewhere.
+      navigate((redirect || ROUTES.chat) as RoutePath, { replace: true, viewTransition: true });
     },
     onError: () => {
       toast({ title: "Invalid username or password", variant: "destructive" });
