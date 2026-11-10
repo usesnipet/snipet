@@ -1,6 +1,7 @@
 import { Injectable, OnApplicationBootstrap } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { EntityManager, Repository } from "typeorm";
+
+import { AppContext } from "#src/common/context/app-context.js";
 
 import { Setting } from "./settings.entity.js";
 
@@ -12,22 +13,28 @@ const entries = (settings: UpdateSettings) => Object.entries(settings).map(([key
 
 @Injectable()
 export class SettingsService implements OnApplicationBootstrap {
-  constructor(@InjectRepository(Setting) private readonly repo: Repository<Setting>) {}
+  constructor(private readonly manager: EntityManager) {}
+
+  /** The settings table, joining the context's transaction when there is one. */
+  private repository(ctx: AppContext): Repository<Setting> {
+    return (ctx.tx ?? this.manager).getRepository(Setting);
+  }
 
   /** Saves the default of every setting not stored yet; stored values are kept. */
   async onApplicationBootstrap(): Promise<void> {
-    await this.repo.createQueryBuilder().insert().values(entries(DEFAULTS)).orIgnore().execute();
+    const ctx = AppContext.create("bootstrap:settings");
+    await this.repository(ctx).createQueryBuilder().insert().values(entries(DEFAULTS)).orIgnore().execute();
   }
 
   /** Every setting, stored value or default; rows of settings no longer in DEFAULTS are ignored. */
-  async get(): Promise<Settings> {
+  async get(ctx: AppContext): Promise<Settings> {
     const settings: Record<string, unknown> = { ...DEFAULTS };
-    for (const { key, value } of await this.repo.find()) if (key in DEFAULTS) settings[key] = value;
+    for (const { key, value } of await this.repository(ctx).find()) if (key in DEFAULTS) settings[key] = value;
     return settings as Settings;
   }
 
-  async update(dto: UpdateSettings): Promise<void> {
+  async update(ctx: AppContext, dto: UpdateSettings): Promise<void> {
     const rows = entries(dto);
-    if (rows.length) await this.repo.upsert(rows, ["key"]);
+    if (rows.length) await this.repository(ctx).upsert(rows, ["key"]);
   }
 }

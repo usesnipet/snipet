@@ -31,27 +31,27 @@ export function CrudController<T extends BaseEntity, C extends BaseContext = Bas
   const serialize = (schemas.serialize ?? ((entity: T) => entity)) as (entity: T) => unknown;
 
   abstract class Base {
-    constructor(readonly service: CrudService<T>) {}
+    constructor(readonly service: CrudService<T, C>) {}
 
     /** Shapes each entity a route returns; override to use the service. */
-    serialize(entity: T): unknown {
+    serialize(_ctx: C, entity: T): unknown {
       return serialize(entity);
     }
 
     @Get()
     async filter(@Ctx() ctx: C, @Query(new ZodPipe(schemas.filter ?? paginationParamsSchema)) query: FilterQuery<T>) {
       const page = await this.service.filter(ctx, query);
-      return { ...page, data: await Promise.all(page.data.map((e) => this.serialize(e))) };
+      return { ...page, data: await Promise.all(page.data.map((e) => this.serialize(ctx, e))) };
     }
 
     @Get(":id")
     async findById(@Ctx() ctx: C, @Param("id", ParseUUIDPipe) id: string) {
-      return this.serialize(await this.service.findById(ctx, id));
+      return this.serialize(ctx, await this.service.findById(ctx, id));
     }
 
     @Post()
     async create(@Ctx() ctx: C, @Body(new ZodPipe(schemas.create)) dto: object) {
-      return this.serialize(await this.service.create(ctx, dto as DeepPartial<T>));
+      return this.serialize(ctx, await this.service.create(ctx, dto as DeepPartial<T>));
     }
 
     @Put(":id")

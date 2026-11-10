@@ -4,6 +4,7 @@ import {
   EntityManager,
   EntityTarget,
   FindOptionsWhere,
+  ObjectLiteral,
   QueryDeepPartialEntity,
   Repository,
 } from "typeorm";
@@ -14,6 +15,7 @@ import { FilterQuery } from "../pagination/filter.js";
 import { BaseEntity } from "./base.entity.js";
 
 import type { Paginated } from "@snipet/shared";
+
 /**
  * Generic CRUD over a TypeORM entity. Extend it and inject the manager:
  * @example constructor(manager: EntityManager) { super(manager, Widget); }
@@ -21,13 +23,18 @@ import type { Paginated } from "@snipet/shared";
  */
 export abstract class CrudService<T extends BaseEntity, C extends BaseContext = BaseContext> {
   constructor(
-    private readonly manager: EntityManager,
+    protected readonly manager: EntityManager,
     private readonly target: EntityTarget<T>,
   ) {}
 
-  // The only way to reach the table: uses the context's transaction when there is one.
+  /** The entity's table, joining the context's transaction when there is one. */
   protected repository(ctx?: C): Repository<T> {
-    return (ctx?.tx ?? this.manager).getRepository(this.target);
+    return this.repositoryOf(ctx, this.target);
+  }
+
+  /** Another entity's table, on the same transaction as `repository(ctx)`. */
+  protected repositoryOf<E extends ObjectLiteral>(ctx: C | undefined, target: EntityTarget<E>): Repository<E> {
+    return (ctx?.tx ?? this.manager).getRepository(target);
   }
 
   // Runs fn in a transaction, reusing the context's one if it's already in one.

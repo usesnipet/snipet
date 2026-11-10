@@ -1,4 +1,6 @@
 import { jest } from "@jest/globals";
+
+import { AppContext } from "#src/common/context/app-context.js";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { SECRET_PLACEHOLDER } from "@snipet/server-common";
 import { pluginManifestSchema } from "@snipet/shared";
@@ -9,7 +11,7 @@ import { AgentService } from "./agent.service.js";
 import type { FilesStorage } from "../files/files.storage.js";
 import type { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 
-import type { Repository } from "typeorm";
+import type { EntityManager } from "typeorm";
 
 /** A plugin with a secret setting, an optional hook and a required one. */
 const memory = pluginManifestSchema.parse({
@@ -33,6 +35,8 @@ const memory = pluginManifestSchema.parse({
   },
 });
 
+const ctx = AppContext.create("test");
+
 function setup(exists = true, avatar: string | null = null) {
   const repoMock = () => ({
     find: jest.fn(() => Promise.resolve([] as unknown[])),
@@ -47,22 +51,24 @@ function setup(exists = true, avatar: string | null = null) {
     [AgentLlm, repoMock()],
     [AgentPluginConnection, repoMock()],
   ]);
-  const m = { getRepository: (target: unknown) => repos.get(target) };
-  const repo = { manager: { transaction: (fn: (em: unknown) => Promise<void>) => fn(m) } };
+  const manager: object = {
+    getRepository: (target: unknown) => repos.get(target),
+    transaction: (fn: (em: unknown) => Promise<void>) => fn(manager),
+  };
   const storage = {
     putDataUrl: jest.fn(() => Promise.resolve("agents/new.webp")),
     delete: jest.fn(() => Promise.resolve()),
   };
   const plugins = {
     // p1 is a memory connection, p2 one whose plugin left the catalog; anything else doesn't exist.
-    manifestsOf: jest.fn((ids: string[]) =>
+    manifestsOf: jest.fn((_ctx: unknown, ids: string[]) =>
       Promise.resolve(
         new Map(ids.filter((id) => id === "p1" || id === "p2").map((id) => [id, id === "p1" ? memory : null])),
       ),
     ),
   };
   const service = new AgentService(
-    repo as unknown as Repository<Agent>,
+    manager as EntityManager,
     storage as unknown as FilesStorage,
     plugins as unknown as PluginConnectionService,
   );
@@ -78,7 +84,7 @@ function setup(exists = true, avatar: string | null = null) {
 describe("AgentService.updateById", () => {
   it("replaces llms in list order and leaves missing lists alone", async () => {
     const { service, agents, llms, pluginGrants } = setup();
-    await service.updateById("a1", { name: "x", llms: [{ model: "openai/a" }, { model: "ollama/b" }] });
+    await service.updateById(ctx, "a1", { name: "x", llms: [{ model: "openai/a" }, { model: "ollama/b" }] });
 
     expect(agents.update).toHaveBeenCalledWith("a1", { name: "x" });
     expect(llms.delete).toHaveBeenCalledWith({ agentId: "a1" });
@@ -93,7 +99,7 @@ describe("AgentService.updateById", () => {
     const { service, pluginGrants } = setup();
     const grant = { pluginConnectionId: "p1", tools: ["read_wiki"], settings: {}, disabledHooks: [] };
     const gone = { pluginConnectionId: "p2", tools: [], settings: { x: 1 }, disabledHooks: [] };
-    await service.updateById("a1", { pluginConnections: [grant, gone] });
+    await service.updateById(ctx, "a1", { pluginConnections: [grant, gone] });
 
     expect(pluginGrants.delete).toHaveBeenCalledWith({ agentId: "a1" });
     expect(pluginGrants.insert).toHaveBeenCalledWith([
@@ -112,9 +118,9 @@ describe("AgentService.updateById", () => {
       disabledHooks: [],
     });
     await expect(
-      service.updateById("a1", { pluginConnections: [grant("p1", { scope: "team" })] }),
+      service.updateById(ctx, "a1", { pluginConnections: [grant("p1", { scope: "team" })] }),
     ).rejects.toBeInstanceOf(BadRequestException);
-    await expect(service.updateById("a1", { pluginConnections: [grant("p9")] })).rejects.toBeInstanceOf(
+    await expect(service.updateById(ctx, "a1", { pluginConnections: [grant("p9")] })).rejects.toBeInstanceOf(
       BadRequestException,
     );
   });
@@ -122,7 +128,7 @@ describe("AgentService.updateById", () => {
   it("keeps stored secrets behind placeholders and only disables optional hooks", async () => {
     const { service, pluginGrants } = setup();
     pluginGrants.find.mockResolvedValue([{ pluginConnectionId: "p1", settings: { apiKey: "sk-1" } }]);
-    await service.updateById("a1", {
+    await service.updateById(ctx, "a1", {
       pluginConnections: [
         {
           pluginConnectionId: "p1",
@@ -140,21 +146,21 @@ describe("AgentService.updateById", () => {
 
   it("404s an unknown agent", async () => {
     const { service } = setup(false);
-    await expect(service.updateById("a1", {})).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.updateById(ctx, "a1", {})).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it("uploads a new avatar and deletes the previous file", async () => {
     const { service, agents, storage } = setup(true, "http://localhost:8852/api/files/agents/old.webp");
-    await service.updateById("a1", { avatar: "data:image/webp;base64,AAAA" });
+    await service.updateById(ctx, "a1", { avatar: "data:image/webp;base64,AAAA" });
 
-    expect(storage.putDataUrl).toHaveBeenCalledWith("agents", "data:image/webp;base64,AAAA");
+    expect(storage.putDataUrl).toHaveBeenCalledWith(ctx, "agents", "data:image/webp;base64,AAAA");
     expect(agents.update).toHaveBeenCalledWith("a1", { avatar: "agents/new.webp" });
-    expect(storage.delete).toHaveBeenCalledWith("agents/old.webp");
+    expect(storage.delete).toHaveBeenCalledWith(ctx, "agents/old.webp");
   });
 
   it("leaves the avatar alone when its current URL is sent back", async () => {
     const { service, agents, storage } = setup(true, "agents/old.webp");
-    await service.updateById("a1", { name: "x", avatar: "http://localhost:8852/api/files/agents/old.webp" });
+    await service.updateById(ctx, "a1", { name: "x", avatar: "http://localhost:8852/api/files/agents/old.webp" });
 
     expect(agents.update).toHaveBeenCalledWith("a1", { name: "x" });
     expect(storage.putDataUrl).not.toHaveBeenCalled();
@@ -163,10 +169,10 @@ describe("AgentService.updateById", () => {
 
   it("deletes the uploaded file when the agent does not exist", async () => {
     const { service, storage } = setup(false);
-    await expect(service.updateById("a1", { avatar: "data:image/webp;base64,AAAA" })).rejects.toBeInstanceOf(
+    await expect(service.updateById(ctx, "a1", { avatar: "data:image/webp;base64,AAAA" })).rejects.toBeInstanceOf(
       NotFoundException,
     );
-    expect(storage.delete).toHaveBeenCalledWith("agents/new.webp");
+    expect(storage.delete).toHaveBeenCalledWith(ctx, "agents/new.webp");
   });
 });
 
@@ -181,7 +187,7 @@ describe("AgentService.mask", () => {
       ],
     } as unknown as Agent;
 
-    const masked = await service.mask(agent);
+    const masked = await service.mask(ctx, agent);
     expect(masked.pluginConnections.map((g) => g.settings)).toEqual([
       { scope: "user", apiKey: SECRET_PLACEHOLDER },
       { token: SECRET_PLACEHOLDER },
@@ -200,10 +206,11 @@ describe("AgentService.mask", () => {
           },
         ]),
       );
-      const repo = { find, count: jest.fn(() => Promise.resolve(7)) } as unknown as Repository<Agent>;
-      const service = new AgentService(repo, {} as FilesStorage, {} as PluginConnectionService);
+      const repo = { find, count: jest.fn(() => Promise.resolve(7)) };
+      const manager = { getRepository: () => repo } as unknown as EntityManager;
+      const service = new AgentService(manager, {} as FilesStorage, {} as PluginConnectionService);
 
-      const page = await service.findSummaries({ take: 1, skip: 0 });
+      const page = await service.findSummaries(ctx, { take: 1, skip: 0 });
 
       expect(page.total).toBe(7);
       expect(find.mock.calls[0][0].select).not.toHaveProperty("systemPrompt");

@@ -18,13 +18,13 @@ export const storageKeyOf = (pathOrUrl: string) => fromStorageUrl(pathOrUrl);
  */
 const KEY_RE = /^[\w-][\w.-]*(\/[\w-][\w.-]*)*$/;
 
+/** Asserts that the key is a valid storage key.
+ * @param key - The key to assert.
+ * @throws {BadRequestException} If the key is not a valid storage key.
+ * @example
+ * assertKey("agents/a.webp"); // valid
+ * assertKey("agents/a.webp/b.webp"); // invalid
+ */
 export function assertKey(key: string): void {
   if (!KEY_RE.test(key)) throw new BadRequestException("Invalid file key");
-}
-
-/** The validated path of key (or of the prefix itself) inside prefix. */
-export function storagePath(prefix: string, key = ""): string {
-  const path = key ? `${prefix}/${key}` : prefix;
-  assertKey(path);
-  return path;
 }

@@ -1,5 +1,7 @@
 import { uniqueSortedBy } from "#src/utils/sort/index.js";
 import { jest } from "@jest/globals";
+
+import { AppContext } from "#src/common/context/app-context.js";
 import { pluginManifestSchema } from "@snipet/shared";
 import { z } from "zod";
 
@@ -8,7 +10,7 @@ import { Driver } from "./driver.js";
 import { DriverRegistry } from "./driver.registry.js";
 
 import type { PluginManifest } from "@snipet/shared";
-import type { Repository } from "typeorm";
+import type { EntityManager } from "typeorm";
 import type { SyncedConnectionEntity } from "./connection-sync.service.js";
 import type { HealthCheckDriver, HealthCheckResult } from "./health-check.js";
 import type { ManifestRegistry } from "./manifest.registry.js";
@@ -40,6 +42,8 @@ class TestSync extends ConnectionSyncService<Conn, PluginManifest, Drivers> {
   }
 }
 
+const ctx = AppContext.create("test");
+
 function setup({ healthy = true, withHealth = true } = {}) {
   const conn = { id: "c1", name: "conn", pluginKey: "alpha", config: {} } as Conn;
   const connections = {
@@ -56,7 +60,8 @@ function setup({ healthy = true, withHealth = true } = {}) {
     },
   });
   const service = new TestSync(
-    connections as unknown as Repository<Conn>,
+    { getRepository: () => connections } as unknown as EntityManager,
+    "Conn",
     { get: () => manifest } as unknown as ManifestRegistry<PluginManifest, Drivers>,
     new DriverRegistry<Drivers>({ tools: [new Lister()], healthCheck: [new Health()] }),
   );
@@ -67,7 +72,7 @@ describe("ConnectionSyncService.sync", () => {
   it("stores the listed fields with the sync's outcome", async () => {
     const { service, connections } = setup();
     service.listed = { name: "renamed" };
-    await service.sync("c1");
+    await service.sync(ctx, "c1");
     expect(connections.update).toHaveBeenCalledTimes(1);
     expect(connections.update).toHaveBeenCalledWith("c1", {
       name: "renamed",
@@ -79,7 +84,7 @@ describe("ConnectionSyncService.sync", () => {
   it("records a failed health check and keeps the stored fields", async () => {
     const { service, connections } = setup({ healthy: false });
     service.listed = { name: "renamed" };
-    await service.sync("c1");
+    await service.sync(ctx, "c1");
     expect(connections.update).toHaveBeenCalledWith("c1", {
       lastSyncedAt: anyDate,
       lastSyncedError: "health check failed: down",
@@ -89,7 +94,7 @@ describe("ConnectionSyncService.sync", () => {
   it("records a listing error, cut to 255 characters", async () => {
     const { service, connections } = setup({ withHealth: false });
     service.listed = new Error("x".repeat(300));
-    await expect(service.sync("c1")).resolves.toBeUndefined();
+    await expect(service.sync(ctx, "c1")).resolves.toBeUndefined();
     expect(connections.update).toHaveBeenCalledWith("c1", {
       lastSyncedAt: anyDate,
       lastSyncedError: "x".repeat(255),
@@ -99,7 +104,7 @@ describe("ConnectionSyncService.sync", () => {
   it("skips a deleted connection", async () => {
     const { service, connections } = setup();
     connections.findOneBy.mockResolvedValue(null);
-    await service.sync("c1");
+    await service.sync(ctx, "c1");
     expect(connections.update).not.toHaveBeenCalled();
   });
 });
@@ -107,7 +112,7 @@ describe("ConnectionSyncService.sync", () => {
 describe("ConnectionSyncService.syncAll", () => {
   it("syncs every connection", async () => {
     const { service, connections } = setup();
-    await service.syncAll();
+    await service.syncAll(ctx);
     expect(connections.findOneBy).toHaveBeenCalledWith({ id: "c1" });
     expect(connections.findOneBy).toHaveBeenCalledWith({ id: "c2" });
   });

@@ -2,12 +2,12 @@ import { ConnectionSyncService } from "#src/manifest/connection-sync.service.js"
 import { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
 import { uniqueSortedBy } from "#src/utils/sort/index.js";
 import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { MAX_PLUGIN_INSTRUCTIONS } from "@snipet/shared";
-import { Repository } from "typeorm";
+import { EntityManager } from "typeorm";
 
 import { PluginConnection } from "../plugin-connection.entity.js";
 
+import type { AppContext } from "#src/common/context/app-context.js";
 import type { PluginDrivers } from "#src/plugin/driver.js";
 import type { PluginManifest } from "@snipet/shared";
 
@@ -20,15 +20,11 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
 > {
   protected readonly keyField = "pluginKey";
 
-  constructor(
-    @InjectRepository(PluginConnection) connections: Repository<PluginConnection>,
-    plugins: PluginRegistry,
-    drivers: PluginDriverRegistry,
-  ) {
-    super(connections, plugins, drivers);
+  constructor(manager: EntityManager, plugins: PluginRegistry, drivers: PluginDriverRegistry) {
+    super(manager, PluginConnection, plugins, drivers);
   }
 
-  protected async fields(conn: PluginConnection, manifest: PluginManifest) {
+  protected async fields(ctx: AppContext, conn: PluginConnection, manifest: PluginManifest) {
     const lister = this.drivers.resolve(manifest, "tools", conn.config);
     const tools = lister && (await lister.driver.listTools(conn.id, lister.options));
     const resolved = this.drivers.resolve(manifest, "instructions", conn.config);
@@ -38,6 +34,7 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
     // Last, so a driver that throws above leaves the grants and stored tools in step.
     if (tools)
       await this.pruneGrants(
+        ctx,
         conn.id,
         tools.map((t) => t.name),
       );
@@ -53,8 +50,8 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
    * the name stays off until selected. Raw SQL because the agent module depends
    * on this one, not the other way around.
    */
-  private async pruneGrants(connectionId: string, names: string[]): Promise<void> {
-    await this.connections.query(
+  private async pruneGrants(ctx: AppContext, connectionId: string, names: string[]): Promise<void> {
+    await this.repository(ctx).query(
       `UPDATE "agent_plugin_connections"
        SET "tools" = ARRAY(SELECT t FROM unnest("tools") AS t WHERE t = ANY($2::text[]))
        WHERE "pluginConnectionId" = $1 AND NOT "tools" <@ $2::text[]`,
