@@ -23,11 +23,14 @@ import { useForm } from "react-hook-form";
 
 import { useCreateApiKey } from "@snipet/client";
 
-import type { z } from "zod";
+import { z } from "zod";
 
-import type { App, CreateApiKey } from "@snipet/shared";
+import type { App } from "@snipet/shared";
 import type { DialogInstanceProps } from "@/lib/dialog";
-type CreateApiKeyInput = z.input<typeof createApiKeySchema>;
+
+/** The select holds a duration ("1m", "never"); it becomes a date only on submit. */
+const formSchema = createApiKeySchema.extend({ expiresAt: z.string().nullable() });
+type FormValues = z.infer<typeof formSchema>;
 
 type CreateApiKeyDialogProps = DialogInstanceProps<{
   /** The app that owns the new key. */
@@ -38,8 +41,8 @@ type CreateApiKeyDialogProps = DialogInstanceProps<{
 export function CreateApiKeyDialog({ app, close }: CreateApiKeyDialogProps) {
   const { openDialog } = useDialog();
   const formId = `create-api-key-${useId()}`;
-  const form = useForm<CreateApiKeyInput, unknown, CreateApiKey>({
-    resolver: zodResolver(createApiKeySchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: { name: "", expiresAt: null, appId: app.id },
   });
 

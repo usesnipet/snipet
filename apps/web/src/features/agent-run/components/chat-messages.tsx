@@ -37,7 +37,7 @@ const RUN_NOTICES: Partial<Record<AgentRun["status"], string>> = {
 
 /** Markdown element styles, since no typography plugin is installed. */
 const MARKDOWN_CLASS = cn(
-  "space-y-3 leading-7 break-words",
+  "space-y-2 leading-7 break-words",
   "[&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold",
   "[&_ul]:list-disc [&_ol]:list-decimal [&_ul,&_ol]:space-y-1 [&_ul,&_ol]:pl-6",
   "[&_a]:text-link [&_a]:underline [&_strong]:font-semibold",
