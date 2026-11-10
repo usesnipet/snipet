@@ -1,4 +1,4 @@
-import { Owner } from "#src/common/decorators/owner.decorator.js";
+import type { AppContext } from "#src/common/context/app-context.js";
 import { ToolResult } from "#src/plugin/driver.js";
 import { BadRequestException, Injectable } from "@nestjs/common";
 
@@ -48,7 +48,7 @@ export class AgentContext {
    * others are returned as denied. Names are made unique and provider-safe;
    * executors maps them back.
    */
-  async build(agent: Agent, owner: Owner): Promise<RunContext> {
+  async build(ctx: AppContext, agent: Agent): Promise<RunContext> {
     const denied: DeniedTool[] = [];
     const executors = new Map<string, Executor>();
     const sources = new Map<string, ToolSource>();
@@ -70,7 +70,7 @@ export class AgentContext {
 
     const pluginGrants = new Map((agent.pluginConnections ?? []).map((g) => [g.pluginConnectionId, g]));
     const used = new Set<string>();
-    for (const tool of await this.plugins.findTools([...pluginGrants.keys()])) {
+    for (const tool of await this.plugins.findTools(ctx, [...pluginGrants.keys()])) {
       if (!pluginGrants.get(tool.connection.id)!.tools.includes(tool.name)) {
         denied.push({ tool: tool.name, pluginConnectionId: tool.connection.id });
         continue;
@@ -78,13 +78,14 @@ export class AgentContext {
       used.add(tool.connection.id);
       const description = `[${tool.connection.name}] ${tool.description}`.trim();
       add(tool.name, description, tool.inputSchema, tool.connection, (args) =>
-        this.plugins.executeTool(tool.connection.id, tool, args),
+        this.plugins.executeTool(ctx, tool.connection.id, tool, args),
       );
     }
 
-    const instructions = await this.plugins.findInstructions([...used]);
+    const instructions = await this.plugins.findInstructions(ctx, [...used]);
     const system = [systemText(`Your name is ${agent.name}`)];
-    if (owner.name) system.push(systemText(`The user's name is ${owner.name}`));
+    const { name: ownerName } = ctx.owner;
+    if (ownerName) system.push(systemText(`The user's name is ${ownerName}`));
     if (agent.systemPrompt) system.push(systemText(agent.systemPrompt));
     for (const { name, text } of instructions) {
       system.push(systemText(`<plugin name="${escapeAttr(name)}">\n${text}\n</plugin>`));

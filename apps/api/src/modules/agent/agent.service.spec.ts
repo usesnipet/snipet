@@ -153,9 +153,9 @@ describe("AgentService.updateById", () => {
     const { service, agents, storage } = setup(true, "http://localhost:8852/api/files/agents/old.webp");
     await service.updateById(ctx, "a1", { avatar: "data:image/webp;base64,AAAA" });
 
-    expect(storage.putDataUrl).toHaveBeenCalledWith(ctx, "agents", "data:image/webp;base64,AAAA");
+    expect(storage.putDataUrl).toHaveBeenCalledWith("agents", "data:image/webp;base64,AAAA");
     expect(agents.update).toHaveBeenCalledWith("a1", { avatar: "agents/new.webp" });
-    expect(storage.delete).toHaveBeenCalledWith(ctx, "agents/old.webp");
+    expect(storage.delete).toHaveBeenCalledWith("agents/old.webp");
   });
 
   it("leaves the avatar alone when its current URL is sent back", async () => {
@@ -172,7 +172,7 @@ describe("AgentService.updateById", () => {
     await expect(service.updateById(ctx, "a1", { avatar: "data:image/webp;base64,AAAA" })).rejects.toBeInstanceOf(
       NotFoundException,
     );
-    expect(storage.delete).toHaveBeenCalledWith(ctx, "agents/new.webp");
+    expect(storage.delete).toHaveBeenCalledWith("agents/new.webp");
   });
 });
 

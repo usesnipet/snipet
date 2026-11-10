@@ -5,12 +5,18 @@ import { z } from "zod";
 import { Driver } from "#src/manifest/driver.js";
 import { PluginDriverRegistry } from "#src/plugin/plugin.registry.js";
 
+import { AppContext } from "#src/common/context/app-context.js";
+import { Role } from "@snipet/shared";
+
 import { HookDispatcher } from "./hook.dispatcher.js";
 
 import type { HookDriver } from "#src/plugin/driver.js";
 import type { PluginConnectionService } from "../../plugin-connection/plugin-connection.service.js";
-import type { HookRunnerContext } from "./hook.runner.js";
+import type { Agent } from "../../agent/agent.entity.js";
+import type { AgentRun } from "../agent-run.entity.js";
 import type { HookEvent, HookName, HookResult } from "@snipet/shared";
+
+const ctx = AppContext.create("test").withAuth({ type: "user", user: { id: "u1", role: Role.User, name: null } });
 
 class RecDriver extends Driver(z.object({})) implements HookDriver {
   readonly key = "rec";
@@ -56,7 +62,7 @@ describe("HookDispatcher.forRun", () => {
             ["c3", conn("c3", "tools")],
           ]),
         ),
-      getManifest: (key: keyof typeof manifests) => manifests[key],
+      getManifest: (_ctx: unknown, key: keyof typeof manifests) => manifests[key],
     } as unknown as PluginConnectionService;
     const drivers = new PluginDriverRegistry({ tools: [], instructions: [], hooks: [driver], healthCheck: [] });
     const agent = {
@@ -69,10 +75,11 @@ describe("HookDispatcher.forRun", () => {
         grant("gone", 3),
       ],
     };
-    const runner = await new HookDispatcher(plugins, drivers).forRun({
-      agent,
-      run: { id: "r1" },
-    } as unknown as HookRunnerContext);
+    const runner = await new HookDispatcher(plugins, drivers).forRun(
+      ctx,
+      { id: "r1" } as AgentRun,
+      agent as unknown as Agent,
+    );
     await runner.run("tool.before", { call: { type: "tool_call", id: "x", name: "t", arguments: {} }, tool: null });
     await runner.run("llm.response", {
       model: null,
@@ -96,7 +103,7 @@ describe("HookDispatcher.forRun", () => {
     } as unknown as PluginConnectionService;
     const drivers = new PluginDriverRegistry({ tools: [], instructions: [], hooks: [], healthCheck: [] });
     const agent = { id: "ag1", pluginConnections: [grant("c1", 0)] };
-    const runner = await new HookDispatcher(plugins, drivers).forRun({ agent } as unknown as HookRunnerContext);
+    const runner = await new HookDispatcher(plugins, drivers).forRun(ctx, {} as AgentRun, agent as unknown as Agent);
     await expect(runner.run("run.start", { input: "hi" })).resolves.toEqual({
       action: "continue",
       payload: { input: "hi" },

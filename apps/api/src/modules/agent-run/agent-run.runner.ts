@@ -1,11 +1,10 @@
-import { Owner } from "#src/common/decorators/owner.decorator.js";
+import type { AppContext } from "#src/common/context/app-context.js";
 import { toHttpException } from "#src/common/filter/llm-error.filter.js";
 import { FailoverError, LlmError } from "#src/llm/errors.js";
 import { ToolResult } from "#src/plugin/driver.js";
 import { HttpException, Injectable, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { AgentRunStatus } from "@snipet/shared";
-import { In, Repository } from "typeorm";
+import { EntityManager, EntityTarget, In, ObjectLiteral, Repository } from "typeorm";
 
 import { Agent } from "../agent/agent.entity.js";
 import { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
@@ -55,27 +54,31 @@ export class AgentRunner {
   private readonly logger = new Logger(AgentRunner.name);
 
   constructor(
-    @InjectRepository(AgentRun) private readonly runsRepo: Repository<AgentRun>,
-    @InjectRepository(AgentMessage) private readonly messagesRepo: Repository<AgentMessage>,
+    private readonly manager: EntityManager,
     private readonly llmConnectionService: LlmConnectionService,
     private readonly runEvents: AgentRunEvents,
     private readonly agentContext: AgentContext,
     private readonly hookDispatcher: HookDispatcher,
   ) {}
 
+  /** A table, joining the context's transaction when there is one. */
+  private repositoryOf<E extends ObjectLiteral>(ctx: AppContext, target: EntityTarget<E>): Repository<E> {
+    return (ctx.tx ?? this.manager).getRepository(target);
+  }
+
   /**
    * The messages of the current run and the session's `previousRuns` before it, with every tool call paired
    * to its result. Tool results older than the last FULL_TOOL_RUNS runs are
    * replaced by a placeholder: the calls stay, so the model knows what it did.
    */
-  private async getHistory(sessionId: string, previousRuns: number): Promise<LlmMessage[]> {
-    const recentRuns = await this.runsRepo.find({
+  private async getHistory(ctx: AppContext, sessionId: string, previousRuns: number): Promise<LlmMessage[]> {
+    const recentRuns = await this.repositoryOf(ctx, AgentRun).find({
       select: { id: true },
       where: { sessionId },
       order: { createdAt: "DESC" },
       take: previousRuns + 1,
     });
-    const messages = await this.messagesRepo.find({
+    const messages = await this.repositoryOf(ctx, AgentMessage).find({
       where: { runId: In(recentRuns.map((r) => r.id)) },
       order: { id: "ASC" },
     });
@@ -106,20 +109,20 @@ export class AgentRunner {
    * Answers the session's history, which ends with the run's user message.
    * Never throws: the outcome is written to the run.
    */
-  async run(agent: Agent, run: AgentRun, owner: Owner): Promise<void> {
+  async run(ctx: AppContext, agent: Agent, run: AgentRun): Promise<void> {
     // Opened before the first await, so a cancel right after start lands.
     const signal = this.runEvents.open(run.id);
-    const hookRunner = await this.hookDispatcher.forRun({ run, agent, owner });
-    await this.execute(agent, run, signal, hookRunner, owner);
+    const hookRunner = await this.hookDispatcher.forRun(ctx, run, agent);
+    await this.execute(ctx, agent, run, signal, hookRunner);
     await hookRunner.settle();
   }
 
   private async execute(
+    ctx: AppContext,
     agent: Agent,
     run: AgentRun,
     signal: AbortSignal,
     hookRunner: HookRunner,
-    owner: Owner,
   ): Promise<void> {
     let status = AgentRunStatus.MAX_TURNS;
     let error: string | null = null;
@@ -133,12 +136,12 @@ export class AgentRunner {
     const startedAt = Date.now();
 
     try {
-      history = await this.getHistory(run.sessionId, agent.historyRuns);
+      history = await this.getHistory(ctx, run.sessionId, agent.historyRuns);
       // The run's own messages start at the user's, the last of the history.
       runStart = Math.max(history.length - 1, 0);
       input = textOf(history.at(-1));
       await hookRunner.run("run.start", { input });
-      const context = await this.agentContext.build(agent, owner);
+      const context = await this.agentContext.build(ctx, agent);
       const {
         payload: { system, tools },
       } = await hookRunner.run("run.context", {
@@ -171,7 +174,7 @@ export class AgentRunner {
           const { messages, targets } = request.payload;
           // Providers may reject an empty tool list.
           const offered = request.payload.tools.length ? request.payload.tools : undefined;
-          const stream = this.llmConnectionService.stream({ targets, messages, tools: offered }, signal);
+          const stream = this.llmConnectionService.stream(ctx, { targets, messages, tools: offered }, signal);
           for await (const event of stream) {
             if (event.event === "llm_started") model = event.data.llm;
             else if (event.event === "llm_skipped") skipped.push(event.data);
@@ -194,7 +197,7 @@ export class AgentRunner {
           skipped,
           durationMs: Date.now() - started,
         }));
-        history.push(await this.save(run, reply, model));
+        history.push(await this.save(ctx, run, reply, model));
 
         const calls = reply.parts.filter((p): p is LlmToolCallPart => p.type === "tool_call");
         if (calls.length === 0) {
@@ -205,10 +208,10 @@ export class AgentRunner {
         // Every call gets a result, even after a cancel, or the next run's
         // history would have calls the providers reject as unanswered.
         for (const asked of calls) {
-          const result = await this.callTool(asked, context, hookRunner, signal);
+          const result = await this.callTool(ctx, asked, context, hookRunner, signal);
           // The result answers the call the model made, whatever a hook changed.
           const parts = [{ type: "tool_result" as const, toolCallId: asked.id, ...result }];
-          history.push(await this.save(run, { role: "tool", parts }, null));
+          history.push(await this.save(ctx, run, { role: "tool", parts }, null));
         }
         signal.throwIfAborted();
       }
@@ -236,8 +239,9 @@ export class AgentRunner {
     });
 
     try {
-      await this.runsRepo.update(run.id, { status, error, turns, finishedAt: new Date() });
-      this.runEvents.emit(run.id, { event: "run_finished", data: await this.runsRepo.findOneByOrFail({ id: run.id }) });
+      const runs = this.repositoryOf(ctx, AgentRun);
+      await runs.update(run.id, { status, error, turns, finishedAt: new Date() });
+      this.runEvents.emit(run.id, { event: "run_finished", data: await runs.findOneByOrFail({ id: run.id }) });
     } catch (err) {
       // The session was deleted mid-run.
       this.logger.warn(`finish agent run ${run.id}: ${String(err)}`);
@@ -248,6 +252,7 @@ export class AgentRunner {
 
   /** Runs one tool call through its hooks; throws only when a hook stops the run (HookStoppedError). */
   private async callTool(
+    ctx: AppContext,
     requestedCall: LlmToolCallPart,
     context: RunContext,
     hookRunner: HookRunner,
@@ -255,14 +260,21 @@ export class AgentRunner {
   ): Promise<ToolResult> {
     const started = Date.now();
     if (signal.aborted)
-      return this.toolDone(hookRunner, requestedCall, { content: "cancelled", isError: true }, "cancelled", started);
+      return this.toolDone(
+        ctx,
+        hookRunner,
+        requestedCall,
+        { content: "cancelled", isError: true },
+        "cancelled",
+        started,
+      );
     const beforeOutcome = await hookRunner.run("tool.before", {
       call: requestedCall,
       tool: context.toolOf(requestedCall.name),
     });
     if (beforeOutcome.action === "deny") {
       const denied = { content: beforeOutcome.reason, isError: true };
-      return this.toolDone(hookRunner, requestedCall, denied, "denied", started);
+      return this.toolDone(ctx, hookRunner, requestedCall, denied, "denied", started);
     }
     if (beforeOutcome.action === "respond") return beforeOutcome.result;
     const { call } = beforeOutcome.payload;
@@ -271,11 +283,12 @@ export class AgentRunner {
     if (signal.aborted) reason = "cancelled";
     else if (context.has(call.name)) reason = "error_result";
     else reason = "unknown_tool";
-    return this.toolDone(hookRunner, call, result, reason, started);
+    return this.toolDone(ctx, hookRunner, call, result, reason, started);
   }
 
   /** Passes a tool's result through tool.after, or tool.error when it is one. */
   private async toolDone(
+    _ctx: AppContext,
     hookRunner: HookRunner,
     call: LlmToolCallPart,
     result: ToolResult,
@@ -289,9 +302,15 @@ export class AgentRunner {
     return outcome.payload.result;
   }
 
-  private async save(run: AgentRun, llmMessage: LlmMessage, model: string | null): Promise<LlmMessage> {
-    const message = await this.messagesRepo.save(
-      this.messagesRepo.create({ sessionId: run.sessionId, runId: run.id, ...llmMessage, model }),
+  private async save(
+    ctx: AppContext,
+    run: AgentRun,
+    llmMessage: LlmMessage,
+    model: string | null,
+  ): Promise<LlmMessage> {
+    const messages = this.repositoryOf(ctx, AgentMessage);
+    const message = await messages.save(
+      messages.create({ sessionId: run.sessionId, runId: run.id, ...llmMessage, model }),
     );
     this.runEvents.emit(run.id, { event: "message", data: message });
     return llmMessage;

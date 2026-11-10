@@ -45,7 +45,7 @@ const originsKey = (id: string) => `app:${id}:origins`;
 type AnonymousRefreshPayload = { sub: string; app: { id: string } };
 
 @Injectable()
-export class AppService extends CrudService<App> {
+export class AppService extends CrudService<App, AppContext> {
   constructor(
     manager: EntityManager,
     private readonly jwt: JwtService,

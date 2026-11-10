@@ -1,7 +1,6 @@
 import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
-import { CurrentOwner } from "#src/common/decorators/owner.decorator.js";
 import { Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Query } from "@nestjs/common";
-import { ZodPipe } from "@snipet/server-common";
+import { Ctx, ZodPipe } from "@snipet/server-common";
 
 import { findAgentMessagesParamsSchema, findAgentSessionsSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
@@ -9,7 +8,7 @@ import { AgentRunService } from "./agent-run.service.js";
 import type { FilterQuery } from "@snipet/server-common";
 
 import type { AgentSession } from "./agent-run.entity.js";
-import type { Owner } from "#src/common/decorators/owner.decorator.js";
+import type { AppContext } from "#src/common/context/app-context.js";
 import type { FindAgentMessagesParams } from "@snipet/shared";
 @Private(UserAuth(), ApiKeyAuth(), AppTokenAuth())
 @Controller("agent-sessions")
@@ -17,27 +16,27 @@ export class AgentSessionController {
   constructor(private readonly service: AgentRunService) {}
 
   @Get()
-  filter(@Query(new ZodPipe(findAgentSessionsSchema)) query: FilterQuery<AgentSession>, @CurrentOwner() owner: Owner) {
-    return this.service.findSessions(query, owner);
+  filter(@Ctx() ctx: AppContext, @Query(new ZodPipe(findAgentSessionsSchema)) query: FilterQuery<AgentSession>) {
+    return this.service.findSessions(ctx, query);
   }
 
   @Get(":id")
-  findById(@Param("id", ParseUUIDPipe) id: string, @CurrentOwner() owner: Owner) {
-    return this.service.findSession(id, owner);
+  findById(@Ctx() ctx: AppContext, @Param("id", ParseUUIDPipe) id: string) {
+    return this.service.findSession(ctx, id);
   }
 
   @Delete(":id")
   @HttpCode(204)
-  deleteById(@Param("id", ParseUUIDPipe) id: string, @CurrentOwner() owner: Owner) {
-    return this.service.deleteSession(id, owner);
+  deleteById(@Ctx() ctx: AppContext, @Param("id", ParseUUIDPipe) id: string) {
+    return this.service.deleteSession(ctx, id);
   }
 
   @Get(":id/messages")
   findMessages(
+    @Ctx() ctx: AppContext,
     @Param("id", ParseUUIDPipe) id: string,
     @Query(new ZodPipe(findAgentMessagesParamsSchema)) query: FindAgentMessagesParams,
-    @CurrentOwner() owner: Owner,
   ) {
-    return this.service.findMessages(id, query, owner);
+    return this.service.findMessages(ctx, id, query);
   }
 }

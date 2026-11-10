@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 
 import { AgentRun } from "../agent-run.entity.js";
 
-import type { Owner } from "#src/common/decorators/owner.decorator.js";
+import type { Owner } from "#src/common/context/app-context.js";
 import type { HookContext, HookDriver } from "#src/plugin/driver.js";
 import type {
   HookAction,

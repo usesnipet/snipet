@@ -5,9 +5,8 @@ import {
   NotFoundException,
   OnApplicationBootstrap,
 } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { AgentRunStatus } from "@snipet/shared";
-import { IsNull, LessThan, MoreThan, Repository } from "typeorm";
+import { EntityManager, EntityTarget, IsNull, LessThan, MoreThan, ObjectLiteral, Repository } from "typeorm";
 
 import { AgentService } from "../agent/agent.service.js";
 
@@ -17,7 +16,7 @@ import { AgentRunner } from "./agent-run.runner.js";
 import { sessionTitleOf } from "./session-title.js";
 
 import type { FilterQuery } from "@snipet/server-common";
-import type { Owner } from "#src/common/decorators/owner.decorator.js";
+import { AppContext, type Owner } from "#src/common/context/app-context.js";
 import type {
   AgentRunEvent,
   FindAgentMessagesParams,
@@ -35,26 +34,35 @@ const ownedBy = (owner: Owner) => ({
 @Injectable()
 export class AgentRunService implements OnApplicationBootstrap {
   constructor(
-    @InjectRepository(AgentSession) private readonly sessionsRepo: Repository<AgentSession>,
-    @InjectRepository(AgentRun) private readonly runsRepo: Repository<AgentRun>,
-    @InjectRepository(AgentMessage) private readonly messagesRepo: Repository<AgentMessage>,
+    private readonly manager: EntityManager,
     private readonly agents: AgentService,
     private readonly runner: AgentRunner,
     private readonly events: AgentRunEvents,
   ) {}
 
+  /** A table, joining the context's transaction when there is one. */
+  private repositoryOf<E extends ObjectLiteral>(ctx: AppContext, target: EntityTarget<E>): Repository<E> {
+    return (ctx.tx ?? this.manager).getRepository(target);
+  }
+
+  /** Runs fn in a transaction, reusing the context's one if it's already in one. */
+  private transaction<R>(ctx: AppContext, fn: (ctx: AppContext) => Promise<R>): Promise<R> {
+    return ctx.tx ? fn(ctx) : this.manager.transaction((tx) => fn(ctx.withTx(tx)));
+  }
+
   async onApplicationBootstrap() {
-    await this.runsRepo.update(
+    const ctx = AppContext.create("bootstrap:agent-runs");
+    await this.repositoryOf(ctx, AgentRun).update(
       { status: AgentRunStatus.RUNNING },
       { status: AgentRunStatus.FAILED, error: "interrupted by a server restart", finishedAt: new Date() },
     );
   }
 
-  async findSessions(query: FilterQuery<AgentSession>, owner: Owner): Promise<Paginated<AgentSession>> {
-    const [data, total] = await this.sessionsRepo.findAndCount({
+  async findSessions(ctx: AppContext, query: FilterQuery<AgentSession>): Promise<Paginated<AgentSession>> {
+    const [data, total] = await this.repositoryOf(ctx, AgentSession).findAndCount({
       where: {
         ...query.where,
-        ...ownedBy(owner),
+        ...ownedBy(ctx.owner),
       },
       order: query.order,
       take: query.take,
@@ -63,26 +71,26 @@ export class AgentRunService implements OnApplicationBootstrap {
     return { data, total, take: query.take, skip: query.skip };
   }
 
-  async findSession(id: string, owner: Owner): Promise<AgentSession> {
-    const session = await this.sessionsRepo.findOneBy({ id, ...ownedBy(owner) });
+  async findSession(ctx: AppContext, id: string): Promise<AgentSession> {
+    const session = await this.repositoryOf(ctx, AgentSession).findOneBy({ id, ...ownedBy(ctx.owner) });
     if (!session) throw new NotFoundException("AgentSession not found");
     return session;
   }
 
-  async deleteSession(id: string, owner: Owner): Promise<void> {
-    await this.findSession(id, owner);
-    const running = await this.runsRepo.findBy({ sessionId: id, status: AgentRunStatus.RUNNING });
+  async deleteSession(ctx: AppContext, id: string): Promise<void> {
+    await this.findSession(ctx, id);
+    const running = await this.repositoryOf(ctx, AgentRun).findBy({ sessionId: id, status: AgentRunStatus.RUNNING });
     for (const run of running) this.events.abort(run.id);
-    await this.sessionsRepo.delete(id);
+    await this.repositoryOf(ctx, AgentSession).delete(id);
   }
 
   async findMessages(
+    ctx: AppContext,
     sessionId: string,
     { take, before }: FindAgentMessagesParams,
-    owner: Owner,
   ): Promise<Paginated<AgentMessage>> {
-    await this.findSession(sessionId, owner);
-    const [data, total] = await this.messagesRepo.findAndCount({
+    await this.findSession(ctx, sessionId);
+    const [data, total] = await this.repositoryOf(ctx, AgentMessage).findAndCount({
       where: { sessionId, ...(before ? { id: LessThan(before) } : {}) },
       order: { id: "DESC" },
       take,
@@ -90,9 +98,9 @@ export class AgentRunService implements OnApplicationBootstrap {
     return { data, total, take, skip: 0 };
   }
 
-  async findRuns({ sessionId, take, skip }: FindAgentRunsParams, owner: Owner): Promise<Paginated<AgentRun>> {
-    await this.findSession(sessionId, owner);
-    const [data, total] = await this.runsRepo.findAndCount({
+  async findRuns(ctx: AppContext, { sessionId, take, skip }: FindAgentRunsParams): Promise<Paginated<AgentRun>> {
+    await this.findSession(ctx, sessionId);
+    const [data, total] = await this.repositoryOf(ctx, AgentRun).findAndCount({
       where: { sessionId },
       order: { createdAt: "DESC" },
       take,
@@ -101,11 +109,11 @@ export class AgentRunService implements OnApplicationBootstrap {
     return { data, total, take, skip };
   }
 
-  async findRun(id: string, owner: Owner): Promise<AgentRun> {
-    const run = await this.runsRepo.findOne({
+  async findRun(ctx: AppContext, id: string): Promise<AgentRun> {
+    const run = await this.repositoryOf(ctx, AgentRun).findOne({
       where: {
         id,
-        session: ownedBy(owner),
+        session: ownedBy(ctx.owner),
       },
     });
     if (!run) throw new NotFoundException("AgentRun not found");
@@ -116,44 +124,46 @@ export class AgentRunService implements OnApplicationBootstrap {
    * Stores the input and answers it in the background; follow the run's
    * events for the answer.
    */
-  async start({ agentId, sessionId, input }: StartAgentRun, owner: Owner): Promise<AgentRun> {
-    const agent = await this.agents.findById(agentId);
+  async start(ctx: AppContext, { agentId, sessionId, input }: StartAgentRun): Promise<AgentRun> {
+    const agent = await this.agents.findById(ctx, agentId);
     if (!agent.enabled) throw new BadRequestException("agent is disabled");
 
     if (sessionId) {
-      const session = await this.findSession(sessionId, owner);
+      const session = await this.findSession(ctx, sessionId);
       if (session.agentId !== agentId) throw new BadRequestException("the session belongs to another agent");
-      if (await this.runsRepo.existsBy({ sessionId, status: AgentRunStatus.RUNNING })) {
+      if (await this.repositoryOf(ctx, AgentRun).existsBy({ sessionId, status: AgentRunStatus.RUNNING })) {
         throw new ConflictException("the session already has a running run");
       }
     }
 
-    const run = await this.runsRepo.manager.transaction(async (m) => {
-      const sessions = m.getRepository(AgentSession);
+    const run = await this.transaction(ctx, async (ctx) => {
+      const sessions = this.repositoryOf(ctx, AgentSession);
+      const runs = this.repositoryOf(ctx, AgentRun);
       let id = sessionId;
       if (id) await sessions.update(id, { updatedAt: new Date() });
-      else ({ id } = await sessions.save({ agentId, ...owner, title: sessionTitleOf(input) }));
-      const run = await m.getRepository(AgentRun).save({ sessionId: id, status: AgentRunStatus.RUNNING });
-      await m.getRepository(AgentMessage).save({
+      else ({ id } = await sessions.save({ agentId, ...ctx.owner, title: sessionTitleOf(input) }));
+      const run = await runs.save({ sessionId: id, status: AgentRunStatus.RUNNING });
+      await this.repositoryOf(ctx, AgentMessage).save({
         sessionId: id,
         runId: run.id,
         role: "user" as const,
         parts: [{ type: "text" as const, text: input }],
         model: null,
       });
-      return m.getRepository(AgentRun).findOneByOrFail({ id: run.id });
+      return runs.findOneByOrFail({ id: run.id });
     });
 
-    void this.runner.run(agent, run, owner);
+    // Outlives the request: the runner gets the request's context, outside the transaction.
+    void this.runner.run(ctx, agent, run);
     return run;
   }
 
-  async cancel(id: string, owner: Owner): Promise<void> {
-    const run = await this.findRun(id, owner);
+  async cancel(ctx: AppContext, id: string): Promise<void> {
+    const run = await this.findRun(ctx, id);
     if (run.status !== AgentRunStatus.RUNNING) return;
     // Not live here: nothing is running it, just close it.
     if (!this.events.abort(id)) {
-      await this.runsRepo.update(id, { status: AgentRunStatus.CANCELLED, finishedAt: new Date() });
+      await this.repositoryOf(ctx, AgentRun).update(id, { status: AgentRunStatus.CANCELLED, finishedAt: new Date() });
     }
   }
 
@@ -161,7 +171,7 @@ export class AgentRunService implements OnApplicationBootstrap {
    * The run's stored messages after lastId, then its live events until it
    * finishes. Subscribes before reading, so nothing falls in between.
    */
-  async *follow(run: AgentRun, lastId: number, signal: AbortSignal): AsyncGenerator<AgentRunEvent> {
+  async *follow(ctx: AppContext, run: AgentRun, lastId: number, signal: AbortSignal): AsyncGenerator<AgentRunEvent> {
     const queue: AgentRunEvent[] = [];
     let wake: (() => void) | undefined;
     const unsubscribe = this.events.subscribe(run.id, (event) => {
@@ -172,7 +182,7 @@ export class AgentRunService implements OnApplicationBootstrap {
     signal.addEventListener("abort", stop);
 
     try {
-      const stored = await this.messagesRepo.find({
+      const stored = await this.repositoryOf(ctx, AgentMessage).find({
         where: { runId: run.id, id: MoreThan(lastId) },
         order: { id: "ASC" },
       });
@@ -181,7 +191,7 @@ export class AgentRunService implements OnApplicationBootstrap {
         yield { event: "message", data: message };
       }
 
-      const current = await this.runsRepo.findOneByOrFail({ id: run.id });
+      const current = await this.repositoryOf(ctx, AgentRun).findOneByOrFail({ id: run.id });
       if (!unsubscribe || current.status !== AgentRunStatus.RUNNING) {
         yield { event: "run_finished", data: current };
         return;
