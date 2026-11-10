@@ -1,6 +1,6 @@
 ---
 name: create-module
-description: Scaffold a new NestJS CRUD module (entity, dto, service, controller, module) on top of the generic abstractions in apps/api/src/common, with shared zod schemas in packages/shared. Use when creating or adding a new module, entity, resource, or CRUD API.
+description: Scaffold a new NestJS CRUD module (entity, dto, service, controller, module) on top of the generic abstractions in apps/api/src/common, with shared zod schemas in packages/shared, and the request-context (`ctx`) rules every service and controller follows. Use when creating or adding a new module, entity, resource, or CRUD API, and when adding or changing a service method, controller route, transaction, or anything that reads the caller (user, API key, app token, owner).
 ---
 
 # Create a module
@@ -15,8 +15,8 @@ packages/shared/src/api/<name>.ts   # zod: response, create, update, find params
 apps/api/src/modules/<name>/
   <name>.entity.ts      # extends BaseEntity, implements the contract type
   <name>.dto.ts         # re-exports create/update, find params -> where/order
-  <name>.service.ts     # extends CrudService<Entity>, injects the TypeORM repo
-  <name>.controller.ts  # extends CrudController<Entity>(schemas)
+  <name>.service.ts     # extends CrudService<Entity, AppContext>, injects EntityManager
+  <name>.controller.ts  # extends CrudController<Entity, AppContext>(schemas)
   <name>.module.ts      # TypeOrmModule.forFeature([Entity]) + controller + service
 ```
 
@@ -38,20 +38,78 @@ column on a populated table needs a default or backfill.
 
 ## What you get for free
 
-| Route                             | Service method                         | Status    |
-| --------------------------------- | -------------------------------------- | --------- |
-| `GET /<name>?take&skip&<filters>` | `filter(query)` returns `Paginated<T>` | 200       |
-| `GET /<name>/:id`                 | `findById(id)`                         | 200 / 404 |
-| `POST /<name>`                    | `create(dto)`                          | 201       |
-| `PUT /<name>/:id`                 | `updateById(id, dto)` partial          | 204 / 404 |
-| `DELETE /<name>/:id`              | `deleteById(id)`                       | 204 / 404 |
+| Route                             | Service method                              | Status    |
+| --------------------------------- | ------------------------------------------- | --------- |
+| `GET /<name>?take&skip&<filters>` | `filter(ctx, query)` returns `Paginated<T>` | 200       |
+| `GET /<name>/:id`                 | `findById(ctx, id)`                         | 200 / 404 |
+| `POST /<name>`                    | `create(ctx, dto)`                          | 201       |
+| `PUT /<name>/:id`                 | `updateById(ctx, id, dto)` partial          | 204 / 404 |
+| `DELETE /<name>/:id`              | `deleteById(ctx, id)`                       | 204 / 404 |
 
-- Every route needs `Authorization: Bearer <access token>` (global `AuthGuard`,
-  401 without it). Mark a route/controller `@Public()` to open it, or
-  `@Roles(Role.Admin)` to restrict it (403). `@CurrentUser()` gives `{ id, role }`.
-  All in `common/decorators/auth.decorators.ts`.
+- Every route needs `@Private(...)` or `@Public()` (global `AuthGuard`; a route
+  with neither is denied). `@Private(UserAuth(Role.Admin))` restricts to a role,
+  `ApiKeyAuth()` / `AppTokenAuth()` accept other credentials. All in
+  `common/decorators/auth.decorator.ts`. The caller is read from the context
+  (`ctx.user`, `ctx.apiKey`, `ctx.appToken`, `ctx.owner`), never from a decorator.
 - Body/query are validated by `ZodPipe`, invalid input is a 400 with zod issues.
 - Unique violations become 409 (`common/filter/db-error.filter.ts`, extend `PG_ERRORS` for more).
+
+## Request context (`ctx`)
+
+`AppContext` (`apps/api/src/common/context/app-context.ts`) carries request-scoped
+data between layers, like Go's `context.Context`: request id, auth, transaction.
+It's immutable: `withAuth`, `withTx`, `withValue` return a new one.
+
+Rules:
+
+- **Every service method takes `ctx: AppContext` as its first parameter**, public
+  and private alike, even when it doesn't use it yet. Pass it down to every service
+  call. Never pass a piece of it (`userId`, `apiKey`) in its place: the callee reads
+  `ctx.user.id` itself.
+- **Controllers** get it with `@Ctx() ctx: AppContext` (from `@snipet/server-common`)
+  as the first route parameter and hand it to the service untouched. `@Public()`
+  routes get one too, just without `auth`.
+- **Database access goes through the context**: `this.repository(ctx)` in a
+  `CrudService`, so queries join `ctx.tx` when there is one. Don't
+  `@InjectRepository` a repository: it never sees the transaction. For another
+  entity, `(ctx.tx ?? this.manager).getRepository(Other)`.
+- **Transactions**: `this.transaction(ctx, (ctx) => ...)` (on `CrudService`); it
+  reuses `ctx.tx` when already inside one. Use the `ctx` the callback receives.
+- **Caller**: `ctx.user`, `ctx.apiKey`, `ctx.appToken` and `ctx.owner` throw 500
+  when the route's `@Private` doesn't match (a code bug, not a client error). A
+  route accepting several strategies branches on `ctx.auth?.type`.
+- **No request** (`onApplicationBootstrap`, `@Cron`, queue consumers): create a
+  root context, like `context.Background()`, labelled for the logs:
+  `AppContext.create("bootstrap:root-user")`.
+- New request-scoped data goes on `AppContext` as a readonly field with its own
+  `withX`, not as another parameter threaded through every call.
+
+```ts
+@Injectable()
+export class WidgetService extends CrudService<Widget, AppContext> {
+  constructor(manager: EntityManager) {
+    super(manager, Widget);
+  }
+
+  /** The caller's widgets. */
+  findMine(ctx: AppContext): Promise<Widget[]> {
+    return this.repository(ctx).findBy({ ownerId: ctx.user.id });
+  }
+}
+
+@Private(UserAuth())
+@Controller("widget")
+export class WidgetController extends CrudController<Widget, AppContext>(schemas) {
+  constructor(override readonly service: WidgetService) {
+    super(service);
+  }
+
+  @Get("mine")
+  findMine(@Ctx() ctx: AppContext) {
+    return this.service.findMine(ctx);
+  }
+}
+```
 
 ## DTO rules
 
@@ -134,12 +192,12 @@ watch mode); the API imports its `dist`.
 
 ## Beyond CRUD
 
-- Extra logic: override a method in the service or add new ones; `this.repo` is
-  the TypeORM repository.
+- Extra logic: override a method in the service or add new ones (`ctx` first);
+  `this.repository(ctx)` is the TypeORM repository.
 - Extra routes: add methods to the controller with normal Nest decorators.
 - Extra services for specific concerns: `<name>.<concern>.service.ts`, register
   it in the module `providers`.
-- Transactions: inject `DataSource` and use `dataSource.transaction(...)`.
+- Transactions: `this.transaction(ctx, (ctx) => ...)`, see Request context.
 - Cache: use Nest's `@nestjs/cache-manager` (not installed yet).
 - Dynamic JSON validated against a stored JSON Schema:
   `validateJson(schema, data)` from `apps/api/src/utils/json-schema/json-schema.ts` (fills defaults,

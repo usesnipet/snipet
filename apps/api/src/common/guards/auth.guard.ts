@@ -46,7 +46,7 @@ export class AuthGuard implements CanActivate {
     // token that fails one is tried against the next strategy.
     for (const strategy of strategies) {
       const handler = this.handlers[strategy.type] as AuthStrategyHandler<typeof strategy.type>;
-      const auth = await handler.authenticate(request, strategy);
+      const auth = await handler.authenticate(request.ctx, request, strategy);
       if (auth) {
         // The context is immutable: withAuth returns a new one.
         request.ctx = request.ctx.withAuth(auth);

@@ -4,9 +4,8 @@ import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Role } from "@snipet/shared";
 
-import { ApiKeyAuth, AppTokenAuth, Private, Public, UserAuth } from "../decorators/auth.decorator.js";
-
 import { AppContext } from "../context/app-context.js";
+import { ApiKeyAuth, AppTokenAuth, Private, Public, UserAuth } from "../decorators/auth.decorator.js";
 
 import { AuthGuard } from "./auth.guard.js";
 import { ApiKeyStrategy } from "./strategies/api-key.strategy.js";
@@ -17,7 +16,9 @@ import type { ApiKeyService } from "#src/modules/api-key/api-key.service.js";
 import type { AppService } from "#src/modules/app/app.service.js";
 
 const jwt = new JwtService({ secret: "test" });
-const apiKeys = { verify: (key: string) => Promise.resolve({ id: key, appId: "app-1" }) } as unknown as ApiKeyService;
+const apiKeys = {
+  verify: (_ctx: unknown, key: string) => Promise.resolve({ id: key, appId: "app-1" }),
+} as unknown as ApiKeyService;
 const allowedOrigins = ["https://shop.com"];
 const apps = { findAllowedOrigins: () => Promise.resolve(allowedOrigins) } as unknown as AppService;
 const guard = new AuthGuard(

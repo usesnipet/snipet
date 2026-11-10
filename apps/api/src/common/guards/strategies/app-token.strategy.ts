@@ -6,6 +6,7 @@ import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET, AppService } from "#src/modules/a
 import { bearerToken } from "./auth-strategy.js";
 
 import type { AppTokenPayload } from "@snipet/shared";
+import type { AppContext } from "#src/common/context/app-context.js";
 import type { Request } from "express";
 import type { AuthStrategyHandler, RequestAuth } from "./auth-strategy.js";
 
@@ -22,7 +23,7 @@ export class AppTokenStrategy implements AuthStrategyHandler<"appToken"> {
     private readonly apps: AppService,
   ) {}
 
-  async authenticate(request: Request): Promise<RequestAuth | null> {
+  async authenticate(ctx: AppContext, request: Request): Promise<RequestAuth | null> {
     const token = bearerToken(request);
     if (!token) return null;
     const payload = await this.jwt
@@ -33,7 +34,7 @@ export class AppTokenStrategy implements AuthStrategyHandler<"appToken"> {
     const origin = request.headers.origin;
     if (origin) {
       // Caught outside the cache, so a failed lookup (deleted app, DB down) is never cached.
-      const allowed = await this.apps.findAllowedOrigins(payload.app.id).catch(() => null);
+      const allowed = await this.apps.findAllowedOrigins(ctx, payload.app.id).catch(() => null);
       if (!allowed) throw new UnauthorizedException("app no longer exists");
       if (allowed.length && !allowed.includes(origin)) throw new ForbiddenException("origin not allowed");
     }

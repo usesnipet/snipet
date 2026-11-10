@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 
 import { ApiKeyService } from "#src/modules/api-key/api-key.service.js";
 
+import type { AppContext } from "#src/common/context/app-context.js";
 import type { Request } from "express";
 import type { AuthStrategyHandler, RequestAuth } from "./auth-strategy.js";
 
@@ -16,7 +17,7 @@ const EXTERNAL_USER_HEADER = "x-external-user-id";
 export class ApiKeyStrategy implements AuthStrategyHandler<"apiKey"> {
   constructor(private readonly apiKeys: ApiKeyService) {}
 
-  async authenticate(request: Request): Promise<RequestAuth | null> {
+  async authenticate(ctx: AppContext, request: Request): Promise<RequestAuth | null> {
     const key = request.headers["x-api-key"];
     if (typeof key !== "string" || !key) return null;
     const externalUserId = request.headers[EXTERNAL_USER_HEADER];
@@ -26,6 +27,6 @@ export class ApiKeyStrategy implements AuthStrategyHandler<"apiKey"> {
     ) {
       throw new BadRequestException("X-External-User-Id must be a single value of 1 to 255 characters");
     }
-    return { type: "apiKey", apiKey: await this.apiKeys.verify(key), externalUserId: externalUserId ?? null };
+    return { type: "apiKey", apiKey: await this.apiKeys.verify(ctx, key), externalUserId: externalUserId ?? null };
   }
 }
