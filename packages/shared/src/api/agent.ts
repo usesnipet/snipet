@@ -6,18 +6,14 @@ import { jsonObjectSchema } from "../schemas/json.js";
 import { hookNameSchema } from "./hook.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
-/**
- * One LLM of an agent; the runner tries them by ascending order. Same fields
- * as ExecuteLlmTarget: model is "llm/model", connectionId falls back to
- * the llm's default connection.
- */
+/** One LLM of an agent; the runner tries them by ascending order. Same fields as ExecuteLlmTarget. */
 export const agentLlmSchema = z.object({
   id: z.uuid(),
   agentId: z.uuid(),
   order: z.number().int(),
+  llm: z.string(),
   model: z.string(),
-  connectionId: z.uuid().nullable(),
-  extraOptions: jsonObjectSchema.nullable(),
+  connectionId: z.uuid(),
 });
 export type AgentLlm = z.infer<typeof agentLlmSchema>;
 
@@ -65,7 +61,7 @@ export const agentSummarySchema = agentSchema
   })
   .extend({
     /** In the order they run. */
-    llms: z.array(agentLlmSchema.pick({ model: true })),
+    llms: z.array(agentLlmSchema.pick({ llm: true, model: true })),
     /** In the order their hooks run; name is the connection's. */
     pluginConnections: z.array(z.object({ pluginConnectionId: z.uuid(), name: z.string() })),
   });
@@ -104,8 +100,9 @@ export const createAgentSchema = z.object({
   llms: z
     .array(
       z.object({
-        model: z.string().regex(/^[^/]+\/.+$/, "Select a connection and a model"),
-        connectionId: z.uuid().optional(),
+        llm: z.string().min(1, "Select a connection"),
+        model: z.string().min(1, "Select a model"),
+        connectionId: z.uuid("Select a connection"),
         extraOptions: z.record(z.string(), z.unknown()).optional(),
       }),
     )

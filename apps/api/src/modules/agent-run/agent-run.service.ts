@@ -1,3 +1,4 @@
+import { AppContext } from "#src/common/context/app-context.js";
 import {
   BadRequestException,
   ConflictException,
@@ -15,8 +16,8 @@ import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
 import { sessionTitleOf } from "./session-title.js";
 
+import type { Owner } from "#src/core/context.js";
 import type { FilterQuery } from "@snipet/server-common";
-import { AppContext, type Owner } from "#src/common/context/app-context.js";
 import type {
   AgentRunEvent,
   FindAgentMessagesParams,

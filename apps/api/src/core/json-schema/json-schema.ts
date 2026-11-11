@@ -24,7 +24,7 @@ export function parseJsonSchema<T = Record<string, unknown>>(schema: JsonSchema 
   if (!schema) return data as T;
   const result = z.fromJSONSchema(schema).safeParse(data);
   if (!result.success) {
-    throw new CoreError(CoreErrorCode.INVALID_JSON_SCHEMA, "Invalid JSON schema", result.error.issues);
+    throw new CoreError(CoreErrorCode.INVALID_JSON_SCHEMA, "Invalid JSON schema", { details: result.error.issues });
   }
   return result.data as T;
 }

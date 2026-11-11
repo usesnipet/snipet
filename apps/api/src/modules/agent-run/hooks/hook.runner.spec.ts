@@ -2,7 +2,7 @@ import { hookHandlerSchema } from "@snipet/shared";
 
 import { HookRunner, HookStoppedError } from "./hook.runner.js";
 
-import type { HookContext, HookDriver } from "#src/plugin/driver.js";
+import type { HookContext, HookDriver } from "#src/core/plugin/driver.js";
 import type { BoundHandler, HookRunnerContext } from "./hook.runner.js";
 import type { HookEvent, HookResult } from "@snipet/shared";
 

@@ -1,7 +1,8 @@
 import type { AppContext } from "#src/common/context/app-context.js";
-import { toHttpException } from "#src/common/filter/llm-error.filter.js";
-import { FailoverError, LlmError } from "#src/llm/errors.js";
-import { ToolResult } from "#src/plugin/driver.js";
+import { llmToHttpException } from "#src/common/filter/llm-error.filter.js";
+import { CoreError } from "#src/core/error.js";
+import { FailoverError, LLMError } from "#src/core/llm/errors.js";
+import { ToolResult } from "#src/core/plugin/driver.js";
 import { HttpException, Injectable, Logger } from "@nestjs/common";
 import { AgentRunStatus } from "@snipet/shared";
 import { EntityManager, EntityTarget, In, ObjectLiteral, Repository } from "typeorm";
@@ -28,17 +29,19 @@ const INTERNAL_ERROR = "internal error";
 /**
  * Client-safe message for a failed run: LLM errors never carry the raw
  * provider message, which may hold hosts or credentials. A hook's stop
- * reason is meant for the client.
+ * reason and a CoreError's message are meant for the client.
  */
 function describe(err: unknown): string {
-  if (err instanceof HookStoppedError) return err.message;
-  if (err instanceof LlmError || err instanceof FailoverError) err = toHttpException(err);
+  if (err instanceof HookStoppedError || err instanceof CoreError) return err.message;
+  if (err instanceof LLMError || err instanceof FailoverError) err = llmToHttpException(err);
   return err instanceof HttpException ? err.message : INTERNAL_ERROR;
 }
 
 /** The raw error, for hooks only: it may hold hosts or credentials the client must not see. */
-function describeError(err: unknown) {
-  return err instanceof Error ? { name: err.name, message: err.message, stack: err.stack } : { message: String(err) };
+function describeError(err: unknown): { name?: string; message: string; stack?: string; cause?: unknown } {
+  if (!(err instanceof Error)) return { message: String(err) };
+  const cause = err.cause === undefined ? {} : { cause: describeError(err.cause) };
+  return { name: err.name, message: err.message, stack: err.stack, ...cause };
 }
 
 /** The text parts of a message, joined. */
@@ -149,11 +152,7 @@ export class AgentRunner {
         system: context.system,
         tools: context.tools ?? [],
       });
-      const agentTargets = agent.llms.map((llm) => ({
-        model: llm.model,
-        connectionId: llm.connectionId ?? undefined,
-        extraOptions: llm.extraOptions ?? undefined,
-      }));
+      const agentTargets = agent.llms.map(({ llm, model, connectionId }) => ({ llm, model, connectionId }));
 
       while (turns < agent.maxTurns) {
         turns++;

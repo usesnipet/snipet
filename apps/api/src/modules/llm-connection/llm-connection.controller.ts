@@ -1,6 +1,6 @@
 import { ApiKeyAuth, Private, Public, UserAuth } from "#src/common/decorators/auth.decorator.js";
-import { LlmErrorFilter, toHttpException } from "#src/common/filter/llm-error.filter.js";
-import { FailoverError, LlmError } from "#src/llm/errors.js";
+import { LlmErrorFilter, llmToHttpException } from "#src/common/filter/llm-error.filter.js";
+import { FailoverError, LLMError } from "#src/core/llm/errors.js";
 import {
   Body,
   Controller,
@@ -114,9 +114,9 @@ export class LlmConnectionController extends CrudController<LlmConnection, AppCo
       send({ event: "done", data: {} });
     } catch (err) {
       if (!abort.signal.aborted) {
-        if (!(err instanceof LlmError || err instanceof FailoverError)) this.logger.error(err);
+        if (!(err instanceof LLMError || err instanceof FailoverError)) this.logger.error(err);
         const message =
-          err instanceof LlmError || err instanceof FailoverError ? toHttpException(err).message : "internal error";
+          err instanceof LLMError || err instanceof FailoverError ? llmToHttpException(err).message : "internal error";
         send({ event: "error", data: { message } });
       }
     } finally {

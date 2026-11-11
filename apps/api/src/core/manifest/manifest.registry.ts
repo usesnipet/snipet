@@ -26,9 +26,9 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
   constructor(
     private readonly name: string, // "plugin", "llm": used in logs and errors
     private readonly loader: ManifestLoader,
-    private readonly schema: z.ZodType<M>,
-    private readonly drivers: DriverRegistry<D>,
-    private readonly logger: Logger,
+    protected readonly schema: z.ZodType<M>,
+    protected readonly drivers: DriverRegistry<D>,
+    protected readonly logger: Logger,
   ) {}
 
   /** Loads and checks the manifests; call once before using the registry. */
@@ -45,8 +45,14 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
     return [...this.manifests.values()];
   }
 
+  /** Returns the manifest for `key`, or undefined when it's not found. */
+  find(key: string): M | undefined {
+    return this.manifests.get(key);
+  }
+
+  /** Throws when the manifest is not found. */
   get(key: string): M {
-    const m = this.manifests.get(key);
+    const m = this.find(key);
     if (!m) throw new CoreError(CoreErrorCode.NOT_FOUND, `${this.name} "${key}" not found`);
     return m;
   }
@@ -63,13 +69,13 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
       if (ref && !this.drivers.has(type, ref.driver)) return `unknown ${String(type)} driver "${ref.driver}"`;
     }
     if (!isValidJsonSchema(m.connection)) return "invalid connection schema";
-    const error = this.check(m, this.drivers);
+    const error = this.check(m);
     if (error) return error;
     manifests.set(m.key, m);
   }
 
   /** Checks specific to a kind of manifest, run once its drivers are known to exist; returns why it's rejected. */
-  protected check(_manifest: M, _drivers: DriverRegistry<D>): string | undefined {
+  protected check(_manifest: M): string | undefined {
     return undefined;
   }
 }

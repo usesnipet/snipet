@@ -1,84 +1,79 @@
+import { AppContext } from "#src/common/context/app-context.js";
+import { CoreError } from "#src/core/error.js";
+import { LLMErrorCode } from "#src/core/llm/errors.js";
 import { jest } from "@jest/globals";
 
-import { AppContext } from "#src/common/context/app-context.js";
-
-import { LlmError } from "#src/llm/errors.js";
-
-import type { LLMRunner } from "#src/llm/llm.runner.js";
 import { LlmConnectionService } from "./llm-connection.service.js";
 
-import type { LLMDriverRegistry, LLMRegistry } from "#src/llm/llm.registry.js";
 import type { EntityManager } from "typeorm";
 import type { LlmConnection } from "./llm-connection.entity.js";
-import type { LlmConnectionSyncService } from "./sync/llm-connection-sync.service.js";
 
 const model = (key: string) => ({ key, name: key, description: "", capabilities: [], contextWindow: 0 });
 
 const byId: Record<string, Partial<LlmConnection>> = {
   c1: { id: "c1", llmKey: "openai", config: { apiKey: "sk-1" }, models: [model("gpt-4o")] },
-  c2: { id: "c2", llmKey: "openai", config: { apiKey: "sk-2" }, default: true, models: [model("meta/llama")] },
-  c3: { id: "c3", llmKey: "ollama", config: {} },
+  c2: { id: "c2", llmKey: "openai", config: { apiKey: "sk-2" }, models: [model("meta/llama")] },
+  c3: { id: "c3", llmKey: "ollama", config: {}, models: [] },
 };
 
 const ctx = AppContext.create("test");
 
 function setup() {
   const repo = {
-    findOneBy: jest.fn((where: Partial<LlmConnection>) =>
-      Promise.resolve(
-        where.id ? byId[where.id] : Object.values(byId).find((c) => c.llmKey === where.llmKey && c.default),
-      ),
-    ),
-    findOne: jest.fn(({ where }: { where: { id: string } }) => Promise.resolve(byId[where.id] ?? null)),
+    findOne: jest.fn(({ where }: { where: { id: string; llmKey: string } }) => {
+      const conn = byId[where.id];
+      return Promise.resolve(conn?.llmKey === where.llmKey ? conn : null);
+    }),
     metadata: { name: "LlmConnection" },
   };
+  // Only the repository is used by these methods.
   const service = new LlmConnectionService(
     { getRepository: () => repo } as unknown as EntityManager,
-    {} as LLMRegistry,
-    {} as LLMDriverRegistry,
-    {} as LlmConnectionSyncService,
-    {} as LLMRunner,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
   );
   return { service };
 }
 
 describe("LlmConnectionService.resolveTargets", () => {
-  it("uses the named connection, else the llm's default", async () => {
+  it("resolves each target to its connection's config", async () => {
     const { service } = setup();
     await expect(
       service.resolveTargets(ctx, [
-        { model: "openai/gpt-4o", connectionId: "c1", extraOptions: { temperature: 0 } },
-        { model: "openai/meta/llama" },
+        { llm: "openai", model: "gpt-4o", connectionId: "c1" },
+        { llm: "openai", model: "meta/llama", connectionId: "c2" },
       ]),
     ).resolves.toEqual([
-      { model: "openai/gpt-4o", connection: { apiKey: "sk-1" }, extraOptions: { temperature: 0 } },
-      { model: "openai/meta/llama", connection: { apiKey: "sk-2" }, extraOptions: undefined },
+      { llm: "openai", model: "gpt-4o", connection: { apiKey: "sk-1" } },
+      { llm: "openai", model: "meta/llama", connection: { apiKey: "sk-2" } },
     ]);
   });
 
-  it("checks the model against the connection's synced models", async () => {
+  it("marks a target unusable instead of throwing, so the runner skips it", async () => {
     const { service } = setup();
-    await expect(service.resolveTargets(ctx, [{ model: "openai/gpt-5", connectionId: "c1" }])).rejects.toThrow(
-      'model "openai/gpt-5" not found',
-    );
-  });
-
-  it("rejects a connection of another llm", async () => {
-    const { service } = setup();
-    await expect(service.resolveTargets(ctx, [{ model: "openai/gpt-4o", connectionId: "c3" }])).rejects.toThrow(
-      'connection "c3" is not a "openai" connection',
-    );
-  });
-
-  it("rejects an llm without a default connection", async () => {
-    const { service } = setup();
-    await expect(service.resolveTargets(ctx, [{ model: "ollama/llama3" }])).rejects.toThrow(LlmError);
+    const [missing, otherLlm, unsynced] = await service.resolveTargets(ctx, [
+      { llm: "openai", model: "gpt-4o", connectionId: "gone" },
+      { llm: "openai", model: "gpt-4o", connectionId: "c3" },
+      { llm: "openai", model: "gpt-5", connectionId: "c1" },
+    ]);
+    expect(missing).toMatchObject({ error: { code: LLMErrorCode.CONNECTION_NOT_FOUND } });
+    expect(otherLlm).toMatchObject({ error: { code: LLMErrorCode.CONNECTION_NOT_FOUND } });
+    expect(unsynced).toMatchObject({
+      error: { code: LLMErrorCode.MODEL_NOT_FOUND, message: 'model "openai/gpt-5" not found' },
+    });
   });
 });
 
 describe("LlmConnectionService.listLLMModels", () => {
-  it("reads the default connection's models from the database", async () => {
+  it("reads the connection's models from the database", async () => {
     const { service } = setup();
-    await expect(service.listLLMModels(ctx, "openai")).resolves.toEqual([model("meta/llama")]);
+    await expect(service.listLLMModels(ctx, "openai", "c2")).resolves.toEqual([model("meta/llama")]);
+  });
+
+  it("rejects a connection of another llm", async () => {
+    const { service } = setup();
+    await expect(service.listLLMModels(ctx, "openai", "c3")).rejects.toThrow(CoreError);
   });
 });

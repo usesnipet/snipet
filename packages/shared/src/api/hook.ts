@@ -110,7 +110,15 @@ export const HOOKS = {
       /** What the client saw. */
       error: z.string().nullable(),
       /** What failed, for hooks only: it may hold hosts or credentials the client must not see. */
-      rawError: z.object({ name: z.string().optional(), message: z.string(), stack: z.string().optional() }).nullable(),
+      rawError: z
+        .object({
+          name: z.string().optional(),
+          message: z.string(),
+          stack: z.string().optional(),
+          /** The underlying error (e.g. the provider's), described the same way. */
+          cause: z.unknown().optional(),
+        })
+        .nullable(),
       input: z.string(),
       /** The run's messages, from the user's on. */
       messages: z.array(llmMessageSchema),

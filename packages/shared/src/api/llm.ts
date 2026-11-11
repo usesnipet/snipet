@@ -82,21 +82,21 @@ export const llmModelSchema = z.object({
 });
 export type LlmModel = z.infer<typeof llmModelSchema>;
 
-/** connectionId: the connection whose synced models to list; else the llm's default. */
+/** connectionId: the connection whose synced models to list. */
 export const listLLMModelsParamsSchema = z.object({
-  connectionId: z.uuid().optional(),
+  connectionId: z.uuid(),
 });
 export type ListLLMModelsParams = z.infer<typeof listLLMModelsParamsSchema>;
 
 // --- execute -------------------------------------------------------------
 
-/**
- * One model the runner may try, in order. model is "llm/model". Runs on
- * connectionId, else the llm's default connection.
- */
+/** One model the runner may try, in order, on the given connection of its llm. */
 export const executeLlmTargetSchema = z.object({
+  /** The llm's key, e.g. "openai". */
+  llm: z.string().min(1),
+  /** The model's key within the llm, e.g. "gpt-4o"; it may itself contain "/". */
   model: z.string().min(1),
-  connectionId: z.uuid().optional(),
+  connectionId: z.uuid(),
   extraOptions: jsonObjectSchema.optional(),
 });
 export type ExecuteLlmTarget = z.infer<typeof executeLlmTargetSchema>;
@@ -126,7 +126,7 @@ export type LlmResponse = z.infer<typeof llmResponseSchema>;
 export const llmStreamEventSchema = z.discriminatedUnion("event", [
   // The runner committed to this target ("llm/model").
   z.object({ event: z.literal("llm_started"), data: z.object({ llm: z.string() }) }),
-  // A target skipped during failover (rate limit, auth, unavailable).
+  // A target skipped during failover: it failed on its own (rate limit, auth, unavailable, missing).
   z.object({ event: z.literal("llm_skipped"), data: z.object({ llm: z.string(), error: z.string() }) }),
   z.object({ event: z.literal("text_delta"), data: z.object({ text: z.string() }) }),
   z.object({ event: z.literal("thinking_delta"), data: z.object({ text: z.string() }) }),

@@ -5,8 +5,8 @@ import type {
   HookName,
   JsonObject,
 } from "@snipet/shared";
-import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
 import { sealConfig } from "#src/infra/database/seal-config.js";
+import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
 import { BaseEntity } from "@snipet/server-common";
 import {
   AfterLoad,
@@ -92,19 +92,21 @@ export class AgentLlm implements AgentLlmContract {
   @Column({ type: "int" })
   order: number;
 
+  /** The llm manifest's key, e.g. "openai". */
+  @Column({ length: 255 })
+  llm: string;
+
+  /** The model's key within the llm; it may itself contain "/". */
   @Column({ length: 255 })
   model: string;
 
-  /** A deleted connection falls back to the llm's default one. */
-  @Column({ type: "uuid", nullable: true })
-  connectionId: string | null;
+  /** Deleting the connection removes this LLM from the agent. */
+  @Column({ type: "uuid" })
+  connectionId: string;
 
-  @ManyToOne(() => LlmConnection, { onDelete: "SET NULL", nullable: true })
+  @ManyToOne(() => LlmConnection, { onDelete: "CASCADE" })
   @JoinColumn({ name: "connectionId" })
-  connection?: LlmConnection | null;
-
-  @Column({ type: "json", nullable: true })
-  extraOptions: JsonObject | null;
+  connection?: LlmConnection;
 }
 
 @Entity("agent_plugin_connections")

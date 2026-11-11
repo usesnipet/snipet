@@ -1,48 +1,36 @@
-import {
-  ArgumentsHost,
-  BadGatewayException,
-  BadRequestException,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-  NotFoundException,
-  ServiceUnavailableException,
-  UnauthorizedException,
-  UnprocessableEntityException,
-} from "@nestjs/common";
+import { FailoverError, LLMError, LLMErrorCode } from "#src/core/llm/errors.js";
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
 import { BaseExceptionFilter } from "@nestjs/core";
 
-import { attemptReason, FailoverError, LlmError, LlmErrorKind } from "#src/llm/errors.js";
-
-/**
- * Client-safe responses: never the raw provider message for upstream
- * failures, which may carry hosts or credentials details.
- */
-const BY_KIND: Record<LlmErrorKind, (e: LlmError) => HttpException> = {
-  llm_not_found: () => new NotFoundException("llm not found"),
-  model_not_found: () => new NotFoundException("llm model not found"),
-  auth: () => new UnauthorizedException("llm provider rejected credentials"),
-  rate_limit: () => new HttpException("llm provider rate limited", HttpStatus.TOO_MANY_REQUESTS),
-  unavailable: () => new ServiceUnavailableException("llm provider unavailable"),
-  context_too_long: () => new UnprocessableEntityException("conversation too long for this model"),
-  invalid_options: (e) => new BadRequestException(e.message),
-  bad_request: () => new BadRequestException("invalid llm request"),
+/** HTTP status per code; a `Record` so a new code can't be left unmapped. */
+const STATUS: Record<LLMErrorCode, HttpStatus> = {
+  [LLMErrorCode.MODEL_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [LLMErrorCode.LLM_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [LLMErrorCode.CONNECTION_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [LLMErrorCode.AUTH]: HttpStatus.BAD_GATEWAY,
+  [LLMErrorCode.RATE_LIMIT]: HttpStatus.TOO_MANY_REQUESTS,
+  [LLMErrorCode.UNAVAILABLE]: HttpStatus.SERVICE_UNAVAILABLE,
+  [LLMErrorCode.BAD_REQUEST]: HttpStatus.BAD_REQUEST,
 };
 
-export function toHttpException(error: LlmError | FailoverError): HttpException {
+/** The HTTP response for an LLM error; its message and details are client-safe by contract. */
+export function llmToHttpException(error: LLMError | FailoverError): HttpException {
   if (error instanceof FailoverError) {
-    return new BadGatewayException({
-      message: "all configured llms failed",
-      details: Object.fromEntries(error.attempts.map((a) => [a.llm, attemptReason(a.error)])),
-    });
+    return new HttpException(
+      {
+        message: "all configured llms failed",
+        details: Object.fromEntries(error.attempts.map((a) => [a.llm, a.error.message])),
+      },
+      HttpStatus.BAD_GATEWAY,
+    );
   }
-  return BY_KIND[error.kind](error);
+  const body = error.details === undefined ? error.message : { message: error.message, details: error.details };
+  return new HttpException(body, STATUS[error.code]);
 }
 
-@Catch(LlmError, FailoverError)
+@Catch(LLMError, FailoverError)
 export class LlmErrorFilter extends BaseExceptionFilter implements ExceptionFilter {
-  catch(error: LlmError | FailoverError, host: ArgumentsHost) {
-    super.catch(toHttpException(error), host);
+  catch(error: LLMError | FailoverError, host: ArgumentsHost) {
+    super.catch(llmToHttpException(error), host);
   }
 }

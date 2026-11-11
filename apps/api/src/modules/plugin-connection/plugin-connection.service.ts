@@ -1,6 +1,6 @@
-import { ConnectionService } from "#src/manifest/connection.service.js";
-import { PluginDrivers, Tool, ToolResult } from "#src/plugin/driver.js";
-import { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
+import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
+import { PluginDrivers, Tool, ToolResult } from "#src/core/plugin/driver.js";
+import { PluginDriverRegistry, PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { validateJson } from "@snipet/server-common";
 import { DeepPartial, EntityManager, In, QueryDeepPartialEntity } from "typeorm";
@@ -23,7 +23,7 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
 
   constructor(
     manager: EntityManager,
-    plugins: PluginRegistry,
+    plugins: PluginManifestRegistry,
     drivers: PluginDriverRegistry,
     private readonly syncer: PluginConnectionSyncService,
   ) {

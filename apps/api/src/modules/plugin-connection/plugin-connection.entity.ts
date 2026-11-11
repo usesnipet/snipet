@@ -1,4 +1,4 @@
-import type { Tool } from "#src/plugin/driver.js";
+import type { Tool } from "#src/core/plugin/driver.js";
 import type { JsonObject, PluginConnection as PluginConnectionContract } from "@snipet/shared";
 import { sealConfig } from "#src/infra/database/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";

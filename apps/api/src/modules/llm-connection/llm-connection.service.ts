@@ -1,17 +1,16 @@
+import { CoreError, CoreErrorCode } from "#src/core/error.js";
+import { LLMError, LLMErrorCode } from "#src/core/llm/errors.js";
+import { LLMRunner, LLMTarget } from "#src/core/llm/llm.runner.js";
+import { LLMDriverRegistry, LLMManifestRegistry } from "#src/core/llm/llm.registry.js";
+import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
 import { Injectable } from "@nestjs/common";
 import { DeepPartial, EntityManager, Not, QueryDeepPartialEntity, Repository } from "typeorm";
-
-import { LlmError } from "#src/llm/errors.js";
-import { LLMDriverRegistry, LLMRegistry } from "#src/llm/llm.registry.js";
-import { LLMRunner, type LlmTarget } from "#src/llm/llm.runner.js";
-import { splitModelRef } from "#src/llm/model-ref.js";
-import { ConnectionService } from "#src/manifest/connection.service.js";
 
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionSyncService } from "./sync/llm-connection-sync.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
-import type { LLMDrivers } from "#src/llm/driver.js";
+import type { LLMDrivers } from "#src/core/llm/driver.js";
 import type { ExecuteLlm, ExecuteLlmTarget, LlmManifest, LlmModel, LlmResponse, LlmStreamEvent } from "@snipet/shared";
 
 /**
@@ -23,7 +22,7 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
 
   constructor(
     manager: EntityManager,
-    llms: LLMRegistry,
+    llms: LLMManifestRegistry,
     drivers: LLMDriverRegistry,
     private readonly syncer: LlmConnectionSyncService,
     private readonly runner: LLMRunner,
@@ -82,9 +81,14 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
     return conn?.models ?? [];
   }
 
-  /** Models of connectionId, else of the llm's default connection. */
-  async listLLMModels(ctx: AppContext, llmKey: string, connectionId?: string): Promise<LlmModel[]> {
-    return this.findModels(ctx, (await this.connectionFor(ctx, llmKey, connectionId)).id);
+  /** Models of connectionId, which must be a connection of llmKey. */
+  async listLLMModels(ctx: AppContext, llmKey: string, connectionId: string): Promise<LlmModel[]> {
+    const conn = await this.repository(ctx).findOne({
+      select: { id: true, models: true },
+      where: { id: connectionId, llmKey },
+    });
+    if (!conn) throw new CoreError(CoreErrorCode.NOT_FOUND, `connection "${connectionId}" of "${llmKey}" not found`);
+    return conn.models;
   }
 
   async generate(ctx: AppContext, dto: ExecuteLlm, signal?: AbortSignal): Promise<LlmResponse> {
@@ -96,33 +100,31 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
   }
 
   /**
-   * Each target with its connection's config, once its model is known to be
-   * among the connection's synced models.
+   * Each target with its connection's config. A target whose connection is
+   * gone (or belongs to another llm), or whose model isn't among the
+   * connection's synced models, comes back with the error instead, so the
+   * runner skips it rather than failing the whole run.
    */
-  async resolveTargets(ctx: AppContext, targets: ExecuteLlmTarget[]): Promise<LlmTarget[]> {
+  async resolveTargets(ctx: AppContext, targets: ExecuteLlmTarget[]): Promise<LLMTarget[]> {
     return Promise.all(
-      targets.map(async (t) => {
-        const [llmKey, model] = splitModelRef(t.model);
-        const conn = await this.connectionFor(ctx, llmKey, t.connectionId);
-        if (!(await this.findModels(ctx, conn.id)).some((m) => m.key === model)) {
-          throw new LlmError("model_not_found", `model "${t.model}" not found`);
+      targets.map(async ({ llm, model, connectionId }): Promise<LLMTarget> => {
+        const conn = await this.repository(ctx).findOne({
+          select: { id: true, config: true, models: true },
+          where: { id: connectionId, llmKey: llm },
+        });
+        if (!conn) {
+          const error = new LLMError(
+            LLMErrorCode.CONNECTION_NOT_FOUND,
+            `connection "${connectionId}" of "${llm}" not found`,
+          );
+          return { llm, model, error };
         }
-        return { model: t.model, connection: conn.config, extraOptions: t.extraOptions };
+        if (!conn.models.some((m) => m.key === model)) {
+          return { llm, model, error: new LLMError(LLMErrorCode.MODEL_NOT_FOUND, `model "${llm}/${model}" not found`) };
+        }
+        return { llm, model, connection: conn.config };
       }),
     );
-  }
-
-  private async connectionFor(ctx: AppContext, llmKey: string, connectionId?: string): Promise<LlmConnection> {
-    if (connectionId) {
-      const conn = await this.findById(ctx, connectionId);
-      if (conn.llmKey !== llmKey) {
-        throw new LlmError("bad_request", `connection "${connectionId}" is not a "${llmKey}" connection`);
-      }
-      return conn;
-    }
-    const conn = await this.repository(ctx).findOneBy({ llmKey, default: true });
-    if (!conn) throw new LlmError("bad_request", `no "${llmKey}" connection`);
-    return conn;
   }
 }
 

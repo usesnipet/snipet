@@ -5,8 +5,8 @@ import { randomUUID } from "node:crypto";
 
 import { AgentRun } from "../agent-run.entity.js";
 
-import type { Owner } from "#src/common/context/app-context.js";
-import type { HookContext, HookDriver } from "#src/plugin/driver.js";
+import type { Owner } from "#src/core/context.js";
+import type { HookContext, HookDriver } from "#src/core/plugin/driver.js";
 import type {
   HookAction,
   HookEvent,
@@ -18,6 +18,7 @@ import type {
   HookResult,
   JsonObject,
 } from "@snipet/shared";
+
 /** A plugin's handler on one hook, ready to run: its driver with the connection's options resolved. */
 export interface BoundHandler {
   /** The plugin connection: its name goes in failure reasons, its id keys the run state. */

@@ -1,20 +1,17 @@
-import { LlmError } from "#src/llm/errors.js";
+import { AppContext } from "#src/common/context/app-context.js";
+import { LLMErrorCode, llmProviderError } from "#src/core/llm/errors.js";
 import { jest } from "@jest/globals";
 import { BadRequestException } from "@nestjs/common";
-import { AgentRunStatus, HOOKS, hookHandlerSchema, hookNameSchema } from "@snipet/shared";
+import { AgentRunStatus, hookHandlerSchema, hookNameSchema, HOOKS, Role } from "@snipet/shared";
 
-import { HookRunner } from "./hooks/hook.runner.js";
-
+import { AgentContext } from "./agent-context.js";
+import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import { AgentRunEvents } from "./agent-run.events.js";
 import { AgentRunner } from "./agent-run.runner.js";
-import { AgentContext } from "./agent-context.js";
+import { HookRunner } from "./hooks/hook.runner.js";
 
-import { AppContext } from "#src/common/context/app-context.js";
-import { Role } from "@snipet/shared";
-
-import { AgentMessage, AgentRun } from "./agent-run.entity.js";
 import type { Agent } from "../agent/agent.entity.js";
-import type { HookDriver } from "#src/plugin/driver.js";
+import type { HookDriver } from "#src/core/plugin/driver.js";
 import type { HookDispatcher } from "./hooks/hook.dispatcher.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import type { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
@@ -35,7 +32,7 @@ const agent = {
   systemPrompt: "be brief",
   maxTurns: 5,
   historyRuns: 10,
-  llms: [{ model: "openai/gpt", connectionId: null, extraOptions: null }],
+  llms: [{ llm: "openai", model: "gpt", connectionId: "c1", extraOptions: null }],
   pluginConnections: [{ pluginConnectionId: "p1", tools: ["ask_question"] }],
 } as unknown as Agent;
 const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z") } as AgentRun;
@@ -299,19 +296,23 @@ describe("AgentRunner.run", () => {
   });
 
   it("fails with a client-safe message on llm errors", async () => {
-    const { runner, runs } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
+    const { runner, runs } = setup([
+      llmProviderError(LLMErrorCode.UNAVAILABLE, new Error("connect ECONNREFUSED 10.0.0.1")),
+    ]);
     await runner.run(ctx, agent, run);
 
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.FAILED, error: "llm provider unavailable" });
   });
 
   it("gives run.end the raw error the client never sees", async () => {
-    const { runner, events } = setup([new LlmError("unavailable", "connect ECONNREFUSED 10.0.0.1")]);
+    const { runner, events } = setup([
+      llmProviderError(LLMErrorCode.UNAVAILABLE, new Error("connect ECONNREFUSED 10.0.0.1")),
+    ]);
     await runner.run(ctx, agent, run);
 
     expect(events.find((e) => e.hook === "run.end")?.payload).toMatchObject({
       status: AgentRunStatus.FAILED,
-      rawError: { message: "connect ECONNREFUSED 10.0.0.1" },
+      rawError: { message: "llm provider unavailable", cause: { message: "connect ECONNREFUSED 10.0.0.1" } },
     });
   });
 });

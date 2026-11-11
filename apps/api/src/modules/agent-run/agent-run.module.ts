@@ -1,4 +1,4 @@
-import { PluginModule } from "#src/plugin/plugin.module.js";
+import { PluginModule } from "#src/drivers/plugin/plugin.module.js";
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 

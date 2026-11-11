@@ -4,13 +4,25 @@ export enum CoreErrorCode {
   INVALID_DRIVER_OPTIONS = "INVALID_DRIVER_OPTIONS",
 }
 
+/** What an error carries besides its message: `details` is public, `cause` is private. */
+export interface CoreErrorOptions {
+  /** Client-safe structured info, e.g. validation issues. */
+  details?: unknown;
+  /** The underlying failure, for logs and hooks only; never sent to the client. */
+  cause?: unknown;
+}
+
+/** An expected failure of the core; `message` and `details` are client-safe. */
 export class CoreError extends Error {
+  readonly details?: unknown;
+
   constructor(
-    public readonly code: CoreErrorCode,
+    readonly code: CoreErrorCode,
     message: string,
-    public readonly details?: unknown,
+    options: CoreErrorOptions = {},
   ) {
-    super(message, { cause: details });
+    super(message, { cause: options.cause });
     this.name = "CoreError";
+    this.details = options.details;
   }
 }

@@ -4,7 +4,7 @@ import { AppContext } from "#src/common/context/app-context.js";
 
 import { PluginConnectionSyncService } from "./plugin-connection-sync.service.js";
 
-import type { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
+import type { PluginDriverRegistry, PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
 import type { EntityManager } from "typeorm";
 
 type Fn = (...args: unknown[]) => Promise<unknown>;
@@ -27,7 +27,7 @@ function setup(listTools: Fn | null, getInstructions: Fn = () => Promise.resolve
   };
   const service = new PluginConnectionSyncService(
     { getRepository: () => connections } as unknown as EntityManager,
-    { get: () => ({}) } as unknown as PluginRegistry,
+    { get: () => ({}) } as unknown as PluginManifestRegistry,
     drivers as unknown as PluginDriverRegistry,
   );
   return { service, connections };

@@ -2,15 +2,15 @@ import { jest } from "@jest/globals";
 import { ALL_HOOKS, pluginManifestSchema } from "@snipet/shared";
 import { z } from "zod";
 
-import { Driver } from "#src/manifest/driver.js";
-import { PluginDriverRegistry } from "#src/plugin/plugin.registry.js";
+import { Driver } from "#src/core/manifest/driver.js";
+import { PluginDriverRegistry } from "#src/core/plugin/plugin.registry.js";
 
 import { AppContext } from "#src/common/context/app-context.js";
 import { Role } from "@snipet/shared";
 
 import { HookDispatcher } from "./hook.dispatcher.js";
 
-import type { HookDriver } from "#src/plugin/driver.js";
+import type { HookDriver } from "#src/core/plugin/driver.js";
 import type { PluginConnectionService } from "../../plugin-connection/plugin-connection.service.js";
 import type { Agent } from "../../agent/agent.entity.js";
 import type { AgentRun } from "../agent-run.entity.js";

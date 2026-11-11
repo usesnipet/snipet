@@ -1,5 +1,5 @@
 import { storageKeyOf } from "#src/infra/storage/utils.js";
-import { secretFields } from "#src/manifest/manifest.registry.js";
+import { secretFields } from "#src/core/manifest/manifest.registry.js";
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { CrudService, maskSecrets, restoreSecrets, validateJson } from "@snipet/server-common";
 import { hookHandlersOf } from "@snipet/shared";
@@ -65,7 +65,7 @@ export class AgentService extends CrudService<Agent, AppContext> {
         enabled: true,
         createdAt: true,
         updatedAt: true,
-        llms: { id: true, model: true, order: true },
+        llms: { id: true, llm: true, model: true, order: true },
         pluginConnections: {
           id: true,
           pluginConnectionId: true,
@@ -82,7 +82,7 @@ export class AgentService extends CrudService<Agent, AppContext> {
     });
     const data = agents.map(({ llms, pluginConnections, ...agent }) => ({
       ...agent,
-      llms: llms.map(({ model }) => ({ model })),
+      llms: llms.map(({ llm, model }) => ({ llm, model })),
       pluginConnections: pluginConnections.map((grant) => ({
         pluginConnectionId: grant.pluginConnectionId,
         name: grant.pluginConnection!.name,

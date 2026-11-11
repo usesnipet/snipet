@@ -1,5 +1,5 @@
-import { ConnectionSyncService } from "#src/manifest/connection-sync.service.js";
-import { PluginDriverRegistry, PluginRegistry } from "#src/plugin/plugin.registry.js";
+import { ConnectionSyncService } from "#src/common/connection-sync/connection-sync.service.js";
+import { PluginDriverRegistry, PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
 import { uniqueSortedBy } from "#src/utils/sort/index.js";
 import { Injectable } from "@nestjs/common";
 import { MAX_PLUGIN_INSTRUCTIONS } from "@snipet/shared";
@@ -8,7 +8,7 @@ import { EntityManager } from "typeorm";
 import { PluginConnection } from "../plugin-connection.entity.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
-import type { PluginDrivers } from "#src/plugin/driver.js";
+import type { PluginDrivers } from "#src/core/plugin/driver.js";
 import type { PluginManifest } from "@snipet/shared";
 
 /** Keeps each connection's tools and instructions in line with its drivers. */
@@ -20,7 +20,7 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
 > {
   protected readonly keyField = "pluginKey";
 
-  constructor(manager: EntityManager, plugins: PluginRegistry, drivers: PluginDriverRegistry) {
+  constructor(manager: EntityManager, plugins: PluginManifestRegistry, drivers: PluginDriverRegistry) {
     super(manager, PluginConnection, plugins, drivers);
   }
 

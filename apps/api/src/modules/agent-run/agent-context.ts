@@ -1,5 +1,5 @@
 import type { AppContext } from "#src/common/context/app-context.js";
-import { ToolResult } from "#src/plugin/driver.js";
+import { ToolResult } from "#src/core/plugin/driver.js";
 import { BadRequestException, Injectable } from "@nestjs/common";
 
 import { Agent } from "../agent/agent.entity.js";

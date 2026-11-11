@@ -84,13 +84,19 @@ function setup(exists = true, avatar: string | null = null) {
 describe("AgentService.updateById", () => {
   it("replaces llms in list order and leaves missing lists alone", async () => {
     const { service, agents, llms, pluginGrants } = setup();
-    await service.updateById(ctx, "a1", { name: "x", llms: [{ model: "openai/a" }, { model: "ollama/b" }] });
+    await service.updateById(ctx, "a1", {
+      name: "x",
+      llms: [
+        { llm: "openai", model: "a", connectionId: "c1" },
+        { llm: "ollama", model: "b", connectionId: "c2" },
+      ],
+    });
 
     expect(agents.update).toHaveBeenCalledWith("a1", { name: "x" });
     expect(llms.delete).toHaveBeenCalledWith({ agentId: "a1" });
     expect(llms.save).toHaveBeenCalledWith([
-      { model: "openai/a", order: 0, agentId: "a1" },
-      { model: "ollama/b", order: 1, agentId: "a1" },
+      { llm: "openai", model: "a", connectionId: "c1", order: 0, agentId: "a1" },
+      { llm: "ollama", model: "b", connectionId: "c2", order: 1, agentId: "a1" },
     ]);
     expect(pluginGrants.delete).not.toHaveBeenCalled();
   });
@@ -201,7 +207,7 @@ describe("AgentService.mask", () => {
           {
             id: "a1",
             name: "Helper",
-            llms: [{ id: "l1", model: "x/first", order: 0 }],
+            llms: [{ id: "l1", llm: "x", model: "first", order: 0 }],
             pluginConnections: [{ pluginConnectionId: "p1", pluginConnection: { name: "GitHub" } }],
           },
         ]),
@@ -214,7 +220,7 @@ describe("AgentService.mask", () => {
 
       expect(page.total).toBe(7);
       expect(find.mock.calls[0][0].select).not.toHaveProperty("systemPrompt");
-      expect(page.data[0].llms).toEqual([{ model: "x/first" }]);
+      expect(page.data[0].llms).toEqual([{ llm: "x", model: "first" }]);
       expect(page.data[0].pluginConnections).toEqual([{ pluginConnectionId: "p1", name: "GitHub" }]);
     });
   });

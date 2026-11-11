@@ -1,4 +1,4 @@
-import { PluginDriverRegistry } from "#src/plugin/plugin.registry.js";
+import { PluginDriverRegistry } from "#src/core/plugin/plugin.registry.js";
 import { Injectable, Logger } from "@nestjs/common";
 import { hookHandlersOf } from "@snipet/shared";
 

@@ -18,7 +18,9 @@ export function Driver<Opts>(optionsSchema: z.ZodType<Opts>) {
     validateOptions(options: unknown): Opts {
       const res = optionsSchema.safeParse(options);
       if (!res.success) {
-        throw new CoreError(CoreErrorCode.INVALID_DRIVER_OPTIONS, "invalid driver options", res.error.issues);
+        throw new CoreError(CoreErrorCode.INVALID_DRIVER_OPTIONS, "invalid driver options", {
+          details: res.error.issues,
+        });
       }
       return res.data;
     }
