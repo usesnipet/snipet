@@ -13,12 +13,13 @@ const CYCLE = STEP * CALL_ORDER.length;
  * so it still reads once the logo is scaled down; more so at the small size.
  */
 const SIZES = {
+  sm: { className: "size-7", signalRadius: 12 },
   md: { className: "size-16", signalRadius: 10 },
   lg: { className: "size-24", signalRadius: 7 },
 };
 
 type SnipetLoaderProps = {
-  /** `lg` (96 px) for a full screen, `md` (64 px) inside a panel such as a dialog. */
+  /** `lg` (96 px) for a full screen, `md` (64 px) inside a panel such as a dialog, `sm` (28 px) inline next to text. */
   size?: keyof typeof SIZES;
   className?: string;
 };

@@ -1,18 +1,19 @@
 import { CopyIcon } from "@/components/swap-icon";
 import { JsonViewer } from "@/components/json-viewer";
+import { SnipetLoader } from "@/components/snipet-loader";
 import { Button } from "@/components/ui/button";
 import { ChatContainerContent, ChatContainerRoot, ChatContainerScrollAnchor } from "@/components/ui/chat-container";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Loader } from "@/components/ui/loader";
+import { Loader, TextShimmerLoader } from "@/components/ui/loader";
 import { Markdown } from "@/components/ui/markdown";
 import { MessageAction, MessageActions } from "@/components/ui/message";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { AgentAvatar } from "@/features/agent/components/agent-avatar";
-import { enterUp } from "@/lib/motion";
+import { enterUp, transitions } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { Brain, Check, ChevronRight, CircleAlert, Wrench, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { AgentMessage, AgentRun, AvailableAgent, LlmPart } from "@snipet/shared";
 
@@ -135,7 +136,7 @@ export function ChatMessages({ agent, messages, pendingInput, draft, streaming, 
             <motion.div key="reply" className="flex flex-col gap-2" {...enterUp}>
               {replyStartsAtEnd && <AgentName agent={agent} />}
               {draft && <Markdown className={MARKDOWN_CLASS}>{draft}</Markdown>}
-              {waiting && <Loader variant="typing" size="sm" />}
+              {waiting && <WaitingIndicator key={waitPhase(last, results)} phase={waitPhase(last, results)} />}
             </motion.div>
           )}
           {notice && (
@@ -163,6 +164,54 @@ export function ChatMessages({ agent, messages, pendingInput, draft, streaming, 
 
 function hasOpenCalls(message: AgentMessage, results: Map<string, ToolResultPart>) {
   return message.parts.some((part) => part.type === "tool_call" && !results.has(part.id));
+}
+
+/**
+ * What the wait is for, each with messages shown in turn as it drags on;
+ * the last one stays.
+ */
+const WAIT_MESSAGES = {
+  start: ["Thinking", "Reading your message", "Working on it", "Still working on it", "Taking a bit longer than usual"],
+  tools: ["Running tools", "Waiting on tool results", "Tools are taking a while"],
+  results: ["Reviewing the results", "Putting it together", "Still working on it"],
+} as const;
+
+/** How long each wait message shows before the next. */
+const WAIT_MESSAGE_MS = 3000;
+
+function waitPhase(last: AgentMessage | undefined, results: Map<string, ToolResultPart>): keyof typeof WAIT_MESSAGES {
+  if (last?.role === "tool") return "results";
+  if (last?.role === "assistant" && hasOpenCalls(last, results)) return "tools";
+  return "start";
+}
+
+/** Before the first token: the animated logo and a shimmering status that changes as the wait goes on. */
+function WaitingIndicator({ phase }: { phase: keyof typeof WAIT_MESSAGES }) {
+  const messages = WAIT_MESSAGES[phase];
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (index >= messages.length - 1) return;
+    const timer = setTimeout(() => setIndex(index + 1), WAIT_MESSAGE_MS);
+    return () => clearTimeout(timer);
+  }, [index, messages.length]);
+
+  return (
+    <div className="flex h-7 items-center gap-2.5" aria-live="polite">
+      <SnipetLoader size="sm" className="flex-none delay-0" />
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={messages[index]}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4, transition: transitions.fast }}
+          transition={transitions.base}
+        >
+          <TextShimmerLoader text={messages[index]} size="md" className="motion-reduce:animate-none" />
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
 }
 
 /** Who is replying; nothing for an agent the user can no longer see, like a disabled one. */
