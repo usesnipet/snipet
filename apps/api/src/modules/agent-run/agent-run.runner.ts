@@ -152,7 +152,7 @@ export class AgentRunner {
         system: context.system,
         tools: context.tools ?? [],
       });
-      const agentTargets = agent.llms.map(({ llm, model, connectionId }) => ({ llm, model, connectionId }));
+      const agentTargets = agent.llms.map(({ connectionId, model }) => ({ connectionId, model }));
 
       while (turns < agent.maxTurns) {
         turns++;
@@ -175,7 +175,7 @@ export class AgentRunner {
           const offered = request.payload.tools.length ? request.payload.tools : undefined;
           const stream = this.llmConnectionService.stream(ctx, { targets, messages, tools: offered }, signal);
           for await (const event of stream) {
-            if (event.event === "llm_started") model = event.data.llm;
+            if (event.event === "llm_started") model = event.data.model;
             else if (event.event === "llm_skipped") skipped.push(event.data);
             else if (event.event === "text_delta") this.runEvents.emit(run.id, event);
             else if (event.event === "usage") turnUsage = event.data;

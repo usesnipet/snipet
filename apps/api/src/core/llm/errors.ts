@@ -71,9 +71,9 @@ export function llmProviderError(code: LLMErrorCode, cause: unknown): LLMError {
 
 /** Every target failed before producing a result. */
 export class FailoverError extends Error {
-  constructor(readonly attempts: { llm: string; error: LLMError }[]) {
+  constructor(readonly attempts: { connectionId: string; model: string; error: LLMError }[]) {
     super(
-      `all ${attempts.length} llm attempts failed: ${attempts.map((a) => `${a.llm}: ${a.error.message}`).join("; ")}`,
+      `all ${attempts.length} llm attempts failed: ${attempts.map((a) => `${a.model}: ${a.error.message}`).join("; ")}`,
     );
     this.name = "FailoverError";
   }

@@ -1,11 +1,9 @@
 import type { JsonObject, LlmConnection as LlmConnectionContract, LlmModel } from "@snipet/shared";
 import { sealConfig } from "#src/infra/database/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
-import { Column, Entity, Index } from "typeorm";
+import { Column, Entity } from "typeorm";
 
 @Entity("llm_connections")
-/** At most one default per llm. */
-@Index(["llmKey"], { unique: true, where: `"default"` })
 export class LlmConnection extends BaseEntity implements LlmConnectionContract {
   @Column({ length: 255 })
   name: string;
@@ -18,9 +16,6 @@ export class LlmConnection extends BaseEntity implements LlmConnectionContract {
 
   @Column({ default: false })
   enabled: boolean;
-
-  @Column({ default: false })
-  default: boolean;
 
   /** What the models driver listed on the last sync. Only loaded on request: it would weigh down every listing. */
   @Column({ type: "jsonb", default: [], select: false })

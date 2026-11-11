@@ -56,11 +56,11 @@ const runner = new LLMRunner(
     healthCheck: [],
   }),
 );
-/** A run over `refs` ("llm/model"), each target with an empty connection. */
+/** A run over `refs` ("llm/model"), each target on connection "c-<llm>" with an empty config. */
 const run = (...refs: string[]) => ({
   targets: refs.map((ref) => {
     const [llm, model] = ref.split("/");
-    return { llm, model, connection: {} };
+    return { connectionId: `c-${llm}`, llm, model, connection: {} };
   }),
   messages: [{ role: "user" as const, parts: [{ type: "text" as const, text: "hi" }] }],
 });
@@ -81,13 +81,17 @@ describe("LLMRunner", () => {
 
   it("skips a target that arrives already unusable, and stops on one that isn't a failover", async () => {
     const ok = run("ok/m").targets[0];
-    const gone = { llm: "x", model: "m", error: new LLMError(LLMErrorCode.CONNECTION_NOT_FOUND, "connection gone") };
-    const bad = { llm: "x", model: "m", error: new LLMError(LLMErrorCode.BAD_REQUEST, "bad target") };
+    const gone = {
+      connectionId: "c-x",
+      model: "m",
+      error: new LLMError(LLMErrorCode.CONNECTION_NOT_FOUND, "connection gone"),
+    };
+    const bad = { connectionId: "c-x", model: "m", error: new LLMError(LLMErrorCode.BAD_REQUEST, "bad target") };
     await expect(runner.generate({ ...run(), targets: [gone, ok] })).resolves.toEqual(reply("ok"));
     await expect(runner.generate({ ...run(), targets: [bad, ok] })).rejects.toThrow("bad target");
     expect((await collect(runner.stream({ ...run(), targets: [gone, ok] })))[0]).toEqual({
       event: "llm_skipped",
-      data: { llm: "x/m", error: "connection gone" },
+      data: { connectionId: "c-x", model: "m", error: "connection gone" },
     });
     await expect(runner.generate(run("broken/m", "ok/m"))).rejects.toThrow("nope");
     await expect(runner.generate(run("limited/m"))).rejects.toBeInstanceOf(FailoverError);
@@ -97,16 +101,16 @@ describe("LLMRunner", () => {
   it("skips an unavailable target in a stream without leaking its message", async () => {
     const events = await collect(runner.stream(run("down/m", "ok/m")));
     expect(events.slice(0, 2)).toEqual([
-      { event: "llm_skipped", data: { llm: "down/m", error: "llm provider unavailable" } },
-      { event: "llm_started", data: { llm: "ok/m" } },
+      { event: "llm_skipped", data: { connectionId: "c-down", model: "m", error: "llm provider unavailable" } },
+      { event: "llm_started", data: { model: "m" } },
     ]);
     expect(JSON.stringify(events)).not.toContain("10.0.0.1");
   });
 
   it("streams skip, start, events and the assembled message", async () => {
     expect(await collect(runner.stream(run("limited/m", "ok/m")))).toEqual([
-      { event: "llm_skipped", data: { llm: "limited/m", error: "llm provider rate limited" } },
-      { event: "llm_started", data: { llm: "ok/m" } },
+      { event: "llm_skipped", data: { connectionId: "c-limited", model: "m", error: "llm provider rate limited" } },
+      { event: "llm_started", data: { model: "m" } },
       { event: "text_delta", data: { text: "he" } },
       { event: "text_delta", data: { text: "llo" } },
       { event: "tool_call", data: { id: "1", name: "t", arguments: { a: 1 } } },

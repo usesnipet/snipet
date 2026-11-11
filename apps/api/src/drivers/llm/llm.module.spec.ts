@@ -1,10 +1,9 @@
-import { Test } from "@nestjs/testing";
-import { readdirSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { FailoverError } from "#src/core/llm/errors.js";
 import { LLMManifestRegistry } from "#src/core/llm/llm.registry.js";
 import { LLMRunner } from "#src/core/llm/llm.runner.js";
+import { Test } from "@nestjs/testing";
+import { readdirSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { LLMModule } from "./llm.module.js";
 
@@ -16,7 +15,9 @@ describe("LLMModule", () => {
     // undefined and this would throw a TypeError instead of failing over.
     const messages = [{ role: "user" as const, parts: [{ type: "text" as const, text: "hi" }] }];
     await expect(
-      app.get(LLMRunner).generate({ targets: [{ llm: "nope", model: "m", connection: {} }], messages }),
+      app
+        .get(LLMRunner)
+        .generate({ targets: [{ connectionId: "c", llm: "nope", model: "m", connection: {} }], messages }),
     ).rejects.toBeInstanceOf(FailoverError);
     const builtIn = readdirSync(resolve(import.meta.dirname, "manifests"));
     expect(app.get(LLMManifestRegistry).getAll().length).toBeGreaterThanOrEqual(builtIn.length);

@@ -4,29 +4,26 @@ import { LLMDriverRegistry, LLMManifestRegistry } from "./llm.registry.js";
 import type { JsonObject, LlmMessage, LlmPart, LlmResponse, LlmStreamEvent, LlmTool } from "@snipet/shared";
 import type { ChatRequest } from "./driver.js";
 
-/** A model of an llm the runner may try. */
-interface TargetRef {
-  /** The llm manifest's key, e.g. "openai". */
-  llm: string;
-  /** The model's key within the llm, e.g. "gpt-4o"; it may itself contain "/". */
-  model: string;
-}
-
 /**
  * Where a conversation can run: a model with the connection to reach it, or
  * with why it can't be reached (its connection or model is gone). The runner
  * treats the error as if the target had failed with it, so a failover code
  * skips to the next target.
  */
-export type LLMTarget =
-  | (TargetRef & {
+export type LLMTarget = {
+  /** The connection the target runs on; names it in events and errors. */
+  connectionId: string;
+  /** The model's key within the llm, e.g. "gpt-4o"; it may itself contain "/". */
+  model: string;
+} & (
+  | {
+      /** The llm manifest's key, e.g. "openai". */
+      llm: string;
       /** The connection's config, rendered into the driver's options. */
       connection: JsonObject;
-    })
-  | (TargetRef & { error: LLMError });
-
-/** The target as clients see it in events and errors: "llm/model". */
-const label = (target: LLMTarget) => `${target.llm}/${target.model}`;
+    }
+  | { error: LLMError }
+);
 
 export interface RunInput {
   targets: LLMTarget[];
@@ -55,7 +52,7 @@ export class LLMRunner {
         return await driver.generate(request, options);
       } catch (err) {
         if (!isFailover(err)) throw err;
-        attempts.push({ llm: label(target), error: err });
+        attempts.push({ connectionId: target.connectionId, model: target.model, error: err });
       }
     }
     throw new FailoverError(attempts);
@@ -79,12 +76,13 @@ export class LLMRunner {
         first = await iterator.next();
       } catch (err) {
         if (!isFailover(err)) throw err;
-        attempts.push({ llm: label(target), error: err });
-        yield { event: "llm_skipped", data: { llm: label(target), error: err.message } };
+        const { connectionId, model } = target;
+        attempts.push({ connectionId, model, error: err });
+        yield { event: "llm_skipped", data: { connectionId, model, error: err.message } };
         continue;
       }
 
-      yield { event: "llm_started", data: { llm: label(target) } };
+      yield { event: "llm_started", data: { model: target.model } };
       let text = "";
       let thinking = "";
       const toolCalls: LlmPart[] = [];

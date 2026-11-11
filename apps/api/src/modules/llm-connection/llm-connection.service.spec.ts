@@ -13,16 +13,16 @@ const model = (key: string) => ({ key, name: key, description: "", capabilities:
 const byId: Record<string, Partial<LlmConnection>> = {
   c1: { id: "c1", llmKey: "openai", config: { apiKey: "sk-1" }, models: [model("gpt-4o")] },
   c2: { id: "c2", llmKey: "openai", config: { apiKey: "sk-2" }, models: [model("meta/llama")] },
-  c3: { id: "c3", llmKey: "ollama", config: {}, models: [] },
+  c3: { id: "c3", llmKey: "ollama", config: {}, models: [model("llama3")] },
 };
 
 const ctx = AppContext.create("test");
 
 function setup() {
   const repo = {
-    findOne: jest.fn(({ where }: { where: { id: string; llmKey: string } }) => {
+    findOne: jest.fn(({ where }: { where: { id: string; llmKey?: string } }) => {
       const conn = byId[where.id];
-      return Promise.resolve(conn?.llmKey === where.llmKey ? conn : null);
+      return Promise.resolve(conn && (where.llmKey === undefined || conn.llmKey === where.llmKey) ? conn : null);
     }),
     metadata: { name: "LlmConnection" },
   };
@@ -38,30 +38,30 @@ function setup() {
 }
 
 describe("LlmConnectionService.resolveTargets", () => {
-  it("resolves each target to its connection's config", async () => {
+  it("resolves each target to its connection's llm and config", async () => {
     const { service } = setup();
     await expect(
       service.resolveTargets(ctx, [
-        { llm: "openai", model: "gpt-4o", connectionId: "c1" },
-        { llm: "openai", model: "meta/llama", connectionId: "c2" },
+        { connectionId: "c1", model: "gpt-4o" },
+        { connectionId: "c2", model: "meta/llama" },
+        { connectionId: "c3", model: "llama3" },
       ]),
     ).resolves.toEqual([
-      { llm: "openai", model: "gpt-4o", connection: { apiKey: "sk-1" } },
-      { llm: "openai", model: "meta/llama", connection: { apiKey: "sk-2" } },
+      { connectionId: "c1", llm: "openai", model: "gpt-4o", connection: { apiKey: "sk-1" } },
+      { connectionId: "c2", llm: "openai", model: "meta/llama", connection: { apiKey: "sk-2" } },
+      { connectionId: "c3", llm: "ollama", model: "llama3", connection: {} },
     ]);
   });
 
   it("marks a target unusable instead of throwing, so the runner skips it", async () => {
     const { service } = setup();
-    const [missing, otherLlm, unsynced] = await service.resolveTargets(ctx, [
-      { llm: "openai", model: "gpt-4o", connectionId: "gone" },
-      { llm: "openai", model: "gpt-4o", connectionId: "c3" },
-      { llm: "openai", model: "gpt-5", connectionId: "c1" },
+    const [missing, unsynced] = await service.resolveTargets(ctx, [
+      { connectionId: "gone", model: "gpt-4o" },
+      { connectionId: "c1", model: "gpt-5" },
     ]);
     expect(missing).toMatchObject({ error: { code: LLMErrorCode.CONNECTION_NOT_FOUND } });
-    expect(otherLlm).toMatchObject({ error: { code: LLMErrorCode.CONNECTION_NOT_FOUND } });
     expect(unsynced).toMatchObject({
-      error: { code: LLMErrorCode.MODEL_NOT_FOUND, message: 'model "openai/gpt-5" not found' },
+      error: { code: LLMErrorCode.MODEL_NOT_FOUND, message: 'model "gpt-5" not found' },
     });
   });
 });

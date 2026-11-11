@@ -87,16 +87,16 @@ describe("AgentService.updateById", () => {
     await service.updateById(ctx, "a1", {
       name: "x",
       llms: [
-        { llm: "openai", model: "a", connectionId: "c1" },
-        { llm: "ollama", model: "b", connectionId: "c2" },
+        { model: "a", connectionId: "c1" },
+        { model: "b", connectionId: "c2" },
       ],
     });
 
     expect(agents.update).toHaveBeenCalledWith("a1", { name: "x" });
     expect(llms.delete).toHaveBeenCalledWith({ agentId: "a1" });
     expect(llms.save).toHaveBeenCalledWith([
-      { llm: "openai", model: "a", connectionId: "c1", order: 0, agentId: "a1" },
-      { llm: "ollama", model: "b", connectionId: "c2", order: 1, agentId: "a1" },
+      { model: "a", connectionId: "c1", order: 0, agentId: "a1" },
+      { model: "b", connectionId: "c2", order: 1, agentId: "a1" },
     ]);
     expect(pluginGrants.delete).not.toHaveBeenCalled();
   });
@@ -207,7 +207,7 @@ describe("AgentService.mask", () => {
           {
             id: "a1",
             name: "Helper",
-            llms: [{ id: "l1", llm: "x", model: "first", order: 0 }],
+            llms: [{ id: "l1", model: "first", order: 0 }],
             pluginConnections: [{ pluginConnectionId: "p1", pluginConnection: { name: "GitHub" } }],
           },
         ]),
@@ -220,7 +220,7 @@ describe("AgentService.mask", () => {
 
       expect(page.total).toBe(7);
       expect(find.mock.calls[0][0].select).not.toHaveProperty("systemPrompt");
-      expect(page.data[0].llms).toEqual([{ llm: "x", model: "first" }]);
+      expect(page.data[0].llms).toEqual([{ model: "first" }]);
       expect(page.data[0].pluginConnections).toEqual([{ pluginConnectionId: "p1", name: "GitHub" }]);
     });
   });

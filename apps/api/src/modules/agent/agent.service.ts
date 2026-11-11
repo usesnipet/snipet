@@ -65,7 +65,7 @@ export class AgentService extends CrudService<Agent, AppContext> {
         enabled: true,
         createdAt: true,
         updatedAt: true,
-        llms: { id: true, llm: true, model: true, order: true },
+        llms: { id: true, model: true, order: true },
         pluginConnections: {
           id: true,
           pluginConnectionId: true,
@@ -82,7 +82,7 @@ export class AgentService extends CrudService<Agent, AppContext> {
     });
     const data = agents.map(({ llms, pluginConnections, ...agent }) => ({
       ...agent,
-      llms: llms.map(({ llm, model }) => ({ llm, model })),
+      llms: llms.map(({ model }) => ({ model })),
       pluginConnections: pluginConnections.map((grant) => ({
         pluginConnectionId: grant.pluginConnectionId,
         name: grant.pluginConnection!.name,

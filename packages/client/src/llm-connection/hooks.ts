@@ -138,8 +138,8 @@ export type LlmStreamStatus = "idle" | "streaming" | "done" | "error";
 export type UseExecuteLlmStreamResult = {
   status: LlmStreamStatus;
   events: LlmStreamEvent[];
-  /** The target currently streaming, e.g. "openai/gpt-4o"; null before the first llm starts. */
-  activeLlm: string | null;
+  /** The model currently streaming, e.g. "gpt-4o"; null before the first one starts. */
+  activeModel: string | null;
   /** Targets skipped over during failover, in the order they were tried. */
   skipped: LlmSkippedEvent[];
   text: string;
@@ -160,7 +160,7 @@ export type UseExecuteLlmStreamResult = {
 export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
   const [status, setStatus] = useState<LlmStreamStatus>("idle");
   const [events, setEvents] = useState<LlmStreamEvent[]>([]);
-  const [activeLlm, setActiveLlm] = useState<string | null>(null);
+  const [activeModel, setActiveModel] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<LlmSkippedEvent[]>([]);
   const [text, setText] = useState("");
   const [toolCalls, setToolCalls] = useState<LlmToolCallEvent[]>([]);
@@ -179,7 +179,7 @@ export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
 
     setStatus("streaming");
     setEvents([]);
-    setActiveLlm(null);
+    setActiveModel(null);
     setSkipped([]);
     setText("");
     setToolCalls([]);
@@ -193,7 +193,7 @@ export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
           setEvents((prev) => [...prev, event]);
           switch (event.event) {
             case "llm_started":
-              setActiveLlm(event.data.llm);
+              setActiveModel(event.data.model);
               break;
             case "text_delta":
               setText((prev) => prev + event.data.text);
@@ -231,5 +231,5 @@ export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  return { status, events, activeLlm, skipped, text, toolCalls, message, error, execute, cancel };
+  return { status, events, activeModel, skipped, text, toolCalls, message, error, execute, cancel };
 };

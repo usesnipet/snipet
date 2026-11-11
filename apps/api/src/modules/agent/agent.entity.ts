@@ -92,11 +92,7 @@ export class AgentLlm implements AgentLlmContract {
   @Column({ type: "int" })
   order: number;
 
-  /** The llm manifest's key, e.g. "openai". */
-  @Column({ length: 255 })
-  llm: string;
-
-  /** The model's key within the llm; it may itself contain "/". */
+  /** The model's key within the connection's llm; it may itself contain "/". */
   @Column({ length: 255 })
   model: string;
 

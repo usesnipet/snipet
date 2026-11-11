@@ -37,11 +37,7 @@ const toForm = (agent?: Agent): AgentFormInput => ({
   maxTurns: agent?.maxTurns ?? 20,
   historyRuns: agent?.historyRuns ?? 10,
   enabled: agent?.enabled ?? true,
-  llms: agent?.llms.map((llm) => ({
-    model: llm.model,
-    connectionId: llm.connectionId ?? undefined,
-    extraOptions: llm.extraOptions ?? undefined,
-  })) ?? [{ model: "" }],
+  llms: agent?.llms.map(({ connectionId, model }) => ({ connectionId, model })) ?? [{ connectionId: "", model: "" }],
   pluginConnections: (agent?.pluginConnections ?? []).map(({ pluginConnectionId, tools, settings, disabledHooks }) => ({
     pluginConnectionId,
     tools,

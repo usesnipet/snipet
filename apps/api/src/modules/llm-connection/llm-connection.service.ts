@@ -1,10 +1,10 @@
+import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
 import { CoreError, CoreErrorCode } from "#src/core/error.js";
 import { LLMError, LLMErrorCode } from "#src/core/llm/errors.js";
-import { LLMRunner, LLMTarget } from "#src/core/llm/llm.runner.js";
 import { LLMDriverRegistry, LLMManifestRegistry } from "#src/core/llm/llm.registry.js";
-import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
+import { LLMRunner, LLMTarget } from "#src/core/llm/llm.runner.js";
 import { Injectable } from "@nestjs/common";
-import { DeepPartial, EntityManager, Not, QueryDeepPartialEntity, Repository } from "typeorm";
+import { DeepPartial, EntityManager, QueryDeepPartialEntity } from "typeorm";
 
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionSyncService } from "./sync/llm-connection-sync.service.js";
@@ -31,40 +31,14 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
   }
 
   override async create(ctx: AppContext, dto: DeepPartial<LlmConnection>): Promise<LlmConnection> {
-    dto = this.checkCreate(ctx, dto);
-    const { id } = await this.transaction(ctx, async (ctx) => {
-      const repo = this.repository(ctx);
-      if (dto.default) await repo.update({ llmKey: dto.llmKey, default: true }, { default: false });
-      const saved = await repo.save(repo.create(dto));
-      await promoteIfNoDefault(repo, dto.llmKey!);
-      return saved;
-    });
+    const { id } = await super.create(ctx, dto);
     void this.syncer.sync(ctx, id);
     return this.findById(ctx, id);
   }
 
   override async updateById(ctx: AppContext, id: string, dto: QueryDeepPartialEntity<LlmConnection>): Promise<void> {
-    const existing = await this.findById(ctx, id);
-    const llmKey = (dto.llmKey as string | undefined) ?? existing.llmKey;
-    dto = await this.checkUpdate(ctx, id, dto);
-
-    await this.transaction(ctx, async (ctx) => {
-      const repo = this.repository(ctx);
-      if (dto.default) await repo.update({ llmKey, default: true, id: Not(id) }, { default: false });
-      if (Object.keys(dto).length > 0) await repo.update(id, dto);
-      await promoteIfNoDefault(repo, llmKey);
-      if (llmKey !== existing.llmKey) await promoteIfNoDefault(repo, existing.llmKey);
-    });
+    await super.updateById(ctx, id, dto);
     if (dto.llmKey !== undefined || dto.config !== undefined) void this.syncer.sync(ctx, id);
-  }
-
-  override async deleteById(ctx: AppContext, id: string): Promise<void> {
-    const existing = await this.findById(ctx, id);
-    await this.transaction(ctx, async (ctx) => {
-      const repo = this.repository(ctx);
-      await repo.delete(id);
-      await promoteIfNoDefault(repo, existing.llmKey);
-    });
   }
 
   sync(ctx: AppContext, id: string): Promise<void> {
@@ -100,36 +74,31 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
   }
 
   /**
-   * Each target with its connection's config. A target whose connection is
-   * gone (or belongs to another llm), or whose model isn't among the
-   * connection's synced models, comes back with the error instead, so the
-   * runner skips it rather than failing the whole run.
+   * Each target with its connection's llm and config. A target whose
+   * connection is gone, or whose model isn't among the connection's synced
+   * models, comes back with the error instead, so the runner skips it rather
+   * than failing the whole run.
    */
   async resolveTargets(ctx: AppContext, targets: ExecuteLlmTarget[]): Promise<LLMTarget[]> {
     return Promise.all(
-      targets.map(async ({ llm, model, connectionId }): Promise<LLMTarget> => {
+      targets.map(async ({ connectionId, model }): Promise<LLMTarget> => {
         const conn = await this.repository(ctx).findOne({
-          select: { id: true, config: true, models: true },
-          where: { id: connectionId, llmKey: llm },
+          select: { id: true, llmKey: true, config: true, models: true },
+          where: { id: connectionId },
         });
         if (!conn) {
-          const error = new LLMError(
-            LLMErrorCode.CONNECTION_NOT_FOUND,
-            `connection "${connectionId}" of "${llm}" not found`,
-          );
-          return { llm, model, error };
+          const error = new LLMError(LLMErrorCode.CONNECTION_NOT_FOUND, `connection "${connectionId}" not found`);
+          return { connectionId, model, error };
         }
         if (!conn.models.some((m) => m.key === model)) {
-          return { llm, model, error: new LLMError(LLMErrorCode.MODEL_NOT_FOUND, `model "${llm}/${model}" not found`) };
+          return {
+            connectionId,
+            model,
+            error: new LLMError(LLMErrorCode.MODEL_NOT_FOUND, `model "${model}" not found`),
+          };
         }
-        return { llm, model, connection: conn.config };
+        return { connectionId, llm: conn.llmKey, model, connection: conn.config };
       }),
     );
   }
-}
-
-async function promoteIfNoDefault(repo: Repository<LlmConnection>, llmKey: string) {
-  if (await repo.existsBy({ llmKey, default: true })) return;
-  const oldest = await repo.findOne({ where: { llmKey }, order: { createdAt: "ASC" } });
-  if (oldest) await repo.update(oldest.id, { default: true });
 }

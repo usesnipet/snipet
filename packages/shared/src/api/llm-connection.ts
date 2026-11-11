@@ -11,11 +11,6 @@ export const llmConnectionSchema = z.object({
   llmKey: z.string(),
   config: jsonObjectSchema,
   enabled: z.boolean(),
-  /**
-   * The connection used for its llm when a call names none. Every llm
-   * with connections has exactly one default.
-   */
-  default: z.boolean(),
   lastSyncedAt: z.coerce.date().nullable(),
   lastSyncedError: z.string().nullable(),
   createdAt: z.coerce.date(),
@@ -30,7 +25,6 @@ export const createLlmConnectionSchema = z.object({
   llmKey: z.string().min(1).max(255),
   config: jsonObjectSchema,
   enabled: z.boolean().optional(),
-  default: z.boolean().optional(),
 });
 export type CreateLlmConnection = z.infer<typeof createLlmConnectionSchema>;
 

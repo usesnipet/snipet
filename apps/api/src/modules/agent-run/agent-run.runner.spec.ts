@@ -32,7 +32,7 @@ const agent = {
   systemPrompt: "be brief",
   maxTurns: 5,
   historyRuns: 10,
-  llms: [{ llm: "openai", model: "gpt", connectionId: "c1", extraOptions: null }],
+  llms: [{ model: "gpt", connectionId: "c1" }],
   pluginConnections: [{ pluginConnectionId: "p1", tools: ["ask_question"] }],
 } as unknown as Agent;
 const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05Z") } as AgentRun;
@@ -71,7 +71,7 @@ function setup(
     stream: jest.fn(async function* (): AsyncGenerator<LlmStreamEvent> {
       const reply = await Promise.resolve(replies.shift()!);
       if (reply instanceof Error) throw reply;
-      yield { event: "llm_started", data: { llm: "openai/gpt" } };
+      yield { event: "llm_started", data: { model: "gpt" } };
       yield { event: "message", data: { message: reply } };
     }),
   };

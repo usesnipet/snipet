@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InputSearch } from "@/components/ui/input-search";
-import { splitModelRef } from "@/features/llm-connection/utils/split-model-ref";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useDialog } from "@/lib/dialog";
 import { ROUTES } from "@/routes";
@@ -102,7 +101,7 @@ export function AgentCatalog() {
 
 /** What the agent is made of: its main model, how many fall back behind it, and its plugins. */
 function AgentComposition({ agent }: { agent: AgentSummary }) {
-  const [mainModel, ...fallbacks] = agent.llms.map((llm) => splitModelRef(llm.model)[1]);
+  const [mainModel, ...fallbacks] = agent.llms.map((llm) => llm.model);
   const pluginNames = agent.pluginConnections.map((grant) => grant.name).join(", ");
 
   return (

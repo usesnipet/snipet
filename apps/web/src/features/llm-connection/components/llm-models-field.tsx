@@ -14,9 +14,10 @@ import { Plus } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, useFormContext, useFormState, useWatch } from "react-hook-form";
 
-import { splitModelRef } from "../utils/split-model-ref";
-
 import type { LlmCapability, LlmConnection, LlmManifest } from "@snipet/shared";
+/** A row before its connection and model are picked. */
+const EMPTY_TARGET = { connectionId: "", model: "" };
+
 type Props = {
   /** Field-array path holding `ExecuteLlmTarget[]` (`ExecuteLlmTarget` in @snipet/shared). */
   name: string;
@@ -38,7 +39,7 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
 
   // Keeps at least one row on screen so there's always something to fill in.
   useEffect(() => {
-    if (fields.length === 0) append({ model: "" });
+    if (fields.length === 0) append(EMPTY_TARGET);
   }, [fields.length, append]);
 
   return (
@@ -63,7 +64,7 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
         variant="ghost"
         size="sm"
         className="text-muted-foreground sm:ml-12.5"
-        onClick={() => append({ model: "" })}
+        onClick={() => append(EMPTY_TARGET)}
       >
         <Plus />
         Add fallback model
@@ -83,11 +84,15 @@ type RowProps = {
 function LlmModelTargetRow({ name, index, llms, connections, allowedModelCapabilities }: RowProps) {
   const form = useFormContext();
   const fieldPath = `${name}.${index}`;
-  const modelRef = (useWatch({ control: form.control, name: `${fieldPath}.model` }) as string | undefined) ?? "";
-  const connectionId = useWatch({ control: form.control, name: `${fieldPath}.connectionId` }) as string | undefined;
-  const [llmKey, modelKey] = splitModelRef(modelRef);
-  const formState = useFormState({ control: form.control, name: `${fieldPath}.model` });
+  const [connectionId, modelKey] = useWatch({
+    control: form.control,
+    name: [`${fieldPath}.connectionId`, `${fieldPath}.model`],
+  }) as (string | undefined)[];
+  const llmKey = connections.find((connection) => connection.id === connectionId)?.llmKey ?? "";
+  const formState = useFormState({ control: form.control, name: fieldPath });
+  const connectionError = form.getFieldState(`${fieldPath}.connectionId`, formState).error;
   const modelError = form.getFieldState(`${fieldPath}.model`, formState).error;
+  const error = connectionError ?? modelError;
   const { data: models = [], isLoading: isLoadingModels } = useLLMModels(llmKey, {
     searchParams: connectionId ? { connectionId } : undefined,
   });
@@ -101,14 +106,13 @@ function LlmModelTargetRow({ name, index, llms, connections, allowedModelCapabil
   const handleConnectionChange = (nextConnectionId: string) => {
     const connection = connections.find((item) => item.id === nextConnectionId);
     if (!connection) return;
-    form.setValue(`${fieldPath}.connectionId`, connection.id, { shouldDirty: true });
-    form.setValue(`${fieldPath}.model`, `${connection.llmKey}/`, { shouldDirty: true, shouldTouch: true });
-    form.setValue(`${fieldPath}.extraOptions`, undefined, { shouldDirty: true });
+    form.setValue(`${fieldPath}.connectionId`, connection.id, { shouldDirty: true, shouldValidate: !!connectionError });
+    form.setValue(`${fieldPath}.model`, "", { shouldDirty: true, shouldTouch: true });
   };
 
   const handleModelChange = (nextModelKey: string) => {
     // Revalidating only when already invalid clears the error without flagging untouched rows.
-    form.setValue(`${fieldPath}.model`, `${llmKey}/${nextModelKey}`, {
+    form.setValue(`${fieldPath}.model`, nextModelKey, {
       shouldDirty: true,
       shouldTouch: true,
       shouldValidate: !!modelError,
@@ -122,7 +126,7 @@ function LlmModelTargetRow({ name, index, llms, connections, allowedModelCapabil
         <SelectTrigger
           className="w-full min-w-0"
           aria-label={`Connection for model ${index + 1}`}
-          aria-invalid={!!modelError && !connectionId}
+          aria-invalid={!!connectionError}
         >
           <SelectValue placeholder="Connection" />
         </SelectTrigger>
@@ -144,7 +148,7 @@ function LlmModelTargetRow({ name, index, llms, connections, allowedModelCapabil
         <SelectTrigger
           className="w-full min-w-0"
           aria-label={`Model ${index + 1}`}
-          aria-invalid={!!modelError && !!connectionId}
+          aria-invalid={!connectionError && !!modelError}
           title={modelKey || undefined}
         >
           <SelectValue placeholder={isLoadingModels ? "Loading…" : "Model"} />
@@ -158,9 +162,9 @@ function LlmModelTargetRow({ name, index, llms, connections, allowedModelCapabil
         </SelectContent>
       </Select>
 
-      {modelError && (
+      {error && (
         <p role="alert" className="text-destructive col-span-2 text-sm">
-          {modelError.message}
+          {error.message}
         </p>
       )}
     </div>

@@ -19,7 +19,12 @@ export function llmToHttpException(error: LLMError | FailoverError): HttpExcepti
     return new HttpException(
       {
         message: "all configured llms failed",
-        details: Object.fromEntries(error.attempts.map((a) => [a.llm, a.error.message])),
+        // A list, not a map by model: the same model may be tried on several connections.
+        details: error.attempts.map(({ connectionId, model, error }) => ({
+          connectionId,
+          model,
+          error: error.message,
+        })),
       },
       HttpStatus.BAD_GATEWAY,
     );

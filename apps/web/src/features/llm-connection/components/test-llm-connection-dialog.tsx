@@ -76,7 +76,7 @@ export function TestLlmConnectionDialog({
     setDurationMs(null);
     const startedAt = performance.now();
     await stream.execute({
-      targets: [{ model: `${connection.llmKey}/${modelKey}`, connectionId: connection.id }],
+      targets: [{ connectionId: connection.id, model: modelKey }],
       messages: [{ role: "user", parts: [{ type: "text", text: prompt }] }],
     });
     setDurationMs(performance.now() - startedAt);

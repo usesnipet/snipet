@@ -28,9 +28,8 @@ import {
   useListLlmConnections,
   useLlmConnectionModels,
   useSyncLlmConnection,
-  useUpdateLlmConnection,
 } from "@snipet/client";
-import { FlaskConical, MoreHorizontal, Pencil, RefreshCw, Star, Trash2 } from "lucide-react";
+import { FlaskConical, MoreHorizontal, Pencil, RefreshCw, Trash2 } from "lucide-react";
 
 import { CreateLlmConnectionDialog, TestLlmConnectionDialog } from "./dialogs";
 
@@ -87,7 +86,6 @@ export function LlmConnectionListDialog({ llm: { key, name } }: LlmConnectionLis
 function LlmConnectionRow({ connection }: { connection: LlmConnection }) {
   const { openDialog } = useDialog();
   const { mutateAsync: deleteConnection } = useDeleteLlmConnection();
-  const { mutate: updateConnection } = useUpdateLlmConnection();
   const { mutate: sync, isPending: isSyncing } = useSyncLlmConnection();
   const syncStatus = syncState(connection);
   const { data: models } = useLlmConnectionModels(syncStatus.kind === "synced" ? connection.id : "");
@@ -114,7 +112,6 @@ function LlmConnectionRow({ connection }: { connection: LlmConnection }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-medium leading-none">{connection.name}</span>
-          {connection.default && <Badge variant="secondary">Default</Badge>}
           {!connection.enabled && <Badge variant="outline">Disabled</Badge>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
@@ -143,12 +140,6 @@ function LlmConnectionRow({ connection }: { connection: LlmConnection }) {
               </DropdownMenuTrigger>
             </IconAction>
             <DropdownMenuContent align="end">
-              {!connection.default && (
-                <DropdownMenuItem onClick={() => updateConnection({ id: connection.id, data: { default: true } })}>
-                  <Star />
-                  Set as default
-                </DropdownMenuItem>
-              )}
               <DropdownMenuItem onClick={openEdit}>
                 <Pencil />
                 Edit

@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { jsonObjectSchema } from "../schemas/json.js";
 import { baseManifestSchema, driverSchema } from "../schemas/manifest.js";
 
 // --- messages ------------------------------------------------------------
@@ -90,14 +89,11 @@ export type ListLLMModelsParams = z.infer<typeof listLLMModelsParamsSchema>;
 
 // --- execute -------------------------------------------------------------
 
-/** One model the runner may try, in order, on the given connection of its llm. */
+/** One model the runner may try, in order; the connection tells which llm it belongs to. */
 export const executeLlmTargetSchema = z.object({
-  /** The llm's key, e.g. "openai". */
-  llm: z.string().min(1),
-  /** The model's key within the llm, e.g. "gpt-4o"; it may itself contain "/". */
-  model: z.string().min(1),
   connectionId: z.uuid(),
-  extraOptions: jsonObjectSchema.optional(),
+  /** The model's key within the connection's llm, e.g. "gpt-4o"; it may itself contain "/". */
+  model: z.string().min(1),
 });
 export type ExecuteLlmTarget = z.infer<typeof executeLlmTargetSchema>;
 
@@ -124,10 +120,13 @@ export type LlmResponse = z.infer<typeof llmResponseSchema>;
 // --- stream events (SSE `event:` name + `data:` payload) -----------------
 
 export const llmStreamEventSchema = z.discriminatedUnion("event", [
-  // The runner committed to this target ("llm/model").
-  z.object({ event: z.literal("llm_started"), data: z.object({ llm: z.string() }) }),
+  // The runner committed to this target.
+  z.object({ event: z.literal("llm_started"), data: z.object({ model: z.string() }) }),
   // A target skipped during failover: it failed on its own (rate limit, auth, unavailable, missing).
-  z.object({ event: z.literal("llm_skipped"), data: z.object({ llm: z.string(), error: z.string() }) }),
+  z.object({
+    event: z.literal("llm_skipped"),
+    data: z.object({ connectionId: z.uuid(), model: z.string(), error: z.string() }),
+  }),
   z.object({ event: z.literal("text_delta"), data: z.object({ text: z.string() }) }),
   z.object({ event: z.literal("thinking_delta"), data: z.object({ text: z.string() }) }),
   // Token counts, near the end; providers that don't report usage never send it.
