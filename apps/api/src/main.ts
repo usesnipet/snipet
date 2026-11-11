@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { AppModule } from "./app.module.js";
+import { CoreErrorFilter } from "./common/filter/core-error.filter.js";
 import { env } from "./env.js";
 
 import type { NestExpressApplication } from "@nestjs/platform-express";
@@ -30,7 +31,8 @@ async function bootstrap() {
       res.sendFile(join(webDir, "index.html"));
     });
   }
-  app.useGlobalFilters(new DbErrorFilter(app.get(HttpAdapterHost).httpAdapter));
+  const { httpAdapter } = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new DbErrorFilter(httpAdapter), new CoreErrorFilter(httpAdapter));
   app.enableShutdownHooks();
   const logger = new Logger("Main");
   await app.listen(env.PORT).then(() => {
