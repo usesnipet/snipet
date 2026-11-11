@@ -1,19 +1,6 @@
 import { ApiKeyAuth, Private, Public, UserAuth } from "#src/common/decorators/auth.decorator.js";
-import { LlmErrorFilter, llmToHttpException } from "#src/common/filter/llm-error.filter.js";
-import { FailoverError, LLMError } from "#src/core/llm/errors.js";
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Logger,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Query,
-  Res,
-  UseFilters,
-} from "@nestjs/common";
+import { clientMessage } from "#src/core/error.js";
+import { Body, Controller, Get, HttpCode, Logger, Param, ParseUUIDPipe, Post, Query, Res } from "@nestjs/common";
 import { CrudController, Ctx, ZodPipe } from "@snipet/server-common";
 import { executeLlmSchema, listLLMModelsParamsSchema, Role } from "@snipet/shared";
 
@@ -33,7 +20,6 @@ import type { Response } from "express";
  * come back as placeholders. Running models is open to any user and API keys.
  */
 @Private(UserAuth(Role.Admin))
-@UseFilters(LlmErrorFilter)
 @Controller("llm-connections")
 export class LlmConnectionController extends CrudController<LlmConnection, AppContext>({
   create: createLlmConnectionSchema,
@@ -114,10 +100,9 @@ export class LlmConnectionController extends CrudController<LlmConnection, AppCo
       send({ event: "done", data: {} });
     } catch (err) {
       if (!abort.signal.aborted) {
-        if (!(err instanceof LLMError || err instanceof FailoverError)) this.logger.error(err);
-        const message =
-          err instanceof LLMError || err instanceof FailoverError ? llmToHttpException(err).message : "internal error";
-        send({ event: "error", data: { message } });
+        const message = clientMessage(err);
+        if (message === undefined) this.logger.error(err);
+        send({ event: "error", data: { message: message ?? "internal error" } });
       }
     } finally {
       res.end();

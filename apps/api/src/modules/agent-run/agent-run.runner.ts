@@ -1,7 +1,5 @@
 import type { AppContext } from "#src/common/context/app-context.js";
-import { llmToHttpException } from "#src/common/filter/llm-error.filter.js";
-import { CoreError } from "#src/core/error.js";
-import { FailoverError, LLMError } from "#src/core/llm/errors.js";
+import { clientMessage } from "#src/core/error.js";
 import { ToolResult } from "#src/core/plugin/driver.js";
 import { HttpException, Injectable, Logger } from "@nestjs/common";
 import { AgentRunStatus } from "@snipet/shared";
@@ -29,12 +27,12 @@ const INTERNAL_ERROR = "internal error";
 /**
  * Client-safe message for a failed run: LLM errors never carry the raw
  * provider message, which may hold hosts or credentials. A hook's stop
- * reason and a CoreError's message are meant for the client.
+ * reason is meant for the client.
  */
 function describe(err: unknown): string {
-  if (err instanceof HookStoppedError || err instanceof CoreError) return err.message;
-  if (err instanceof LLMError || err instanceof FailoverError) err = llmToHttpException(err);
-  return err instanceof HttpException ? err.message : INTERNAL_ERROR;
+  if (err instanceof HookStoppedError) return err.message;
+  // HttpException: the Nest exceptions still thrown by the plugin services, until they become CoreErrors.
+  return clientMessage(err) ?? (err instanceof HttpException ? err.message : INTERNAL_ERROR);
 }
 
 /** The raw error, for hooks only: it may hold hosts or credentials the client must not see. */
