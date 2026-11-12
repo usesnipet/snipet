@@ -15,17 +15,15 @@ export enum LLMStreamEventType {
   ERROR = "error",
   DONE = "done",
 }
-export const llmStreamEventMetadataSchema = z.record(z.string(), z.unknown());
-export type LLMStreamEventMetadata = z.infer<typeof llmStreamEventMetadataSchema>;
 
 export const llmStreamEventSchema = z.discriminatedUnion("event", [
   z.object({
     event: z.literal(LLMStreamEventType.LLM_STARTED),
-    data: z.object({ metadata: llmStreamEventMetadataSchema, model: z.string() }),
+    data: z.object({ model: z.string() }),
   }),
   z.object({
     event: z.literal(LLMStreamEventType.LLM_SKIPPED),
-    data: z.object({ metadata: llmStreamEventMetadataSchema, model: z.string(), error: z.string() }),
+    data: z.object({ model: z.string(), error: z.string() }),
   }),
   z.object({
     event: z.literal(LLMStreamEventType.TEXT_DELTA),
@@ -37,22 +35,19 @@ export const llmStreamEventSchema = z.discriminatedUnion("event", [
   }),
   z.object({
     event: z.literal(LLMStreamEventType.USAGE),
-    data: z.object({ metadata: llmStreamEventMetadataSchema, usage: llmUsageSchema }),
+    data: z.object({ usage: llmUsageSchema }),
   }),
   z.object({
     event: z.literal(LLMStreamEventType.TOOL_CALL),
-    data: z.object({
-      metadata: llmStreamEventMetadataSchema,
-      call: llmToolCallRequestSchema,
-    }),
+    data: z.object({ call: llmToolCallRequestSchema }),
   }),
   z.object({
     event: z.literal(LLMStreamEventType.MESSAGE),
-    data: z.object({ metadata: llmStreamEventMetadataSchema, message: llmMessageSchema }),
+    data: z.object({ message: llmMessageSchema }),
   }),
   z.object({
     event: z.literal(LLMStreamEventType.ERROR),
-    data: z.object({ metadata: llmStreamEventMetadataSchema, message: z.string() }),
+    data: z.object({ message: z.string() }),
   }),
   z.object({
     event: z.literal(LLMStreamEventType.DONE),

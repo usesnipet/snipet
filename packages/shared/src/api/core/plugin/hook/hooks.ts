@@ -4,7 +4,6 @@ import { jsonObjectSchema } from "../../../../schemas/json.js";
 import { agentRunStatusSchema } from "../../../agent-run.js";
 import { llmMessageSchema, llmToolCallPartSchema } from "../../llm/message.js";
 import { llmResponseSchema, llmUsageSchema } from "../../llm/response.js";
-import { llmStreamEventMetadataSchema } from "../../llm/stream.js";
 import { llmTargetSchema } from "../../llm/target.js";
 import { llmToolSchema, toolResultSchema } from "../../llm/tool.js";
 
@@ -88,7 +87,7 @@ const durationMs = z.number();
 const error = z.string().nullable();
 
 /** A target the run fell back from, as the llm_skipped stream event reports it. */
-const skippedTargetSchema = z.object({ metadata: llmStreamEventMetadataSchema, model: z.string(), error: z.string() });
+const skippedTargetSchema = z.object({ model: z.string(), error: z.string() });
 
 /** Every hook of the agent loop */
 export enum HookName {

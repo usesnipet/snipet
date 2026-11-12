@@ -1,9 +1,8 @@
 import z from "zod";
 
-// );
+/** One model to try, resolved to its llm and connection config, or the reason it can't be used. */
 export const llmTargetSchema = z
   .object({
-    metadata: z.record(z.string(), z.unknown()),
     model: z.string(),
   })
   .and(

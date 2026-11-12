@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import { pluginManifestSchema } from "@snipet/shared";
+import { pluginManifestSchema } from "@snipet/shared/core";
 import { z } from "zod";
 
 import { CoreError } from "../error.js";

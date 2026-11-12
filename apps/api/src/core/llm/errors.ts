@@ -2,7 +2,7 @@ import type { CoreErrorOptions } from "../error.js";
 
 /**
  * Error vocabulary shared by drivers, registry and runner. Drivers map
- * their SDK errors onto a code; the runner fails over on some of them.
+ * their SDK errors onto a code; the runner fails over on any of them.
  */
 export enum LLMErrorCode {
   RATE_LIMIT = "RATE_LIMIT",
@@ -13,20 +13,6 @@ export enum LLMErrorCode {
   LLM_NOT_FOUND = "LLM_NOT_FOUND",
   CONNECTION_NOT_FOUND = "CONNECTION_NOT_FOUND",
 }
-
-/**
- * The runner moves to the next target only on these: failures of that target
- * alone (its provider, credentials, manifest or model), which the next may not
- * share. Any other error ends the run.
- */
-const FAILOVER = new Set([
-  LLMErrorCode.RATE_LIMIT,
-  LLMErrorCode.UNAVAILABLE,
-  LLMErrorCode.AUTH,
-  LLMErrorCode.LLM_NOT_FOUND,
-  LLMErrorCode.MODEL_NOT_FOUND,
-  LLMErrorCode.CONNECTION_NOT_FOUND,
-]);
 
 /**
  * An LLM failure. Like CoreError, `message` and `details` are client-safe;
@@ -44,14 +30,7 @@ export class LLMError extends Error {
     this.name = "LLMError";
     this.details = options.details;
   }
-
-  /** Whether the runner may try the next target. */
-  get failover(): boolean {
-    return FAILOVER.has(this.code);
-  }
 }
-
-export const isFailover = (err: unknown): err is LLMError => err instanceof LLMError && err.failover;
 
 /** Client-safe message per code, for errors that wrap a provider's. */
 const PROVIDER_MESSAGES: Record<LLMErrorCode, string> = {
@@ -71,7 +50,7 @@ export function llmProviderError(code: LLMErrorCode, cause: unknown): LLMError {
 
 /** Every target failed before producing a result. */
 export class FailoverError extends Error {
-  constructor(readonly attempts: { connectionId: string; model: string; error: LLMError }[]) {
+  constructor(readonly attempts: { model: string; error: LLMError }[]) {
     super(
       `all ${attempts.length} llm attempts failed: ${attempts.map((a) => `${a.model}: ${a.error.message}`).join("; ")}`,
     );
@@ -81,7 +60,7 @@ export class FailoverError extends Error {
 
 /**
  * Maps an HTTP status from a provider API onto an error code, like the Go
- * drivers did. Unknown statuses become BAD_REQUEST rather than failing over.
+ * drivers did. Unknown statuses become BAD_REQUEST.
  */
 export function llmErrorFromStatus(status: number, cause: unknown): LLMError {
   if (status === 429) return llmProviderError(LLMErrorCode.RATE_LIMIT, cause);

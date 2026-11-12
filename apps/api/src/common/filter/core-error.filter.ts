@@ -26,11 +26,7 @@ export function toHttpException(error: ExpectedError): HttpException {
       {
         message: clientMessage(error),
         // A list, not a map by model: the same model may be tried on several connections.
-        details: error.attempts.map(({ connectionId, model, error }) => ({
-          connectionId,
-          model,
-          error: error.message,
-        })),
+        details: error.attempts.map(({ model, error }) => ({ model, error: error.message })),
       },
       HttpStatus.BAD_GATEWAY,
     );

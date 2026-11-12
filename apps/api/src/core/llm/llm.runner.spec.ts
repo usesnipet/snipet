@@ -1,14 +1,16 @@
+import { LLMFinishReason, LLMMessagePartType, LLMRole, LLMStreamEventType } from "@snipet/shared/core";
+
 import { FailoverError, LLMError, LLMErrorCode, llmProviderError } from "./errors.js";
 import { LLMDriverRegistry } from "./llm.registry.js";
 import { LLMRunner } from "./llm.runner.js";
 
-import type { LlmManifest, LlmResponse, LlmStreamEvent } from "@snipet/shared";
 import type { ChatDriver, ChatStreamEvent } from "./driver.js";
 import type { LLMManifestRegistry } from "./llm.registry.js";
+import type { LLMManifest, LLMResponse, LLMStreamEvent, LLMTarget } from "@snipet/shared/core";
 
-const reply = (text: string): LlmResponse => ({
-  message: { role: "assistant", parts: [{ type: "text", text }] },
-  finishReason: "stop",
+const reply = (text: string): LLMResponse => ({
+  message: { role: LLMRole.ASSISTANT, parts: [{ type: LLMMessagePartType.TEXT, text }] },
+  finishReason: LLMFinishReason.STOP,
   usage: { inputTokens: 1, outputTokens: 1 },
 });
 
@@ -21,9 +23,25 @@ function fake(key: string, error?: LLMError): ChatDriver {
     // eslint-disable-next-line @typescript-eslint/require-await -- fake stream
     async *stream(): AsyncGenerator<ChatStreamEvent> {
       if (error) throw error;
-      yield { event: "text_delta", data: { text: "he" } };
-      yield { event: "text_delta", data: { text: "llo" } };
-      yield { event: "tool_call", data: { id: "1", name: "t", arguments: { a: 1 } } };
+      yield { event: LLMStreamEventType.TEXT_DELTA, data: { text: "he" } };
+      yield { event: LLMStreamEventType.TEXT_DELTA, data: { text: "llo" } };
+      yield {
+        event: LLMStreamEventType.TOOL_CALL,
+        data: { call: { id: "1", name: "t", arguments: { a: 1 } } },
+      };
+    },
+  };
+}
+
+/** A chat driver that fails with a plain Error, which is not an LLMError. */
+function crash(key: string): ChatDriver {
+  return {
+    key,
+    validateOptions: (o) => o,
+    generate: () => Promise.reject(new Error("crash")),
+    // eslint-disable-next-line require-yield, @typescript-eslint/require-await -- fails before yielding
+    async *stream(): AsyncGenerator<ChatStreamEvent> {
+      throw new Error("crash");
     },
   };
 }
@@ -39,7 +57,7 @@ const llms = {
             models: { driver: "static", options: {} },
             ...(key !== "nochat" && { chat: { driver: key, options: {} } }),
           },
-        } as LlmManifest),
+        } as LLMManifest),
 } as unknown as LLMManifestRegistry;
 
 const runner = new LLMRunner(
@@ -56,52 +74,76 @@ const runner = new LLMRunner(
     healthCheck: [],
   }),
 );
-/** A run over `refs` ("llm/model"), each target on connection "c-<llm>" with an empty config. */
+/** A run over `refs` ("llm/model"), each target with an empty connection config. */
 const run = (...refs: string[]) => ({
-  targets: refs.map((ref) => {
+  targets: refs.map((ref): LLMTarget => {
     const [llm, model] = ref.split("/");
-    return { connectionId: `c-${llm}`, llm, model, connection: {} };
+    return { llm, model, connection: {} };
   }),
-  messages: [{ role: "user" as const, parts: [{ type: "text" as const, text: "hi" }] }],
+  messages: [{ role: LLMRole.USER, parts: [{ type: LLMMessagePartType.TEXT as const, text: "hi" }] }],
 });
 
-async function collect(it: AsyncIterable<LlmStreamEvent>) {
-  const events: LlmStreamEvent[] = [];
+async function collect(it: AsyncIterable<LLMStreamEvent>) {
+  const events: LLMStreamEvent[] = [];
   for await (const e of it) events.push(e);
   return events;
 }
 
 describe("LLMRunner", () => {
-  it("fails over on failover errors only", async () => {
+  it("fails over to the next target", async () => {
     await expect(runner.generate(run("limited/m", "ok/m"))).resolves.toEqual(reply("ok"));
     await expect(runner.generate(run("down/m", "ok/m"))).resolves.toEqual(reply("ok"));
     await expect(runner.generate(run("gone/m", "ok/m"))).resolves.toEqual(reply("ok"));
     await expect(runner.generate(run("nomodel/m", "ok/m"))).resolves.toEqual(reply("ok"));
   });
 
-  it("skips a target that arrives already unusable, and stops on one that isn't a failover", async () => {
+  it("fails over on any LLMError, including targets that arrive unusable", async () => {
     const ok = run("ok/m").targets[0];
-    const gone = {
-      connectionId: "c-x",
-      model: "m",
-      error: new LLMError(LLMErrorCode.CONNECTION_NOT_FOUND, "connection gone"),
-    };
-    const bad = { connectionId: "c-x", model: "m", error: new LLMError(LLMErrorCode.BAD_REQUEST, "bad target") };
+    const gone: LLMTarget = { model: "m", error: "connection gone" };
     await expect(runner.generate({ ...run(), targets: [gone, ok] })).resolves.toEqual(reply("ok"));
-    await expect(runner.generate({ ...run(), targets: [bad, ok] })).rejects.toThrow("bad target");
     expect((await collect(runner.stream({ ...run(), targets: [gone, ok] })))[0]).toEqual({
       event: "llm_skipped",
-      data: { connectionId: "c-x", model: "m", error: "connection gone" },
+      data: { model: "m", error: "connection gone" },
     });
-    await expect(runner.generate(run("broken/m", "ok/m"))).rejects.toThrow("nope");
+    await expect(runner.generate(run("broken/m", "ok/m"))).resolves.toEqual(reply("ok"));
+    await expect(runner.generate(run("nochat/m", "ok/m"))).resolves.toEqual(reply("ok"));
     await expect(runner.generate(run("limited/m"))).rejects.toBeInstanceOf(FailoverError);
-    await expect(runner.generate(run("nochat/m"))).rejects.toThrow('"nochat" does not support chat');
+    await expect(runner.generate(run("nochat/m"))).rejects.toBeInstanceOf(FailoverError);
+  });
+
+  it("rethrows errors that aren't an LLMError without failing over", async () => {
+    const boom = new LLMRunner(llms, new LLMDriverRegistry({ chat: [crash("boom")], models: [], healthCheck: [] }));
+    await expect(boom.generate(run("boom/m", "ok/m"))).rejects.toThrow("crash");
+  });
+
+  it("closes the driver stream when the consumer stops early", async () => {
+    let closed = false;
+    const driver: ChatDriver = {
+      key: "slow",
+      validateOptions: (o) => o,
+      generate: () => Promise.resolve(reply("slow")),
+      // eslint-disable-next-line @typescript-eslint/require-await -- fake stream
+      async *stream(): AsyncGenerator<ChatStreamEvent> {
+        try {
+          yield { event: LLMStreamEventType.TEXT_DELTA, data: { text: "a" } };
+          yield { event: LLMStreamEventType.TEXT_DELTA, data: { text: "b" } };
+        } finally {
+          closed = true;
+        }
+      },
+    };
+    const slow = new LLMRunner(llms, new LLMDriverRegistry({ chat: [driver], models: [], healthCheck: [] }));
+    for await (const event of slow.stream(run("slow/m"))) if (event.event === LLMStreamEventType.TEXT_DELTA) break;
+    expect(closed).toBe(true);
   });
 
   it("skips an unavailable target in a stream without leaking its message", async () => {
     const events = await collect(runner.stream(run("down/m", "ok/m")));
     expect(events.slice(0, 2)).toEqual([
-      { event: "llm_skipped", data: { connectionId: "c-down", model: "m", error: "llm provider unavailable" } },
+      {
+        event: "llm_skipped",
+        data: { model: "m", error: "llm provider unavailable" },
+      },
       { event: "llm_started", data: { model: "m" } },
     ]);
     expect(JSON.stringify(events)).not.toContain("10.0.0.1");
@@ -109,11 +151,14 @@ describe("LLMRunner", () => {
 
   it("streams skip, start, events and the assembled message", async () => {
     expect(await collect(runner.stream(run("limited/m", "ok/m")))).toEqual([
-      { event: "llm_skipped", data: { connectionId: "c-limited", model: "m", error: "llm provider rate limited" } },
+      {
+        event: "llm_skipped",
+        data: { model: "m", error: "llm provider rate limited" },
+      },
       { event: "llm_started", data: { model: "m" } },
       { event: "text_delta", data: { text: "he" } },
       { event: "text_delta", data: { text: "llo" } },
-      { event: "tool_call", data: { id: "1", name: "t", arguments: { a: 1 } } },
+      { event: "tool_call", data: { call: { id: "1", name: "t", arguments: { a: 1 } } } },
       {
         event: "message",
         data: {

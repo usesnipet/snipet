@@ -1,25 +1,25 @@
 import type { BaseDriver } from "#src/core/manifest/driver.js";
 import type { HealthCheckDriver } from "#src/core/manifest/health-check.js";
-import type { LlmMessage, LlmModel, LlmResponse, LlmStreamEvent, LlmTool } from "@snipet/shared";
+import type { LLMMessage, LLMModel, LLMResponse, LLMStreamEvent, LLMTool } from "@snipet/shared/core";
 
 export interface ModelDriver<Opts = unknown> extends BaseDriver<Opts> {
-  listModels(options: Opts): Promise<LlmModel[]>;
+  listModels(options: Opts): Promise<LLMModel[]>;
 }
 
 export interface ChatRequest {
   model: string;
-  messages: LlmMessage[];
-  tools?: LlmTool[];
+  messages: LLMMessage[];
+  tools?: LLMTool[];
   signal?: AbortSignal;
 }
 
 export type ChatStreamEvent = Extract<
-  LlmStreamEvent,
+  LLMStreamEvent,
   { event: "text_delta" | "thinking_delta" | "tool_call" | "usage" }
 >;
 
 export interface ChatDriver<Opts = unknown> extends BaseDriver<Opts> {
-  generate(req: ChatRequest, options: Opts): Promise<LlmResponse>;
+  generate(req: ChatRequest, options: Opts): Promise<LLMResponse>;
   stream(req: ChatRequest, options: Opts): AsyncGenerator<ChatStreamEvent>;
 }
 
