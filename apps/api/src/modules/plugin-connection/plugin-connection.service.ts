@@ -1,5 +1,5 @@
 import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
-import { PluginDrivers, Tool, ToolResult } from "#src/core/plugin/driver.js";
+import { PluginDrivers } from "#src/core/plugin/driver.js";
 import { PluginDriverRegistry, PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { validateJson } from "@snipet/server-common";
@@ -9,10 +9,10 @@ import { PluginConnection } from "./plugin-connection.entity.js";
 import { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
-import type { PluginManifest, PluginTool } from "@snipet/shared";
+import type { LLMTool, LLMToolResult, PluginManifest } from "@snipet/shared/core";
 
 /** A synced tool with the connection it comes from. */
-export type ConnectionTool = Tool & { connection: { id: string; name: string } };
+export type ConnectionTool = LLMTool & { connection: { id: string; name: string } };
 
 /**
  * Service for managing plugin connections and executing tools.
@@ -32,7 +32,7 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
 
   override async create(ctx: AppContext, dto: DeepPartial<PluginConnection>): Promise<PluginConnection> {
     const { id } = await super.create(ctx, dto);
-    void this.syncer.sync(ctx, id);
+    void this.sync(ctx, id);
     return this.findById(ctx, id);
   }
 
@@ -68,11 +68,11 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   /** A connection's synced tools, enabled or not, without their schemas. */
-  async listTools(ctx: AppContext, id: string): Promise<PluginTool[]> {
+  async listTools(ctx: AppContext, id: string): Promise<LLMTool[]> {
     // No config: it would be decrypted for nothing.
     const conn = await this.repository(ctx).findOne({ select: { id: true, tools: true }, where: { id } });
     if (!conn) throw new NotFoundException(`Plugin connection ${id} not found`);
-    return conn.tools.map(({ name, description }) => ({ name, description }));
+    return conn.tools;
   }
 
   /**
@@ -116,9 +116,9 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   async executeTool(
     ctx: AppContext,
     connectionId: string,
-    tool: Tool,
+    tool: LLMTool,
     args: Record<string, unknown> = {},
-  ): Promise<ToolResult> {
+  ): Promise<LLMToolResult> {
     const conn = await this.findById(ctx, connectionId);
     const manifest = this.manifests.get(conn.pluginKey);
     if (!conn.enabled || !manifest.capabilities.tools) {

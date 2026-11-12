@@ -2,22 +2,22 @@ import { ConnectionService } from "#src/common/connection-sync/connection.servic
 import { CoreError, CoreErrorCode } from "#src/core/error.js";
 import { LLMError, LLMErrorCode } from "#src/core/llm/errors.js";
 import { LLMDriverRegistry, LLMManifestRegistry } from "#src/core/llm/llm.registry.js";
-import { LLMRunner, LLMTarget } from "#src/core/llm/llm.runner.js";
+import { LLMRunner } from "#src/core/llm/llm.runner.js";
 import { Injectable } from "@nestjs/common";
+import { LLMManifest, LLMModel, LLMResponse, LLMStreamEvent, LLMTarget } from "@snipet/shared/core";
 import { DeepPartial, EntityManager, QueryDeepPartialEntity } from "typeorm";
 
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionSyncService } from "./sync/llm-connection-sync.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
+import type { ExecuteLLM, ExecuteLLMTarget } from "@snipet/shared";
 import type { LLMDrivers } from "#src/core/llm/driver.js";
-import type { ExecuteLlm, ExecuteLlmTarget, LlmManifest, LlmModel, LlmResponse, LlmStreamEvent } from "@snipet/shared";
-
 /**
  * Service for managing LLM connections and running conversations.
  */
 @Injectable()
-export class LlmConnectionService extends ConnectionService<LlmConnection, LlmManifest, LLMDrivers> {
+export class LlmConnectionService extends ConnectionService<LlmConnection, LLMManifest, LLMDrivers> {
   protected readonly keyField = "llmKey";
 
   constructor(
@@ -46,7 +46,7 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
   }
 
   /** The connection's models as last synced, by key. */
-  async findModels(ctx: AppContext, connectionId: string): Promise<LlmModel[]> {
+  async findModels(ctx: AppContext, connectionId: string): Promise<LLMModel[]> {
     // No config: it would be decrypted for nothing.
     const conn = await this.repository(ctx).findOne({
       select: { id: true, models: true },
@@ -56,7 +56,7 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
   }
 
   /** Models of connectionId, which must be a connection of llmKey. */
-  async listLLMModels(ctx: AppContext, llmKey: string, connectionId: string): Promise<LlmModel[]> {
+  async listLLMModels(ctx: AppContext, llmKey: string, connectionId: string): Promise<LLMModel[]> {
     const conn = await this.repository(ctx).findOne({
       select: { id: true, models: true },
       where: { id: connectionId, llmKey },
@@ -65,11 +65,11 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
     return conn.models;
   }
 
-  async generate(ctx: AppContext, dto: ExecuteLlm, signal?: AbortSignal): Promise<LlmResponse> {
+  async generate(ctx: AppContext, dto: ExecuteLLM, signal?: AbortSignal): Promise<LLMResponse> {
     return this.runner.generate({ ...dto, targets: await this.resolveTargets(ctx, dto.targets), signal });
   }
 
-  async *stream(ctx: AppContext, dto: ExecuteLlm, signal?: AbortSignal): AsyncGenerator<LlmStreamEvent> {
+  async *stream(ctx: AppContext, dto: ExecuteLLM, signal?: AbortSignal): AsyncGenerator<LLMStreamEvent> {
     yield* this.runner.stream({ ...dto, targets: await this.resolveTargets(ctx, dto.targets), signal });
   }
 
@@ -79,7 +79,7 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LlmMa
    * models, comes back with the error instead, so the runner skips it rather
    * than failing the whole run.
    */
-  async resolveTargets(ctx: AppContext, targets: ExecuteLlmTarget[]): Promise<LLMTarget[]> {
+  async resolveTargets(ctx: AppContext, targets: ExecuteLLMTarget[]): Promise<LLMTarget[]> {
     return Promise.all(
       targets.map(async ({ connectionId, model }): Promise<LLMTarget> => {
         const conn = await this.repository(ctx).findOne({

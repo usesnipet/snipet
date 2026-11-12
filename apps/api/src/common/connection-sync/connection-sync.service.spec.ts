@@ -3,12 +3,12 @@ import { Driver } from "#src/core/manifest/driver.js";
 import { DriverRegistry } from "#src/core/manifest/driver.registry.js";
 import { uniqueSortedBy } from "#src/utils/sort/index.js";
 import { jest } from "@jest/globals";
-import { pluginManifestSchema } from "@snipet/shared";
+import { pluginManifestSchema } from "@snipet/shared/core";
+import type { PluginManifest } from "@snipet/shared/core";
 import { z } from "zod";
 
 import { ConnectionSyncService } from "./connection-sync.service.js";
 
-import type { PluginManifest } from "@snipet/shared";
 import type { EntityManager } from "typeorm";
 import type { SyncedConnectionEntity } from "./connection-sync.service.js";
 import type { HealthCheckDriver, HealthCheckResult } from "#src/core/manifest/health-check.js";

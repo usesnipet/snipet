@@ -2,7 +2,9 @@ import { ApiKeyAuth, Private, Public, UserAuth } from "#src/common/decorators/au
 import { clientMessage } from "#src/core/error.js";
 import { Body, Controller, Get, HttpCode, Logger, Param, ParseUUIDPipe, Post, Query, Res } from "@nestjs/common";
 import { CrudController, Ctx, ZodPipe } from "@snipet/server-common";
-import { executeLlmSchema, listLLMModelsParamsSchema, Role } from "@snipet/shared";
+import { Role, executeLLMSchema, listLLMModelsParamsSchema } from "@snipet/shared";
+import type { ExecuteLLM, ListLLMModelsParams } from "@snipet/shared";
+import type { LLMStreamEvent } from "@snipet/shared/core";
 
 import {
   createLlmConnectionSchema,
@@ -12,7 +14,6 @@ import {
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionService } from "./llm-connection.service.js";
 
-import type { ExecuteLlm, ListLLMModelsParams, LlmStreamEvent } from "@snipet/shared";
 import type { AppContext } from "#src/common/context/app-context.js";
 import type { Response } from "express";
 /**
@@ -66,7 +67,7 @@ export class LlmConnectionController extends CrudController<LlmConnection, AppCo
   @Private(UserAuth(Role.Admin), ApiKeyAuth())
   @Post("execute")
   @HttpCode(200)
-  execute(@Ctx() ctx: AppContext, @Body(new ZodPipe(executeLlmSchema)) dto: ExecuteLlm) {
+  execute(@Ctx() ctx: AppContext, @Body(new ZodPipe(executeLLMSchema)) dto: ExecuteLLM) {
     return this.service.generate(ctx, dto);
   }
 
@@ -78,7 +79,7 @@ export class LlmConnectionController extends CrudController<LlmConnection, AppCo
   @Post("execute/stream")
   async executeStream(
     @Ctx() ctx: AppContext,
-    @Body(new ZodPipe(executeLlmSchema)) dto: ExecuteLlm,
+    @Body(new ZodPipe(executeLLMSchema)) dto: ExecuteLLM,
     @Res() res: Response,
   ) {
     const abort = new AbortController();
@@ -93,7 +94,7 @@ export class LlmConnectionController extends CrudController<LlmConnection, AppCo
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     });
-    const send = ({ event, data }: LlmStreamEvent) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    const send = ({ event, data }: LLMStreamEvent) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 
     try {
       for (let result = first; !result.done; result = await events.next()) send(result.value);

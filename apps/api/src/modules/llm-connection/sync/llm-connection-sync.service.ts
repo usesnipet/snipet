@@ -8,11 +8,11 @@ import { LlmConnection } from "../llm-connection.entity.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
 import type { LLMDrivers } from "#src/core/llm/driver.js";
-import type { LlmManifest } from "@snipet/shared";
+import type { LLMManifest } from "@snipet/shared/core";
 
 /** Keeps each connection's models in line with its models driver. */
 @Injectable()
-export class LlmConnectionSyncService extends ConnectionSyncService<LlmConnection, LlmManifest, LLMDrivers> {
+export class LlmConnectionSyncService extends ConnectionSyncService<LlmConnection, LLMManifest, LLMDrivers> {
   override readonly keyField = "llmKey";
 
   constructor(manager: EntityManager, registry: LLMManifestRegistry, drivers: LLMDriverRegistry) {
@@ -22,7 +22,7 @@ export class LlmConnectionSyncService extends ConnectionSyncService<LlmConnectio
   protected async fields(
     _ctx: AppContext,
     conn: LlmConnection,
-    manifest: LlmManifest,
+    manifest: LLMManifest,
   ): Promise<Partial<LlmConnection>> {
     const { driver, options } = this.drivers.resolve(manifest, "models", conn.config)!;
     return { models: uniqueSortedBy(await driver.listModels(options), (m) => m.key) };

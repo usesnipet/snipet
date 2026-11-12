@@ -19,4 +19,4 @@ export const llmToolCallRequestSchema = z.object({
 export type LLMToolCallRequest = z.infer<typeof llmToolCallRequestSchema>;
 
 export const toolResultSchema = z.object({ content: z.string(), isError: z.boolean() });
-export type ToolResult = z.infer<typeof toolResultSchema>;
+export type LLMToolResult = z.infer<typeof toolResultSchema>;

@@ -4,12 +4,12 @@ import { DriverRegistry } from "#src/core/manifest/driver.registry.js";
 import { jest } from "@jest/globals";
 import { BadRequestException } from "@nestjs/common";
 import { SECRET_PLACEHOLDER } from "@snipet/server-common";
-import { pluginManifestSchema } from "@snipet/shared";
+import { pluginManifestSchema } from "@snipet/shared/core";
+import type { PluginManifest } from "@snipet/shared/core";
 import { z } from "zod";
 
 import { ConnectionEntity, ConnectionService } from "./connection.service.js";
 
-import type { PluginManifest } from "@snipet/shared";
 import type { EntityManager, QueryDeepPartialEntity } from "typeorm";
 import type { ManifestRegistry } from "#src/core/manifest/manifest.registry.js";
 
