@@ -4,42 +4,32 @@ import {
   EntityManager,
   EntityTarget,
   FindOptionsWhere,
-  ObjectLiteral,
   QueryDeepPartialEntity,
   Repository,
 } from "typeorm";
 
+import { BaseEntity } from "../base/base.entity.js";
+import { BaseService } from "../base/base.service.js";
 import { BaseContext } from "../context/base-context.js";
 import { FilterQuery } from "../pagination/filter.js";
 
-import { BaseEntity } from "./base.entity.js";
-
 import type { Paginated } from "@snipet/shared";
-
 /**
  * Generic CRUD over a TypeORM entity. Extend it and inject the manager:
  * @example constructor(manager: EntityManager) { super(manager, Widget); }
  * Every method takes the request context first.
  */
-export abstract class CrudService<T extends BaseEntity, C extends BaseContext = BaseContext> {
+export abstract class CrudService<T extends BaseEntity, C extends BaseContext = BaseContext> extends BaseService<C> {
   constructor(
     protected readonly manager: EntityManager,
     private readonly target: EntityTarget<T>,
-  ) {}
+  ) {
+    super(manager);
+  }
 
   /** The entity's table, joining the context's transaction when there is one. */
   protected repository(ctx?: C): Repository<T> {
     return this.repositoryOf(ctx, this.target);
-  }
-
-  /** Another entity's table, on the same transaction as `repository(ctx)`. */
-  protected repositoryOf<E extends ObjectLiteral>(ctx: C | undefined, target: EntityTarget<E>): Repository<E> {
-    return (ctx?.tx ?? this.manager).getRepository(target);
-  }
-
-  // Runs fn in a transaction, reusing the context's one if it's already in one.
-  protected transaction<R>(ctx: C, fn: (ctx: C) => Promise<R>): Promise<R> {
-    return ctx.tx ? fn(ctx) : this.manager.transaction((tx) => fn(ctx.withTx(tx)));
   }
 
   async filter(ctx: C, query: FilterQuery<T>): Promise<Paginated<T>> {
