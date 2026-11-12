@@ -3,18 +3,18 @@ import { z } from "zod";
 import { dataUrlSchema } from "../schemas/data-url.js";
 import { jsonObjectSchema } from "../schemas/json.js";
 
-import { hookNameSchema } from "./hook.js";
+import { hookNameSchema } from "./core/plugin/index.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 /** One LLM of an agent; the runner tries them by ascending order. Same fields as ExecuteLlmTarget. */
-export const agentLlmSchema = z.object({
+export const agentLLMSchema = z.object({
   id: z.uuid(),
   agentId: z.uuid(),
   order: z.number().int(),
   model: z.string(),
   connectionId: z.uuid(),
 });
-export type AgentLlm = z.infer<typeof agentLlmSchema>;
+export type AgentLLM = z.infer<typeof agentLLMSchema>;
 
 /** Adds a plugin connection to an agent: its actions, hooks and settings. */
 export const agentPluginConnectionSchema = z.object({
@@ -37,7 +37,7 @@ export const agentSchema = z.object({
   maxTurns: z.number().int(),
   historyRuns: z.number().int(),
   enabled: z.boolean(),
-  llms: z.array(agentLlmSchema),
+  llms: z.array(agentLLMSchema),
   pluginConnections: z.array(agentPluginConnectionSchema),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -60,7 +60,7 @@ export const agentSummarySchema = agentSchema
   })
   .extend({
     /** In the order they run. */
-    llms: z.array(agentLlmSchema.pick({ model: true })),
+    llms: z.array(agentLLMSchema.pick({ model: true })),
     /** In the order their hooks run; name is the connection's. */
     pluginConnections: z.array(z.object({ pluginConnectionId: z.uuid(), name: z.string() })),
   });

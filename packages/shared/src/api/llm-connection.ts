@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { jsonObjectSchema } from "../schemas/json.js";
 
+import { llmMessageSchema, llmToolSchema } from "./core/index.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 
 /** A named, configured connection to an LLM. */
@@ -35,3 +36,23 @@ export const findLlmConnectionsParamsSchema = paginationParamsSchema.extend({
   llmKey: z.string().optional(),
 });
 export type FindLlmConnectionsParams = z.infer<typeof findLlmConnectionsParamsSchema>;
+
+/** connectionId: the connection whose synced models to list. */
+export const listLLMModelsParamsSchema = z.object({
+  connectionId: z.uuid(),
+});
+export type ListLLMModelsParams = z.infer<typeof listLLMModelsParamsSchema>;
+
+// --- execute -------------------------------------------------------------
+export const executeLLMTargetSchema = z.object({
+  connectionId: z.uuid(),
+  model: z.string().min(1),
+});
+export type ExecuteLLMTarget = z.infer<typeof executeLLMTargetSchema>;
+
+export const executeLLMSchema = z.object({
+  targets: z.array(executeLLMTargetSchema).min(1),
+  messages: z.array(llmMessageSchema).min(1),
+  tools: z.array(llmToolSchema).optional(),
+});
+export type ExecuteLLM = z.infer<typeof executeLLMSchema>;
