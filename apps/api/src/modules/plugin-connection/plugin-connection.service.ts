@@ -126,6 +126,6 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
     }
 
     const { driver, options } = this.drivers.resolve(manifest, "tools", conn.config)!;
-    return driver.callTool(conn.id, tool.name, validateJson(tool.inputSchema, args), options);
+    return driver.callTool(tool.name, validateJson(tool.inputSchema, args), options);
   }
 }

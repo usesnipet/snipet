@@ -83,7 +83,7 @@ export abstract class ConnectionSyncService<
 
     const health = this.drivers.resolve(manifest, "healthCheck", conn.config);
     if (health) {
-      const result = await health.driver.checkHealth(conn.id, health.options);
+      const result = await health.driver.checkHealth(health.options);
       if (!result.isHealthy) throw new Error(`health check failed: ${result.error ?? "unknown error"}`);
     }
 

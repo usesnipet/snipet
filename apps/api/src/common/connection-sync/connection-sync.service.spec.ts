@@ -20,7 +20,7 @@ const anyDate = expect.any(Date) as unknown;
 
 class Health extends Driver(z.object({ ok: z.boolean() })) implements HealthCheckDriver<{ ok: boolean }> {
   readonly key = "health";
-  checkHealth(_id: string, { ok }: { ok: boolean }): Promise<HealthCheckResult> {
+  checkHealth({ ok }: { ok: boolean }): Promise<HealthCheckResult> {
     return Promise.resolve(ok ? { isHealthy: true } : { isHealthy: false, error: "down" });
   }
 }

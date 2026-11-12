@@ -9,7 +9,7 @@ import { PluginConnection } from "../plugin-connection.entity.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
 import type { PluginDrivers } from "#src/core/plugin/driver.js";
-import type { PluginManifest } from "@snipet/shared";
+import type { PluginManifest } from "@snipet/shared/core";
 
 /** Keeps each connection's tools and instructions in line with its drivers. */
 @Injectable()
@@ -26,9 +26,9 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
 
   protected async fields(ctx: AppContext, conn: PluginConnection, manifest: PluginManifest) {
     const lister = this.drivers.resolve(manifest, "tools", conn.config);
-    const tools = lister && (await lister.driver.listTools(conn.id, lister.options));
+    const tools = lister && (await lister.driver.listTools(lister.options));
     const resolved = this.drivers.resolve(manifest, "instructions", conn.config);
-    const instructions = resolved && (await resolved.driver.getInstructions(conn.id, resolved.options));
+    const instructions = resolved && (await resolved.driver.getInstructions(resolved.options));
     if (instructions && instructions.length > MAX_PLUGIN_INSTRUCTIONS)
       this.logger.warn(`Instructions for ${conn.id} are too long`);
     // Last, so a driver that throws above leaves the grants and stored tools in step.
