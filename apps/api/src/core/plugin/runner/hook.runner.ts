@@ -22,7 +22,7 @@ export interface BoundHandler {
 
 /** Who and what a run's events are about. */
 export interface HookRunnerContext {
-  run: { id: string; sessionId: string };
+  run: { id: string; sessionId: string; createdAt: Date };
   agent: { id: string; name: string };
   owner: Owner;
 }
@@ -162,7 +162,13 @@ export class HookRunner {
       hook: bound.hook,
       payload: structuredClone(payload),
       occurredAt: new Date().toISOString(),
-      run: { id: run.id, sessionId: run.sessionId, turn: this.turn, status: this.status },
+      run: {
+        id: run.id,
+        sessionId: run.sessionId,
+        turn: this.turn,
+        status: this.status,
+        createdAt: run.createdAt.toISOString(),
+      },
       agent: { id: agent.id, name: agent.name },
       owner,
       settings,

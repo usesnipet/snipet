@@ -1,5 +1,7 @@
 import { resolveOptions } from "#src/core/manifest/options.js";
 import { validateJson } from "@snipet/server-common";
+import { AgentRunStatus } from "@snipet/shared";
+import { HookName, LLMMessagePartType } from "@snipet/shared/core";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createServer, get } from "node:http";
 import { tmpdir } from "node:os";
@@ -7,9 +9,6 @@ import { join } from "node:path";
 
 import type { BaseDriver } from "#src/core/manifest/driver.js";
 import type { JsonObject, ManifestDriver } from "@snipet/shared";
-import { AgentRunStatus } from "@snipet/shared";
-import { HookName, LLMMessagePartType } from "@snipet/shared/core";
-
 import type { HookEvent } from "@snipet/shared/core";
 import type { AddressInfo } from "node:net";
 import type { HookContext } from "#src/core/plugin/driver.js";
@@ -21,7 +20,13 @@ const { debugPath } = await import("./event-file.js");
 const { DebugFsDriver } = await import("./fs.hooks.js");
 const { DebugS3Driver } = await import("./s3.hooks.js");
 
-const run = { id: "r1", sessionId: "s1", turn: 1, status: AgentRunStatus.RUNNING };
+const run = {
+  id: "r1",
+  sessionId: "s1",
+  turn: 1,
+  status: AgentRunStatus.RUNNING,
+  createdAt: "2026-10-16T14:32:05.123Z",
+};
 const event: HookEvent = {
   id: "0a1b2c3d-0000-0000-0000-000000000000",
   hook: HookName.TOOL_AFTER,
