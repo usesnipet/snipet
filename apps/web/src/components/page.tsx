@@ -2,7 +2,7 @@ import { createContext, Suspense, useContext, useEffect, useLayoutEffect, useSta
 import { ErrorBoundary } from "react-error-boundary";
 
 import { ErrorFallback } from "./error-fallback";
-import { LoadingFallback } from "./loading-fallback";
+import { PageBodySkeleton } from "./page-skeleton";
 
 type PageActionsContextType = {
   setActions: (node: React.ReactNode) => void;
@@ -14,6 +14,7 @@ const PageActionsContext = createContext<PageActionsContextType | null>(null);
 export type PageProps = {
   title: string;
   description: string;
+  /** Browser tab title; " · Snipet" is appended. */
   documentTitle: string;
   children: React.ReactNode;
   /** Prefer {@link PageActions} inside `content.tsx` when actions need colocation. */
@@ -29,13 +30,13 @@ export function Page({ title, description, documentTitle, children, actions, lef
   const headerLeftActions = leftActions ?? slotLeftActions;
 
   useEffect(() => {
-    document.title = documentTitle;
+    document.title = `${documentTitle} · Snipet`;
   }, [documentTitle]);
 
   return (
     <PageActionsContext.Provider value={{ setActions: setSlotActions, setLeftActions: setSlotLeftActions }}>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-8 lg:px-10">
-        <header className="flex w-full max-w-6xl mx-auto shrink-0 items-start justify-between gap-4 pb-8">
+        <header className="flex w-full max-w-6xl mx-auto shrink-0 flex-col items-start justify-between gap-4 pb-8 sm:flex-row">
           <div className="flex items-start gap-3">
             {headerLeftActions && <div>{headerLeftActions}</div>}
             <div className="space-y-1.5">
@@ -47,7 +48,7 @@ export function Page({ title, description, documentTitle, children, actions, lef
         </header>
         <div className="flex w-full max-w-6xl mx-auto min-h-0 flex-1 flex-col">
           <ErrorBoundary fallbackRender={({ error }) => <ErrorFallback error={error as Error} />}>
-            <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
+            <Suspense fallback={<PageBodySkeleton />}>{children}</Suspense>
           </ErrorBoundary>
         </div>
       </div>

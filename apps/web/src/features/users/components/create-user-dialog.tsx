@@ -1,6 +1,7 @@
 import { FormInput } from "@/components/form/input";
 import { Button } from "@/components/ui/button";
 import {
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -50,21 +51,23 @@ export function CreateUserDialog({ onCreated, close }: CreateUserDialogProps) {
   });
 
   return (
-    <DialogContent className="sm:max-w-md">
+    <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-md">
       <DialogHeader>
         <DialogTitle>New user</DialogTitle>
         <DialogDescription>
           Create a login for a teammate — they can sign in with this username and password.
         </DialogDescription>
       </DialogHeader>
-      <Form {...form}>
-        <form id={formId} onSubmit={onSubmit} className="space-y-4">
-          <FormInput name="username" label="Username" />
-          <FormInput name="name" label="Name" />
-          <FormInput name="password" label="Password" type="password" />
-          <RoleSelect name="role" />
-        </form>
-      </Form>
+      <DialogBody>
+        <Form {...form}>
+          <form id={formId} onSubmit={onSubmit} className="space-y-4">
+            <FormInput name="username" label="Username" />
+            <FormInput name="name" label="Name" />
+            <FormInput name="password" label="Password" type="password" />
+            <RoleSelect name="role" />
+          </form>
+        </Form>
+      </DialogBody>
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline" disabled={isPending}>

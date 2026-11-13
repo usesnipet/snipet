@@ -1,10 +1,12 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { transitions } from "@/lib/motion";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
 import { Button } from "./ui/button";
-import { Loading } from "./ui/loading";
+import { Skeleton } from "./ui/skeleton";
 import { ScrollArea } from "./ui/scroll-area";
 
 import type { Paginated } from "@/schemas/paginated";
@@ -35,6 +37,13 @@ export type DataTableProps<T> = {
 
 const DEFAULT_PAGE_SIZE = 50;
 
+/** A row that fades out when deleted. */
+const MotionTableRow = motion.create(TableRow);
+
+/** Placeholder rows while the first page loads: enough to suggest a table without filling the screen. */
+const SKELETON_ROWS = 5;
+/** Varied bar widths per column, so the placeholder reads as text rather than a grid of boxes. */
+const SKELETON_WIDTHS = ["w-3/4", "w-1/2", "w-2/3", "w-1/3"];
 export function DataTable<T>({
   columns,
   useQuery,
@@ -74,11 +83,16 @@ export function DataTable<T>({
           </TableHeader>
           <TableBody>
             {loading && rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  <Loading />
-                </TableCell>
-              </TableRow>
+              Array.from({ length: Math.min(pageSize, SKELETON_ROWS) }, (_, rowIndex) => (
+                <TableRow key={rowIndex} aria-hidden={rowIndex > 0}>
+                  {columns.map((column, columnIndex) => (
+                    <TableCell key={column.id} className={column.className}>
+                      {rowIndex === 0 && columnIndex === 0 && <span className="sr-only">Loading</span>}
+                      <Skeleton className={cn("h-4", SKELETON_WIDTHS[columnIndex % SKELETON_WIDTHS.length])} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
@@ -86,15 +100,22 @@ export function DataTable<T>({
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row, index) => (
-                <TableRow key={getRowKey?.(row, index) ?? index}>
-                  {columns.map((column) => (
-                    <TableCell key={column.id} className={column.className}>
-                      {column.cell(row)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              // Keyed by page so paging swaps rows at once; only a row removed from the current page fades out.
+              <AnimatePresence key={page} initial={false}>
+                {rows.map((row, index) => (
+                  <MotionTableRow
+                    key={getRowKey?.(row, index) ?? index}
+                    exit={{ opacity: 0 }}
+                    transition={transitions.fast}
+                  >
+                    {columns.map((column) => (
+                      <TableCell key={column.id} className={column.className}>
+                        {column.cell(row)}
+                      </TableCell>
+                    ))}
+                  </MotionTableRow>
+                ))}
+              </AnimatePresence>
             )}
           </TableBody>
         </Table>

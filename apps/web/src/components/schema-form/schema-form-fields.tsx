@@ -31,17 +31,20 @@ export function SchemaFormFields({ schema, defaultData, onChange, extraErrors }:
   );
 
   return (
-    <RjsfForm
-      tagName="div"
-      schema={schema}
-      formData={defaultData}
-      validator={validator}
-      uiSchema={uiSchema}
-      widgets={widgets}
-      onChange={(e) => onChange(e.formData ?? {})}
-      extraErrors={extraErrors}
-      liveValidate={false}
-      showErrorList={false}
-    />
+    // Same gap after every field, whether or not it has a description under it.
+    <div className="[&_.rjsf-field:not(.rjsf-field-object)]:pb-2">
+      <RjsfForm
+        tagName="div"
+        schema={schema}
+        formData={defaultData}
+        validator={validator}
+        uiSchema={uiSchema}
+        widgets={widgets}
+        onChange={(e) => onChange(e.formData ?? {})}
+        extraErrors={extraErrors}
+        liveValidate={false}
+        showErrorList={false}
+      />
+    </div>
   );
 }

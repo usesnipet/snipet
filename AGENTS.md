@@ -13,6 +13,8 @@ This block is written and re-added by `turbo` before repository-scoped commands 
 
 Before writing or editing a class, load the `repo-standards` skill (`.claude/skills/repo-standards/SKILL.md`): it covers property naming, including renaming non-descriptive names in the files you touch.
 
+API services take the request context first: `method(ctx: AppContext, ...)`, always, and pass it down instead of pieces of it (`userId`). Rules in the `create-module` skill, section "Request context".
+
 ## Comments
 
 - Document classes, functions, methods, fields, types and top-level constants with JSDoc (`/** ... */`), not `//`, so editors show it on hover. One line when it fits: `/** The run's stored messages after lastId. */`; otherwise the multi-line form with `*` on each line.

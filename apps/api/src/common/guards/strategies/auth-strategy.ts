@@ -1,6 +1,7 @@
 import type { AppTokenPayload, Role } from "@snipet/shared";
 import type { Request } from "express";
 import type { ApiKey } from "#src/modules/api-key/api-key.entity.js";
+import type { AppContext } from "#src/common/context/app-context.js";
 
 /** Metadata key holding a route's strategies, set by @Private/@Public. */
 export const AUTH = "auth";
@@ -20,7 +21,10 @@ export interface AuthUser {
 
 /** How the request authenticated, set by AuthGuard on @Private routes. */
 export type RequestAuth =
-  { type: "user"; user: AuthUser } | { type: "apiKey"; apiKey: ApiKey } | { type: "appToken"; token: AppTokenPayload };
+  | { type: "user"; user: AuthUser }
+  /** `externalUserId`: the app's end user the key's backend acts for, from X-External-User-Id. */
+  | { type: "apiKey"; apiKey: ApiKey; externalUserId: string | null }
+  | { type: "appToken"; token: AppTokenPayload };
 
 /** The route's config for one strategy type, e.g. the roles of `UserAuth(...)`. */
 export type StrategyOptions<T extends AuthStrategy["type"]> = Extract<AuthStrategy, { type: T }>;
@@ -31,7 +35,7 @@ export type StrategyOptions<T extends AuthStrategy["type"]> = Extract<AuthStrate
  * throws when it's this strategy's credential but not acceptable.
  */
 export interface AuthStrategyHandler<T extends AuthStrategy["type"]> {
-  authenticate(request: Request, options: StrategyOptions<T>): Promise<RequestAuth | null>;
+  authenticate(ctx: AppContext, request: Request, options: StrategyOptions<T>): Promise<RequestAuth | null>;
 }
 
 /** The token of `Authorization: Bearer <token>`, if any. */

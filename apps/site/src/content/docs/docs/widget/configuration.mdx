@@ -13,7 +13,7 @@ Pass options to `init()`, as React props, or to `provideSnipet()`. Change them l
 | `token` | `string` | | An end-user token from your backend. See [identify your users](/docs/auth/). |
 | `getToken` | `() => Promise<string \| null>` | | Called when the token is rejected: return a fresh one, or `null` to sign out. |
 | `theme` | `"light" \| "dark" \| "auto"` | `"light"` | `auto` follows the visitor's system. |
-| `size` | `"sm" \| "md" \| "lg"` | `"md"` | Overall scale. |
+| `size` | `"sm" \| "md" \| "lg" \| "full"` | `"md"` | `sm`, `md` and `lg` scale the whole widget. `full` opens the panel almost full screen over a dimmed page; clicking outside closes it. |
 | `radius` | `number` | `16` | Panel corner radius, in px. |
 | `primaryColor`, `backgroundColor`, `textColor` | `string` | | Any CSS color. See [styling](/docs/widget/styling/). |
 | `css` | `string` | | CSS added inside the widget. |

@@ -1,8 +1,8 @@
+import { CopyIcon } from "@/components/swap-icon";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
@@ -11,12 +11,15 @@ type SecretKeyDialogProps = DialogInstanceProps<{
   secret: string;
   title?: string;
   description?: string;
+  /** Extra content under the secret, e.g. how to use it. */
+  children?: React.ReactNode;
 }>;
 
 export function SecretKeyDialog({
   secret,
   title = "Secret key created",
   description = "Copy this key now. You will not be able to see it again.",
+  children,
   close,
 }: SecretKeyDialogProps) {
   const [copied, setCopied] = useState(false);
@@ -37,10 +40,11 @@ export function SecretKeyDialog({
       <div className="flex gap-2">
         <Input readOnly value={secret} className="font-mono text-xs" containerclassname="w-full" />
         <Button type="button" variant="outline" size="icon-lg" onClick={handleCopy}>
-          {copied ? <Check /> : <Copy />}
+          <CopyIcon copied={copied} />
           <span className="sr-only">Copy</span>
         </Button>
       </div>
+      {children}
       <DialogFooter>
         <Button type="button" onClick={close}>
           Done

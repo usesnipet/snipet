@@ -115,6 +115,8 @@ const envSchema = z
     ANONYMOUS_SIGNUPS_PER_IP_PER_HOUR: z.coerce.number().int().positive().default(30),
     // Agent runs one app end user (app token) can start per minute.
     AGENT_RUNS_PER_END_USER_PER_MINUTE: z.coerce.number().int().positive().default(10),
+    // Requests one caller (user, API key, app end user, or IP when anonymous) can make per minute, on any route.
+    REQUESTS_PER_CALLER_PER_MINUTE: z.coerce.number().int().positive().default(300),
 
     // Set on release builds.
     APP_VERSION: z.string().default("dev"),

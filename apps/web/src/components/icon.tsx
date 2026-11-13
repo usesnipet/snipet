@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SVG } from "@/components/ui/svg";
+import { initials } from "@/lib/avatar-fallback";
 import { cn } from "@/lib/utils";
 import stc from "string-to-color";
 
@@ -10,12 +11,6 @@ type Props = {
   icon?: string;
   className?: string;
 };
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return name.trim().slice(0, 2).toUpperCase();
-}
 
 export function Icon({ name, icon, className }: Props) {
   const trimmed = icon?.trim();

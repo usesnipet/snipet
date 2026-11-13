@@ -1,7 +1,6 @@
 import http, { httpSse, parseZodErrors } from "../http";
 
 import {
-  agentMessageSchema,
   agentRunSchema,
   agentSessionSchema,
   findAgentMessagesParamsSchema,
@@ -10,18 +9,19 @@ import {
   paginatedAgentMessageSchema,
   paginatedAgentRunSchema,
   paginatedAgentSessionSchema,
+  runEventSchema,
   startAgentRunSchema,
 } from "@snipet/shared";
 
 import type {
   AgentMessage,
   AgentRun,
-  AgentRunEvent,
   AgentSession,
   FindAgentMessagesParams,
   FindAgentRunsParams,
   FindAgentSessionsParams,
   Paginated,
+  RunEvent,
   StartAgentRun,
 } from "@snipet/shared";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions } from "../http";
@@ -56,7 +56,7 @@ const listRuns = async (
 const events = async (
   id: string,
   lastId: number,
-  onEvent: (event: AgentRunEvent) => void,
+  onEvent: (event: RunEvent) => void,
   opts: { signal?: AbortSignal } = {},
 ): Promise<void> =>
   httpSse({
@@ -66,13 +66,9 @@ const events = async (
     headers: lastId > 0 ? { "Last-Event-ID": String(lastId) } : undefined,
     signal: opts.signal,
     onEvent: (event, data) => {
-      const schema = event === "message" ? agentMessageSchema : event === "run_finished" ? agentRunSchema : undefined;
-      if (schema) {
-        const parsed = schema.safeParse(data);
-        if (!parsed.success) throw parseZodErrors(parsed.error, `Invalid ${event} event`);
-        data = parsed.data;
-      }
-      onEvent({ event, data } as AgentRunEvent);
+      const parsed = runEventSchema.safeParse({ event, data });
+      if (!parsed.success) throw parseZodErrors(parsed.error, `Invalid ${event} event`);
+      onEvent(parsed.data);
     },
   });
 

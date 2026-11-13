@@ -1,4 +1,6 @@
+import { AppContext } from "#src/common/context/app-context.js";
 import { env } from "#src/env.js";
+import { LayeredCache } from "#src/infra/cache/layered-cache.service.js";
 import {
   BadRequestException,
   ForbiddenException,
@@ -7,13 +9,10 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { InjectRepository } from "@nestjs/typeorm";
 import { CrudService } from "@snipet/server-common";
 import { anonymousHasOrigins } from "@snipet/shared";
 import { createHmac, randomUUID } from "node:crypto";
-import { Repository } from "typeorm";
-
-import { LayeredCache } from "#src/infra/cache/layered-cache.service.js";
+import { EntityManager } from "typeorm";
 
 import { App } from "./app.entity.js";
 
@@ -25,7 +24,6 @@ import type {
   UpdateApp,
 } from "@snipet/shared";
 import type { z } from "zod";
-
 export const APP_TOKEN_AUDIENCE = "app";
 
 /** Audience of anonymous refresh tokens: never accepted where an app token is. */
@@ -47,41 +45,45 @@ const originsKey = (id: string) => `app:${id}:origins`;
 type AnonymousRefreshPayload = { sub: string; app: { id: string } };
 
 @Injectable()
-export class AppService extends CrudService<App> {
+export class AppService extends CrudService<App, AppContext> {
   constructor(
-    @InjectRepository(App) repo: Repository<App>,
+    manager: EntityManager,
     private readonly jwt: JwtService,
     private readonly cache: LayeredCache,
   ) {
-    super(repo);
+    super(manager, App);
   }
 
   /** The app's allowedOrigins, cached: checked on every browser request with an app token. */
-  findAllowedOrigins(id: string): Promise<string[]> {
-    return this.cache.run(originsKey(id), async () => (await this.findById(id)).allowedOrigins);
+  findAllowedOrigins(ctx: AppContext, id: string): Promise<string[]> {
+    return this.cache.run(originsKey(id), async () => (await this.findById(ctx, id)).allowedOrigins);
   }
 
-  override async deleteById(id: string): Promise<void> {
-    await super.deleteById(id);
+  override async deleteById(ctx: AppContext, id: string): Promise<void> {
+    await super.deleteById(ctx, id);
     await this.cache.del(originsKey(id));
   }
 
-  override async updateById(id: string, dto: UpdateApp): Promise<void> {
+  override async updateById(ctx: AppContext, id: string, dto: UpdateApp): Promise<void> {
     // Either field alone can break the rule, so check against the stored app.
     if (
       (dto.allowAnonymous !== undefined || dto.allowedOrigins !== undefined) &&
-      !anonymousHasOrigins({ ...(await this.findById(id)), ...dto })
+      !anonymousHasOrigins({ ...(await this.findById(ctx, id)), ...dto })
     ) {
       throw new BadRequestException("allowedOrigins is required when allowAnonymous is on");
     }
-    await super.updateById(id, dto);
+    await super.updateById(ctx, id, dto);
     await this.cache.del(originsKey(id));
   }
 
   /** Signs a token for one of the API key's app's end users. */
-  async issueToken(appId: string, dto: z.output<typeof issueAppTokenSchema>): Promise<AppTokenResponse> {
+  async issueToken(
+    ctx: AppContext,
+    appId: string,
+    dto: z.output<typeof issueAppTokenSchema>,
+  ): Promise<AppTokenResponse> {
     if (dto.appId && dto.appId !== appId) throw new ForbiddenException("API key does not belong to this app");
-    const app = await this.findById(appId);
+    const app = await this.findById(ctx, appId);
     return this.signAppToken(
       { sub: dto.externalUserId, user: { name: dto.name, email: dto.email, metadata: dto.metadata }, app },
       dto.expiresInSeconds,
@@ -92,8 +94,8 @@ export class AppService extends CrudService<App> {
    * An app with allowAnonymous on, called from one of its allowed origins.
    * Any other app is a 404, so private apps can't be probed.
    */
-  async findPublic(id: string, origin: string | undefined): Promise<App> {
-    const app = await this.repo.findOneBy({ id, allowAnonymous: true });
+  async findPublic(ctx: AppContext, id: string, origin: string | undefined): Promise<App> {
+    const app = await this.repository(ctx).findOneBy({ id, allowAnonymous: true });
     if (!app) throw new NotFoundException("App not found");
     if (!origin || !app.allowedOrigins.includes(origin)) throw new ForbiddenException("origin not allowed");
     return app;
@@ -105,11 +107,12 @@ export class AppService extends CrudService<App> {
    * sessions it reads.
    */
   async issueAnonymousToken(
+    ctx: AppContext,
     id: string,
     origin: string | undefined,
     refreshToken?: string,
   ): Promise<AnonymousTokenResponse> {
-    const app = await this.findPublic(id, origin);
+    const app = await this.findPublic(ctx, id, origin);
     let sub = `anon:${randomUUID()}`;
     if (refreshToken) {
       const payload = await this.jwt

@@ -1,6 +1,6 @@
 import { useGetSystemInfo } from "@snipet/client";
 
-import { Loading } from "./ui/loading";
+import { Skeleton } from "./ui/skeleton";
 
 export const Version = () => {
   const { data, error, isLoading } = useGetSystemInfo();
@@ -11,7 +11,7 @@ export const Version = () => {
     <div className="flex items-center gap-1">
       <span className="text-xs text-muted-foreground">Version:</span>
       {isLoading ? (
-        <Loading variant="skeleton" count={1} width="w-10" height="h-4" className="m-0" />
+        <Skeleton className="h-4 w-10" />
       ) : (
         <span className="text-xs font-medium tabular-nums">{data?.version}</span>
       )}

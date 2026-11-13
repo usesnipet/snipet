@@ -72,6 +72,21 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return <div data-slot="dialog-header" className={cn("flex flex-col gap-2", className)} {...props} />;
 }
 
+/**
+ * Scrolling middle of a dialog, so header and footer stay put. Give the
+ * DialogContent `flex max-h-[90vh] flex-col` for it to have a height to fill.
+ */
+function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-body"
+      // Bleeds to the dialog edges so the scrollbar sits there and focus rings aren't clipped.
+      className={cn("-mx-4 -my-1 min-h-0 flex-1 overflow-y-auto px-4 py-1", className)}
+      {...props}
+    />
+  );
+}
+
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -124,6 +139,7 @@ function DialogDescription({ className, ...props }: React.ComponentProps<typeof 
 
 export {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,

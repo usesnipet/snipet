@@ -14,7 +14,7 @@ import { AdminPage } from "./routes/admin/page";
 const AdminPage = lazy(() => import("./routes/admin/page").then((m) => ({ default: m.AdminPage })));
 ```
 
-- Wrap the `<Routes>` tree in `<Suspense fallback={<LoadingFallback />}>`.
+- The root route wraps the tree in `<Suspense fallback={<LoadingFallback />}>`.
 - Map named exports to `default` inside `.then((m) => ({ default: m.X }))`.
 - Add new pages/layouts the same way; do not introduce static route imports.
 

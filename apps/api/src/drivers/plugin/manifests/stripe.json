@@ -1,0 +1,43 @@
+{
+  "key": "stripe",
+  "name": "Stripe",
+  "description": "Manage Stripe customers, payments, invoices and products",
+  "icon": "https://github.com/stripe.png",
+  "tags": ["payments"],
+  "auth": {
+    "type": "none"
+  },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "Secret key",
+        "description": "Stripe secret or restricted key (sk_… / rk_…). Prefer a restricted key."
+      }
+    },
+    "required": ["apiKey"]
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.stripe.com",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.stripe.com",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
+      }
+    }
+  }
+}

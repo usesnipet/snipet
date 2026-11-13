@@ -1,0 +1,85 @@
+{
+  "key": "ollama",
+  "name": "Ollama",
+  "icon": "https://ollama.com/public/ollama.png",
+  "description": "Ollama runs open models such as Llama, Qwen, Gemma and Mistral locally or on your own server.",
+  "connection": {
+    "type": "object",
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "description": "Ollama server URL, e.g. http://localhost:11434. If running on the docker container, use http://host.docker.internal:11434.",
+        "default": "http://localhost:11434"
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "description": "How random the replies are: lower is focused and repeatable, higher is more varied and creative. Leave empty to use the model's default.",
+        "minimum": 0,
+        "maximum": 1,
+        "step": 0.01
+      },
+      "apiKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "API key",
+        "description": "Only needed when the server sits behind an authenticating proxy."
+      },
+      "keepAlive": {
+        "type": "string",
+        "title": "Keep alive",
+        "description": "How long a model stays loaded after a request, e.g. 5m, 1h or -1m to keep it loaded. Defaults to the server's setting."
+      },
+      "numCtx": {
+        "type": "integer",
+        "minimum": 1,
+        "title": "Context length",
+        "description": "Context window (num_ctx) used for chat. Defaults to the model's setting."
+      },
+      "think": {
+        "type": "string",
+        "title": "Thinking",
+        "enum": ["off", "on", "low", "medium", "high"],
+        "description": "Reasoning before answering, for models that support it. low, medium and high only work on models that grade their effort, such as gpt-oss. Defaults to the model's setting."
+      }
+    },
+    "required": ["baseUrl"]
+  },
+  "capabilities": {
+    "models": {
+      "driver": "ollama",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl }}",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
+      }
+    },
+    "chat": {
+      "driver": "ollama",
+      "options": {
+        "baseUrl": "{{ connection.baseUrl }}",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        },
+        "keepAlive": "{{ connection.keepAlive }}",
+        "options": {
+          "num_ctx": "{{ connection.numCtx }}",
+          "temperature": "{{ connection.temperature }}"
+        },
+        "think": "{{ connection.think }}"
+      }
+    },
+    "healthCheck": {
+      "driver": "http",
+      "options": {
+        "url": "{{ connection.baseUrl }}/api/version",
+        "headers": {
+          "Authorization": "Bearer {{ connection.apiKey }}"
+        }
+      }
+    }
+  }
+}

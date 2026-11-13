@@ -1,22 +1,19 @@
 import { CatalogPageContent } from "@/components/catalog";
 import { Page } from "@/components/page";
 import { AgentCatalog } from "@/features/agent/components/agent-catalog";
-import { AgentFormDialog } from "@/features/agent/components/agent-form-dialog";
-import { useDialog } from "@/lib/dialog";
+import { ROUTES } from "@/routes";
+import { useNavigate } from "react-router";
 
 export const AgentsPage = () => {
-  const { openDialog } = useDialog();
+  const navigate = useNavigate();
 
   return (
     <Page
       title="Agents"
-      description="Agents loop between LLMs and tools until the task is done."
+      description="Build agents from models and plugins, then chat with them."
       documentTitle="Agents"
     >
-      <CatalogPageContent
-        createLabel="New agent"
-        onCreate={() => openDialog({ component: AgentFormDialog, props: {} })}
-      >
+      <CatalogPageContent createLabel="New agent" onCreate={() => navigate(ROUTES.agentNew)}>
         <AgentCatalog />
       </CatalogPageContent>
     </Page>

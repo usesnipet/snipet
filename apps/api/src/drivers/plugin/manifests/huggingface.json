@@ -1,0 +1,24 @@
+{
+  "key": "huggingface",
+  "name": "Hugging Face",
+  "description": "Search models, datasets, Spaces and papers on the Hugging Face Hub",
+  "icon": "https://github.com/huggingface.png",
+  "tags": ["ai"],
+  "auth": {
+    "type": "none"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://huggingface.co/mcp"
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://huggingface.co/mcp"
+      }
+    }
+  }
+}

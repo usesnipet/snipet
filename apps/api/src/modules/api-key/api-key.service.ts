@@ -1,9 +1,10 @@
 import { ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { createHash, randomBytes } from "node:crypto";
-import { DeepPartial, Repository } from "typeorm";
+import { DeepPartial, EntityManager } from "typeorm";
 
 import { CrudService } from "@snipet/server-common";
+
+import type { AppContext } from "#src/common/context/app-context.js";
 
 import { ApiKey } from "./api-key.entity.js";
 
@@ -18,27 +19,28 @@ function generateKey() {
 }
 
 @Injectable()
-export class ApiKeyService extends CrudService<ApiKey> {
-  constructor(@InjectRepository(ApiKey) repo: Repository<ApiKey>) {
-    super(repo);
+export class ApiKeyService extends CrudService<ApiKey, AppContext> {
+  constructor(manager: EntityManager) {
+    super(manager, ApiKey);
   }
 
-  // Hash stays out of the response, like every other query.
-  override async create(dto: DeepPartial<ApiKey>): Promise<ApiKeyWithSecret> {
+  /** Returns the plain key once; the hash stays out of the response, like every other query. */
+  override async create(ctx: AppContext, dto: DeepPartial<ApiKey>): Promise<ApiKeyWithSecret> {
     const { key, ...generated } = generateKey();
-    const { hash, ...apiKey } = await super.create({ ...dto, ...generated });
+    const { hash, ...apiKey } = await super.create(ctx, { ...dto, ...generated });
     return { ...apiKey, key };
   }
 
   /** Swaps in a new key; the previous one stops working immediately. */
-  async roll(id: string): Promise<ApiKeyWithSecret> {
+  async roll(ctx: AppContext, id: string): Promise<ApiKeyWithSecret> {
     const { key, ...generated } = generateKey();
-    await super.updateById(id, generated);
-    return { ...(await this.findById(id)), key };
+    await super.updateById(ctx, id, generated);
+    return { ...(await this.findById(ctx, id)), key };
   }
 
-  async verify(key: string): Promise<ApiKey> {
-    const apiKey = await this.repo.findOneBy({ hash: hashKey(key) });
+  /** The active, unexpired key matching `key`; throws 401/403 otherwise. */
+  async verify(ctx: AppContext, key: string): Promise<ApiKey> {
+    const apiKey = await this.repository(ctx).findOneBy({ hash: hashKey(key) });
     if (!apiKey) throw new UnauthorizedException("invalid api key");
     if (!apiKey.active) throw new ForbiddenException("api key is disabled");
     if (apiKey.expiresAt && apiKey.expiresAt < new Date()) throw new ForbiddenException("api key is expired");

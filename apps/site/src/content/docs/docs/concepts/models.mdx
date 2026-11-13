@@ -8,19 +8,24 @@ A model connection is a provider plus the credentials to use it. Agents pick the
 ## Providers
 
 - **Cloud**: OpenAI, Google Gemini, Mistral AI, Groq, OpenRouter, DeepSeek, xAI, Cerebras and Fireworks AI.
-- **Local**: Ollama and LM Studio. Point the connection at the server's URL, like `http://localhost:11434`; the API key is optional.
+- **Local**: Ollama, LM Studio and 9Router. Point the connection at the server's URL, like `http://localhost:11434`; the API key is optional.
+- **OpenAI Compatible**: any other service with an OpenAI-style API. Give it the base URL and the API key.
+
+From Docker, a server on your own machine is at `host.docker.internal` instead of `localhost`. For one on another machine of your network, add its host to [`OUTBOUND_ALLOWLIST`](/docs/get-started/install/#configuration).
 
 ## Add a connection
 
-Go to **LLMs > Connections**, pick the provider and fill in its fields, usually an API key. Credentials are stored encrypted with your `ENCRYPTION_KEY`.
+Go to **LLMs**, pick the provider and fill in its fields, usually an API key. Credentials are stored encrypted with your `ENCRYPTION_KEY`.
 
 ![New model connection form](/images/docs/models-connection-form.png)
 
-You can have several connections for the same provider, say one per team or billing account. One of them is the **default**: it's used when an agent names a model of that provider without picking a connection.
+You can have several connections for the same provider, say one per team or billing account.
 
 ## Try a model
 
-**LLMs > Playground** sends prompts straight to a model, without an agent. Use it to compare models before giving one to an agent.
+In **LLMs**, open a provider's connections and click **Test** on one. It sends a prompt to a model you pick and shows the reply, how long it took and the tokens used. Use it to check a key, base URL or model access before giving the connection to an agent.
+
+![Test model](/images/docs/test-model.png)
 
 ## Related
 

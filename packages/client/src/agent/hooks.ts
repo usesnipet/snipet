@@ -2,7 +2,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { agentService } from "./service";
 
-import type { Agent, CreateAgent, FindAgentsParams, Paginated, UpdateAgent } from "@snipet/shared";
+import type {
+  Agent,
+  AgentSummary,
+  AvailableAgent,
+  CreateAgent,
+  FindAgentsParams,
+  Paginated,
+  UpdateAgent,
+} from "@snipet/shared";
 import type { ServiceGetOptions } from "../http";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
@@ -10,11 +18,29 @@ const BASE_QUERY_KEY = "agent";
 
 export const listAgentsQueryKey = () => [BASE_QUERY_KEY] as const;
 export const useListAgents = (
-  opts?: ServiceGetOptions<Paginated<Agent>, Partial<FindAgentsParams>>,
-): UseQueryResult<Paginated<Agent>, Error> =>
+  opts?: ServiceGetOptions<Paginated<AgentSummary>, Partial<FindAgentsParams>>,
+): UseQueryResult<Paginated<AgentSummary>, Error> =>
   useQuery({
     queryKey: [...listAgentsQueryKey(), opts?.searchParams],
     queryFn: () => agentService.list(opts),
+  });
+
+export const useListAvailableAgents = (): UseQueryResult<AvailableAgent[], Error> =>
+  useQuery({
+    queryKey: [...listAgentsQueryKey(), "available"],
+    queryFn: () => agentService.listAvailable(),
+  });
+
+/**
+ * One agent, for seeding a form. Not cached after unmount: a form reads its
+ * values once, so reopening it on a stale copy would hide the last save.
+ */
+export const useAgent = (id: string | undefined): UseQueryResult<Agent, Error> =>
+  useQuery({
+    queryKey: [...listAgentsQueryKey(), id],
+    queryFn: () => agentService.find(id!),
+    enabled: !!id,
+    gcTime: 0,
   });
 
 /** Wraps an agent write with outcome messages and a list refresh. */

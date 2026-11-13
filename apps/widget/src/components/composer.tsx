@@ -1,9 +1,10 @@
 import { SendHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 /** Message input; calls onSend with the trimmed text and clears itself. */
 export function Composer({ disabled, onSend }: { disabled: boolean; onSend: (text: string) => void }) {
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const text = input.trim();
 
   return (
@@ -13,11 +14,15 @@ export function Composer({ disabled, onSend }: { disabled: boolean; onSend: (tex
         if (!text || disabled) return;
         setInput("");
         onSend(text);
+        // Clicking send moves focus to the button, which then disables and drops it.
+        inputRef.current?.focus();
       }}
       className="sw-composer"
       part="composer"
     >
       <input
+        ref={inputRef}
+        autoFocus
         value={input}
         onChange={(event) => setInput(event.target.value)}
         placeholder="Type a message..."

@@ -1,12 +1,12 @@
+import type { JsonObject } from "@snipet/shared";
+import type { HookName } from "@snipet/shared/core";
 import type {
   Agent as AgentContract,
-  AgentLlm as AgentLlmContract,
+  AgentLLM as AgentLLMContract,
   AgentPluginConnection as AgentPluginConnectionContract,
-  HookName,
-  JsonObject,
 } from "@snipet/shared";
+import { sealConfig } from "#src/infra/database/seal-config.js";
 import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
-import { sealConfig } from "#src/manifest/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
 import {
   AfterLoad,
@@ -27,15 +27,6 @@ import { PluginConnection } from "../plugin-connection/plugin-connection.entity.
 export const storagePathTransformer: ValueTransformer = {
   from: (path: string | null) => path && toStorageUrl(path),
   to: (url: string | null | undefined) => url && fromStorageUrl(url),
-};
-
-/**
- * sealConfig, reading a missing value (rows added by SQL, which can't seal)
- * as no settings.
- */
-const sealSettings: ValueTransformer = {
-  to: (value?: JsonObject | null) => sealConfig.to(value ?? {}) as string,
-  from: (value?: string | null) => (value ? (sealConfig.from(value) as JsonObject) : {}),
 };
 
 @Entity("agents")
@@ -63,8 +54,8 @@ export class Agent extends BaseEntity implements AgentContract {
   @Column({ default: true })
   enabled: boolean;
 
-  @OneToMany(() => AgentLlm, (llm) => llm.agent, { eager: true, cascade: ["insert"] })
-  llms: AgentLlm[];
+  @OneToMany(() => AgentLLM, (llm) => llm.agent, { eager: true, cascade: ["insert"] })
+  llms: AgentLLM[];
 
   @OneToMany(() => AgentPluginConnection, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
   pluginConnections: AgentPluginConnection[];
@@ -78,7 +69,7 @@ export class Agent extends BaseEntity implements AgentContract {
 }
 
 @Entity("agent_llms")
-export class AgentLlm implements AgentLlmContract {
+export class AgentLLM implements AgentLLMContract {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -92,19 +83,17 @@ export class AgentLlm implements AgentLlmContract {
   @Column({ type: "int" })
   order: number;
 
+  /** The model's key within the connection's llm; it may itself contain "/". */
   @Column({ length: 255 })
   model: string;
 
-  /** A deleted connection falls back to the llm's default one. */
-  @Column({ type: "uuid", nullable: true })
-  connectionId: string | null;
+  /** Deleting the connection removes this LLM from the agent. */
+  @Column({ type: "uuid" })
+  connectionId: string;
 
-  @ManyToOne(() => LlmConnection, { onDelete: "SET NULL", nullable: true })
+  @ManyToOne(() => LlmConnection, { onDelete: "CASCADE" })
   @JoinColumn({ name: "connectionId" })
-  connection?: LlmConnection | null;
-
-  @Column({ type: "json", nullable: true })
-  extraOptions: JsonObject | null;
+  connection?: LlmConnection;
 }
 
 @Entity("agent_plugin_connections")
@@ -132,7 +121,7 @@ export class AgentPluginConnection extends BaseEntity implements AgentPluginConn
   position: number;
 
   /** Sealed whole, like connection configs: settings may hold secrets. */
-  @Column({ type: "text", nullable: true, transformer: sealSettings })
+  @Column({ type: "text", nullable: true, transformer: sealConfig })
   settings: JsonObject;
 
   @Column({ type: "text", array: true, default: [] })

@@ -1,9 +1,9 @@
 ---
 title: Plugins
-description: Give agents actions on the services you already use.
+description: Give agents tools for the services you already use.
 ---
 
-A plugin is an integration with an external service, like GitHub, Linear or Stripe. Each one brings **actions** an agent can call: search issues, create a customer, read the docs.
+A plugin is an integration with an external service, like GitHub, Linear or Stripe. Each one brings **tools** an agent can call: search issues, create a customer, read the docs.
 
 ## Catalog and connections
 
@@ -11,29 +11,36 @@ A plugin is an integration with an external service, like GitHub, Linear or Stri
 
 ![Plugin catalog](/images/docs/plugins-catalog.png)
 
-When you save a connection, Snipet fetches the plugin's actions and keeps them in sync. Credentials are stored encrypted.
+When you save a connection, Snipet fetches the plugin's tools and keeps them in sync. Credentials are stored encrypted. A tool the plugin gains in a later sync stays off for agents that already use the connection, until you [turn it on](/docs/concepts/agents/#plugins) in the agent.
+
+The catalog has:
+
+- **Code and docs**: GitHub, GitMCP, DeepWiki, Context7, Hugging Face, Microsoft Learn, AWS Knowledge, Cloudflare Docs.
+- **Web search and scraping**: Exa, Tavily, Firecrawl, Apify.
+- **Work and data**: Linear, Stripe, Supabase, Neon.
+- **Debugging**: Debug (disk) and Debug (S3), see [hooks](#hooks).
+- **Any MCP server**: see [below](#any-mcp-server).
 
 ![Plugin connection form](/images/docs/plugins-connection-form.png)
 
 ## Instructions
 
-Many plugins come with instructions that tell the model how to use their actions well. Snipet adds them to the prompt of every agent allowed to use the connection. Write your own instructions on the connection to replace them, for example to point the agent at the repositories that matter.
+Many plugins come with instructions that tell the model how to use their tools well. Snipet adds them to the prompt of every agent allowed to use the connection. Write your own instructions on the connection to replace them, for example to point the agent at the repositories that matter.
 
 ## Hooks
 
-Some plugins act on the run itself instead of offering actions: they hook into moments of the agent loop, like before each model call or each tool call, and can change what goes through, block a tool call, answer in the model's place or stop the run. A plugin card shows what each of its hooks can do.
+Some plugins act on the run itself instead of offering tools: they hook into moments of the agent loop, like before each model call or each tool call, and can change what goes through, block a tool call, answer in the model's place or stop the run. The connection form shows what each of its hooks can do.
 
-- **Debug** saves every event of the agent's runs as a JSON file in storage, to inspect what goes in and out. The files hold whole conversations: add it only while debugging.
-- **Webhook** sends each event to a URL and uses its JSON reply, so any service of yours can act on the run. Set a signing secret to have each request signed in the `X-Snipet-Signature` header.
+- **Debug (disk)** and **Debug (S3)** save every event of the agent's runs as a JSON file, in a directory of the API server or in an S3 bucket, to inspect what goes in and out. The files hold whole conversations: add them only while debugging.
 
 ## Any MCP server
 
-The **MCP** plugin connects to any server that speaks the [Model Context Protocol](https://modelcontextprotocol.io) by URL. Its tools become actions like any other plugin's.
+The **MCP** plugin connects to any server that speaks the [Model Context Protocol](https://modelcontextprotocol.io) by URL. Its tools work like any other plugin's.
 
 ## Your own plugins
 
-Plugins are JSON manifests, each listing its `capabilities`: `actions`, `instructions` and `hooks`. Put your own in the folder set by `PLUGINS_DIR` and they show up in the catalog. With the Docker setup, that's the `./plugins` folder next to `docker-compose.yml`.
+Plugins are JSON manifests, each listing its `capabilities`: `tools`, `instructions` and `hooks`. Put your own in the folder set by `PLUGINS_DIR` and they show up in the catalog. With the Docker setup, that's the `./plugins` folder next to `docker-compose.yml`.
 
 ## Related
 
-- [Agents](/docs/concepts/agents/#plugins) choose which connections, actions and hooks they use.
+- [Agents](/docs/concepts/agents/#plugins) choose which connections, tools and hooks they use.

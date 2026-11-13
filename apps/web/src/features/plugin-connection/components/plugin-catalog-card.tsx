@@ -1,14 +1,14 @@
-import { CatalogCard } from "@/components/catalog";
+import { CatalogCard, ConnectionCount } from "@/components/catalog";
 import { Icon } from "@/components/icon";
 import { useDialog } from "@/lib/dialog";
 import { ArrowRight, Plus } from "lucide-react";
 
 import { capabilityLabels } from "../capabilities";
-import { PluginConnectionFormDialog } from "./plugin-connection-form-dialog";
-import { PluginConnectionListDialog } from "./plugin-connection-list-dialog";
+import { PluginConnectionFormDialog, PluginConnectionListDialog } from "./dialogs";
 
 import type { RegistryView } from "@/components/catalog";
-import type { PluginConnection, PluginManifest } from "@snipet/shared";
+import type { PluginConnection } from "@snipet/shared";
+import type { PluginManifest } from "@snipet/shared/core";
 
 type PluginCatalogCardProps = {
   plugin: PluginManifest;
@@ -16,15 +16,12 @@ type PluginCatalogCardProps = {
 };
 
 export function PluginCatalogCard({ plugin, view }: PluginCatalogCardProps) {
-  const { connectionCount, connected } = view;
+  const { instances, connected } = view;
   const { openDialog } = useDialog();
-
-  const countLabel =
-    connectionCount === 0 ? "No connections yet" : `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
 
   const onClick = () => {
     if (connected) openDialog({ component: PluginConnectionListDialog, props: { plugin } });
-    else openDialog({ component: PluginConnectionFormDialog, props: { plugin } });
+    else openDialog({ component: PluginConnectionFormDialog, props: { plugin, openListOnCreate: true } });
   };
 
   return (
@@ -32,10 +29,12 @@ export function PluginCatalogCard({ plugin, view }: PluginCatalogCardProps) {
       icon={<Icon name={plugin.name} icon={plugin.icon} />}
       title={plugin.name}
       description={plugin.description}
-      tags={[...capabilityLabels(plugin), ...view.tags]}
-      meta={countLabel}
+      badges={capabilityLabels(plugin)}
+      tags={view.tags}
+      meta={<ConnectionCount connections={instances} />}
+      onClick={onClick}
       cta={{
-        label: connected ? "Configure" : "Connect",
+        label: connected ? "Manage" : "Connect",
         icon: connected ? <ArrowRight /> : <Plus />,
         variant: connected ? "outline" : "default",
         onClick,

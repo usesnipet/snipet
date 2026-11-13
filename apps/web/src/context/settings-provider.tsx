@@ -1,8 +1,7 @@
+import { ErrorFallback } from "@/components/error-fallback";
+import { SnipetLoader } from "@/components/snipet-loader";
 import { useSettings } from "@snipet/client";
 import { Outlet } from "react-router";
-
-import { ErrorFallback } from "@/components/error-fallback";
-import { LoadingFallback } from "@/components/loading-fallback";
 
 import { SettingsContext } from "./settings-context";
 
@@ -10,8 +9,8 @@ import { SettingsContext } from "./settings-context";
 export function SettingsProvider() {
   const { data, error } = useSettings();
 
-  if (error) return <ErrorFallback error={error} />;
-  if (!data) return <LoadingFallback className="min-h-svh" />;
+  if (error) return <ErrorFallback error={error} className="min-h-svh" />;
+  if (!data) return <SnipetLoader className="min-h-svh" />;
 
   return (
     <SettingsContext.Provider value={data}>

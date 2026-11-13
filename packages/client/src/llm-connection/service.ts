@@ -2,32 +2,26 @@ import http, { httpSse } from "../http";
 
 import {
   createLlmConnectionSchema,
-  executeLlmSchema,
+  executeLLMSchema,
   findLlmConnectionsParamsSchema,
   listLLMModelsParamsSchema,
   llmConnectionSchema,
-  llmModelSchema,
-  llmManifestSchema,
-  llmResponseSchema,
-  llmStreamEventSchema,
   paginatedLlmConnectionSchema,
   updateLlmConnectionSchema,
 } from "@snipet/shared";
+import { llmManifestSchema, llmModelSchema, llmResponseSchema, llmStreamEventSchema } from "@snipet/shared/core";
 import { z } from "zod";
 
 import type {
   CreateLlmConnection,
-  ExecuteLlm,
+  ExecuteLLM,
   FindLlmConnectionsParams,
   ListLLMModelsParams,
   LlmConnection,
-  LlmModel,
-  LlmManifest,
-  LlmResponse,
-  LlmStreamEvent,
   Paginated,
   UpdateLlmConnection,
 } from "@snipet/shared";
+import type { LLMManifest, LLMModel, LLMResponse, LLMStreamEvent } from "@snipet/shared/core";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const LLM_CONNECTION_URL = "/api/llm-connections";
@@ -44,7 +38,7 @@ const list = async (
     ...opts,
   });
 
-const listLLMs = async (opts: ServiceGetOptions<LlmManifest[]> = {}): Promise<LlmManifest[]> =>
+const listLLMs = async (opts: ServiceGetOptions<LLMManifest[]> = {}): Promise<LLMManifest[]> =>
   http.get({
     url: `${LLM_CONNECTION_URL}/llms`,
     schemas: { response: z.array(llmManifestSchema) },
@@ -91,7 +85,7 @@ const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promis
   });
 
 /** The connection's models as last synced. */
-const findModels = async (id: string, opts: ServiceGetOptions<LlmModel[]> = {}): Promise<LlmModel[]> =>
+const findModels = async (id: string, opts: ServiceGetOptions<LLMModel[]> = {}): Promise<LLMModel[]> =>
   http.get({
     url: `${LLM_CONNECTION_URL}/{id}/models`,
     params: { id },
@@ -112,8 +106,8 @@ const sync = async (id: string, opts: ServicePostOptions<void, void> = {}): Prom
  */
 const listLLMModels = async (
   llmKey: string,
-  opts: ServiceGetOptions<LlmModel[], ListLLMModelsParams> = {},
-): Promise<LlmModel[]> =>
+  opts: ServiceGetOptions<LLMModel[], ListLLMModelsParams> = {},
+): Promise<LLMModel[]> =>
   http.get({
     url: `${LLM_CONNECTION_URL}/llms/{key}/models`,
     params: { key: llmKey },
@@ -125,13 +119,13 @@ const listLLMModels = async (
   });
 
 const execute = async (
-  body: ExecuteLlm,
-  opts: ServicePostOptions<ExecuteLlm, LlmResponse> = {},
-): Promise<LlmResponse> =>
+  body: ExecuteLLM,
+  opts: ServicePostOptions<ExecuteLLM, LLMResponse> = {},
+): Promise<LLMResponse> =>
   http.post({
     url: `${LLM_CONNECTION_URL}/execute`,
     body,
-    schemas: { body: executeLlmSchema, response: llmResponseSchema },
+    schemas: { body: executeLLMSchema, response: llmResponseSchema },
     ...opts,
   });
 
@@ -140,14 +134,14 @@ const execute = async (
  * SSE event (llm_started, text_delta, tool_call, llm_skipped, message, error, done).
  */
 const executeStream = async (
-  body: ExecuteLlm,
-  onEvent: (event: LlmStreamEvent) => void,
+  body: ExecuteLLM,
+  onEvent: (event: LLMStreamEvent) => void,
   opts: { signal?: AbortSignal } = {},
 ): Promise<void> =>
   httpSse({
     url: `${LLM_CONNECTION_URL}/execute/stream`,
     body,
-    schemas: { body: executeLlmSchema },
+    schemas: { body: executeLLMSchema },
     signal: opts.signal,
     onEvent: (event, data) => {
       const parsed = llmStreamEventSchema.safeParse({ event, data });

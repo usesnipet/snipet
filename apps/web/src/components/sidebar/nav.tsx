@@ -1,0 +1,206 @@
+"use client";
+
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Link } from "@/components/ui/link";
+import {
+  SidebarContent as SidebarContentBase,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from "@/components/ui/sidebar";
+import { usePathBuilder } from "@/hooks/use-path-builder";
+import { resolve } from "@/lib/resolve";
+import { ChevronRight } from "lucide-react";
+import { motion } from "motion/react";
+import { useCallback, useMemo } from "react";
+import { useLocation } from "react-router";
+
+import { isNavActive, isNavGroup, isNavGroupActive, isNavItemWithChildren } from "./utils";
+
+import type { NavEntry, NavLeafEntry } from "./types";
+
+type Props = {
+  navItems: NavEntry[];
+};
+
+type NavSection = {
+  label?: string;
+  items: NavLeafEntry[];
+};
+
+/** Shared by plain items and groups, so both line up in the list. */
+const NAV_BUTTON_CLASS =
+  "text-sidebar-foreground/70 relative my-0.5 h-9 gap-3 rounded-lg text-[13px] [&_svg]:size-4.5 [&_svg]:text-sidebar-foreground/55 data-[active=true]:bg-transparent data-[active=true]:text-sidebar-foreground data-[active=true]:[&_svg]:text-sidebar-foreground";
+
+/**
+ * The active item's background; one shared `layoutId`, so it slides from the old item to the new one.
+ * Rendered in the `<li>`, not the button: the button clips its overflow, which would hide the slide.
+ * Sized like the button (h-9 after its my-0.5) so a group's highlight doesn't cover its sub-items.
+ */
+function ActiveHighlight() {
+  return (
+    <motion.span
+      layoutId="nav-active-highlight"
+      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+      className="bg-sidebar-accent pointer-events-none absolute inset-x-0 top-0.5 h-9 rounded-lg group-data-[collapsible=icon]:size-8"
+    />
+  );
+}
+
+function NavTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="ml-2 rounded-md bg-sidebar-foreground/10 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-foreground/50">
+      {children}
+    </span>
+  );
+}
+
+function ComingSoonBadge() {
+  return <NavTag>Coming Soon</NavTag>;
+}
+
+function NavMenuItems({ items, pathname }: { items: NavLeafEntry[]; pathname: string }) {
+  const toBoolean = (v?: boolean | (() => boolean), defaultValue = true) => {
+    const value = resolve(v);
+    return value === undefined ? defaultValue : value;
+  };
+
+  return (
+    <SidebarMenu>
+      {items.map((item) =>
+        isNavItemWithChildren(item)
+          ? toBoolean(item.visible) && (
+              <Collapsible
+                key={item.title}
+                asChild
+                defaultOpen={isNavGroupActive(pathname, item.items)}
+                className="group/collapsible text-sidebar-foreground/70 "
+                disabled={toBoolean(item.disabled, false)}
+              >
+                <SidebarMenuItem>
+                  {isNavGroupActive(pathname, item.items) && <ActiveHighlight />}
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      isActive={isNavGroupActive(pathname, item.items)}
+                      className={NAV_BUTTON_CLASS}
+                    >
+                      <item.icon />
+                      <span>{item.title}</span>
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      {item.comingSoon && <ComingSoonBadge />}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items.map(
+                        (subItem) =>
+                          toBoolean(subItem.visible) && (
+                            <SidebarMenuSubItem key={subItem.href}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={
+                                  isNavActive(pathname, subItem.href, subItem.exact) && toBoolean(subItem.visible)
+                                }
+                                className="text-sidebar-foreground/70"
+                              >
+                                <Link href={subItem.href}>
+                                  <span>{subItem.title}</span>
+                                  {subItem.comingSoon && <ComingSoonBadge />}
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ),
+                      )}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            )
+          : toBoolean(item.visible) && (
+              <SidebarMenuItem key={item.href}>
+                {isNavActive(pathname, item.href, item.exact) && <ActiveHighlight />}
+                <SidebarMenuButton
+                  asChild
+                  isActive={isNavActive(pathname, item.href, item.exact) && toBoolean(item.visible)}
+                  tooltip={item.title}
+                  className={NAV_BUTTON_CLASS}
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                    {item.comingSoon && <ComingSoonBadge />}
+                    {"experimental" in item && item.experimental && <NavTag>Experimental</NavTag>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ),
+      )}
+    </SidebarMenu>
+  );
+}
+
+export function SidebarNav({ navItems }: Props) {
+  const { pathname } = useLocation();
+  const buildPath = usePathBuilder();
+
+  const transformLeaf = useCallback(
+    (item: NavLeafEntry): NavLeafEntry => {
+      if (isNavItemWithChildren(item)) {
+        return {
+          ...item,
+          items: item.items.map((sub) => ({
+            ...sub,
+            href: buildPath(sub.href),
+          })),
+        };
+      }
+      return {
+        ...item,
+        href: buildPath(item.href),
+      };
+    },
+    [buildPath],
+  );
+
+  const sections = useMemo(() => {
+    const result: NavSection[] = [];
+    for (const item of navItems) {
+      if (isNavGroup(item)) {
+        result.push({ label: item.label, items: item.items.map(transformLeaf) });
+        continue;
+      }
+      const leaf = transformLeaf(item);
+      const last = result.at(-1);
+      if (last && last.label === undefined) {
+        last.items.push(leaf);
+      } else {
+        result.push({ items: [leaf] });
+      }
+    }
+    return result;
+  }, [navItems, transformLeaf]);
+
+  return (
+    <SidebarContentBase>
+      {sections.map((section, index) => (
+        <SidebarGroup key={section.label ?? `group-${index}`} className="gap-1">
+          {section.label && (
+            <SidebarGroupLabel className="text-sidebar-foreground/50 px-2 text-[10px] font-medium tracking-widest uppercase">
+              {section.label}
+            </SidebarGroupLabel>
+          )}
+          <SidebarGroupContent>
+            <NavMenuItems items={section.items} pathname={pathname} />
+          </SidebarGroupContent>
+        </SidebarGroup>
+      ))}
+    </SidebarContentBase>
+  );
+}

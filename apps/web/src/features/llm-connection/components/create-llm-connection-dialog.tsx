@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import {
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -13,9 +14,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 
+import { useDialog } from "@/lib/dialog";
+
 import { useCreateLlmConnection, useUpdateLlmConnection } from "@snipet/client";
 import { createLlmConnectionSchema } from "@snipet/shared";
 
+import { TestLlmConnectionDialog } from "./dialogs";
 import { LlmFormFields } from "./llm-form-fields";
 
 import type { CreateLlmConnection, LlmConnection } from "@snipet/shared";
@@ -37,6 +41,10 @@ const DEFAULT_VALUES: CreateLlmConnection = {
 
 export function CreateLlmConnectionDialog({ onSaved, close, defaultValues, llm }: CreateLlmConnectionDialogProps) {
   const isEditing = !!llm;
+  // Opened from a provider (its card, its list) or editing: the provider is settled, and
+  // switching it would leave a config that belongs to another schema.
+  const isLlmLocked = isEditing || !!defaultValues?.llmKey;
+  const { openDialog } = useDialog();
   const mergedDefaultValues = llm
     ? { name: llm.name, llmKey: llm.llmKey, config: llm.config, enabled: llm.enabled }
     : { ...DEFAULT_VALUES, ...defaultValues };
@@ -58,12 +66,16 @@ export function CreateLlmConnectionDialog({ onSaved, close, defaultValues, llm }
       const result = await create({ data: values });
       form.reset();
       onSaved?.(result);
+      close();
+      // A sync only proves the key lists models; the test shows it generates text.
+      openDialog({ component: TestLlmConnectionDialog, props: { connection: result, isNew: true } });
+      return;
     }
     close();
   });
 
   return (
-    <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+    <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-lg">
       <DialogHeader>
         <DialogTitle>{isEditing ? "Edit LLM connection" : "New LLM connection"}</DialogTitle>
         <DialogDescription>
@@ -72,15 +84,17 @@ export function CreateLlmConnectionDialog({ onSaved, close, defaultValues, llm }
               Update settings for <span className="font-medium text-foreground">{llm.name}</span>.
             </>
           ) : (
-            "Point at an LLM and drop in your API key — it becomes available to your agents."
+            "Add your API key or local server. Your agents can use it once it's saved."
           )}
         </DialogDescription>
       </DialogHeader>
-      <Form {...form}>
-        <form id={formId} onSubmit={onSubmit}>
-          <LlmFormFields />
-        </form>
-      </Form>
+      <DialogBody>
+        <Form {...form}>
+          <form id={formId} onSubmit={onSubmit}>
+            <LlmFormFields isLlmLocked={isLlmLocked} />
+          </form>
+        </Form>
+      </DialogBody>
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline" disabled={isPending}>

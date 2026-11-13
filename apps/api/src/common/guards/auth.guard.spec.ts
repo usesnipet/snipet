@@ -1,9 +1,10 @@
 import { APP_TOKEN_AUDIENCE, APP_TOKEN_SECRET } from "#src/modules/app/app.service.js";
-import { ExecutionContext, ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ExecutionContext, ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Role } from "@snipet/shared";
 
+import { AppContext } from "../context/app-context.js";
 import { ApiKeyAuth, AppTokenAuth, Private, Public, UserAuth } from "../decorators/auth.decorator.js";
 
 import { AuthGuard } from "./auth.guard.js";
@@ -15,7 +16,9 @@ import type { ApiKeyService } from "#src/modules/api-key/api-key.service.js";
 import type { AppService } from "#src/modules/app/app.service.js";
 
 const jwt = new JwtService({ secret: "test" });
-const apiKeys = { verify: (key: string) => Promise.resolve({ id: key, appId: "app-1" }) } as unknown as ApiKeyService;
+const apiKeys = {
+  verify: (_ctx: unknown, key: string) => Promise.resolve({ id: key, appId: "app-1" }),
+} as unknown as ApiKeyService;
 const allowedOrigins = ["https://shop.com"];
 const apps = { findAllowedOrigins: () => Promise.resolve(allowedOrigins) } as unknown as AppService;
 const guard = new AuthGuard(
@@ -38,13 +41,13 @@ function run(
     const descriptor = Object.getOwnPropertyDescriptor(Controller.prototype, "handler")!;
     decorators.method(Controller.prototype, "handler", descriptor);
   }
-  const request: Record<string, unknown> = { headers };
+  const request = { headers, ctx: AppContext.create("test") };
   const ctx = {
     getHandler: () => Object.getOwnPropertyDescriptor(Controller.prototype, "handler")!.value as () => void,
     getClass: () => Controller,
     switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
-  return guard.canActivate(ctx).then(() => request.auth);
+  return guard.canActivate(ctx).then(() => request.ctx.auth);
 }
 
 const bearer = (role: Role) => ({ authorization: `Bearer ${jwt.sign({ sub: "u-1", role })}` });
@@ -81,7 +84,18 @@ describe("AuthGuard", () => {
   it("accepts an API key when the route allows it", async () => {
     await expect(run({ cls: Private(UserAuth(), ApiKeyAuth()) }, { "x-api-key": "k" })).resolves.toMatchObject({
       type: "apiKey",
+      externalUserId: null,
     });
+  });
+
+  it("takes the API key's end user from X-External-User-Id", async () => {
+    const route = { cls: Private(ApiKeyAuth()) };
+    await expect(run(route, { "x-api-key": "k", "x-external-user-id": "eu-1" })).resolves.toMatchObject({
+      externalUserId: "eu-1",
+    });
+    await expect(run(route, { "x-api-key": "k", "x-external-user-id": "" })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it("method decorators override the class's", async () => {

@@ -1,0 +1,19 @@
+---
+title: Users
+description: The people who sign in to Snipet, and what each role can do.
+---
+
+Users are the people who sign in to Snipet itself: your team. They are not the end users who chat through an [app](/docs/concepts/apps/); those come from your app's [tokens](/docs/auth/) or sign in [anonymously](/docs/auth/anonymous/).
+
+Admins manage users in **Users**: create one with a username, name, password (8 characters or more) and role, change their name, password or role, or remove them. The username is the sign-in handle and can't be changed.
+
+## Roles
+
+- **Admin**: everything. Models, plugins, agents, apps and their API keys, settings and users.
+- **User**: only **Chat**, with the [enabled](/docs/concepts/agents/#enabled) agents. They see each agent's name, description and avatar, never its prompt, models or plugins.
+
+Each user's chats are their own: no one else, admins included, sees them in **Chat**.
+
+## The first admin
+
+On first boot, when there are no users, Snipet creates an admin from `ROOT_USERNAME` and `ROOT_PASSWORD`. See [Run Snipet](/docs/get-started/install/#sign-in).

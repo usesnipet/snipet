@@ -1,0 +1,24 @@
+{
+  "key": "aws-knowledge",
+  "name": "AWS Knowledge",
+  "description": "Search AWS documentation, API references and best practices",
+  "icon": "https://github.com/aws.png",
+  "tags": ["docs"],
+  "auth": {
+    "type": "none"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://knowledge-mcp.global.api.aws"
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://knowledge-mcp.global.api.aws"
+      }
+    }
+  }
+}

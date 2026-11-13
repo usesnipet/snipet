@@ -29,7 +29,12 @@ export const FormInput = ({ split, ...props }: Props = { split: false } as Props
       name={props.name}
       render={({ field }) => (
         <FormItem className={props.fieldclassname}>
-          {props.label && <FormLabel>{props.label}</FormLabel>}
+          {props.label && (
+            <FormLabel>
+              {props.label}
+              {props.required && "*"}
+            </FormLabel>
+          )}
           <FormControl>
             <Input
               disabled={isLoading}

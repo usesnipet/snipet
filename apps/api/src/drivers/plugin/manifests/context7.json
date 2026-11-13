@@ -1,0 +1,24 @@
+{
+  "key": "context7",
+  "name": "Context7",
+  "description": "Up-to-date documentation and code examples for libraries and frameworks",
+  "icon": "https://github.com/upstash.png",
+  "tags": ["docs"],
+  "auth": {
+    "type": "none"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.context7.com/mcp"
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.context7.com/mcp"
+      }
+    }
+  }
+}

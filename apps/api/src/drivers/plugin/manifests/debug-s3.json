@@ -1,0 +1,119 @@
+{
+  "key": "debug-s3",
+  "name": "Debug (S3)",
+  "description": "Saves every event of the agent's runs as a JSON file in an S3 bucket, to inspect what goes in and out of them. The files hold whole conversations: add it only while debugging.",
+  "icon": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='#f59e0b'/><g transform='translate(6 6) scale(.8333)' fill='none' stroke='#fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m8 2 1.88 1.88'/><path d='M14.12 3.88 16 2'/><path d='M9 7.13v-1a3 3 0 1 1 6 0v1'/><path d='M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6'/><path d='M12 20v-9'/><path d='M6.53 9C4.6 8.8 3 7.1 3 5'/><path d='M6 13H2'/><path d='M3 21c0-2.1 1.7-3.9 3.8-4'/><path d='M20.97 5c0 2.1-1.6 3.8-3.5 4'/><path d='M22 13h-4'/><path d='M17.2 17c2.1.1 3.8 1.9 3.8 4'/></g></svg>",
+  "tags": ["debug"],
+  "auth": {
+    "type": "none"
+  },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "bucket": {
+        "type": "string",
+        "title": "Bucket"
+      },
+      "region": {
+        "type": "string",
+        "title": "Region",
+        "default": "us-east-1"
+      },
+      "accessKeyId": {
+        "type": "string",
+        "title": "Access key ID",
+        "description": "Needs s3:ListBucket on the bucket, for the health check, and s3:PutObject on its objects, to save the files."
+      },
+      "secretAccessKey": {
+        "type": "string",
+        "secret": true,
+        "format": "password",
+        "title": "Secret access key"
+      },
+      "prefix": {
+        "type": "string",
+        "title": "Key prefix",
+        "description": "Prepended as is to each object key.",
+        "default": "debug/"
+      },
+      "endpoint": {
+        "type": "string",
+        "title": "Endpoint",
+        "description": "For S3-compatible services, e.g. https://minio.example.com. Leave empty for AWS S3."
+      },
+      "forcePathStyle": {
+        "type": "boolean",
+        "title": "Force path style",
+        "description": "Use endpoint/bucket/key URLs, as most S3-compatible services expect.",
+        "default": false
+      },
+      "timeout": {
+        "type": "integer",
+        "title": "Timeout (seconds)",
+        "description": "How long to wait for the bucket to answer, when saving an event or on the health check.",
+        "minimum": 1,
+        "maximum": 60,
+        "default": 10
+      }
+    },
+    "required": ["bucket", "region", "accessKeyId", "secretAccessKey"]
+  },
+  "capabilities": {
+    "hooks": {
+      "driver": "debug-s3",
+      "options": {
+        "bucket": "{{ connection.bucket }}",
+        "region": "{{ connection.region }}",
+        "prefix": "{{ connection.prefix }}",
+        "endpoint": "{{ connection.endpoint }}",
+        "forcePathStyle": "{{ connection.forcePathStyle }}",
+        "accessKeyId": "{{ connection.accessKeyId }}",
+        "secretAccessKey": "{{ connection.secretAccessKey }}",
+        "timeout": "{{ connection.timeout }}"
+      },
+      "handlers": {
+        "run.start": {
+          "mode": "background",
+          "optional": true
+        },
+        "run.context": {
+          "mode": "background",
+          "optional": true
+        },
+        "llm.request": {
+          "mode": "background",
+          "optional": true
+        },
+        "llm.response": {
+          "mode": "background",
+          "optional": true
+        },
+        "tool.before": {
+          "mode": "background",
+          "optional": true
+        },
+        "tool.after": {
+          "mode": "background",
+          "optional": true
+        },
+        "run.end": {
+          "mode": "background",
+          "optional": true
+        }
+      }
+    },
+    "healthCheck": {
+      "driver": "debug-s3",
+      "options": {
+        "bucket": "{{ connection.bucket }}",
+        "region": "{{ connection.region }}",
+        "prefix": "{{ connection.prefix }}",
+        "endpoint": "{{ connection.endpoint }}",
+        "forcePathStyle": "{{ connection.forcePathStyle }}",
+        "accessKeyId": "{{ connection.accessKeyId }}",
+        "secretAccessKey": "{{ connection.secretAccessKey }}",
+        "timeout": "{{ connection.timeout }}"
+      }
+    }
+  }
+}

@@ -26,10 +26,25 @@ It returns the run right away, with its `id` and `sessionId`. Keep the `sessionI
 | Event | Data |
 | --- | --- |
 | `text_delta` | `{ text }`: the next piece of the answer as it's written. |
-| `message` | A complete message: the assistant's reply, a plugin call or a plugin result. Its SSE `id` is the message id. |
-| `run_finished` | The run, with its final `status`: `completed`, `failed`, `cancelled` or `max_turns`. |
+| `message` | `{ message }`: a complete, saved [message](#messages). Its SSE `id` is the message id. |
+| `run_finished` | `{ run }`: the run, with its final `status` (`completed`, `failed`, `cancelled` or `max_turns`) and, when it failed, its `error`. |
 
-If the connection drops, reconnect with the `Last-Event-ID` header set to the last message id you got; the stream resumes after it.
+If the connection drops, reconnect with the `Last-Event-ID` header set to the last message id you got; the stream resumes after it. When the run has already finished, the stream sends its remaining messages and `run_finished` right away.
+
+`text_delta` only carries the answer's text. Thinking and plugin calls arrive in `message` events, once each model call or plugin call is done.
+
+## Messages
+
+Every message has an `id`, `sessionId`, `runId`, `role` (`user`, `assistant` or `tool`) and a list of `parts`:
+
+| Part `type` | Fields | |
+| --- | --- | --- |
+| `text` | `text` | Text written by the user or the agent. |
+| `thinking` | `text` | The model's reasoning, when the model returns it. |
+| `tool_call` | `id`, `name`, `arguments` | A plugin call the agent asked for, in an `assistant` message. |
+| `tool_result` | `toolCallId`, `content`, `isError` | The call's result, in a `tool` message. `content` is a string, often JSON. |
+
+Match a result to its call by `toolCallId`. A call with no result yet is still running. A run with several turns sends several `assistant` messages: show them in id order.
 
 ## Examples
 
@@ -72,7 +87,7 @@ If the connection drops, reconnect with the `Last-Event-ID` header set to the la
           const event = raw.match(/^event: (.*)$/m)?.[1];
           const data = JSON.parse(raw.match(/^data: (.*)$/m)?.[1] ?? "null");
           if (event === "text_delta") onText(data.text);
-          if (event === "run_finished") return { sessionId: run.sessionId, status: data.status };
+          if (event === "run_finished") return { sessionId: run.sessionId, status: data.run.status };
         }
       }
     }
@@ -104,7 +119,7 @@ If the connection drops, reconnect with the `Last-Event-ID` header set to the la
                     if event == "text_delta":
                         print(data["text"], end="", flush=True)
                     elif event == "run_finished":
-                        return run["sessionId"], data["status"]
+                        return run["sessionId"], data["run"]["status"]
     ```
   </TabItem>
 </Tabs>
@@ -114,8 +129,18 @@ If the connection drops, reconnect with the `Last-Event-ID` header set to the la
 | Endpoint | |
 | --- | --- |
 | `GET /api/agent-sessions` | The user's conversations. Filter by `agentId`. |
-| `GET /api/agent-sessions/:id/messages` | A conversation's messages, newest first. Page back with `before=<message id>`. |
+| `GET /api/agent-sessions/:id/messages` | A conversation's messages, newest first: `take` of them (100 by default, up to 500). Page back with `before=<message id>`. |
 | `DELETE /api/agent-sessions/:id` | Deletes a conversation. |
+| `GET /api/agent-runs?sessionId=<id>` | A conversation's runs, newest first. |
+| `GET /api/agent-runs/:id` | One run and its `status`. |
 | `POST /api/agent-runs/:id/cancel` | Stops a run that's still going. |
 
 A conversation runs one message at a time: starting a run while another is still going in the same session fails with `409`.
+
+### Resume a conversation
+
+A run keeps going when the user leaves the page. To pick it back up, as the widget does: load the messages, get the session's newest run with `GET /api/agent-runs?sessionId=<id>&take=1`, and if its `status` is `running`, open its events with `Last-Event-ID` set to the newest message id you loaded.
+
+### Which agent
+
+End-user tokens can't list agents: pass the `agentId` from your own configuration. Copy it from the agent's menu in **Agents**.

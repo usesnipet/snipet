@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Suspense } from "react";
 import { useLocation, useOutlet } from "react-router";
 
-import { LoadingFallback } from "./loading-fallback";
+import { RouteProgress } from "./route-progress";
 
 const fadeTransition = { duration: 0.2, ease: "easeInOut" } as const;
 
@@ -23,7 +23,7 @@ export function AnimatedOutlet() {
           transition={fadeTransition}
           className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
         >
-          <Suspense fallback={<LoadingFallback />}>{outlet}</Suspense>
+          <Suspense fallback={<RouteProgress />}>{outlet}</Suspense>
         </motion.div>
       ) : null}
     </AnimatePresence>

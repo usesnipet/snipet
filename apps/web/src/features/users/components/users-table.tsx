@@ -8,7 +8,7 @@ import { PencilIcon, Trash2Icon } from "lucide-react";
 
 import { useDeleteUser, useListUsers } from "@snipet/client";
 
-import { UpdateUserDialog } from "./update-user-dialog";
+import { UpdateUserDialog } from "./dialogs";
 
 import type { DataTableColumn, DataTablePagination } from "@/components/data-table";
 import type { User } from "@snipet/shared";

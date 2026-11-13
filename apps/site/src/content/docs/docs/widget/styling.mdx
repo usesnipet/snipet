@@ -37,15 +37,28 @@ Variables: `--sw-accent`, `--sw-accent-text`, `--sw-surface`, `--sw-text`, `--sw
 
 ## Parts
 
-Style specific pieces with `::part()`, for example to move the launcher above a cookie banner:
+Style specific pieces with `::part()`, for example to move the widget above a cookie banner:
 
 ```css
-snipet-widget::part(launcher) {
+snipet-widget::part(root) {
   bottom: 80px;
 }
 ```
 
-Parts: `root`, `panel`, `header`, `body`, `message`, `user`, `assistant`, `composer`, `input`, `send`, `launcher`, `sessions`, `session`.
+| Part | |
+| --- | --- |
+| `root` | The fixed container in the corner, holding the panel and the launcher. |
+| `launcher` | The button that opens and closes the panel. |
+| `panel` | The chat window. |
+| `backdrop` | The dimmed page behind the panel, with `size: "full"`. |
+| `header` | The panel's top bar. |
+| `body` | The scrolling list of messages. |
+| `message` | Every chat bubble; also `user` or `assistant`. |
+| `thinking` | The agent's collapsed reasoning. |
+| `tool` | A plugin call, or a group of them. |
+| `waiting` | The status shown while the agent works, like "Thinking". |
+| `composer`, `input`, `send` | The message box and its send button. |
+| `sessions`, `session` | The chat history list and each chat in it. |
 
 ## Custom CSS
 

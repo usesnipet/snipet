@@ -1,13 +1,15 @@
+import { SwapIcon } from "@/components/swap-icon";
 import { Button } from "@/components/ui/button";
 import { PromptInput, PromptInputAction, PromptInputActions, PromptInputTextarea } from "@/components/ui/prompt-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUp, Bot, Square } from "lucide-react";
+import { AgentAvatar } from "@/features/agent/components/agent-avatar";
+import { ArrowUp, Square } from "lucide-react";
 import { useState } from "react";
 
-import type { Agent } from "@snipet/shared";
+import type { AvailableAgent } from "@snipet/shared";
 
 type Props = {
-  agents: Agent[];
+  agents: AvailableAgent[];
   agentId: string | undefined;
   onAgentChange: (agentId: string) => void;
   /** Locks the agent select, e.g. while a session is open. */
@@ -31,7 +33,7 @@ export function ChatInput({ agents, agentId, onAgentChange, agentLocked, running
   return (
     <div className="flex flex-col gap-2">
       <PromptInput value={value} onValueChange={setValue} onSubmit={submit} isLoading={running || sending}>
-        <PromptInputTextarea placeholder="Message the agent…" className="px-3 text-base" />
+        <PromptInputTextarea autoFocus placeholder="Message the agent…" className="px-3 text-base" />
         <PromptInputActions className="justify-between px-1 pt-2">
           <Select value={agentId ?? ""} onValueChange={onAgentChange} disabled={agentLocked}>
             <SelectTrigger
@@ -40,31 +42,35 @@ export function ChatInput({ agents, agentId, onAgentChange, agentLocked, running
               onClick={(event) => event.stopPropagation()}
               aria-label="Agent"
             >
-              <Bot />
               <SelectValue placeholder="Select an agent" />
             </SelectTrigger>
             <SelectContent>
               {agents.map((agent) => (
                 <SelectItem key={agent.id} value={agent.id}>
-                  {agent.name}
+                  {/* The selected option's content also fills the trigger, avatar included. */}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <AgentAvatar avatar={agent.avatar} name={agent.name} className="size-5 shrink-0" />
+                    <span className="truncate">{agent.name}</span>
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {running ? (
-            <PromptInputAction tooltip="Stop">
-              <Button size="icon" className="rounded-full" onClick={onStop} aria-label="Stop">
-                <Square className="fill-current" />
-              </Button>
-            </PromptInputAction>
-          ) : (
-            <PromptInputAction tooltip="Send">
-              <Button size="icon" className="rounded-full" disabled={!canSend} onClick={submit} aria-label="Send">
-                <ArrowUp />
-              </Button>
-            </PromptInputAction>
-          )}
+          {/* One button for both, so the icon can swap in place instead of the button remounting. */}
+          <PromptInputAction tooltip={running ? "Stop" : "Send"}>
+            <Button
+              size="icon"
+              className="rounded-full"
+              disabled={!running && !canSend}
+              onClick={running ? onStop : submit}
+              aria-label={running ? "Stop" : "Send"}
+            >
+              <SwapIcon swapKey={running ? "stop" : "send"}>
+                {running ? <Square className="fill-current" /> : <ArrowUp />}
+              </SwapIcon>
+            </Button>
+          </PromptInputAction>
         </PromptInputActions>
       </PromptInput>
       <p className="text-muted-foreground text-center text-xs">Agents can make mistakes. Check important info.</p>

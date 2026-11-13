@@ -1,7 +1,7 @@
-import type { Tool } from "#src/plugin/driver.js";
 import type { JsonObject, PluginConnection as PluginConnectionContract } from "@snipet/shared";
-import { sealConfig } from "#src/manifest/seal-config.js";
+import { sealConfig } from "#src/infra/database/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
+import { LLMTool } from "@snipet/shared/core";
 import { Column, Entity, Index } from "typeorm";
 
 @Entity("plugin_connections")
@@ -24,7 +24,7 @@ export class PluginConnection extends BaseEntity implements PluginConnectionCont
 
   /** What the tools driver listed on the last sync. Only loaded on request: it would weigh down every listing. */
   @Column({ type: "jsonb", default: [], select: false })
-  tools: Tool[];
+  tools: LLMTool[];
 
   /** What the instructions driver returned on the last sync. */
   @Column({ type: "text", nullable: true })

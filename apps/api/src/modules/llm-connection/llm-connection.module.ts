@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { LLMModule } from "#src/llm/llm.module.js";
+import { LLMModule } from "#src/drivers/llm/llm.module.js";
 
 import { LlmConnectionController } from "./llm-connection.controller.js";
 import { LlmConnection } from "./llm-connection.entity.js";

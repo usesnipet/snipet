@@ -4,7 +4,7 @@ import { Icon } from "@/components/icon";
 import { SchemaFormFields } from "@/components/schema-form";
 import { Badge } from "@/components/ui/badge";
 import { FieldGroup } from "@/components/ui/field";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
 import { useLLMs } from "@snipet/client";
@@ -12,7 +12,12 @@ import { useLLMs } from "@snipet/client";
 import { LlmSelect } from "./llm-select";
 
 import type { RJSFSchema } from "@rjsf/utils";
-export function LlmFormFields() {
+type LlmFormFieldsProps = {
+  /** Hides the provider select and shows only its summary; set when the provider is already chosen. */
+  isLlmLocked?: boolean;
+};
+
+export function LlmFormFields({ isLlmLocked = false }: LlmFormFieldsProps) {
   const form = useFormContext();
   const { data: llms = [] } = useLLMs();
 
@@ -22,6 +27,11 @@ export function LlmFormFields() {
   const hasConfig = Object.keys(configSchema?.properties ?? {}).length > 0;
 
   const [previousLlmKey, setPreviousLlmKey] = useState<string | undefined>(llmKey);
+
+  // With no select to pick from, the provider's name is the starting name, as picking would set it.
+  useEffect(() => {
+    if (isLlmLocked && selected && !form.getValues("name")) form.setValue("name", selected.name);
+  }, [isLlmLocked, selected, form]);
 
   return (
     <FieldGroup>
@@ -33,21 +43,23 @@ export function LlmFormFields() {
         required
       />
 
-      <LlmSelect
-        name="llmKey"
-        configName="config"
-        llms={llms}
-        label="LLM"
-        placeholder="Select an LLM"
-        onAfterChange={(key) => {
-          const prev = llms.find((llm) => llm.key === previousLlmKey);
-          const picked = llms.find((llm) => llm.key === key);
-          if (picked && (!form.getValues("name") || form.getValues("name") === prev?.name)) {
-            form.setValue("name", picked.name, { shouldDirty: true });
-          }
-          setPreviousLlmKey(key);
-        }}
-      />
+      {!isLlmLocked && (
+        <LlmSelect
+          name="llmKey"
+          configName="config"
+          llms={llms}
+          label="LLM"
+          placeholder="Select an LLM"
+          onAfterChange={(key) => {
+            const prev = llms.find((llm) => llm.key === previousLlmKey);
+            const picked = llms.find((llm) => llm.key === key);
+            if (picked && (!form.getValues("name") || form.getValues("name") === prev?.name)) {
+              form.setValue("name", picked.name, { shouldDirty: true });
+            }
+            setPreviousLlmKey(key);
+          }}
+        />
+      )}
 
       {selected ? (
         <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">

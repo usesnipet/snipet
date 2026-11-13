@@ -2,25 +2,40 @@ import http from "../http";
 
 import {
   agentSchema,
+  availableAgentSchema,
   createAgentSchema,
   findAgentsParamsSchema,
-  paginatedAgentSchema,
+  paginatedAgentSummarySchema,
   updateAgentSchema,
 } from "@snipet/shared";
 
-import type { Agent, CreateAgent, FindAgentsParams, Paginated, UpdateAgent } from "@snipet/shared";
+import type {
+  Agent,
+  AgentSummary,
+  AvailableAgent,
+  CreateAgent,
+  FindAgentsParams,
+  Paginated,
+  UpdateAgent,
+} from "@snipet/shared";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const AGENT_URL = "/api/agents";
 
 const list = async (
-  opts: ServiceGetOptions<Paginated<Agent>, Partial<FindAgentsParams>> = {},
-): Promise<Paginated<Agent>> =>
+  opts: ServiceGetOptions<Paginated<AgentSummary>, Partial<FindAgentsParams>> = {},
+): Promise<Paginated<AgentSummary>> =>
   http.get({
     url: AGENT_URL,
-    schemas: { response: paginatedAgentSchema, searchParams: findAgentsParamsSchema },
+    schemas: { response: paginatedAgentSummarySchema, searchParams: findAgentsParamsSchema },
     ...opts,
   });
+
+const listAvailable = async (): Promise<AvailableAgent[]> =>
+  http.get({ url: `${AGENT_URL}/available`, schemas: { response: availableAgentSchema.array() } });
+
+const find = async (id: string): Promise<Agent> =>
+  http.get({ url: `${AGENT_URL}/{id}`, params: { id }, schemas: { response: agentSchema } });
 
 const create = async (body: CreateAgent, opts: ServicePostOptions<CreateAgent, Agent> = {}): Promise<Agent> =>
   http.post({
@@ -42,4 +57,4 @@ const update = async (id: string, body: UpdateAgent, opts: ServicePutOptions<Upd
 const remove = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promise<void> =>
   http.delete({ url: `${AGENT_URL}/{id}`, params: { id }, ...opts });
 
-export const agentService = { list, create, update, delete: remove };
+export const agentService = { list, listAvailable, find, create, update, delete: remove };

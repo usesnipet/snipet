@@ -1,25 +1,44 @@
+import { OrderedRows } from "@/components/form/ordered-rows";
 import { FormSelect } from "@/components/form/select";
 import { SchemaFormFields } from "@/components/schema-form";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { syncState, useListPluginConnections, usePluginConnectionTools, usePlugins } from "@snipet/client";
-import { hookHandlersOf } from "@snipet/shared";
-import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
-import { describeHandler } from "@/features/plugin-connection/capabilities";
+import { describeHandler, handlersOf } from "@/features/plugin-connection/capabilities";
 
 import type { RJSFSchema } from "@rjsf/utils";
-import type { HookName, PluginConnection, PluginManifest } from "@snipet/shared";
+import type { PluginConnection } from "@snipet/shared";
+import type { HookName, LLMTool, PluginManifest } from "@snipet/shared/core";
 import type { AgentFormInput } from "../schemas";
+
+/** Form path of one plugin grant. */
+type GrantPath = `pluginConnections.${number}`;
+
+/** Neutral when checked: a long list in the accent color outweighs the dialog's action. */
+const QUIET_CHECKBOX_CLASS =
+  "rounded-sm data-[state=checked]:border-input data-[state=checked]:bg-transparent data-[state=checked]:text-foreground dark:data-[state=checked]:bg-input/30";
 
 /**
  * Plugin connections granted to the agent, in order (the order its hooks run
- * in): the tools it can call, the optional hooks it runs, and the agent's
- * settings for the plugin.
+ * in). Each row picks the connection; Configure opens its tools, optional hooks
+ * and the agent's settings for the plugin.
  */
 export function AgentPluginsField() {
   const form = useFormContext<AgentFormInput>();
@@ -34,85 +53,93 @@ export function AgentPluginsField() {
   }));
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label>Plugins</Label>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => append({ pluginConnectionId: "", settings: {}, disabledHooks: [] })}
-        >
-          <Plus />
-          Add plugin
-        </Button>
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-sm font-medium">Plugins</h2>
+        <p className="text-muted-foreground text-sm">Tools and hooks the agent can use. Hooks run in this order.</p>
       </div>
-      {fields.length === 0 ? (
-        <p className="text-muted-foreground text-xs">
-          No plugins. Add a connection to give the agent its tools and hooks.
-        </p>
-      ) : (
-        fields.map((field, index) => (
-          <div key={field.id} className="space-y-2 rounded-lg border bg-muted/30 p-3">
-            <div className="flex items-start gap-2">
-              <FormSelect
-                name={`pluginConnections.${index}.pluginConnectionId`}
-                options={options}
-                placeholder="Select a connection"
-                fieldclassname="flex-1"
-                onValueChange={() => {
-                  // Names of the previous connection's tools mean nothing on this one.
-                  form.setValue(`pluginConnections.${index}.tools`, undefined);
-                  return undefined;
-                }}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Move up"
-                disabled={index === 0}
-                onClick={() => move(index, index - 1)}
-              >
-                <ArrowUp />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Move down"
-                disabled={index === fields.length - 1}
-                onClick={() => move(index, index + 1)}
-              >
-                <ArrowDown />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Remove plugin"
-                onClick={() => remove(index)}
-              >
-                <X />
-              </Button>
-            </div>
-            <PluginGrant index={index} connections={connections} manifestOf={manifestOf} />
-          </div>
-        ))
+      {fields.length > 0 && (
+        <OrderedRows rows={fields} rowLabel="plugin" onMove={move} onRemove={remove}>
+          {(_field, index) => (
+            <PluginRow index={index} options={options} connections={connections} manifestOf={manifestOf} />
+          )}
+        </OrderedRows>
       )}
-      {fields.length > 1 && <p className="text-muted-foreground text-xs">Hooks run in this order.</p>}
-    </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className={cn("text-muted-foreground", fields.length > 0 && "sm:ml-12.5")}
+        onClick={() => append({ pluginConnectionId: "", settings: {}, disabledHooks: [] })}
+      >
+        <Plus />
+        Add plugin
+      </Button>
+    </section>
+  );
+}
+
+function PluginRow({
+  index,
+  options,
+  connections,
+  manifestOf,
+}: {
+  index: number;
+  options: { label: string; value: string }[];
+  connections: PluginConnection[];
+  manifestOf: Map<string, PluginManifest>;
+}) {
+  const form = useFormContext<AgentFormInput>();
+  const name = `pluginConnections.${index}` as const;
+  const connectionId = useWatch({ control: form.control, name: `${name}.pluginConnectionId` });
+  const connection = connections.find((c) => c.id === connectionId);
+  const manifest = connection && manifestOf.get(connection.pluginKey);
+
+  return (
+    <>
+      <FormSelect
+        name={`${name}.pluginConnectionId`}
+        options={options}
+        placeholder="Select a connection"
+        fieldclassname="min-w-0 flex-1"
+        onValueChange={() => {
+          // Names of the previous connection's tools mean nothing on this one.
+          form.setValue(`${name}.tools`, undefined);
+          return undefined;
+        }}
+      />
+      {connection && manifest ? (
+        <PluginConfigure key={connection.id} name={name} connection={connection} manifest={manifest} />
+      ) : (
+        <Button type="button" variant="ghost" disabled>
+          Configure
+        </Button>
+      )}
+    </>
   );
 }
 
 /**
- * Checklist of the connection's tools. A grant with no list yet (undefined)
- * starts with every tool on, once they're synced; an empty list stays empty.
+ * The Configure button and its dialog, whose edits go straight into the agent
+ * form. Lives inside the row, even while closed, because a grant with no list
+ * yet (undefined) must start with every tool on: the API saves undefined as none.
  */
-function ToolPicker({ name, connection }: { name: `pluginConnections.${number}`; connection: PluginConnection }) {
+function PluginConfigure({
+  name,
+  connection,
+  manifest,
+}: {
+  name: GrantPath;
+  connection: PluginConnection;
+  manifest: PluginManifest;
+}) {
   const form = useFormContext<AgentFormInput>();
+  const { tools: hasTools, hooks } = manifest.capabilities;
+  const settings = manifest.settings as RJSFSchema | undefined;
+  const hasSettings = Object.keys(settings?.properties ?? {}).length > 0;
+  const { data: tools } = usePluginConnectionTools(connection, { enabled: !!hasTools });
   const selected = useWatch({ control: form.control, name: `${name}.tools` });
-  const { data: tools } = usePluginConnectionTools(connection);
-  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (selected === undefined && tools?.length) {
@@ -123,6 +150,69 @@ function ToolPicker({ name, connection }: { name: `pluginConnections.${number}`;
       );
     }
   }, [form, name, selected, tools]);
+
+  if (!hasTools && !hooks && !hasSettings) {
+    return (
+      <Button type="button" variant="ghost" disabled title="This plugin has nothing to configure">
+        Configure
+      </Button>
+    );
+  }
+
+  // Drops tools the connection no longer has, so they don't count or get saved again.
+  const current = (selected ?? []).filter((toolName) => tools?.some((t) => t.name === toolName));
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button type="button" variant="ghost">
+          Configure
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Configure {connection.name}</DialogTitle>
+          <DialogDescription>Choose what this agent can use. Changes apply when you save the agent.</DialogDescription>
+        </DialogHeader>
+        <DialogBody className="space-y-5">
+          {hasTools && <ToolPicker name={name} connection={connection} tools={tools} current={current} />}
+          {hooks && <HookList name={name} hooks={hooks} />}
+          {hasSettings && settings && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Settings</p>
+              <SchemaFormFields
+                schema={settings}
+                defaultData={form.getValues(`${name}.settings`)}
+                onChange={(data) => form.setValue(`${name}.settings`, data, { shouldDirty: true })}
+              />
+            </div>
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button">Done</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Checklist of the connection's tools. */
+function ToolPicker({
+  name,
+  connection,
+  tools,
+  current,
+}: {
+  name: GrantPath;
+  connection: PluginConnection;
+  tools: LLMTool[] | undefined;
+  /** Names of the tools currently on. */
+  current: string[];
+}) {
+  const form = useFormContext<AgentFormInput>();
+  const [search, setSearch] = useState("");
 
   if (!tools?.length) {
     const sync = syncState(connection);
@@ -136,47 +226,49 @@ function ToolPicker({ name, connection }: { name: `pluginConnections.${number}`;
   }
 
   const names = tools.map((t) => t.name);
-  // Drops tools the connection no longer has, so they don't count or get saved again.
-  const current = (selected ?? []).filter((n) => names.includes(n));
   const setTools = (next: string[]) => form.setValue(`${name}.tools`, next, { shouldDirty: true });
   const query = search.trim().toLowerCase();
   const visible = tools.filter((t) => `${t.name} ${t.description}`.toLowerCase().includes(query));
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground">
-          Tools ({current.length}/{tools.length})
-        </p>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          onClick={() => setTools(current.length === names.length ? [] : names)}
-        >
-          {current.length === names.length ? "Clear" : "Select all"}
-        </Button>
+    <div>
+      {/* Stays in view so the count and search remain reachable down a long list. */}
+      <div className="bg-popover sticky top-0 z-10 space-y-1 pb-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground">
+            Tools ({current.length}/{tools.length})
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            onClick={() => setTools(current.length === names.length ? [] : names)}
+          >
+            {current.length === names.length ? "Clear" : "Select all"}
+          </Button>
+        </div>
+        {tools.length > 8 && (
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search tools"
+            aria-label="Search tools"
+          />
+        )}
       </div>
-      {tools.length > 8 && (
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search tools"
-          aria-label="Search tools"
-        />
-      )}
-      <div className="max-h-48 space-y-1 overflow-y-auto">
+      <div className="space-y-2">
         {visible.map((tool) => (
-          <label key={tool.name} className="flex items-center gap-2 text-xs">
+          <label key={tool.name} className="flex items-start gap-2">
             <Checkbox
+              className={cn(QUIET_CHECKBOX_CLASS, "mt-0.5")}
               checked={current.includes(tool.name)}
               onCheckedChange={(checked) =>
                 setTools(checked === true ? [...current, tool.name] : current.filter((n) => n !== tool.name))
               }
             />
-            <code className="shrink-0">{tool.name}</code>
-            <span className="truncate text-muted-foreground" title={tool.description}>
-              {tool.description}
+            <span className="min-w-0">
+              <code className="block text-xs break-all">{tool.name}</code>
+              <span className="text-muted-foreground block text-xs">{tool.description}</span>
             </span>
           </label>
         ))}
@@ -185,62 +277,30 @@ function ToolPicker({ name, connection }: { name: `pluginConnections.${number}`;
   );
 }
 
-/** The parts of a grant that depend on its plugin: tools, hooks, settings. */
-function PluginGrant({
-  index,
-  connections,
-  manifestOf,
-}: {
-  index: number;
-  connections: PluginConnection[];
-  manifestOf: Map<string, PluginManifest>;
-}) {
+/** The plugin's hooks; only the optional ones can be turned off. */
+function HookList({ name, hooks }: { name: GrantPath; hooks: NonNullable<PluginManifest["capabilities"]["hooks"]> }) {
   const form = useFormContext<AgentFormInput>();
-  const name = `pluginConnections.${index}` as const;
-  const connectionId = useWatch({ control: form.control, name: `${name}.pluginConnectionId` });
   const disabledHooks = useWatch({ control: form.control, name: `${name}.disabledHooks` }) ?? [];
-  const connection = connections.find((c) => c.id === connectionId);
-  const manifest = connection && manifestOf.get(connection.pluginKey);
-  if (!manifest) return null;
-
-  const { tools, hooks } = manifest.capabilities;
-  const settings = manifest.settings as RJSFSchema | undefined;
-  const toggleHook = (hook: HookName, on: boolean) =>
-    form.setValue(`${name}.disabledHooks`, on ? disabledHooks.filter((h) => h !== hook) : [...disabledHooks, hook], {
+  const toggleHook = (hook: HookName, isOn: boolean) =>
+    form.setValue(`${name}.disabledHooks`, isOn ? disabledHooks.filter((h) => h !== hook) : [...disabledHooks, hook], {
       shouldDirty: true,
     });
 
   return (
-    <>
-      {tools && connection && <ToolPicker key={connection.id} name={name} connection={connection} />}
-      {hooks && (
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Hooks</p>
-          {[...hookHandlersOf(hooks)].map(([hook, handler]) => (
-            <label key={hook} className="flex items-center gap-2 text-xs">
-              <Checkbox
-                checked={!handler.optional || !disabledHooks.includes(hook)}
-                disabled={!handler.optional}
-                onCheckedChange={(checked) => toggleHook(hook, checked === true)}
-              />
-              <code>{hook}</code>
-              <span className="text-muted-foreground">{describeHandler(handler)}</span>
-            </label>
-          ))}
-        </div>
-      )}
-      {settings && Object.keys(settings.properties ?? {}).length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Settings</p>
-          <SchemaFormFields
-            // A new connection gets fresh fields: defaultData is only read on mount.
-            key={connectionId}
-            schema={settings}
-            defaultData={form.getValues(`${name}.settings`)}
-            onChange={(data) => form.setValue(`${name}.settings`, data, { shouldDirty: true })}
+    <div className="space-y-1">
+      <p className="text-xs font-medium text-muted-foreground">Hooks</p>
+      {handlersOf(hooks).map(([hook, handler]) => (
+        <label key={hook} className="flex items-center gap-2 text-xs">
+          <Checkbox
+            className={QUIET_CHECKBOX_CLASS}
+            checked={!handler.optional || !disabledHooks.includes(hook)}
+            disabled={!handler.optional}
+            onCheckedChange={(checked) => toggleHook(hook, checked === true)}
           />
-        </div>
-      )}
-    </>
+          <code>{hook}</code>
+          <span className="text-muted-foreground">{describeHandler(hook, handler)}</span>
+        </label>
+      ))}
+    </div>
   );
 }

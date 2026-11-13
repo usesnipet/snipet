@@ -1,130 +1,98 @@
+import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
+import { CoreError, CoreErrorCode } from "#src/core/error.js";
+import { LLMDriverRegistry, LLMManifestRegistry } from "#src/core/llm/llm.registry.js";
+import { LLMRunner } from "#src/core/llm/llm.runner.js";
 import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { DeepPartial, Not, QueryDeepPartialEntity, Repository } from "typeorm";
-
-import { LlmError } from "#src/llm/errors.js";
-import { LLMDriverRegistry, LLMRegistry } from "#src/llm/llm.registry.js";
-import { LLMRunner, type LlmTarget } from "#src/llm/llm.runner.js";
-import { splitModelRef } from "#src/llm/model-ref.js";
-import { ConnectionService } from "#src/manifest/connection.service.js";
+import { LLMManifest, LLMModel, LLMResponse, LLMStreamEvent, LLMTarget } from "@snipet/shared/core";
+import { DeepPartial, EntityManager, QueryDeepPartialEntity } from "typeorm";
 
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionSyncService } from "./sync/llm-connection-sync.service.js";
 
-import type { LLMDrivers } from "#src/llm/driver.js";
-import type { ExecuteLlm, ExecuteLlmTarget, LlmManifest, LlmModel, LlmResponse, LlmStreamEvent } from "@snipet/shared";
-
+import type { AppContext } from "#src/common/context/app-context.js";
+import type { ExecuteLLM, ExecuteLLMTarget } from "@snipet/shared";
+import type { LLMDrivers } from "#src/core/llm/driver.js";
 /**
  * Service for managing LLM connections and running conversations.
  */
 @Injectable()
-export class LlmConnectionService extends ConnectionService<LlmConnection, LlmManifest, LLMDrivers> {
+export class LlmConnectionService extends ConnectionService<LlmConnection, LLMManifest, LLMDrivers> {
   protected readonly keyField = "llmKey";
 
   constructor(
-    @InjectRepository(LlmConnection) repo: Repository<LlmConnection>,
-    llms: LLMRegistry,
+    manager: EntityManager,
+    llms: LLMManifestRegistry,
     drivers: LLMDriverRegistry,
     private readonly syncer: LlmConnectionSyncService,
     private readonly runner: LLMRunner,
   ) {
-    super(repo, llms, drivers);
+    super(manager, LlmConnection, llms, drivers);
   }
 
-  override async create(dto: DeepPartial<LlmConnection>): Promise<LlmConnection> {
-    dto = this.checkCreate(dto);
-    const { id } = await this.repo.manager.transaction(async (m) => {
-      const repo = m.getRepository(LlmConnection);
-      if (dto.default) await repo.update({ llmKey: dto.llmKey, default: true }, { default: false });
-      const saved = await repo.save(repo.create(dto));
-      await promoteIfNoDefault(repo, dto.llmKey!);
-      return saved;
-    });
-    void this.syncer.sync(id);
-    return this.findById(id);
+  override async create(ctx: AppContext, dto: DeepPartial<LlmConnection>): Promise<LlmConnection> {
+    const { id } = await super.create(ctx, dto);
+    void this.syncer.sync(ctx, id);
+    return this.findById(ctx, id);
   }
 
-  override async updateById(id: string, dto: QueryDeepPartialEntity<LlmConnection>): Promise<void> {
-    const existing = await this.findById(id);
-    const llmKey = (dto.llmKey as string | undefined) ?? existing.llmKey;
-    dto = await this.checkUpdate(id, dto);
-
-    await this.repo.manager.transaction(async (m) => {
-      const repo = m.getRepository(LlmConnection);
-      if (dto.default) await repo.update({ llmKey, default: true, id: Not(id) }, { default: false });
-      if (Object.keys(dto).length > 0) await repo.update(id, dto);
-      await promoteIfNoDefault(repo, llmKey);
-      if (llmKey !== existing.llmKey) await promoteIfNoDefault(repo, existing.llmKey);
-    });
-    if (dto.llmKey !== undefined || dto.config !== undefined) void this.syncer.sync(id);
+  override async updateById(ctx: AppContext, id: string, dto: QueryDeepPartialEntity<LlmConnection>): Promise<void> {
+    await super.updateById(ctx, id, dto);
+    if (dto.llmKey !== undefined || dto.config !== undefined) void this.syncer.sync(ctx, id);
   }
 
-  override async deleteById(id: string): Promise<void> {
-    const existing = await this.findById(id);
-    await this.repo.manager.transaction(async (m) => {
-      const repo = m.getRepository(LlmConnection);
-      await repo.delete(id);
-      await promoteIfNoDefault(repo, existing.llmKey);
-    });
-  }
-
-  sync(id: string): Promise<void> {
-    return this.syncer.sync(id);
+  sync(ctx: AppContext, id: string): Promise<void> {
+    return this.syncer.sync(ctx, id);
   }
 
   /** The connection's models as last synced, by key. */
-  async findModels(connectionId: string): Promise<LlmModel[]> {
+  async findModels(ctx: AppContext, connectionId: string): Promise<LLMModel[]> {
     // No config: it would be decrypted for nothing.
-    const conn = await this.repo.findOne({ select: { id: true, models: true }, where: { id: connectionId } });
+    const conn = await this.repository(ctx).findOne({
+      select: { id: true, models: true },
+      where: { id: connectionId },
+    });
     return conn?.models ?? [];
   }
 
-  /** Models of connectionId, else of the llm's default connection. */
-  async listLLMModels(llmKey: string, connectionId?: string): Promise<LlmModel[]> {
-    return this.findModels((await this.connectionFor(llmKey, connectionId)).id);
+  /** Models of connectionId, which must be a connection of llmKey. */
+  async listLLMModels(ctx: AppContext, llmKey: string, connectionId: string): Promise<LLMModel[]> {
+    const conn = await this.repository(ctx).findOne({
+      select: { id: true, models: true },
+      where: { id: connectionId, llmKey },
+    });
+    if (!conn) throw new CoreError(CoreErrorCode.NOT_FOUND, `connection "${connectionId}" of "${llmKey}" not found`);
+    return conn.models;
   }
 
-  async generate(dto: ExecuteLlm, signal?: AbortSignal): Promise<LlmResponse> {
-    return this.runner.generate({ ...dto, targets: await this.resolveTargets(dto.targets), signal });
+  async generate(ctx: AppContext, dto: ExecuteLLM, signal?: AbortSignal): Promise<LLMResponse> {
+    return this.runner.generate({ ...dto, targets: await this.resolveTargets(ctx, dto.targets), signal });
   }
 
-  async *stream(dto: ExecuteLlm, signal?: AbortSignal): AsyncGenerator<LlmStreamEvent> {
-    yield* this.runner.stream({ ...dto, targets: await this.resolveTargets(dto.targets), signal });
+  async *stream(ctx: AppContext, dto: ExecuteLLM, signal?: AbortSignal): AsyncGenerator<LLMStreamEvent> {
+    yield* this.runner.stream({ ...dto, targets: await this.resolveTargets(ctx, dto.targets), signal });
   }
 
   /**
-   * Each target with its connection's config, once its model is known to be
-   * among the connection's synced models.
+   * Each target with its connection's llm and config. A target whose
+   * connection is gone, or whose model isn't among the connection's synced
+   * models, comes back with the error instead, so the runner skips it rather
+   * than failing the whole run.
    */
-  async resolveTargets(targets: ExecuteLlmTarget[]): Promise<LlmTarget[]> {
+  async resolveTargets(ctx: AppContext, targets: ExecuteLLMTarget[]): Promise<LLMTarget[]> {
     return Promise.all(
-      targets.map(async (t) => {
-        const [llmKey, model] = splitModelRef(t.model);
-        const conn = await this.connectionFor(llmKey, t.connectionId);
-        if (!(await this.findModels(conn.id)).some((m) => m.key === model)) {
-          throw new LlmError("model_not_found", `model "${t.model}" not found`);
+      targets.map(async ({ connectionId, model }): Promise<LLMTarget> => {
+        const conn = await this.repository(ctx).findOne({
+          select: { id: true, llmKey: true, config: true, models: true },
+          where: { id: connectionId },
+        });
+        if (!conn) {
+          return { status: "error", model, error: `connection "${connectionId}" not found` };
         }
-        return { model: t.model, connection: conn.config, extraOptions: t.extraOptions };
+        if (!conn.models.some((m) => m.key === model)) {
+          return { status: "error", model, error: `model "${model}" not found` };
+        }
+        return { status: "success", llm: conn.llmKey, model, connection: conn.config };
       }),
     );
   }
-
-  private async connectionFor(llmKey: string, connectionId?: string): Promise<LlmConnection> {
-    if (connectionId) {
-      const conn = await this.findById(connectionId);
-      if (conn.llmKey !== llmKey) {
-        throw new LlmError("bad_request", `connection "${connectionId}" is not a "${llmKey}" connection`);
-      }
-      return conn;
-    }
-    const conn = await this.repo.findOneBy({ llmKey, default: true });
-    if (!conn) throw new LlmError("bad_request", `no "${llmKey}" connection`);
-    return conn;
-  }
-}
-
-async function promoteIfNoDefault(repo: Repository<LlmConnection>, llmKey: string) {
-  if (await repo.existsBy({ llmKey, default: true })) return;
-  const oldest = await repo.findOne({ where: { llmKey }, order: { createdAt: "ASC" } });
-  if (oldest) await repo.update(oldest.id, { default: true });
 }

@@ -2,19 +2,41 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
+import { initials, readableTextColor } from "@/lib/avatar-fallback";
 import { cn } from "@/lib/utils";
 import { BotIcon, ImageUpIcon, XIcon } from "lucide-react";
 import { useRef } from "react";
 import { useFormContext } from "react-hook-form";
+import stc from "string-to-color";
 
 const AVATAR_SIZE = 256;
 
-export function AgentAvatar({ avatar, className }: { avatar?: string | null; className?: string }) {
+type AgentAvatarProps = {
+  avatar?: string | null;
+  /** Gives the fallback initials and a color of its own, to tell agents without an avatar apart. */
+  name?: string;
+  className?: string;
+  onClick?: () => void;
+};
+export function AgentAvatar({ avatar, name, className, onClick }: AgentAvatarProps) {
+  const background = name && stc(name);
   return (
-    <Avatar className={cn("size-9 rounded-lg after:rounded-lg", className)}>
+    <Avatar className={cn("size-9 rounded-lg after:rounded-lg", className)} onClick={onClick}>
       {avatar && <AvatarImage src={avatar} alt="" className="rounded-lg" />}
-      <AvatarFallback className="rounded-lg">
-        <BotIcon className="size-1/2" />
+      <AvatarFallback
+        className="@container rounded-lg"
+        style={background ? { backgroundColor: background } : undefined}
+      >
+        {/* Sized against the avatar, which ranges from a chat row to a form field. */}
+        {background ? (
+          // Hidden from screen readers: the name is always next to it or in a label, so "EM EMS" would be read out.
+          // Colored here because parents like a focused select item force a text color on their descendants.
+          <span aria-hidden className="text-[40cqw] font-semibold" style={{ color: readableTextColor(background) }}>
+            {initials(name)}
+          </span>
+        ) : (
+          <BotIcon className="size-1/2" />
+        )}
       </AvatarFallback>
     </Avatar>
   );
@@ -66,19 +88,32 @@ export function AgentAvatarField({ name }: { name: string }) {
         };
 
         return (
-          <FormItem>
+          <FormItem className="w-24 shrink-0">
             <FormLabel>Avatar</FormLabel>
-            <div className="flex items-center gap-3">
-              <AgentAvatar avatar={field.value} className="size-14" />
-              <FormControl>
-                <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFile} />
-              </FormControl>
-              <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
-                <ImageUpIcon /> {field.value ? "Change" : "Upload"}
+            <AgentAvatar avatar={field.value} className="size-24" onClick={() => inputRef.current?.click()} />
+            <FormControl>
+              <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFile} />
+            </FormControl>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-w-0 flex-1"
+                onClick={() => inputRef.current?.click()}
+              >
+                {!field.value && <ImageUpIcon />}
+                {field.value ? "Change" : "Upload"}
               </Button>
               {field.value && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => field.onChange(null)}>
-                  <XIcon /> Remove
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Remove avatar"
+                  onClick={() => field.onChange(null)}
+                >
+                  <XIcon />
                 </Button>
               )}
             </div>

@@ -1,16 +1,14 @@
 export const ROUTES = {
   login: "/login",
-  home: "/",
-  agents: "/agents",
-  agentPlayground: "/agents/playground",
-  agentPlaygroundSession: "/agents/playground/{sessionId}",
-  llmConnections: "/llm/connections",
-  llmPlayground: "/llm/playground",
-  plugins: "/plugins",
-  apps: "/apps",
-  users: "/users",
-  apiKey: "/api-keys",
-  settings: "/settings",
+  chat: "/",
+  chatSession: "/{sessionId}",
+  agents: "/admin/agents",
+  agentNew: "/admin/agents/new",
+  agent: "/admin/agents/{agentId}",
+  llmConnections: "/admin/llm/connections",
+  plugins: "/admin/plugins",
+  apps: "/admin/apps",
+  users: "/admin/users",
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

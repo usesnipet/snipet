@@ -9,15 +9,15 @@ In a few minutes you'll have an agent that can read your GitHub repositories. Yo
 
 <Steps>
 
-1. **Connect a model.** Go to **LLMs > Connections**, pick a provider and paste its API key.
+1. **Connect a model.** Go to **LLMs**, pick a provider and paste its API key.
 
    ![New model connection form](/images/docs/models-connection-form.png)
 
-2. **Enable a plugin.** Go to **Plugins**, open GitHub from the catalog and add a connection with a GitHub token. Snipet loads the plugin's actions once the connection is saved.
+2. **Enable a plugin.** Go to **Plugins**, open GitHub from the catalog and add a connection with a GitHub token. Snipet loads the plugin's tools once the connection is saved.
 
    ![Plugin catalog](/images/docs/plugins-catalog.png)
 
-3. **Create the agent.** Go to **Agents > Browse** and create one:
+3. **Create the agent.** Go to **Agents** and create one:
 
    - **System prompt**: what it's for, e.g. "You help the team triage GitHub issues."
    - **Models**: the connection from step 1.
@@ -25,9 +25,9 @@ In a few minutes you'll have an agent that can read your GitHub repositories. Yo
 
    ![Agent form](/images/docs/agents-form.png)
 
-4. **Try it.** Open **Agents > Playground**, pick the agent and ask "What are the open issues labeled bug?". You'll see each plugin call as it happens, then the answer.
+4. **Try it.** Open **Chat**, pick the agent and ask "What are the open issues labeled bug?". You'll see each plugin call as it happens, then the answer.
 
-   ![Agent playground with a tool call](/images/docs/agents-playground.png)
+   ![Chat with a tool call](/images/docs/chat.png)
 
 </Steps>
 
