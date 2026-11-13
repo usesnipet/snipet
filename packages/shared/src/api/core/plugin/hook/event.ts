@@ -16,7 +16,8 @@ export const hookEventBaseSchema = z.object({
   payload: z.unknown(),
   occurredAt: z.iso.datetime(),
   /** turn is 0 before the first LLM call. */
-  run: z.object({ turn: z.number().int(), status: agentRunStatusSchema }),
+  run: z.object({ id: z.uuid(), sessionId: z.uuid(), turn: z.number().int(), status: agentRunStatusSchema }),
+  agent: z.object({ id: z.uuid(), name: z.string() }),
   owner: ownerSchema,
   /** The agent's settings for this plugin. */
   settings: jsonObjectSchema,

@@ -79,7 +79,7 @@ export class PluginResolver {
     instructions.sort((a, b) => a.source.id.localeCompare(b.source.id));
     return {
       tools: new ToolRunner(tools),
-      hooks: new HookRunner(handlers, { runId: run.id, owner: ctx.owner }, this.logger),
+      hooks: new HookRunner(handlers, { run, agent, owner: ctx.owner }, this.logger),
       denied,
       instructions,
     };

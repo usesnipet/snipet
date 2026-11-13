@@ -15,7 +15,11 @@ import type { BoundHandler } from "./hook.runner.js";
 import type { HookEvent, HookResult } from "@snipet/shared/core";
 
 const logger = { log() {}, warn() {}, error() {} };
-const context = { runId: "r1", owner: { userId: "u1", appId: null, externalUserId: null, name: "Ana" } };
+const context = {
+  run: { id: "r1", sessionId: "s1" },
+  agent: { id: "ag1", name: "Bot" },
+  owner: { userId: "u1", appId: null, externalUserId: null, name: "Ana" },
+};
 const call = { type: LLMMessagePartType.TOOL_CALL as const, id: "c1", name: "search", arguments: { q: "x" } };
 const source = { id: "p1", name: "GitHub" };
 const result = { content: "ok", isError: false };
@@ -195,7 +199,8 @@ describe("HookRunner.run", () => {
 
     expect(events[0]).toMatchObject({
       hook: HookName.TOOL_BEFORE,
-      run: { turn: 2, status: AgentRunStatus.RUNNING },
+      run: { id: "r1", sessionId: "s1", turn: 2, status: AgentRunStatus.RUNNING },
+      agent: { id: "ag1", name: "Bot" },
       owner: context.owner,
       settings: { who: "a" },
       state: {},

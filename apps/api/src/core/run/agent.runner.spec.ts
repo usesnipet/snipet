@@ -79,7 +79,7 @@ function setup(replies: LLMMessage[], handlers: BoundHandler[] = [], plugins: "o
         ? Promise.reject(new Error("db down"))
         : Promise.resolve({
             tools,
-            hooks: new HookRunner(handlers, { runId: run.id, owner: ctx.owner }, logger),
+            hooks: new HookRunner(handlers, { run, agent, owner: ctx.owner }, logger),
             denied: [],
             instructions: [],
           }),
@@ -104,7 +104,7 @@ function setup(replies: LLMMessage[], handlers: BoundHandler[] = [], plugins: "o
   const runStore: RunStore = {
     finish: (_ctx, id, outcome) => {
       outcomes.push(outcome);
-      return Promise.resolve({ ...run, id, ...outcome } as AgentRun);
+      return Promise.resolve({ ...run, id, ...outcome });
     },
   };
   const runner = new AgentRunner(

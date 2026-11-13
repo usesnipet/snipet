@@ -20,9 +20,10 @@ export interface BoundHandler {
   settings: JsonObject;
 }
 
-/** Who a run's events are about; runId only names the run in logs. */
+/** Who and what a run's events are about. */
 export interface HookRunnerContext {
-  runId: string;
+  run: { id: string; sessionId: string };
+  agent: { id: string; name: string };
   owner: Owner;
 }
 
@@ -153,6 +154,7 @@ export class HookRunner {
   private handle(bound: BoundHandler, payload: unknown): Promise<unknown> {
     const signal = AbortSignal.timeout(bound.handler.timeoutMs);
     // Copies, so a driver can't change what the next handler or the loop sees.
+    const { run, agent, owner } = this.context;
     const settings = structuredClone(bound.settings);
     const state = structuredClone(this.stateOf(bound));
     const event = {
@@ -160,8 +162,9 @@ export class HookRunner {
       hook: bound.hook,
       payload: structuredClone(payload),
       occurredAt: new Date().toISOString(),
-      run: { turn: this.turn, status: this.status },
-      owner: this.context.owner,
+      run: { id: run.id, sessionId: run.sessionId, turn: this.turn, status: this.status },
+      agent: { id: agent.id, name: agent.name },
+      owner,
       settings,
       state,
     } as HookEvent;
@@ -170,7 +173,7 @@ export class HookRunner {
   }
 
   private warnFailure(bound: BoundHandler, err: unknown): void {
-    this.logger.warn(`hook ${bound.hook} (${bound.plugin.name}) on run ${this.context.runId}: ${String(err)}`);
+    this.logger.warn(`hook ${bound.hook} (${bound.plugin.name}) on run ${this.context.run.id}: ${String(err)}`);
   }
 
   private stateOf(bound: BoundHandler): JsonObject {

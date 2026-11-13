@@ -7,6 +7,9 @@ import { join } from "node:path";
 
 import type { BaseDriver } from "#src/core/manifest/driver.js";
 import type { JsonObject, ManifestDriver } from "@snipet/shared";
+import { AgentRunStatus } from "@snipet/shared";
+import { HookName, LLMMessagePartType } from "@snipet/shared/core";
+
 import type { HookEvent } from "@snipet/shared/core";
 import type { AddressInfo } from "node:net";
 import type { HookContext } from "#src/core/plugin/driver.js";
@@ -18,13 +21,23 @@ const { debugPath } = await import("./event-file.js");
 const { DebugFsDriver } = await import("./fs.hooks.js");
 const { DebugS3Driver } = await import("./s3.hooks.js");
 
-const event = {
+const run = { id: "r1", sessionId: "s1", turn: 1, status: AgentRunStatus.RUNNING };
+const event: HookEvent = {
   id: "0a1b2c3d-0000-0000-0000-000000000000",
-  hook: "tool.after",
+  hook: HookName.TOOL_AFTER,
+  payload: {
+    call: { type: LLMMessagePartType.TOOL_CALL, id: "c1", name: "search", arguments: {} },
+    result: { content: "ok", isError: false },
+    durationMs: 1,
+    error: null,
+  },
   occurredAt: "2026-10-16T14:32:05.123Z",
-  run: { id: "r1", sessionId: "s1" },
+  run,
   agent: { id: "ag1", name: "Suporte Técnico" },
-} as HookEvent;
+  owner: { userId: "u1", appId: null, externalUserId: null, name: null },
+  settings: {},
+  state: {},
+};
 const eventPath = "2026-10-16/suporte-tecnico_ag1/s1/r1/14-32-05.123_tool.after_0a1b2c3d.json";
 const context = { signal: new AbortController().signal } as HookContext;
 
@@ -42,8 +55,7 @@ describe("debugPath", () => {
   });
 
   it("refuses ids that would leave the folder", () => {
-    const run = { id: "../../etc", sessionId: "s1" };
-    expect(() => debugPath({ ...event, run } as HookEvent)).toThrow("Invalid file key");
+    expect(() => debugPath({ ...event, run: { ...run, id: "../../etc" } })).toThrow("Invalid file key");
   });
 });
 

@@ -72,7 +72,8 @@ export class AgentRunner {
       this.logger.error(err);
     }
     // Without plugins the run still ends through run.end, on no handlers.
-    const hooks = plugins?.hooks ?? new HookRunner([], { runId: run.id, owner: ctx.owner }, this.logger);
+    // TODO: check if we need to build the hooks runner here
+    const hooks = plugins?.hooks ?? new HookRunner([], { run, agent, owner: ctx.owner }, this.logger);
     await this.execute(ctx, agent, run, signal, hooks, plugins);
     await hooks.settle();
   }
