@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 export const ownerSchema = z.union([
   z.object({ userId: z.string(), appId: z.null(), externalUserId: z.null(), name: z.string().nullable() }),

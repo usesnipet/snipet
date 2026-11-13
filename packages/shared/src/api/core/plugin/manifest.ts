@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 import { jsonObjectSchema } from "../../../schemas/json.js";
 import { baseManifestSchema, driverSchema } from "../../../schemas/manifest.js";

@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 import { driverSchema } from "../../../../schemas/manifest.js";
 

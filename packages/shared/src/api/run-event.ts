@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 import { agentRunSchema } from "./agent-run.js";
 import { agentMessageSchema } from "./agent-session.js";

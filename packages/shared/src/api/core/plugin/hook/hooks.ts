@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 import { jsonObjectSchema } from "../../../../schemas/json.js";
 import { agentRunStatusSchema } from "../../../agent-run.js";

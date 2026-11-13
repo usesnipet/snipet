@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 import { llmPartSchema, llmRoleSchema } from "./core/index.js";
 import { paginatedSchema, paginationParamsSchema } from "./pagination.js";

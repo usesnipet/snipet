@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 import { llmMessageSchema } from "./message.js";
 import { llmUsageSchema } from "./response.js";
