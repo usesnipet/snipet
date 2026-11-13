@@ -16,7 +16,7 @@ import type { HookEvent, HookResult } from "@snipet/shared/core";
 
 const logger = { log() {}, warn() {}, error() {} };
 const context = {
-  run: { id: "r1", sessionId: "s1" },
+  run: { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05.123Z") },
   agent: { id: "ag1", name: "Bot" },
   owner: { userId: "u1", appId: null, externalUserId: null, name: "Ana" },
 };

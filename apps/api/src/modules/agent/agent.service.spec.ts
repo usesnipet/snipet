@@ -26,10 +26,10 @@ const memory = pluginManifestSchema.parse({
   capabilities: {
     hooks: {
       driver: "memory",
-      handlers: [
-        { hook: "run.context", actions: ["modify"] },
-        { hook: "run.end", background: true, optional: true },
-      ],
+      handlers: {
+        "run.context": {},
+        "run.end": { mode: "background", optional: true },
+      },
     },
   },
 });

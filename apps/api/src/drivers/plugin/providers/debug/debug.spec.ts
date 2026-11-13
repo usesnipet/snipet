@@ -43,7 +43,7 @@ const event: HookEvent = {
   settings: {},
   state: {},
 };
-const eventPath = "2026-10-16/suporte-tecnico_ag1/s1/r1/14-32-05.123_tool.after_0a1b2c3d.json";
+const eventPath = "2026-10-16/suporte-tecnico_ag1/session_s1/run_14-32-05_r1/14-32-05.123_tool.after_0a1b2c3d.json";
 const context = { signal: new AbortController().signal } as HookContext;
 
 /** The options the manifest gives its driver for a connection config. */

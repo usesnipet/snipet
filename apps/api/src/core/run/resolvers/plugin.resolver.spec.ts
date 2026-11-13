@@ -14,7 +14,7 @@ import type { PluginManifestRegistry } from "../../plugin/plugin.registry.js";
 import type { PluginConnectionStore, RunPluginConnection } from "../../store/plugin-connection.store.js";
 
 const ctx = { owner: { userId: "u1", appId: null, externalUserId: null, name: null }, requestId: "q1" } as CoreContext;
-const run = { id: "r1", sessionId: "s1" } as AgentRun;
+const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05.123Z") } as AgentRun;
 
 /** Every call any fake driver saw, in order. */
 let calls: string[] = [];

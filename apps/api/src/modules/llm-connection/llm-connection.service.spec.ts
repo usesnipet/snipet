@@ -1,6 +1,5 @@
 import { AppContext } from "#src/common/context/app-context.js";
 import { CoreError } from "#src/core/error.js";
-import { LLMErrorCode } from "#src/core/llm/errors.js";
 import { jest } from "@jest/globals";
 
 import { LlmConnectionService } from "./llm-connection.service.js";
@@ -47,9 +46,9 @@ describe("LlmConnectionService.resolveTargets", () => {
         { connectionId: "c3", model: "llama3" },
       ]),
     ).resolves.toEqual([
-      { connectionId: "c1", llm: "openai", model: "gpt-4o", connection: { apiKey: "sk-1" } },
-      { connectionId: "c2", llm: "openai", model: "meta/llama", connection: { apiKey: "sk-2" } },
-      { connectionId: "c3", llm: "ollama", model: "llama3", connection: {} },
+      { status: "success", llm: "openai", model: "gpt-4o", connection: { apiKey: "sk-1" } },
+      { status: "success", llm: "openai", model: "meta/llama", connection: { apiKey: "sk-2" } },
+      { status: "success", llm: "ollama", model: "llama3", connection: {} },
     ]);
   });
 
@@ -59,10 +58,8 @@ describe("LlmConnectionService.resolveTargets", () => {
       { connectionId: "gone", model: "gpt-4o" },
       { connectionId: "c1", model: "gpt-5" },
     ]);
-    expect(missing).toMatchObject({ error: { code: LLMErrorCode.CONNECTION_NOT_FOUND } });
-    expect(unsynced).toMatchObject({
-      error: { code: LLMErrorCode.MODEL_NOT_FOUND, message: 'model "gpt-5" not found' },
-    });
+    expect(missing).toEqual({ status: "error", model: "gpt-4o", error: 'connection "gone" not found' });
+    expect(unsynced).toEqual({ status: "error", model: "gpt-5", error: 'model "gpt-5" not found' });
   });
 });
 

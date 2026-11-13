@@ -29,7 +29,7 @@ import type { TargetResolver } from "./resolvers/target.resolver.js";
 
 const ctx = { owner: { userId: "u1", appId: null, externalUserId: null, name: null }, requestId: "q1" } as CoreContext;
 const agent = { name: "Bot", systemPrompt: "", maxTurns: 3, llms: [], pluginConnections: [] } as unknown as Agent;
-const run = { id: "r1", sessionId: "s1" } as AgentRun;
+const run = { id: "r1", sessionId: "s1", createdAt: new Date("2026-10-16T14:32:05.123Z") } as AgentRun;
 const logger = { log() {}, warn() {}, error() {} };
 const user: LLMMessage = { role: LLMRole.USER, parts: [{ type: LLMMessagePartType.TEXT, text: "hi" }] };
 
