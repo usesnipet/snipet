@@ -22,7 +22,6 @@ const LlmConnectionsPage = lazy(() =>
 const PluginsPage = lazy(() => import("./routes/plugins/page").then((m) => ({ default: m.PluginsPage })));
 const AppsPage = lazy(() => import("./routes/apps/page").then((m) => ({ default: m.AppsPage })));
 const UsersPage = lazy(() => import("./routes/users/page").then((m) => ({ default: m.UsersPage })));
-const SettingsPage = lazy(() => import("./routes/settings/page").then((m) => ({ default: m.SettingsPage })));
 const NotFoundPage = lazy(() => import("./routes/not-found/page").then((m) => ({ default: m.NotFoundPage })));
 
 const toReactRouterPath = (path: RoutePath) => {
@@ -56,7 +55,6 @@ const router = createBrowserRouter(
                 <Route path={toReactRouterPath(ROUTES.plugins)} element={<PluginsPage />} />
                 <Route path={toReactRouterPath(ROUTES.apps)} element={<AppsPage />} />
                 <Route path={toReactRouterPath(ROUTES.users)} element={<UsersPage />} />
-                <Route path={toReactRouterPath(ROUTES.settings)} element={<SettingsPage />} />
               </Route>
               <Route path="*" element={<NotFoundPage />} />
             </Route>

@@ -6,6 +6,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db/snipet
       PLUGINS_DIR: "/app/plugins"
+      STORAGE_FS_DIR: "/app/storage"
       CORS_ORIGINS: "*"
     # host.docker.internal is the host, for a local Ollama or LM Studio; Linux needs it declared.
     extra_hosts:
@@ -14,13 +15,13 @@ services:
     depends_on:
       - db
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8852/system/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8852/api/system/health || exit 1"]
       interval: 5s
       retries: 10
       timeout: 5s
     volumes:
       - ./plugins:/app/plugins
-
+      - ./storage:/app/storage
   db:
     image: postgres:17
     environment:
@@ -33,17 +34,6 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       retries: 10
-    restart: unless-stopped
-
-  rustfs:
-    image: rustfs/rustfs:latest
-    container_name: rustfs-server
-    ports:
-      - "9000:9000"  # S3 API
-      - "9001:9001"  # Console Web
-    environment:
-      - RUSTFS_ACCESS_KEY=admin
-      - RUSTFS_SECRET_KEY=admin
     restart: unless-stopped
 
 volumes:
