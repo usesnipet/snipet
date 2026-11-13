@@ -92,7 +92,7 @@ export class AgentRunner {
     let userInput = "";
     let history: LLMMessage[] = [];
     let runStart = 0;
-    const usage: LLMUsage = { inputTokens: 0, outputTokens: 0 };
+    const usage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 } satisfies LLMUsage;
     const startedAt = Date.now();
 
     try {
@@ -124,6 +124,7 @@ export class AgentRunner {
         });
         usage.inputTokens += reply.usage.inputTokens;
         usage.outputTokens += reply.usage.outputTokens;
+        usage.cachedInputTokens += reply.usage.cachedInputTokens ?? 0;
         history.push(await this.save(ctx, run, reply.message, reply.model));
 
         const calls = toolCallsOf(reply.message);

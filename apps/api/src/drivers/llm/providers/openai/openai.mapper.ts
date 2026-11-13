@@ -1,6 +1,6 @@
 import { LLMFinishReason, LLMMessagePartType, LLMRole, LLMStreamEventType } from "@snipet/shared/core";
 
-import type { LLMMessage, LLMMessagePart, LLMResponse, LLMTool } from "@snipet/shared/core";
+import type { LLMMessage, LLMMessagePart, LLMResponse, LLMTool, LLMUsage } from "@snipet/shared/core";
 import type {
   ChatCompletion,
   ChatCompletionChunk,
@@ -8,6 +8,7 @@ import type {
   ChatCompletionMessageParam,
   ChatCompletionTool,
 } from "openai/resources/chat/completions";
+import type { CompletionUsage } from "openai/resources/completions";
 
 import type { ChatStreamEvent } from "#src/core/llm/driver.js";
 
@@ -82,10 +83,15 @@ export function fromCompletion(completion: ChatCompletion): LLMResponse {
       choice.finish_reason,
       parts.some((p) => p.type === LLMMessagePartType.TOOL_CALL),
     ),
-    usage: {
-      inputTokens: completion.usage?.prompt_tokens ?? 0,
-      outputTokens: completion.usage?.completion_tokens ?? 0,
-    },
+    usage: usageOf(completion.usage),
+  };
+}
+
+function usageOf(usage: CompletionUsage | undefined): LLMUsage {
+  return {
+    inputTokens: usage?.prompt_tokens ?? 0,
+    outputTokens: usage?.completion_tokens ?? 0,
+    cachedInputTokens: usage?.prompt_tokens_details?.cached_tokens ?? 0,
   };
 }
 
@@ -109,10 +115,7 @@ export async function* toStreamEvents(chunks: AsyncIterable<ChatCompletionChunk>
     // With include_usage the last chunk carries the totals and no choices.
     if (chunk.usage) {
       yield* flush();
-      yield {
-        event: LLMStreamEventType.USAGE,
-        data: { usage: { inputTokens: chunk.usage.prompt_tokens, outputTokens: chunk.usage.completion_tokens } },
-      };
+      yield { event: LLMStreamEventType.USAGE, data: { usage: usageOf(chunk.usage) } };
     }
     for (const choice of chunk.choices) {
       if (choice.delta.content) yield { event: LLMStreamEventType.TEXT_DELTA, data: { text: choice.delta.content } };

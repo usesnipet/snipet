@@ -35,14 +35,17 @@ describe("openai mapper", () => {
     for await (const e of toStreamEvents(
       from([
         chunk({ content: "Hi" }, "stop"),
-        { choices: [], usage: { prompt_tokens: 12, completion_tokens: 3 } } as unknown as ChatCompletionChunk,
+        {
+          choices: [],
+          usage: { prompt_tokens: 12, completion_tokens: 3, prompt_tokens_details: { cached_tokens: 8 } },
+        } as unknown as ChatCompletionChunk,
       ]),
     )) {
       events.push(e);
     }
     expect(events).toEqual([
       { event: "text_delta", data: { text: "Hi" } },
-      { event: "usage", data: { usage: { inputTokens: 12, outputTokens: 3 } } },
+      { event: "usage", data: { usage: { inputTokens: 12, outputTokens: 3, cachedInputTokens: 8 } } },
     ]);
   });
 
