@@ -1,27 +1,17 @@
-import { storageKeyOf } from "#src/infra/storage/utils.js";
 import { secretFields } from "#src/core/manifest/manifest.registry.js";
+import { storageKeyOf } from "#src/infra/storage/utils.js";
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { CrudService, maskSecrets, restoreSecrets, validateJson } from "@snipet/server-common";
-import { hookHandlersOf } from "@snipet/shared";
 import { EntityManager, QueryDeepPartialEntity } from "typeorm";
 
 import { FilesStorage } from "../files/files.storage.js";
 import { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
 
-import { Agent, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
+import { Agent, AgentLLM, AgentPluginConnection } from "./agent.entity.js";
 
+import type { AgentSummary, AvailableAgent, CreateAgent, JsonObject, Paginated, UpdateAgent } from "@snipet/shared";
 import type { AppContext } from "#src/common/context/app-context.js";
 import type { FilterQuery } from "@snipet/server-common";
-import type {
-  AgentSummary,
-  AvailableAgent,
-  CreateAgent,
-  HookHandler,
-  HookName,
-  JsonObject,
-  Paginated,
-  UpdateAgent,
-} from "@snipet/shared";
 
 type PluginGrant = NonNullable<CreateAgent["pluginConnections"]>[number];
 
@@ -131,7 +121,7 @@ export class AgentService extends CrudService<Agent, AppContext> {
     try {
       await this.transaction(ctx, async (ctx) => {
         const agentRepo = this.repository(ctx);
-        const llmRepo = this.repositoryOf(ctx, AgentLlm);
+        const llmRepo = this.repositoryOf(ctx, AgentLLM);
         const pluginConnectionRepo = this.repositoryOf(ctx, AgentPluginConnection);
         const current = await agentRepo.findOne({
           where: { id },
@@ -191,8 +181,8 @@ export class AgentService extends CrudService<Agent, AppContext> {
       if (!manifest) return { ...grant, position, settings: incoming };
       const settings = manifest.settings ? validateJson<JsonObject>(manifest.settings, incoming) : {};
       const hooks = manifest.capabilities.hooks;
-      const handlers = hooks ? hookHandlersOf(hooks) : new Map<HookName, HookHandler>();
-      const disabledHooks = (grant.disabledHooks ?? []).filter((hook) => handlers.get(hook)?.optional);
+      if (!hooks) return { ...grant, position, settings: incoming };
+      const disabledHooks = (grant.disabledHooks ?? []).filter((hook) => hooks.handlers[hook]?.optional);
       return { ...grant, position, settings, disabledHooks };
     });
   }

@@ -4,7 +4,7 @@ import { HttpHealthCheckDriver } from "#src/drivers/http.health.js";
 import { env } from "#src/env.js";
 import { loadManifests } from "#src/infra/manifest/load-manifest.js";
 import { Logger, Module } from "@nestjs/common";
-import { llmManifestSchema } from "@snipet/shared";
+import { llmManifestSchema } from "@snipet/shared/core";
 import { resolve } from "node:path";
 
 import { OllamaChatDriver } from "./providers/ollama/ollama.chat.js";

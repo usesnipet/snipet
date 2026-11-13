@@ -1,9 +1,9 @@
 import { Driver } from "#src/core/manifest/driver.js";
-import { LlmCapability } from "@snipet/shared";
+import { LLMCapability } from "@snipet/shared/core";
+import type { LLMModel } from "@snipet/shared/core";
 
 import { ollamaClient, ollamaOptionsSchema, toLlmError } from "./ollama.client.js";
 
-import type { LlmModel } from "@snipet/shared";
 import type { ModelDriver } from "#src/core/llm/driver.js";
 import type { OllamaOptions } from "./ollama.client.js";
 
@@ -12,14 +12,14 @@ export interface OllamaShow {
   model_info?: Record<string, unknown>;
 }
 
-const CAPABILITIES: Record<string, LlmCapability> = {
-  completion: LlmCapability.TEXT,
-  tools: LlmCapability.TOOLS,
-  vision: LlmCapability.VISION,
-  embedding: LlmCapability.EMBEDDING,
+const CAPABILITIES: Record<string, LLMCapability> = {
+  completion: LLMCapability.TEXT,
+  tools: LLMCapability.TOOLS,
+  vision: LLMCapability.VISION,
+  embedding: LLMCapability.EMBEDDING,
 };
 
-export function toLlmModel(name: string, show: OllamaShow): LlmModel {
+export function toLlmModel(name: string, show: OllamaShow): LLMModel {
   const contextLength = Object.entries(show.model_info ?? {}).find(([k]) => k.endsWith(".context_length"))?.[1];
   return {
     key: name,
@@ -37,7 +37,7 @@ export function toLlmModel(name: string, show: OllamaShow): LlmModel {
 export class OllamaModelDriver extends Driver(ollamaOptionsSchema) implements ModelDriver<OllamaOptions> {
   readonly key = "ollama";
 
-  async listModels(options: OllamaOptions): Promise<LlmModel[]> {
+  async listModels(options: OllamaOptions): Promise<LLMModel[]> {
     try {
       const client = ollamaClient(options, AbortSignal.timeout(10_000));
       const { models } = await client.list();

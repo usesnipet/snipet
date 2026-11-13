@@ -1,6 +1,5 @@
 import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
 import { CoreError, CoreErrorCode } from "#src/core/error.js";
-import { LLMError, LLMErrorCode } from "#src/core/llm/errors.js";
 import { LLMDriverRegistry, LLMManifestRegistry } from "#src/core/llm/llm.registry.js";
 import { LLMRunner } from "#src/core/llm/llm.runner.js";
 import { Injectable } from "@nestjs/common";
@@ -87,17 +86,12 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LLMMa
           where: { id: connectionId },
         });
         if (!conn) {
-          const error = new LLMError(LLMErrorCode.CONNECTION_NOT_FOUND, `connection "${connectionId}" not found`);
-          return { connectionId, model, error };
+          return { status: "error", model, error: `connection "${connectionId}" not found` };
         }
         if (!conn.models.some((m) => m.key === model)) {
-          return {
-            connectionId,
-            model,
-            error: new LLMError(LLMErrorCode.MODEL_NOT_FOUND, `model "${model}" not found`),
-          };
+          return { status: "error", model, error: `model "${model}" not found` };
         }
-        return { connectionId, llm: conn.llmKey, model, connection: conn.config };
+        return { status: "success", llm: conn.llmKey, model, connection: conn.config };
       }),
     );
   }

@@ -1,3 +1,4 @@
+import { LLMMessagePartType, LLMRole } from "@snipet/shared/core";
 import type { ChatResponse } from "ollama";
 
 import { OllamaChatDriver } from "./ollama.chat.js";
@@ -27,8 +28,8 @@ describe("ollama mapper", () => {
     expect(events).toEqual([
       { event: "thinking_delta", data: { text: "hmm" } },
       { event: "text_delta", data: { text: "Hi" } },
-      { event: "tool_call", data: { id: "c1", name: "weather", arguments: { city: "SP" } } },
-      { event: "usage", data: { inputTokens: 12, outputTokens: 3 } },
+      { event: "tool_call", data: { call: { id: "c1", name: "weather", arguments: { city: "SP" } } } },
+      { event: "usage", data: { usage: { inputTokens: 12, outputTokens: 3 } } },
     ]);
   });
 
@@ -45,20 +46,20 @@ describe("ollama mapper", () => {
     expect(
       toOllamaMessages([
         {
-          role: "user",
+          role: LLMRole.USER,
           parts: [
-            { type: "text", text: "see" },
-            { type: "image", source: "data:image/png;base64,AAA", mimeType: "image/png" },
+            { type: LLMMessagePartType.TEXT, text: "see" },
+            { type: LLMMessagePartType.IMAGE, source: "data:image/png;base64,AAA", mimeType: "image/png" },
           ],
         },
         {
-          role: "assistant",
+          role: LLMRole.ASSISTANT,
           parts: [
-            { type: "thinking", text: "hmm" },
-            { type: "tool_call", id: "c1", name: "weather", arguments: { city: "SP" } },
+            { type: LLMMessagePartType.THINKING, text: "hmm" },
+            { type: LLMMessagePartType.TOOL_CALL, id: "c1", name: "weather", arguments: { city: "SP" } },
           ],
         },
-        { role: "tool", parts: [{ type: "tool_result", toolCallId: "c1", content: "sunny" }] },
+        { role: LLMRole.TOOL, parts: [{ type: LLMMessagePartType.TOOL_RESULT, toolCallId: "c1", content: "sunny" }] },
       ]),
     ).toEqual([
       { role: "user", content: "see", images: ["AAA"] },

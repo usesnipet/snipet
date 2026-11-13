@@ -1,11 +1,10 @@
-import { jest } from "@jest/globals";
-
 import { AppContext } from "#src/common/context/app-context.js";
+import { jest } from "@jest/globals";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { SECRET_PLACEHOLDER } from "@snipet/server-common";
-import { pluginManifestSchema } from "@snipet/shared";
+import { HookName, pluginManifestSchema } from "@snipet/shared/core";
 
-import { Agent, AgentLlm, AgentPluginConnection } from "./agent.entity.js";
+import { Agent, AgentLLM, AgentPluginConnection } from "./agent.entity.js";
 import { AgentService } from "./agent.service.js";
 
 import type { FilesStorage } from "../files/files.storage.js";
@@ -48,7 +47,7 @@ function setup(exists = true, avatar: string | null = null) {
   });
   const repos = new Map<unknown, ReturnType<typeof repoMock>>([
     [Agent, repoMock()],
-    [AgentLlm, repoMock()],
+    [AgentLLM, repoMock()],
     [AgentPluginConnection, repoMock()],
   ]);
   const manager: object = {
@@ -76,7 +75,7 @@ function setup(exists = true, avatar: string | null = null) {
     service,
     storage,
     agents: repos.get(Agent)!,
-    llms: repos.get(AgentLlm)!,
+    llms: repos.get(AgentLLM)!,
     pluginGrants: repos.get(AgentPluginConnection)!,
   };
 }
@@ -140,7 +139,7 @@ describe("AgentService.updateById", () => {
           pluginConnectionId: "p1",
           tools: [],
           settings: { apiKey: SECRET_PLACEHOLDER },
-          disabledHooks: ["run.context", "run.end"],
+          disabledHooks: [HookName.RUN_CONTEXT, HookName.RUN_END],
         },
       ],
     });

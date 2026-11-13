@@ -1,4 +1,4 @@
-import { LlmCapability } from "@snipet/shared";
+import { LLMCapability } from "@snipet/shared/core";
 
 import { toLlmModel } from "./ollama.model.js";
 
@@ -13,7 +13,7 @@ describe("ollama toLlmModel", () => {
       key: "llama3.2:latest",
       name: "llama3.2:latest",
       description: "",
-      capabilities: [LlmCapability.TEXT, LlmCapability.TOOLS],
+      capabilities: [LLMCapability.TEXT, LLMCapability.TOOLS],
       contextWindow: 131072,
     });
   });

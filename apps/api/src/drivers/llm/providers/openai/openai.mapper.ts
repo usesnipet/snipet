@@ -1,4 +1,6 @@
-import type { LlmFinishReason, LlmMessage, LlmPart, LlmResponse, LlmTool } from "@snipet/shared";
+import { LLMFinishReason, LLMMessagePartType, LLMRole, LLMStreamEventType } from "@snipet/shared/core";
+
+import type { LLMMessage, LLMMessagePart, LLMResponse, LLMTool } from "@snipet/shared/core";
 import type {
   ChatCompletion,
   ChatCompletionChunk,
@@ -11,24 +13,25 @@ import type { ChatStreamEvent } from "#src/core/llm/driver.js";
 
 // Pure mapping between our message model and the Chat Completions API.
 
-export function toOpenAiMessages(messages: LlmMessage[]): ChatCompletionMessageParam[] {
+export function toOpenAiMessages(messages: LLMMessage[]): ChatCompletionMessageParam[] {
   return messages.flatMap((m): ChatCompletionMessageParam[] => {
-    const text = m.parts.flatMap((p) => (p.type === "text" ? [p.text] : [])).join("");
+    const text = m.parts.flatMap((p) => (p.type === LLMMessagePartType.TEXT ? [p.text] : [])).join("");
     switch (m.role) {
-      case "system":
+      case LLMRole.SYSTEM:
         return [{ role: "system", content: text }];
-      case "user": {
-        if (!m.parts.some((p) => p.type === "image")) return [{ role: "user", content: text }];
+      case LLMRole.USER: {
+        if (!m.parts.some((p) => p.type === LLMMessagePartType.IMAGE)) return [{ role: "user", content: text }];
         const content = m.parts.flatMap((p): ChatCompletionContentPart[] => {
-          if (p.type === "text") return [{ type: "text", text: p.text }];
-          if (p.type === "image") return [{ type: "image_url", image_url: { url: imageUrl(p.source, p.mimeType) } }];
+          if (p.type === LLMMessagePartType.TEXT) return [{ type: "text", text: p.text }];
+          if (p.type === LLMMessagePartType.IMAGE)
+            return [{ type: "image_url", image_url: { url: imageUrl(p.source, p.mimeType) } }];
           return [];
         });
         return [{ role: "user", content }];
       }
-      case "assistant": {
+      case LLMRole.ASSISTANT: {
         const toolCalls = m.parts.flatMap((p) =>
-          p.type === "tool_call"
+          p.type === LLMMessagePartType.TOOL_CALL
             ? [
                 {
                   id: p.id,
@@ -40,42 +43,44 @@ export function toOpenAiMessages(messages: LlmMessage[]): ChatCompletionMessageP
         );
         return [{ role: "assistant", content: text || null, ...(toolCalls.length > 0 && { tool_calls: toolCalls }) }];
       }
-      case "tool":
+      case LLMRole.TOOL:
         // One API message per result.
         return m.parts.flatMap((p) =>
-          p.type === "tool_result" ? [{ role: "tool" as const, tool_call_id: p.toolCallId, content: p.content }] : [],
+          p.type === LLMMessagePartType.TOOL_RESULT
+            ? [{ role: "tool" as const, tool_call_id: p.toolCallId, content: p.content }]
+            : [],
         );
     }
   });
 }
 
-export function toOpenAiTools(tools: LlmTool[] | undefined): ChatCompletionTool[] | undefined {
+export function toOpenAiTools(tools: LLMTool[] | undefined): ChatCompletionTool[] | undefined {
   if (!tools?.length) return undefined;
   return tools.map((t) => ({
     type: "function",
-    function: { name: t.name, description: t.description, parameters: t.parameters },
+    function: { name: t.name, description: t.description, parameters: t.inputSchema },
   }));
 }
 
-export function fromCompletion(completion: ChatCompletion): LlmResponse {
+export function fromCompletion(completion: ChatCompletion): LLMResponse {
   const choice = completion.choices[0];
   if (!choice) throw new Error("openai: response had no choices");
-  const parts: LlmPart[] = [];
-  if (choice.message.content) parts.push({ type: "text", text: choice.message.content });
+  const parts: LLMMessagePart[] = [];
+  if (choice.message.content) parts.push({ type: LLMMessagePartType.TEXT, text: choice.message.content });
   for (const call of choice.message.tool_calls ?? []) {
     if (call.type !== "function") continue;
     parts.push({
-      type: "tool_call",
+      type: LLMMessagePartType.TOOL_CALL,
       id: call.id,
       name: call.function.name,
       arguments: parseArguments(call.function.arguments),
     });
   }
   return {
-    message: { role: "assistant", parts },
+    message: { role: LLMRole.ASSISTANT, parts },
     finishReason: finishReason(
       choice.finish_reason,
-      parts.some((p) => p.type === "tool_call"),
+      parts.some((p) => p.type === LLMMessagePartType.TOOL_CALL),
     ),
     usage: {
       inputTokens: completion.usage?.prompt_tokens ?? 0,
@@ -93,8 +98,8 @@ export async function* toStreamEvents(chunks: AsyncIterable<ChatCompletionChunk>
   function* flush(): Generator<ChatStreamEvent> {
     for (const call of pending.values()) {
       yield {
-        event: "tool_call",
-        data: { id: call.id, name: call.name, arguments: parseArguments(call.args || "{}") },
+        event: LLMStreamEventType.TOOL_CALL,
+        data: { call: { id: call.id, name: call.name, arguments: parseArguments(call.args || "{}") } },
       };
     }
     pending.clear();
@@ -105,12 +110,12 @@ export async function* toStreamEvents(chunks: AsyncIterable<ChatCompletionChunk>
     if (chunk.usage) {
       yield* flush();
       yield {
-        event: "usage",
-        data: { inputTokens: chunk.usage.prompt_tokens, outputTokens: chunk.usage.completion_tokens },
+        event: LLMStreamEventType.USAGE,
+        data: { usage: { inputTokens: chunk.usage.prompt_tokens, outputTokens: chunk.usage.completion_tokens } },
       };
     }
     for (const choice of chunk.choices) {
-      if (choice.delta.content) yield { event: "text_delta", data: { text: choice.delta.content } };
+      if (choice.delta.content) yield { event: LLMStreamEventType.TEXT_DELTA, data: { text: choice.delta.content } };
       for (const delta of choice.delta.tool_calls ?? []) {
         const call = pending.get(delta.index) ?? { id: "", name: "", args: "" };
         call.id ||= delta.id ?? "";
@@ -124,10 +129,11 @@ export async function* toStreamEvents(chunks: AsyncIterable<ChatCompletionChunk>
   yield* flush();
 }
 
-function finishReason(raw: string | null, hasToolCalls: boolean): LlmFinishReason {
-  if (raw === "length") return "length";
-  if (raw === "tool_calls" || raw === "function_call" || (raw !== "stop" && hasToolCalls)) return "tool_call";
-  return "stop";
+function finishReason(raw: string | null, hasToolCalls: boolean): LLMFinishReason {
+  if (raw === "length") return LLMFinishReason.LENGTH;
+  if (raw === "tool_calls" || raw === "function_call" || (raw !== "stop" && hasToolCalls))
+    return LLMFinishReason.TOOL_CALL;
+  return LLMFinishReason.STOP;
 }
 
 /** Tool arguments arrive as a JSON string; keep the raw string if it isn't valid JSON. */

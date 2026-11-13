@@ -1,3 +1,4 @@
+import { LLMMessagePartType, LLMRole } from "@snipet/shared/core";
 import type { ChatCompletionChunk } from "openai/resources/chat/completions";
 
 import { toOpenAiMessages, toStreamEvents } from "./openai.mapper.js";
@@ -25,7 +26,7 @@ describe("openai mapper", () => {
     }
     expect(events).toEqual([
       { event: "text_delta", data: { text: "Hi" } },
-      { event: "tool_call", data: { id: "c1", name: "weather", arguments: { city: "SP" } } },
+      { event: "tool_call", data: { call: { id: "c1", name: "weather", arguments: { city: "SP" } } } },
     ]);
   });
 
@@ -41,15 +42,18 @@ describe("openai mapper", () => {
     }
     expect(events).toEqual([
       { event: "text_delta", data: { text: "Hi" } },
-      { event: "usage", data: { inputTokens: 12, outputTokens: 3 } },
+      { event: "usage", data: { usage: { inputTokens: 12, outputTokens: 3 } } },
     ]);
   });
 
   it("maps tool calls and results to API messages", () => {
     expect(
       toOpenAiMessages([
-        { role: "assistant", parts: [{ type: "tool_call", id: "c1", name: "weather", arguments: { city: "SP" } }] },
-        { role: "tool", parts: [{ type: "tool_result", toolCallId: "c1", content: "sunny" }] },
+        {
+          role: LLMRole.ASSISTANT,
+          parts: [{ type: LLMMessagePartType.TOOL_CALL, id: "c1", name: "weather", arguments: { city: "SP" } }],
+        },
+        { role: LLMRole.TOOL, parts: [{ type: LLMMessagePartType.TOOL_RESULT, toolCallId: "c1", content: "sunny" }] },
       ]),
     ).toEqual([
       {

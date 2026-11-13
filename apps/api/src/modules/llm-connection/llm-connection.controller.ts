@@ -2,9 +2,8 @@ import { ApiKeyAuth, Private, Public, UserAuth } from "#src/common/decorators/au
 import { clientMessage } from "#src/core/error.js";
 import { Body, Controller, Get, HttpCode, Logger, Param, ParseUUIDPipe, Post, Query, Res } from "@nestjs/common";
 import { CrudController, Ctx, ZodPipe } from "@snipet/server-common";
-import { Role, executeLLMSchema, listLLMModelsParamsSchema } from "@snipet/shared";
-import type { ExecuteLLM, ListLLMModelsParams } from "@snipet/shared";
-import type { LLMStreamEvent } from "@snipet/shared/core";
+import { executeLLMSchema, listLLMModelsParamsSchema, Role } from "@snipet/shared";
+import { LLMStreamEventType } from "@snipet/shared/core";
 
 import {
   createLlmConnectionSchema,
@@ -14,8 +13,11 @@ import {
 import { LlmConnection } from "./llm-connection.entity.js";
 import { LlmConnectionService } from "./llm-connection.service.js";
 
+import type { LLMStreamEvent } from "@snipet/shared/core";
+import type { ExecuteLLM, ListLLMModelsParams } from "@snipet/shared";
 import type { AppContext } from "#src/common/context/app-context.js";
 import type { Response } from "express";
+
 /**
  * CRUD is admin only and never returns credentials: secret config fields
  * come back as placeholders. Running models is open to any user and API keys.
@@ -98,12 +100,12 @@ export class LlmConnectionController extends CrudController<LlmConnection, AppCo
 
     try {
       for (let result = first; !result.done; result = await events.next()) send(result.value);
-      send({ event: "done", data: {} });
+      send({ event: LLMStreamEventType.DONE, data: {} });
     } catch (err) {
       if (!abort.signal.aborted) {
         const message = clientMessage(err);
         if (message === undefined) this.logger.error(err);
-        send({ event: "error", data: { message: message ?? "internal error" } });
+        send({ event: LLMStreamEventType.ERROR, data: { message: message ?? "internal error" } });
       }
     } finally {
       res.end();

@@ -3,7 +3,7 @@ import { Driver } from "#src/core/manifest/driver.js";
 import { openAiClient, openAiOptionsSchema, toLlmError } from "./openai.client.js";
 import { fromCompletion, toOpenAiMessages, toOpenAiTools, toStreamEvents } from "./openai.mapper.js";
 
-import type { LlmResponse } from "@snipet/shared";
+import type { LLMResponse } from "@snipet/shared/core";
 import type { ChatDriver, ChatRequest, ChatStreamEvent } from "#src/core/llm/driver.js";
 import type { OpenAiOptions } from "./openai.client.js";
 
@@ -11,7 +11,7 @@ import type { OpenAiOptions } from "./openai.client.js";
 export class OpenAiChatDriver extends Driver(openAiOptionsSchema) implements ChatDriver<OpenAiOptions> {
   readonly key = "openai";
 
-  async generate(req: ChatRequest, options: OpenAiOptions): Promise<LlmResponse> {
+  async generate(req: ChatRequest, options: OpenAiOptions): Promise<LLMResponse> {
     try {
       const completion = await openAiClient(options).chat.completions.create(
         { temperature: options.temperature, ...body(req), stream: false },

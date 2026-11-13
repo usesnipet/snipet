@@ -1,5 +1,5 @@
 import { Driver } from "#src/core/manifest/driver.js";
-import { LlmModel, llmModelSchema } from "@snipet/shared";
+import { LLMModel, llmModelSchema } from "@snipet/shared/core";
 import z from "zod";
 
 import type { ModelDriver } from "#src/core/llm/driver.js";
@@ -12,7 +12,7 @@ type StaticModelOptions = z.infer<typeof optionsSchema>;
 export class StaticModelDriver extends Driver(optionsSchema) implements ModelDriver<StaticModelOptions> {
   readonly key = "static";
 
-  listModels(options: StaticModelOptions): Promise<LlmModel[]> {
+  listModels(options: StaticModelOptions): Promise<LLMModel[]> {
     return Promise.resolve(options.models);
   }
 }

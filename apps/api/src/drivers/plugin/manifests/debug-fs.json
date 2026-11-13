@@ -24,22 +24,36 @@
       "options": {
         "dir": "{{ connection.dir }}"
       },
-      "handlers": [
-        {
-          "hook": [
-            "run.start",
-            "run.context",
-            "llm.request",
-            "llm.response",
-            "tool.before",
-            "tool.after",
-            "tool.error",
-            "run.end"
-          ],
-          "background": true,
+      "handlers": {
+        "run.start": {
+          "mode": "background",
+          "optional": true
+        },
+        "run.context": {
+          "mode": "background",
+          "optional": true
+        },
+        "llm.request": {
+          "mode": "background",
+          "optional": true
+        },
+        "llm.response": {
+          "mode": "background",
+          "optional": true
+        },
+        "tool.before": {
+          "mode": "background",
+          "optional": true
+        },
+        "tool.after": {
+          "mode": "background",
+          "optional": true
+        },
+        "run.end": {
+          "mode": "background",
           "optional": true
         }
-      ]
+      }
     }
   }
 }

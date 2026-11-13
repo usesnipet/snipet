@@ -1,9 +1,9 @@
+import type { JsonObject } from "@snipet/shared";
+import type { HookName } from "@snipet/shared/core";
 import type {
   Agent as AgentContract,
-  AgentLlm as AgentLlmContract,
+  AgentLLM as AgentLLMContract,
   AgentPluginConnection as AgentPluginConnectionContract,
-  HookName,
-  JsonObject,
 } from "@snipet/shared";
 import { sealConfig } from "#src/infra/database/seal-config.js";
 import { fromStorageUrl, toStorageUrl } from "#src/infra/storage/utils.js";
@@ -27,15 +27,6 @@ import { PluginConnection } from "../plugin-connection/plugin-connection.entity.
 export const storagePathTransformer: ValueTransformer = {
   from: (path: string | null) => path && toStorageUrl(path),
   to: (url: string | null | undefined) => url && fromStorageUrl(url),
-};
-
-/**
- * sealConfig, reading a missing value (rows added by SQL, which can't seal)
- * as no settings.
- */
-const sealSettings: ValueTransformer = {
-  to: (value?: JsonObject | null) => sealConfig.to(value ?? {}) as string,
-  from: (value?: string | null) => (value ? (sealConfig.from(value) as JsonObject) : {}),
 };
 
 @Entity("agents")
@@ -63,8 +54,8 @@ export class Agent extends BaseEntity implements AgentContract {
   @Column({ default: true })
   enabled: boolean;
 
-  @OneToMany(() => AgentLlm, (llm) => llm.agent, { eager: true, cascade: ["insert"] })
-  llms: AgentLlm[];
+  @OneToMany(() => AgentLLM, (llm) => llm.agent, { eager: true, cascade: ["insert"] })
+  llms: AgentLLM[];
 
   @OneToMany(() => AgentPluginConnection, (grant) => grant.agent, { eager: true, cascade: ["insert"] })
   pluginConnections: AgentPluginConnection[];
@@ -78,7 +69,7 @@ export class Agent extends BaseEntity implements AgentContract {
 }
 
 @Entity("agent_llms")
-export class AgentLlm implements AgentLlmContract {
+export class AgentLLM implements AgentLLMContract {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -130,7 +121,7 @@ export class AgentPluginConnection extends BaseEntity implements AgentPluginConn
   position: number;
 
   /** Sealed whole, like connection configs: settings may hold secrets. */
-  @Column({ type: "text", nullable: true, transformer: sealSettings })
+  @Column({ type: "text", nullable: true, transformer: sealConfig })
   settings: JsonObject;
 
   @Column({ type: "text", array: true, default: [] })

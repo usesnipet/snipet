@@ -3,7 +3,7 @@ import { Driver } from "#src/core/manifest/driver.js";
 import { ollamaClient, ollamaOptionsSchema, toLlmError } from "./ollama.client.js";
 import { fromChatResponse, toOllamaMessages, toOllamaTools, toStreamEvents } from "./ollama.mapper.js";
 
-import type { LlmResponse } from "@snipet/shared";
+import type { LLMResponse } from "@snipet/shared/core";
 import type { ChatRequest as OllamaChatRequest } from "ollama";
 import type { ChatDriver, ChatRequest, ChatStreamEvent } from "#src/core/llm/driver.js";
 import type { OllamaOptions } from "./ollama.client.js";
@@ -12,7 +12,7 @@ import type { OllamaOptions } from "./ollama.client.js";
 export class OllamaChatDriver extends Driver(ollamaOptionsSchema) implements ChatDriver<OllamaOptions> {
   readonly key = "ollama";
 
-  async generate(req: ChatRequest, options: OllamaOptions): Promise<LlmResponse> {
+  async generate(req: ChatRequest, options: OllamaOptions): Promise<LLMResponse> {
     try {
       const res = await ollamaClient(options, req.signal).chat({ ...body(req, options), stream: false });
       return fromChatResponse(res);
