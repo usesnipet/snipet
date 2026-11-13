@@ -14,6 +14,7 @@ import {
   useSessionMessages,
   useStartRun,
 } from "@snipet/client";
+import { LLMRole } from "@snipet/shared/core";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 
@@ -65,7 +66,7 @@ export const ChatPage = () => {
   const showPending =
     pending !== null &&
     pending.sessionId === sessionId &&
-    !messages.some((m) => m.role === "user" && m.runId === pending.runId);
+    !messages.some((m) => m.role === LLMRole.USER && m.runId === pending.runId);
 
   // Only an agent the user can chat with: a link can name a disabled or deleted one.
   const agentParam = searchParams.get("agent");

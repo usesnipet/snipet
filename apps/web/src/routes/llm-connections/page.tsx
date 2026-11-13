@@ -7,7 +7,8 @@ import { LlmConnectionCatalogCard } from "@/features/llm-connection/components/l
 import { useDialog } from "@/lib/dialog";
 import { useDeleteLlmConnection, useListLlmConnections, useLLMs } from "@snipet/client";
 
-import type { LlmConnection, LlmManifest } from "@snipet/shared";
+import type { LlmConnection } from "@snipet/shared";
+import type { LLMManifest } from "@snipet/shared/core";
 
 const llmOf = (connection: LlmConnection) => connection.llmKey;
 
@@ -53,7 +54,7 @@ export const LlmConnectionsPage = () => {
 };
 
 /** Shown until the first connection exists: agents can't run without one. */
-function GetStarted({ llms }: { llms: LlmManifest[] }) {
+function GetStarted({ llms }: { llms: LLMManifest[] }) {
   const { openDialog } = useDialog();
   const common = COMMON_LLM_KEYS.flatMap((key) => llms.find((llm) => llm.key === key) ?? []);
 

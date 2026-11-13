@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LLMStreamEventType } from "@snipet/shared/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { syncState } from "../plugin-connection/utils";
@@ -6,18 +7,21 @@ import { llmConnectionService } from "./service";
 
 import type {
   CreateLlmConnection,
-  ExecuteLlm,
+  ExecuteLLM,
   FindLlmConnectionsParams,
   ListLLMModelsParams,
   LlmConnection,
-  LlmMessage,
-  LlmModel,
-  LlmManifest,
-  LlmResponse,
-  LlmStreamEvent,
   Paginated,
   UpdateLlmConnection,
 } from "@snipet/shared";
+import type {
+  LLMManifest,
+  LLMMessage,
+  LLMModel,
+  LLMResponse,
+  LLMStreamEvent,
+  LLMToolCallRequest,
+} from "@snipet/shared/core";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
@@ -36,7 +40,7 @@ export const useListLlmConnections = (
   });
 
 export const llmsQueryKey = () => [BASE_QUERY_KEY, "llms"] as const;
-export const useLLMs = (opts?: ServiceGetOptions<LlmManifest[]>): UseQueryResult<LlmManifest[], Error> =>
+export const useLLMs = (opts?: ServiceGetOptions<LLMManifest[]>): UseQueryResult<LLMManifest[], Error> =>
   useQuery({
     queryKey: llmsQueryKey(),
     queryFn: () => llmConnectionService.listLLMs(opts),
@@ -46,8 +50,8 @@ export const llmModelsQueryKey = (llmKey: string, searchParams?: ListLLMModelsPa
   [BASE_QUERY_KEY, "llms", llmKey, "models", searchParams] as const;
 export const useLLMModels = (
   llmKey: string,
-  opts?: ServiceGetOptions<LlmModel[], ListLLMModelsParams>,
-): UseQueryResult<LlmModel[], Error> =>
+  opts?: ServiceGetOptions<LLMModel[], ListLLMModelsParams>,
+): UseQueryResult<LLMModel[], Error> =>
   useQuery({
     queryKey: llmModelsQueryKey(llmKey, opts?.searchParams),
     queryFn: () => llmConnectionService.listLLMModels(llmKey, opts),
@@ -57,8 +61,8 @@ export const useLLMModels = (
 export const llmConnectionModelsQueryKey = (id: string) => [BASE_QUERY_KEY, id, "models"] as const;
 export const useLlmConnectionModels = (
   id: string,
-  opts?: ServiceGetOptions<LlmModel[]>,
-): UseQueryResult<LlmModel[], Error> =>
+  opts?: ServiceGetOptions<LLMModel[]>,
+): UseQueryResult<LLMModel[], Error> =>
   useQuery({
     queryKey: llmConnectionModelsQueryKey(id),
     queryFn: () => llmConnectionService.findModels(id, opts),
@@ -123,21 +127,21 @@ export const useSyncLlmConnection = (opts?: ServicePostOptions<void, void>): Use
 // --- Playground: execute / stream ---
 
 export const useExecuteLlm = (
-  opts?: ServicePostOptions<ExecuteLlm, LlmResponse>,
-): UseMutationResult<LlmResponse, Error, { data: ExecuteLlm }> =>
+  opts?: ServicePostOptions<ExecuteLLM, LLMResponse>,
+): UseMutationResult<LLMResponse, Error, { data: ExecuteLLM }> =>
   useMutation({
     mutationFn: ({ data }) => llmConnectionService.execute(data, opts),
     meta: { errorMessage: "Failed to execute LLM" },
   });
 
-export type LlmSkippedEvent = Extract<LlmStreamEvent, { event: "llm_skipped" }>["data"];
-export type LlmToolCallEvent = Extract<LlmStreamEvent, { event: "tool_call" }>["data"];
+export type LlmSkippedEvent = Extract<LLMStreamEvent, { event: LLMStreamEventType.LLM_SKIPPED }>["data"];
+export type LlmToolCallEvent = LLMToolCallRequest;
 
 export type LlmStreamStatus = "idle" | "streaming" | "done" | "error";
 
 export type UseExecuteLlmStreamResult = {
   status: LlmStreamStatus;
-  events: LlmStreamEvent[];
+  events: LLMStreamEvent[];
   /** The model currently streaming, e.g. "gpt-4o"; null before the first one starts. */
   activeModel: string | null;
   /** Targets skipped over during failover, in the order they were tried. */
@@ -145,9 +149,9 @@ export type UseExecuteLlmStreamResult = {
   text: string;
   toolCalls: LlmToolCallEvent[];
   /** The full assistant message, set once the stream ends cleanly. */
-  message: LlmMessage | null;
+  message: LLMMessage | null;
   error: Error | null;
-  execute: (data: ExecuteLlm) => Promise<void>;
+  execute: (data: ExecuteLLM) => Promise<void>;
   cancel: () => void;
 };
 
@@ -159,12 +163,12 @@ export type UseExecuteLlmStreamResult = {
  */
 export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
   const [status, setStatus] = useState<LlmStreamStatus>("idle");
-  const [events, setEvents] = useState<LlmStreamEvent[]>([]);
+  const [events, setEvents] = useState<LLMStreamEvent[]>([]);
   const [activeModel, setActiveModel] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<LlmSkippedEvent[]>([]);
   const [text, setText] = useState("");
   const [toolCalls, setToolCalls] = useState<LlmToolCallEvent[]>([]);
-  const [message, setMessage] = useState<LlmMessage | null>(null);
+  const [message, setMessage] = useState<LLMMessage | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -172,7 +176,7 @@ export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
     abortRef.current?.abort();
   }, []);
 
-  const execute = useCallback(async (data: ExecuteLlm) => {
+  const execute = useCallback(async (data: ExecuteLLM) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -192,26 +196,26 @@ export const useExecuteLlmStream = (): UseExecuteLlmStreamResult => {
         (event) => {
           setEvents((prev) => [...prev, event]);
           switch (event.event) {
-            case "llm_started":
+            case LLMStreamEventType.LLM_STARTED:
               setActiveModel(event.data.model);
               break;
-            case "text_delta":
+            case LLMStreamEventType.TEXT_DELTA:
               setText((prev) => prev + event.data.text);
               break;
-            case "tool_call":
-              setToolCalls((prev) => [...prev, event.data]);
+            case LLMStreamEventType.TOOL_CALL:
+              setToolCalls((prev) => [...prev, event.data.call]);
               break;
-            case "llm_skipped":
+            case LLMStreamEventType.LLM_SKIPPED:
               setSkipped((prev) => [...prev, event.data]);
               break;
-            case "message":
+            case LLMStreamEventType.MESSAGE:
               setMessage(event.data.message);
               break;
-            case "error":
+            case LLMStreamEventType.ERROR:
               setError(new Error(event.data.message));
               setStatus("error");
               break;
-            case "done":
+            case LLMStreamEventType.DONE:
               setStatus("done");
               break;
           }

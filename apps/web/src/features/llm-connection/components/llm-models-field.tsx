@@ -14,7 +14,8 @@ import { Plus } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, useFormContext, useFormState, useWatch } from "react-hook-form";
 
-import type { LlmCapability, LlmConnection, LlmManifest } from "@snipet/shared";
+import type { LlmConnection } from "@snipet/shared";
+import type { LLMCapability, LLMManifest } from "@snipet/shared/core";
 /** A row before its connection and model are picked. */
 const EMPTY_TARGET = { connectionId: "", model: "" };
 
@@ -22,7 +23,7 @@ type Props = {
   /** Field-array path holding `ExecuteLlmTarget[]` (`ExecuteLlmTarget` in @snipet/shared). */
   name: string;
   /** If set, only models with these capabilities will be shown. */
-  allowedModelCapabilities?: LlmCapability[];
+  allowedModelCapabilities?: LLMCapability[];
 };
 
 /**
@@ -76,9 +77,9 @@ export function LlmModelsField({ name, allowedModelCapabilities }: Props) {
 type RowProps = {
   name: string;
   index: number;
-  llms: LlmManifest[];
+  llms: LLMManifest[];
   connections: LlmConnection[];
-  allowedModelCapabilities?: LlmCapability[];
+  allowedModelCapabilities?: LLMCapability[];
 };
 
 function LlmModelTargetRow({ name, index, llms, connections, allowedModelCapabilities }: RowProps) {

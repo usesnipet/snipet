@@ -5,10 +5,9 @@ import {
   findPluginConnectionsParamsSchema,
   paginatedPluginConnectionSchema,
   pluginConnectionSchema,
-  pluginManifestSchema,
-  pluginToolSchema,
   updatePluginConnectionSchema,
 } from "@snipet/shared";
+import { llmToolSchema, pluginManifestSchema } from "@snipet/shared/core";
 import { z } from "zod";
 
 import type {
@@ -16,10 +15,9 @@ import type {
   FindPluginConnectionsParams,
   Paginated,
   PluginConnection,
-  PluginManifest,
-  PluginTool,
   UpdatePluginConnection,
 } from "@snipet/shared";
+import type { LLMTool, PluginManifest } from "@snipet/shared/core";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 
 const PLUGIN_CONNECTION_URL = "/api/plugin-connections";
@@ -43,11 +41,11 @@ const listPlugins = async (opts: ServiceGetOptions<PluginManifest[]> = {}): Prom
     ...opts,
   });
 
-const listTools = async (id: string, opts: ServiceGetOptions<PluginTool[]> = {}): Promise<PluginTool[]> =>
+const listTools = async (id: string, opts: ServiceGetOptions<LLMTool[]> = {}): Promise<LLMTool[]> =>
   http.get({
     url: `${PLUGIN_CONNECTION_URL}/{id}/tools`,
     params: { id },
-    schemas: { response: z.array(pluginToolSchema) },
+    schemas: { response: z.array(llmToolSchema) },
     ...opts,
   });
 

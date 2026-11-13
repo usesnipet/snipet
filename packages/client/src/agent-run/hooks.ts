@@ -1,6 +1,9 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { RunEventType } from "@snipet/shared";
+import { LLMRole } from "@snipet/shared/core";
+
 import { agentRunService } from "./service";
 
 import type { AgentMessage, AgentRun, AgentSession, Paginated, StartAgentRun } from "@snipet/shared";
@@ -145,17 +148,17 @@ export const useRunStream = (): UseRunStreamResult => {
           lastId,
           (event) => {
             switch (event.event) {
-              case "text_delta":
+              case RunEventType.TEXT_DELTA:
                 setDraft((prev) => prev + event.data.text);
                 break;
-              case "message": {
-                const message = event.data;
+              case RunEventType.MESSAGE: {
+                const { message } = event.data;
                 setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
-                if (message.role === "assistant") setDraft("");
+                if (message.role === LLMRole.ASSISTANT) setDraft("");
                 break;
               }
-              case "run_finished":
-                finish(event.data);
+              case RunEventType.RUN_FINISHED:
+                finish(event.data.run);
                 break;
             }
           },

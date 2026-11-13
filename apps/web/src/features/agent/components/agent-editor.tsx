@@ -15,7 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { ROUTES } from "@/routes";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateAgent, useUpdateAgent } from "@snipet/client";
-import { LlmCapability } from "@snipet/shared";
+import { LLMCapability } from "@snipet/shared/core";
 import { useEffect, useId } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
@@ -132,7 +132,7 @@ export function AgentEditor({ agent }: { agent?: Agent }) {
               />
             </FieldGroup>
             <div className="space-y-6">
-              <LlmModelsField name="llms" allowedModelCapabilities={[LlmCapability.TEXT]} />
+              <LlmModelsField name="llms" allowedModelCapabilities={[LLMCapability.TEXT]} />
               <Separator />
               <AgentPluginsField />
             </div>

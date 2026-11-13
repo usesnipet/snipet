@@ -34,11 +34,13 @@ import {
   useSyncPluginConnection,
   useUpdatePluginConnection,
 } from "@snipet/client";
-import { hookHandlersOf } from "@snipet/shared";
+
+import { handlersOf } from "../capabilities";
 
 import { PluginConnectionFormDialog } from "./dialogs";
 
-import type { PluginConnection, PluginManifest } from "@snipet/shared";
+import type { PluginConnection } from "@snipet/shared";
+import type { PluginManifest } from "@snipet/shared/core";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
 
@@ -100,7 +102,7 @@ function PluginConnectionRow({ plugin, connection }: { plugin: PluginManifest; c
   const syncStatus = syncState(connection);
   const hasTools = !!plugin.capabilities.tools;
   const { data: tools } = usePluginConnectionTools(connection, { enabled: hasTools && syncStatus.kind === "synced" });
-  const hookCount = plugin.capabilities.hooks ? hookHandlersOf(plugin.capabilities.hooks).size : 0;
+  const hookCount = plugin.capabilities.hooks ? handlersOf(plugin.capabilities.hooks).length : 0;
 
   const openEdit = () => openDialog({ component: PluginConnectionFormDialog, props: { plugin, connection } });
   const openDelete = () =>

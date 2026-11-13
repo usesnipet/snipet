@@ -17,15 +17,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { syncState, useListPluginConnections, usePluginConnectionTools, usePlugins } from "@snipet/client";
-import { hookHandlersOf } from "@snipet/shared";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
-import { describeHandler } from "@/features/plugin-connection/capabilities";
+import { describeHandler, handlersOf } from "@/features/plugin-connection/capabilities";
 
 import type { RJSFSchema } from "@rjsf/utils";
-import type { HookName, PluginConnection, PluginManifest, PluginTool } from "@snipet/shared";
+import type { PluginConnection } from "@snipet/shared";
+import type { HookName, LLMTool, PluginManifest } from "@snipet/shared/core";
 import type { AgentFormInput } from "../schemas";
 
 /** Form path of one plugin grant. */
@@ -207,7 +207,7 @@ function ToolPicker({
 }: {
   name: GrantPath;
   connection: PluginConnection;
-  tools: PluginTool[] | undefined;
+  tools: LLMTool[] | undefined;
   /** Names of the tools currently on. */
   current: string[];
 }) {
@@ -289,7 +289,7 @@ function HookList({ name, hooks }: { name: GrantPath; hooks: NonNullable<PluginM
   return (
     <div className="space-y-1">
       <p className="text-xs font-medium text-muted-foreground">Hooks</p>
-      {[...hookHandlersOf(hooks)].map(([hook, handler]) => (
+      {handlersOf(hooks).map(([hook, handler]) => (
         <label key={hook} className="flex items-center gap-2 text-xs">
           <Checkbox
             className={QUIET_CHECKBOX_CLASS}
@@ -298,7 +298,7 @@ function HookList({ name, hooks }: { name: GrantPath; hooks: NonNullable<PluginM
             onCheckedChange={(checked) => toggleHook(hook, checked === true)}
           />
           <code>{hook}</code>
-          <span className="text-muted-foreground">{describeHandler(handler)}</span>
+          <span className="text-muted-foreground">{describeHandler(hook, handler)}</span>
         </label>
       ))}
     </div>

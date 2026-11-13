@@ -1,13 +1,13 @@
 import { FormSelect } from "@/components/form/select";
 import { useFormContext } from "react-hook-form";
 
-import type { LlmManifest } from "@snipet/shared";
+import type { LLMManifest } from "@snipet/shared/core";
 
 type LlmSelectProps = {
   name: string;
   /** Field that holds the connection config — reset when the llm changes. */
   configName: string;
-  llms: LlmManifest[];
+  llms: LLMManifest[];
   label?: string;
   placeholder?: string;
   disabled?: boolean;

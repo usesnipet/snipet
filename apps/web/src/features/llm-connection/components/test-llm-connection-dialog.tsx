@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { transitions } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { syncState, useExecuteLlmStream, useListLlmConnections, useLLMModels } from "@snipet/client";
-import { LlmCapability } from "@snipet/shared";
+import { LLMCapability, LLMMessagePartType, LLMRole, LLMStreamEventType } from "@snipet/shared/core";
 import { CircleAlert, Loader2, Play, Square } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
@@ -60,7 +60,7 @@ export function TestLlmConnectionDialog({
     seenSyncedAt.current = lastSyncedAt;
     void refetchModels();
   }, [lastSyncedAt, refetchModels]);
-  const textModels = models.filter((model) => model.capabilities.includes(LlmCapability.TEXT));
+  const textModels = models.filter((model) => model.capabilities.includes(LLMCapability.TEXT));
   const [pickedModelKey, setPickedModelKey] = useState<string>();
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [durationMs, setDurationMs] = useState<number | null>(null);
@@ -69,7 +69,7 @@ export function TestLlmConnectionDialog({
   // Falls back to the first model so the test runs in one click.
   const modelKey = pickedModelKey ?? textModels[0]?.key;
   const isStreaming = stream.status === "streaming";
-  const usage = stream.events.find((event) => event.event === "usage")?.data;
+  const usage = stream.events.find((event) => event.event === LLMStreamEventType.USAGE)?.data.usage;
 
   const runTest = async () => {
     if (!modelKey) return;
@@ -77,7 +77,7 @@ export function TestLlmConnectionDialog({
     const startedAt = performance.now();
     await stream.execute({
       targets: [{ connectionId: connection.id, model: modelKey }],
-      messages: [{ role: "user", parts: [{ type: "text", text: prompt }] }],
+      messages: [{ role: LLMRole.USER, parts: [{ type: LLMMessagePartType.TEXT, text: prompt }] }],
     });
     setDurationMs(performance.now() - startedAt);
   };

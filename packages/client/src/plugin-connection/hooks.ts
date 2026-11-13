@@ -8,10 +8,9 @@ import type {
   FindPluginConnectionsParams,
   Paginated,
   PluginConnection,
-  PluginManifest,
-  PluginTool,
   UpdatePluginConnection,
 } from "@snipet/shared";
+import type { LLMTool, PluginManifest } from "@snipet/shared/core";
 import type { ServiceDeleteOptions, ServiceGetOptions, ServicePostOptions, ServicePutOptions } from "../http";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
@@ -33,7 +32,7 @@ export const useListPluginConnections = (
 export const usePluginConnectionTools = (
   connection: Pick<PluginConnection, "id" | "lastSyncedAt">,
   opts?: { enabled?: boolean },
-): UseQueryResult<PluginTool[], Error> =>
+): UseQueryResult<LLMTool[], Error> =>
   useQuery({
     queryKey: [...listPluginConnectionsQueryKey(), connection.id, "tools", connection.lastSyncedAt],
     queryFn: () => pluginConnectionService.listTools(connection.id),

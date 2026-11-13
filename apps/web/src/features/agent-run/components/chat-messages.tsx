@@ -15,10 +15,13 @@ import { Brain, Check, ChevronRight, CircleAlert, Wrench, X } from "lucide-react
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
-import type { AgentMessage, AgentRun, AvailableAgent, LlmPart } from "@snipet/shared";
+import { LLMMessagePartType, LLMRole } from "@snipet/shared/core";
 
-type ToolCallPart = Extract<LlmPart, { type: "tool_call" }>;
-type ToolResultPart = Extract<LlmPart, { type: "tool_result" }>;
+import type { AgentMessage, AgentRun, AvailableAgent } from "@snipet/shared";
+import type { LLMMessagePart } from "@snipet/shared/core";
+
+type ToolCallPart = Extract<LLMMessagePart, { type: LLMMessagePartType.TOOL_CALL }>;
+type ToolResultPart = Extract<LLMMessagePart, { type: LLMMessagePartType.TOOL_RESULT }>;
 
 type Props = {
   /** The agent replying, when the user can see it. */
@@ -49,16 +52,19 @@ const MARKDOWN_CLASS = cn(
   "[&_table]:w-full [&_td,&_th]:border [&_td,&_th]:px-2 [&_td,&_th]:py-1 [&_th]:text-left [&_hr]:my-4",
 );
 
-const textOf = (parts: LlmPart[]) =>
+const textOf = (parts: LLMMessagePart[]) =>
   parts
-    .filter((part): part is { type: "text"; text: string } => part.type === "text")
+    .filter(
+      (part): part is Extract<LLMMessagePart, { type: LLMMessagePartType.TEXT }> =>
+        part.type === LLMMessagePartType.TEXT,
+    )
     .map((part) => part.text)
     .join("\n");
 
 /** A stretch of the conversation as shown on screen. */
 type Block =
   | { kind: "user"; key: string; text: string }
-  | { kind: "assistant"; key: string; messageId: number; parts: LlmPart[] }
+  | { kind: "assistant"; key: string; messageId: number; parts: LLMMessagePart[] }
   | { kind: "tools"; key: string; calls: ToolCallPart[] };
 
 /**
@@ -69,15 +75,15 @@ type Block =
 function toBlocks(messages: AgentMessage[]): Block[] {
   const blocks: Block[] = [];
   for (const message of messages) {
-    if (message.role === "user") {
+    if (message.role === LLMRole.USER) {
       blocks.push({ kind: "user", key: String(message.id), text: textOf(message.parts) });
-    } else if (message.role === "assistant") {
+    } else if (message.role === LLMRole.ASSISTANT) {
       message.parts.forEach((part, index) => {
         const last = blocks.at(-1);
-        if (part.type === "tool_call") {
+        if (part.type === LLMMessagePartType.TOOL_CALL) {
           if (last?.kind === "tools") last.calls.push(part);
           else blocks.push({ kind: "tools", key: part.id, calls: [part] });
-        } else if ((part.type === "text" || part.type === "thinking") && part.text) {
+        } else if ((part.type === LLMMessagePartType.TEXT || part.type === LLMMessagePartType.THINKING) && part.text) {
           if (last?.kind === "assistant" && last.messageId === message.id) last.parts.push(part);
           else blocks.push({ kind: "assistant", key: `${message.id}-${index}`, messageId: message.id, parts: [part] });
         }
@@ -92,14 +98,14 @@ export function ChatMessages({ agent, messages, pendingInput, draft, streaming, 
   const results = new Map<string, ToolResultPart>();
   for (const message of messages) {
     for (const part of message.parts) {
-      if (part.type === "tool_result") results.set(part.toolCallId, part);
+      if (part.type === LLMMessagePartType.TOOL_RESULT) results.set(part.toolCallId, part);
     }
   }
 
   const blocks = toBlocks(messages);
   const last = messages.at(-1);
   const waiting =
-    streaming && !draft && (pendingInput !== null || last?.role !== "assistant" || hasOpenCalls(last, results));
+    streaming && !draft && (pendingInput !== null || last?.role !== LLMRole.ASSISTANT || hasOpenCalls(last, results));
   const notice = !streaming && run ? RUN_NOTICES[run.status] : undefined;
   const replyStartsAtEnd = pendingInput !== null || blocks.length === 0 || blocks.at(-1)?.kind === "user";
 
@@ -163,7 +169,7 @@ export function ChatMessages({ agent, messages, pendingInput, draft, streaming, 
 }
 
 function hasOpenCalls(message: AgentMessage, results: Map<string, ToolResultPart>) {
-  return message.parts.some((part) => part.type === "tool_call" && !results.has(part.id));
+  return message.parts.some((part) => part.type === LLMMessagePartType.TOOL_CALL && !results.has(part.id));
 }
 
 /**
@@ -180,8 +186,8 @@ const WAIT_MESSAGES = {
 const WAIT_MESSAGE_MS = 3000;
 
 function waitPhase(last: AgentMessage | undefined, results: Map<string, ToolResultPart>): keyof typeof WAIT_MESSAGES {
-  if (last?.role === "tool") return "results";
-  if (last?.role === "assistant" && hasOpenCalls(last, results)) return "tools";
+  if (last?.role === LLMRole.TOOL) return "results";
+  if (last?.role === LLMRole.ASSISTANT && hasOpenCalls(last, results)) return "tools";
   return "start";
 }
 
@@ -233,19 +239,19 @@ function UserBubble({ text }: { text: string }) {
   );
 }
 
-function AssistantText({ parts }: { parts: LlmPart[] }) {
+function AssistantText({ parts }: { parts: LLMMessagePart[] }) {
   const text = textOf(parts);
   return (
     <div className="group flex flex-col gap-2">
       {parts.map((part, i) => {
-        if (part.type === "text") {
+        if (part.type === LLMMessagePartType.TEXT) {
           return (
             <Markdown key={i} className={MARKDOWN_CLASS}>
               {part.text}
             </Markdown>
           );
         }
-        if (part.type === "thinking") return <Thinking key={i} text={part.text} />;
+        if (part.type === LLMMessagePartType.THINKING) return <Thinking key={i} text={part.text} />;
         return null;
       })}
       {text && (

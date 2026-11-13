@@ -23,13 +23,15 @@ import { useId } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { useCreatePluginConnection, useUpdatePluginConnection } from "@snipet/client";
-import { createPluginConnectionSchema, hookHandlersOf } from "@snipet/shared";
+import { createPluginConnectionSchema } from "@snipet/shared";
+import { HookMode } from "@snipet/shared/core";
 
-import { describeHandler } from "../capabilities";
+import { describeHandler, handlersOf } from "../capabilities";
 import { PluginConnectionListDialog } from "./dialogs";
 
 import type { RJSFSchema } from "@rjsf/utils";
-import type { CreatePluginConnection, HooksCapability, PluginConnection, PluginManifest } from "@snipet/shared";
+import type { CreatePluginConnection, PluginConnection } from "@snipet/shared";
+import type { HooksCapability, PluginManifest } from "@snipet/shared/core";
 
 import type { DialogInstanceProps } from "@/lib/dialog";
 
@@ -166,8 +168,8 @@ export function PluginConnectionFormDialog({
 
 /** One sentence on what the plugin's hooks do, with each hook in an expandable detail. */
 function HooksSummary({ hooks }: { hooks: HooksCapability }) {
-  const handlers = [...hookHandlersOf(hooks)];
-  const onlyWatches = handlers.every(([, handler]) => !handler.actions.length);
+  const handlers = handlersOf(hooks);
+  const onlyWatches = handlers.every(([, handler]) => handler.mode === HookMode.BACKGROUND);
   const count = `${handlers.length} ${handlers.length === 1 ? "moment" : "moments"}`;
 
   return (
@@ -188,7 +190,7 @@ function HooksSummary({ hooks }: { hooks: HooksCapability }) {
         <ul className="space-y-0.5 text-xs">
           {handlers.map(([hook, handler]) => (
             <li key={hook}>
-              <code>{hook}</code> <span className="text-muted-foreground">{describeHandler(handler)}</span>
+              <code>{hook}</code> <span className="text-muted-foreground">{describeHandler(hook, handler)}</span>
             </li>
           ))}
         </ul>

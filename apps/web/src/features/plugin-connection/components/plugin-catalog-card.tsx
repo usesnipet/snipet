@@ -7,7 +7,8 @@ import { capabilityLabels } from "../capabilities";
 import { PluginConnectionFormDialog, PluginConnectionListDialog } from "./dialogs";
 
 import type { RegistryView } from "@/components/catalog";
-import type { PluginConnection, PluginManifest } from "@snipet/shared";
+import type { PluginConnection } from "@snipet/shared";
+import type { PluginManifest } from "@snipet/shared/core";
 
 type PluginCatalogCardProps = {
   plugin: PluginManifest;
