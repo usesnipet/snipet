@@ -1,6 +1,6 @@
 import { AppContext } from "#src/common/context/app-context.js";
 import { env } from "#src/env.js";
-import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
+import { ForbiddenException, Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { CrudService } from "@snipet/server-common";
 import { Role } from "@snipet/shared";
 import { hash } from "bcryptjs";
@@ -43,6 +43,7 @@ export class UserService extends CrudService<User> implements OnApplicationBoots
   }
 
   override async updateById(ctx: AppContext, id: string, dto: QueryDeepPartialEntity<User>): Promise<void> {
+    if (ctx.user.id === id && dto.role) throw new ForbiddenException("You cannot update your own role");
     if (typeof dto.password === "string") dto = { ...dto, password: await hashPassword(dto.password) };
     await super.updateById(ctx, id, dto);
   }
