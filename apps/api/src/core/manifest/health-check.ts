@@ -6,5 +6,5 @@ export interface HealthCheckResult {
 }
 
 export interface HealthCheckDriver<Opts = unknown> extends BaseDriver<Opts> {
-  checkHealth(connectionId: string, options: Opts): Promise<HealthCheckResult>;
+  checkHealth(options: Opts): Promise<HealthCheckResult>;
 }

@@ -3,7 +3,7 @@ import { HttpHealthCheckDriver } from "#src/drivers/http.health.js";
 import { env } from "#src/env.js";
 import { loadManifests } from "#src/infra/manifest/load-manifest.js";
 import { Logger, Module } from "@nestjs/common";
-import { pluginManifestSchema } from "@snipet/shared";
+import { pluginManifestSchema } from "@snipet/shared/core";
 import { resolve } from "node:path";
 
 import { DebugFsDriver } from "./providers/debug/fs.hooks.js";

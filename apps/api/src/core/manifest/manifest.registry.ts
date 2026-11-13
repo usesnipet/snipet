@@ -24,7 +24,8 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
   private manifests = new Map<string, M>();
 
   constructor(
-    private readonly name: string, // "plugin", "llm": used in logs and errors
+    /** The kind of manifest ("plugin", "llm"), used in logs and errors. */
+    private readonly name: string,
     private readonly loader: ManifestLoader,
     protected readonly schema: z.ZodType<M>,
     protected readonly drivers: DriverRegistry<D>,

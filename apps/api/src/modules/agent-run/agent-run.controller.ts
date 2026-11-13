@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Headers, HttpCode, Param, ParseUUIDPipe, Post, Query, Res } from "@nestjs/common";
-import { Ctx, ZodPipe } from "@snipet/server-common";
-
 import { ApiKeyAuth, AppTokenAuth, Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
 import { RateLimit } from "#src/common/rate-limit/rate-limit.js";
+import { Body, Controller, Get, Headers, HttpCode, Param, ParseUUIDPipe, Post, Query, Res } from "@nestjs/common";
+import { Ctx, ZodPipe } from "@snipet/server-common";
+import { findAgentRunsParamsSchema, startAgentRunSchema } from "@snipet/shared";
+import { RunEventType } from "@snipet/shared/core";
 
-import { findAgentRunsParamsSchema, startAgentRunSchema } from "./agent-run.dto.js";
 import { AgentRunService } from "./agent-run.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
@@ -64,7 +64,7 @@ export class AgentRunController {
     });
     try {
       for await (const { event, data } of this.service.follow(ctx, run, Number(lastEventId) || 0, abort.signal)) {
-        const sseId = event === "message" ? `id: ${data.id}\n` : "";
+        const sseId = event === RunEventType.MESSAGE ? `id: ${data.message.id}\n` : "";
         res.write(`${sseId}event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
       }
     } finally {

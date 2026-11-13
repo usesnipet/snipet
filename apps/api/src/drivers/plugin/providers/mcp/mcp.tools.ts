@@ -1,11 +1,12 @@
-import { Tool, ToolDriver, ToolResult } from "#src/core/plugin/driver.js";
+import type { ToolDriver } from "#src/core/plugin/driver.js";
+import type { LLMTool, LLMToolResult } from "@snipet/shared/core";
 
 import { MCPDriver, MCPOptions } from "./mcp.base.js";
 
 export class MCPToolsDriver extends MCPDriver implements ToolDriver<MCPOptions> {
-  async listTools(_connectionId: string, options: MCPOptions): Promise<Tool[]> {
+  async listTools(options: MCPOptions): Promise<LLMTool[]> {
     return this.withSession(options, async (client, opts) => {
-      const tools: Tool[] = [];
+      const tools: LLMTool[] = [];
       let cursor: string | undefined;
       do {
         const page = await client.listTools({ cursor }, opts);
@@ -22,12 +23,7 @@ export class MCPToolsDriver extends MCPDriver implements ToolDriver<MCPOptions> 
     });
   }
 
-  callTool(
-    _connectionId: string,
-    name: string,
-    parameters: Record<string, unknown>,
-    options: MCPOptions,
-  ): Promise<ToolResult> {
+  callTool(name: string, parameters: Record<string, unknown>, options: MCPOptions): Promise<LLMToolResult> {
     return this.withSession(options, async (client, opts) => {
       const result = await client.callTool(
         {

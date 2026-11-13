@@ -2,28 +2,29 @@ import { PluginModule } from "#src/drivers/plugin/plugin.module.js";
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
+import { HookDispatcher } from "../../core/plugin/hooks/hook.dispatcher.js";
+import { AgentRunner } from "../../core/run/agent.runner.js";
+import { AgentContext } from "../../core/run/resolvers/context.resolver.js";
+import { AgentMessage } from "../agent-session/agent-message.entity.js";
+import { AgentSessionModule } from "../agent-session/agent-session.module.js";
 import { AgentModule } from "../agent/agent.module.js";
 import { LlmConnectionModule } from "../llm-connection/llm-connection.module.js";
 import { PluginConnectionModule } from "../plugin-connection/plugin-connection.module.js";
 
-import { AgentContext } from "./agent-context.js";
 import { AgentRunController } from "./agent-run.controller.js";
-import { AgentMessage, AgentRun, AgentSession } from "./agent-run.entity.js";
-import { AgentRunEvents } from "./agent-run.events.js";
-import { AgentRunner } from "./agent-run.runner.js";
+import { AgentRun } from "./agent-run.entity.js";
 import { AgentRunService } from "./agent-run.service.js";
-import { AgentSessionController } from "./agent-session.controller.js";
-import { HookDispatcher } from "./hooks/hook.dispatcher.js";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AgentSession, AgentRun, AgentMessage]),
+    TypeOrmModule.forFeature([AgentRun, AgentMessage]),
     AgentModule,
+    AgentSessionModule,
     LlmConnectionModule,
     PluginConnectionModule,
     PluginModule,
   ],
-  controllers: [AgentRunController, AgentSessionController],
-  providers: [AgentRunService, AgentRunner, AgentRunEvents, AgentContext, HookDispatcher],
+  controllers: [AgentRunController],
+  providers: [AgentRunService, AgentRunner, AgentContext, HookDispatcher],
 })
 export class AgentRunModule {}

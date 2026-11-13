@@ -16,7 +16,7 @@ export class StaticInstructionsDriver
 {
   readonly key = "static";
 
-  getInstructions(_connectionId: string, { text }: StaticInstructionsOptions): Promise<string | undefined> {
+  getInstructions({ text }: StaticInstructionsOptions): Promise<string | undefined> {
     return Promise.resolve(text || undefined);
   }
 }

@@ -2,29 +2,33 @@ import { AppContext } from "#src/common/context/app-context.js";
 import { LLMErrorCode, llmProviderError } from "#src/core/llm/errors.js";
 import { jest } from "@jest/globals";
 import { BadRequestException } from "@nestjs/common";
-import { AgentRunStatus, hookHandlerSchema, hookNameSchema, HOOKS, Role } from "@snipet/shared";
+import { AgentRunStatus, Role } from "@snipet/shared";
+import { hookHandlerSchema, hookNameSchema, HOOKS } from "@snipet/shared/core";
 
-import { AgentContext } from "./agent-context.js";
-import { AgentMessage, AgentRun } from "./agent-run.entity.js";
-import { AgentRunEvents } from "./agent-run.events.js";
-import { AgentRunner } from "./agent-run.runner.js";
-import { HookRunner } from "./hooks/hook.runner.js";
+import { HookRunner } from "../../core/plugin/hooks/hook.runner.js";
+import { AgentRunner } from "../../core/run/agent.runner.js";
+import { AgentContext } from "../../core/run/resolvers/context.resolver.js";
+import { RunEvents } from "../../core/run/run.events.js";
+import { AgentMessage } from "../agent-session/agent-message.entity.js";
+
+import { AgentRun } from "./agent-run.entity.js";
+
+import type { HookEvent, HookResult, LLMMessage, LLMStreamEvent } from "@snipet/shared/core";
 
 import type { Agent } from "../agent/agent.entity.js";
 import type { HookDriver } from "#src/core/plugin/driver.js";
-import type { HookDispatcher } from "./hooks/hook.dispatcher.js";
+import type { HookDispatcher } from "../../core/plugin/hooks/hook.dispatcher.js";
 import type { LlmConnectionService } from "../llm-connection/llm-connection.service.js";
 import type { PluginConnectionService } from "../plugin-connection/plugin-connection.service.js";
-import type { HookEvent, HookResult, LlmMessage, LlmStreamEvent } from "@snipet/shared";
 import type { EntityManager } from "typeorm";
 
 type Fn = (...args: unknown[]) => Promise<unknown>;
 
-const callTool: LlmMessage = {
+const callTool: LLMMessage = {
   role: "assistant",
   parts: [{ type: "tool_call", id: "c1", name: "ask_question", arguments: { q: "x" } }],
 };
-const answer: LlmMessage = { role: "assistant", parts: [{ type: "text", text: "done" }] };
+const answer: LLMMessage = { role: "assistant", parts: [{ type: "text", text: "done" }] };
 
 const agent = {
   id: "ag1",
@@ -49,15 +53,15 @@ const wiki = { connection: { id: "p1", name: "Wiki" } };
  * reply: what the hooks answer to each event.
  */
 function setup(
-  replies: (LlmMessage | Error)[],
+  replies: (LLMMessage | Error)[],
   reply: (event: HookEvent) => HookResult = () => ({ action: "continue" }),
 ) {
   let nextId = 1;
-  const saved: LlmMessage[] = [];
+  const saved: LLMMessage[] = [];
   const messages = {
     find: jest.fn<Fn>().mockResolvedValue([{ runId: "r1", role: "user", parts: [{ type: "text", text: "hi" }] }]),
     create: (m: unknown) => m,
-    save: jest.fn((m: LlmMessage) => {
+    save: jest.fn((m: LLMMessage) => {
       saved.push({ role: m.role, parts: m.parts });
       return Promise.resolve({ ...m, id: nextId++ });
     }),
@@ -68,7 +72,7 @@ function setup(
     findOneByOrFail: jest.fn<Fn>().mockResolvedValue(run),
   };
   const llm = {
-    stream: jest.fn(async function* (): AsyncGenerator<LlmStreamEvent> {
+    stream: jest.fn(async function* (): AsyncGenerator<LLMStreamEvent> {
       const reply = await Promise.resolve(replies.shift()!);
       if (reply instanceof Error) throw reply;
       yield { event: "llm_started", data: { model: "gpt" } };
@@ -110,7 +114,7 @@ function setup(
       getRepository: (target: unknown) => (target === AgentRun ? runs : target === AgentMessage ? messages : undefined),
     } as unknown as EntityManager,
     llm as unknown as LlmConnectionService,
-    new AgentRunEvents(),
+    new RunEvents(),
     new AgentContext(plugins as unknown as PluginConnectionService),
     hooks,
   );
@@ -132,7 +136,7 @@ describe("AgentRunner.run", () => {
     expect(finishedWith(runs)).toMatchObject({ status: AgentRunStatus.COMPLETED, turns: 2, error: null });
 
     const [{ messages, tools }] = llm.stream.mock.calls[1].slice(1) as unknown as [
-      { messages: LlmMessage[]; tools: { name: string; description: string }[] },
+      { messages: LLMMessage[]; tools: { name: string; description: string }[] },
     ];
     expect(messages.map((m) => m.role)).toEqual(["system", "system", "user", "assistant", "tool"]);
     // read_wiki isn't selected in the plugin grant.
@@ -146,7 +150,7 @@ describe("AgentRunner.run", () => {
     await runner.run(ctx, agent, run);
 
     expect(plugins.findInstructions).toHaveBeenCalledWith(ctx, ["p1"]);
-    const [{ messages }] = llm.stream.mock.calls[0].slice(1) as unknown as [{ messages: LlmMessage[] }];
+    const [{ messages }] = llm.stream.mock.calls[0].slice(1) as unknown as [{ messages: LLMMessage[] }];
     expect(messages.slice(1, 3).map((m) => m.parts)).toEqual([
       [{ type: "text", text: "be brief" }],
       [{ type: "text", text: '<plugin name="Wiki &quot;docs&quot;">\nsearch first\n</plugin>' }],
@@ -157,7 +161,7 @@ describe("AgentRunner.run", () => {
     const { runner, llm } = setup([answer]);
     await runner.run(userCtx("Maria"), agent, run);
 
-    const [{ messages }] = llm.stream.mock.calls[0].slice(1) as unknown as [{ messages: LlmMessage[] }];
+    const [{ messages }] = llm.stream.mock.calls[0].slice(1) as unknown as [{ messages: LLMMessage[] }];
     expect(messages.slice(0, 3).map((m) => m.parts)).toEqual([
       [{ type: "text", text: "Your name is Suporte Técnico" }],
       [{ type: "text", text: "The user's name is Maria" }],
@@ -283,7 +287,7 @@ describe("AgentRunner.run", () => {
     await runner.run(ctx, { ...agent, historyRuns: 2 } as Agent, run);
 
     expect(runs.find).toHaveBeenCalledWith(expect.objectContaining({ where: { sessionId: "s1" }, take: 3 }));
-    const [{ messages: sent }] = llm.stream.mock.calls[0].slice(1) as unknown as [{ messages: LlmMessage[] }];
+    const [{ messages: sent }] = llm.stream.mock.calls[0].slice(1) as unknown as [{ messages: LLMMessage[] }];
     const contents = sent.flatMap((m) => m.parts.flatMap((p) => (p.type === "tool_result" ? [p.content] : [])));
     expect(contents).toEqual(["[result omitted]", "data"]);
   });

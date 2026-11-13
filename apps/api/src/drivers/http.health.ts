@@ -18,10 +18,7 @@ type HttpHealthOptions = z.infer<typeof optionsSchema>;
 export class HttpHealthCheckDriver extends Driver(optionsSchema) implements HealthCheckDriver<HttpHealthOptions> {
   readonly key = "http";
 
-  async checkHealth(
-    _connectionId: string,
-    { url, method, headers, timeout }: HttpHealthOptions,
-  ): Promise<HealthCheckResult> {
+  async checkHealth({ url, method, headers, timeout }: HttpHealthOptions): Promise<HealthCheckResult> {
     try {
       const res = await safeFetch(url, { method, headers, signal: AbortSignal.timeout(timeout * 1000) });
       return res.ok ? { isHealthy: true } : { isHealthy: false, error: `HTTP ${res.status}` };
