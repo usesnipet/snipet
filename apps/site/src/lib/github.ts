@@ -35,7 +35,7 @@ function remember<T>(load: () => Promise<T | null>): () => Promise<T | null> {
 /** The API's manifests in `dir` on the default branch, or null when GitHub can't be reached. */
 async function fetchManifests(dir: "llm" | "plugin"): Promise<Manifest[] | null> {
   try {
-    const res = await fetch(`${REPO}/contents/apps/api/src/${dir}/manifests`);
+    const res = await fetch(`${REPO}/contents/apps/api/src/drivers/${dir}/manifests`);
     if (!res.ok) throw new Error(`status ${res.status}`);
     const files = (await res.json()) as { name: string; download_url: string }[];
     return await Promise.all(
