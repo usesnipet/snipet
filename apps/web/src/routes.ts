@@ -9,6 +9,7 @@ export const ROUTES = {
   plugins: "/admin/plugins",
   apps: "/admin/apps",
   users: "/admin/users",
+  usage: "/admin/usage",
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

@@ -4,7 +4,7 @@ import { Sidebar as SidebarContainer } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/features/auth/store";
 import { ROUTES } from "@/routes";
 import { hasRole, Role } from "@snipet/shared";
-import { AppWindow, Bot, MessageSquare, Plug, Server, Users } from "lucide-react";
+import { AppWindow, BarChart3, Bot, MessageSquare, Plug, Server, Users } from "lucide-react";
 
 import { SidebarFooter } from "./sidebar/footer";
 
@@ -20,6 +20,7 @@ const navItems: NavEntry[] = [
       { title: "LLMs", href: ROUTES.llmConnections, icon: Server, visible: isAdmin },
       { title: "Plugins", href: ROUTES.plugins, icon: Plug, visible: isAdmin },
       { title: "Apps", href: ROUTES.apps, icon: AppWindow, visible: isAdmin },
+      { title: "Usage", href: ROUTES.usage, icon: BarChart3, visible: isAdmin },
     ],
   },
   {

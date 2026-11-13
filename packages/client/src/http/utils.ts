@@ -12,7 +12,7 @@ export function buildSearchParams(params: SearchParamsRecord): string {
 
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null) continue;
-    searchParams.append(key, String(value));
+    searchParams.append(key, value instanceof Date ? value.toISOString() : String(value));
   }
 
   return searchParams.toString();
