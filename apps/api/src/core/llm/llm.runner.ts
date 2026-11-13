@@ -60,8 +60,10 @@ export class LLMRunner {
       signal?.throwIfAborted();
       let iterator: AsyncIterator<LLMStreamEvent>;
       let first: IteratorResult<LLMStreamEvent>;
+      let connectionId: string;
       try {
-        const { driver, request, options } = this.resolve(target, messages, tools, signal);
+        const { driver, request, options, ...resolved } = this.resolve(target, messages, tools, signal);
+        connectionId = resolved.connectionId;
         iterator = driver.stream(request, options)[Symbol.asyncIterator]();
         first = await iterator.next();
       } catch (error) {
@@ -72,7 +74,7 @@ export class LLMRunner {
         continue;
       }
 
-      yield { event: LLMStreamEventType.LLM_STARTED, data: { model: target.model } };
+      yield { event: LLMStreamEventType.LLM_STARTED, data: { model: target.model, connectionId } };
       let text = "";
       let thinking = "";
       const toolCalls: LLMMessagePart[] = [];
@@ -111,6 +113,6 @@ export class LLMRunner {
     if (!chat) throw new LLMError(LLMErrorCode.BAD_REQUEST, `"${target.llm}" does not support chat`);
 
     const request: ChatRequest = { model: target.model, messages, tools, signal };
-    return { driver: chat.driver, options: chat.options, request };
+    return { driver: chat.driver, options: chat.options, request, connectionId: target.connectionId };
   }
 }

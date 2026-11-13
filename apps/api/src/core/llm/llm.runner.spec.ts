@@ -78,7 +78,7 @@ const runner = new LLMRunner(
 const run = (...refs: string[]) => ({
   targets: refs.map((ref): LLMTarget => {
     const [llm, model] = ref.split("/");
-    return { status: "success", llm, model, connection: {} };
+    return { status: "success", llm, model, connectionId: "c1", connection: {} };
   }),
   messages: [{ role: LLMRole.USER, parts: [{ type: LLMMessagePartType.TEXT as const, text: "hi" }] }],
 });
@@ -144,7 +144,7 @@ describe("LLMRunner", () => {
         event: "llm_skipped",
         data: { model: "m", error: "llm provider unavailable" },
       },
-      { event: "llm_started", data: { model: "m" } },
+      { event: "llm_started", data: { model: "m", connectionId: "c1" } },
     ]);
     expect(JSON.stringify(events)).not.toContain("10.0.0.1");
   });
@@ -155,7 +155,7 @@ describe("LLMRunner", () => {
         event: "llm_skipped",
         data: { model: "m", error: "llm provider rate limited" },
       },
-      { event: "llm_started", data: { model: "m" } },
+      { event: "llm_started", data: { model: "m", connectionId: "c1" } },
       { event: "text_delta", data: { text: "he" } },
       { event: "text_delta", data: { text: "llo" } },
       { event: "tool_call", data: { call: { id: "1", name: "t", arguments: { a: 1 } } } },

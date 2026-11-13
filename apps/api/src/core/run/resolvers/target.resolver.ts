@@ -21,7 +21,7 @@ export class TargetResolver {
       const connection = connections.get(connectionId);
       if (!connection) return { status: "error", model, error: `connection "${connectionId}" not found` };
       if (!connection.models.includes(model)) return { status: "error", model, error: `model "${model}" not found` };
-      return { status: "success", model, llm: connection.llmKey, connection: connection.config };
+      return { status: "success", model, connectionId, llm: connection.llmKey, connection: connection.config };
     });
   }
 }

@@ -16,6 +16,7 @@ import { LlmConnectionModule } from "#src/modules/llm-connection/llm-connection.
 import { PluginConnectionModule } from "#src/modules/plugin-connection/plugin-connection.module.js";
 import { SettingsModule } from "#src/modules/settings/settings.module.js";
 import { SystemModule } from "#src/modules/system/system.module.js";
+import { UsageModule } from "#src/modules/usage/usage.module.js";
 import { UserModule } from "#src/modules/user/user.module.js";
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
@@ -49,6 +50,7 @@ import { AppContext } from "./common/context/app-context.js";
     PluginConnectionModule,
     SettingsModule,
     SystemModule,
+    UsageModule,
     UserModule,
   ],
   // In this order: some throttlers track the caller AuthGuard sets.

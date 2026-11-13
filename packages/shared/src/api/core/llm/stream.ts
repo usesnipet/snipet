@@ -19,7 +19,7 @@ export enum LLMStreamEventType {
 export const llmStreamEventSchema = z.discriminatedUnion("event", [
   z.object({
     event: z.literal(LLMStreamEventType.LLM_STARTED),
-    data: z.object({ model: z.string() }),
+    data: z.object({ model: z.string(), connectionId: z.string() }),
   }),
   z.object({
     event: z.literal(LLMStreamEventType.LLM_SKIPPED),

@@ -91,7 +91,7 @@ export class LlmConnectionService extends ConnectionService<LlmConnection, LLMMa
         if (!conn.models.some((m) => m.key === model)) {
           return { status: "error", model, error: `model "${model}" not found` };
         }
-        return { status: "success", llm: conn.llmKey, model, connection: conn.config };
+        return { status: "success", llm: conn.llmKey, model, connectionId, connection: conn.config };
       }),
     );
   }

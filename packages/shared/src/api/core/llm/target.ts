@@ -4,6 +4,7 @@ export const llmTargetSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("success"),
     model: z.string(),
+    connectionId: z.string(),
     llm: z.string(),
     connection: z.record(z.string(), z.unknown()),
   }),

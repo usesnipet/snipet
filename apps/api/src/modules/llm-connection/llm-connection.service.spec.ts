@@ -46,9 +46,9 @@ describe("LlmConnectionService.resolveTargets", () => {
         { connectionId: "c3", model: "llama3" },
       ]),
     ).resolves.toEqual([
-      { status: "success", llm: "openai", model: "gpt-4o", connection: { apiKey: "sk-1" } },
-      { status: "success", llm: "openai", model: "meta/llama", connection: { apiKey: "sk-2" } },
-      { status: "success", llm: "ollama", model: "llama3", connection: {} },
+      { status: "success", llm: "openai", model: "gpt-4o", connectionId: "c1", connection: { apiKey: "sk-1" } },
+      { status: "success", llm: "openai", model: "meta/llama", connectionId: "c2", connection: { apiKey: "sk-2" } },
+      { status: "success", llm: "ollama", model: "llama3", connectionId: "c3", connection: {} },
     ]);
   });
 

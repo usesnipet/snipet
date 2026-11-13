@@ -11,3 +11,4 @@ export * from "./plugin.js";
 export * from "./settings.js";
 export * from "./system.js";
 export * from "./user.js";
+export * from "./usage.js";

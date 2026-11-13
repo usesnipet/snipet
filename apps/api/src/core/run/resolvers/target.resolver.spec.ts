@@ -21,7 +21,7 @@ describe("TargetResolver", () => {
       ],
     } as Agent;
     await expect(new TargetResolver(store).resolve(ctx, agent)).resolves.toEqual([
-      { status: "success", model: "gpt", llm: "openai", connection: { apiKey: "k" } },
+      { status: "success", model: "gpt", connectionId: "c1", llm: "openai", connection: { apiKey: "k" } },
       { status: "error", model: "gpt", error: 'connection "c9" not found' },
       { status: "error", model: "gone", error: 'model "gone" not found' },
     ]);

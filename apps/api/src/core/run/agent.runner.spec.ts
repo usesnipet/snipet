@@ -23,6 +23,7 @@ import type { HookDriver } from "../plugin/driver.js";
 import type { BoundHandler } from "../plugin/runner/hook.runner.js";
 import type { MessageStore } from "../store/message.store.js";
 import type { RunOutcome, RunStore } from "../store/run.store.js";
+import type { LLMCall, UsageStore } from "../store/usage.store.js";
 import type { HistoryResolver } from "./resolvers/history.resolver.js";
 import type { PluginResolver } from "./resolvers/plugin.resolver.js";
 import type { TargetResolver } from "./resolvers/target.resolver.js";
@@ -61,6 +62,7 @@ function setup(replies: LLMMessage[], handlers: BoundHandler[] = [], plugins: "o
   const outcomes: RunOutcome[] = [];
   const events: RunEvent[] = [];
   const executed: string[] = [];
+  const recorded: LLMCall[] = [];
   const runEvents = new RunEvents();
 
   const tools = new ToolRunner([
@@ -88,7 +90,7 @@ function setup(replies: LLMMessage[], handlers: BoundHandler[] = [], plugins: "o
     // eslint-disable-next-line @typescript-eslint/require-await -- fake stream
     async *stream(): AsyncGenerator<LLMStreamEvent> {
       const message = replies.shift()!;
-      yield { event: LLMStreamEventType.LLM_STARTED, data: { model: "m" } };
+      yield { event: LLMStreamEventType.LLM_STARTED, data: { model: "m", connectionId: "c1" } };
       yield { event: LLMStreamEventType.USAGE, data: { usage: { inputTokens: 2, outputTokens: 1 } } };
       yield { event: LLMStreamEventType.MESSAGE, data: { message } };
     },
@@ -107,6 +109,12 @@ function setup(replies: LLMMessage[], handlers: BoundHandler[] = [], plugins: "o
       return Promise.resolve({ ...run, id, ...outcome });
     },
   };
+  const usageStore: UsageStore = {
+    record: (_ctx, _agent, _run, call) => {
+      recorded.push(call);
+      return Promise.resolve();
+    },
+  };
   const runner = new AgentRunner(
     runEvents,
     { resolve: () => Promise.resolve([user]) } as unknown as HistoryResolver,
@@ -115,6 +123,7 @@ function setup(replies: LLMMessage[], handlers: BoundHandler[] = [], plugins: "o
     { resolve: () => Promise.resolve([]) } as unknown as TargetResolver,
     messageStore,
     runStore,
+    usageStore,
     llmRunner,
     logger,
   );
@@ -123,7 +132,7 @@ function setup(replies: LLMMessage[], handlers: BoundHandler[] = [], plugins: "o
     runEvents.subscribe(run.id, (event) => events.push(event));
     await running;
   };
-  return { start, saved, outcomes, events, executed };
+  return { start, saved, outcomes, events, executed, recorded };
 }
 
 describe("AgentRunner", () => {
@@ -144,6 +153,22 @@ describe("AgentRunner", () => {
       { type: LLMMessagePartType.TOOL_RESULT, toolCallId: "call-search", content: "found", isError: false },
     ]);
     expect(outcomes[0]).toMatchObject({ status: AgentRunStatus.COMPLETED, turns: 2 });
+  });
+
+  it("records the usage of each LLM call, but not of a reply a hook gave in the model's place", async () => {
+    const called = setup([toolCall("search"), text("done")]);
+    await called.start();
+    const usage = { inputTokens: 2, outputTokens: 1 };
+    expect(called.recorded).toEqual([
+      { connectionId: "c1", model: "m", usage },
+      { connectionId: "c1", model: "m", usage },
+    ]);
+
+    const respond = hookOn(HookName.LLM_REQUEST, () => ({ action: HookAction.RESPOND, result: text("canned") }));
+    const answered = setup([], [respond]);
+    await answered.start();
+    expect(answered.saved.map((m) => m.parts)).toEqual([text("canned").parts]);
+    expect(answered.recorded).toEqual([]);
   });
 
   it("answers a denied call with the reason, without running the tool", async () => {

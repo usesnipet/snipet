@@ -20,6 +20,7 @@ import type { Logger } from "../logger.js";
 import type { ToolRunner } from "../plugin/runner/tool.runner.js";
 import type { MessageStore } from "../store/message.store.js";
 import type { RunStore } from "../store/run.store.js";
+import type { LLMCall, UsageStore } from "../store/usage.store.js";
 import type { ContextResolver } from "./resolvers/context.resolver.js";
 import type { HistoryResolver } from "./resolvers/history.resolver.js";
 import type { PluginResolver, RunPlugins } from "./resolvers/plugin.resolver.js";
@@ -54,6 +55,7 @@ export class AgentRunner {
     private readonly targetResolver: TargetResolver,
     private readonly messageStore: MessageStore,
     private readonly runStore: RunStore,
+    private readonly usageStore: UsageStore,
     private readonly llmRunner: LLMRunner,
     private readonly logger: Logger,
   ) {}
@@ -117,7 +119,7 @@ export class AgentRunner {
       while (turns < agent.maxTurns) {
         turns++;
         hooks.turn = turns;
-        const reply = await this.callLLM(run, hooks, signal, {
+        const reply = await this.callLLM(ctx, agent, run, hooks, signal, {
           messages: [...context.messages, ...history],
           tools: context.tools,
           targets,
@@ -181,6 +183,8 @@ export class AgentRunner {
 
   /** One LLM call through llm.request and llm.response; a hook may answer it instead. */
   private async callLLM(
+    ctx: CoreContext,
+    agent: Agent,
     run: AgentRun,
     hooks: HookRunner,
     signal: AbortSignal,
@@ -193,6 +197,7 @@ export class AgentRunner {
     const started = Date.now();
     let message: LLMMessage | undefined;
     let model: string | null = null;
+    let connectionId: string | null = null;
     let usage: LLMUsage = { inputTokens: 0, outputTokens: 0 };
     const skipped: { model: string; error: string }[] = [];
 
@@ -203,7 +208,7 @@ export class AgentRunner {
       // Providers may reject an empty tool list.
       const stream = this.llmRunner.stream({ messages, targets, tools: tools.length ? tools : undefined, signal });
       for await (const event of stream) {
-        if (event.event === LLMStreamEventType.LLM_STARTED) model = event.data.model;
+        if (event.event === LLMStreamEventType.LLM_STARTED) ({ model, connectionId } = event.data);
         else if (event.event === LLMStreamEventType.LLM_SKIPPED) skipped.push(event.data);
         else if (event.event === LLMStreamEventType.TEXT_DELTA) {
           this.runEvents.emit(run.id, { event: RunEventType.TEXT_DELTA, data: event.data });
@@ -212,6 +217,8 @@ export class AgentRunner {
       }
     }
     if (!message) throw new Error("llm stream ended without a message");
+    // A hook that answered in the model's place made no LLM call.
+    if (model && connectionId) await this.recordUsage(ctx, agent, run, { connectionId, model, usage });
 
     const response = await hooks.run(HookName.LLM_RESPONSE, {
       message,
@@ -269,6 +276,15 @@ export class AgentRunner {
       ...(reason && { reason }),
     });
     return outcome.payload.result;
+  }
+
+  /** Records an LLM call's tokens; a failure is logged, never fails the run. */
+  private async recordUsage(ctx: CoreContext, agent: Agent, run: AgentRun, call: LLMCall): Promise<void> {
+    try {
+      await this.usageStore.record(ctx, agent, run, call);
+    } catch (err) {
+      this.logger.warn(`record usage of run ${run.id}: ${String(err)}`);
+    }
   }
 
   /** Stores the message and sends it to the run's followers; returns it as the models see it. */

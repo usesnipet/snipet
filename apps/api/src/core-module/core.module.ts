@@ -10,12 +10,14 @@ import { LLMConnectionStore } from "#src/core/store/llm-connection.store.js";
 import { MessageStore } from "#src/core/store/message.store.js";
 import { PluginConnectionStore } from "#src/core/store/plugin-connection.store.js";
 import { RunStore } from "#src/core/store/run.store.js";
+import { UsageStore } from "#src/core/store/usage.store.js";
 import { LLMModule } from "#src/drivers/llm/llm.module.js";
 import { PluginModule } from "#src/drivers/plugin/plugin.module.js";
 import { AgentRun } from "#src/modules/agent-run/agent-run.entity.js";
 import { AgentMessage } from "#src/modules/agent-session/agent-message.entity.js";
 import { LlmConnection } from "#src/modules/llm-connection/llm-connection.entity.js";
 import { PluginConnection } from "#src/modules/plugin-connection/plugin-connection.entity.js";
+import { UsageRecord } from "#src/modules/usage/usage-record.entity.js";
 import { Logger, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
@@ -23,6 +25,7 @@ import { DatabaseLLMConnectionStore } from "./stores/llm-connection.store.js";
 import { DatabaseMessageStore } from "./stores/message.store.js";
 import { DatabasePluginConnectionStore } from "./stores/plugin-connection.store.js";
 import { DatabaseRunStore } from "./stores/run.store.js";
+import { DatabaseUsageStore } from "./stores/usage.store.js";
 
 /**
  * Builds the core for the application: its stores on the database, its
@@ -31,7 +34,7 @@ import { DatabaseRunStore } from "./stores/run.store.js";
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AgentRun, AgentMessage, PluginConnection, LlmConnection]),
+    TypeOrmModule.forFeature([AgentRun, AgentMessage, PluginConnection, LlmConnection, UsageRecord]),
     LLMModule,
     PluginModule,
   ],
@@ -39,6 +42,7 @@ import { DatabaseRunStore } from "./stores/run.store.js";
     RunEvents,
     { provide: MessageStore, useClass: DatabaseMessageStore },
     { provide: RunStore, useClass: DatabaseRunStore },
+    { provide: UsageStore, useClass: DatabaseUsageStore },
     { provide: PluginConnectionStore, useClass: DatabasePluginConnectionStore },
     { provide: LLMConnectionStore, useClass: DatabaseLLMConnectionStore },
     {
@@ -71,6 +75,7 @@ import { DatabaseRunStore } from "./stores/run.store.js";
         targets: TargetResolver,
         messages: MessageStore,
         runs: RunStore,
+        usage: UsageStore,
         llmRunner: LLMRunner,
       ) =>
         new AgentRunner(
@@ -81,6 +86,7 @@ import { DatabaseRunStore } from "./stores/run.store.js";
           targets,
           messages,
           runs,
+          usage,
           llmRunner,
           new Logger(AgentRunner.name),
         ),
@@ -92,6 +98,7 @@ import { DatabaseRunStore } from "./stores/run.store.js";
         TargetResolver,
         MessageStore,
         RunStore,
+        UsageStore,
         LLMRunner,
       ],
     },

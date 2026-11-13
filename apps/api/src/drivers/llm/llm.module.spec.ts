@@ -16,9 +16,10 @@ describe("LLMModule", () => {
     // undefined and this would throw a TypeError instead of failing over.
     const messages = [{ role: LLMRole.USER, parts: [{ type: LLMMessagePartType.TEXT as const, text: "hi" }] }];
     await expect(
-      app
-        .get(LLMRunner)
-        .generate({ targets: [{ status: "success", llm: "nope", model: "m", connection: {} }], messages }),
+      app.get(LLMRunner).generate({
+        targets: [{ status: "success", llm: "nope", model: "m", connectionId: "c1", connection: {} }],
+        messages,
+      }),
     ).rejects.toBeInstanceOf(FailoverError);
     const builtIn = readdirSync(resolve(import.meta.dirname, "manifests"));
     expect(app.get(LLMManifestRegistry).getAll().length).toBeGreaterThanOrEqual(builtIn.length);
