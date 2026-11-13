@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { EntityManager, EntityTarget, ObjectLiteral, Repository } from "typeorm";
 
 import { BaseContext } from "../context/base-context.js";
@@ -12,6 +13,10 @@ export abstract class BaseService<C extends BaseContext = BaseContext> {
 
   /** Another entity's table, on the same transaction as `repository(ctx)`. */
   protected repositoryOf<E extends ObjectLiteral>(ctx: C | undefined, target: EntityTarget<E>): Repository<E> {
+    if (!this.manager) {
+      const logger = new Logger(this.constructor.name);
+      logger.error("EntityManager not found, do you remember to inject it?");
+    }
     return (ctx?.tx ?? this.manager).getRepository(target);
   }
 

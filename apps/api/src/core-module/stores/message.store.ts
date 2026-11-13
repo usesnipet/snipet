@@ -3,7 +3,7 @@ import { AgentRun } from "#src/modules/agent-run/agent-run.entity.js";
 import { AgentMessage } from "#src/modules/agent-session/agent-message.entity.js";
 import { Injectable } from "@nestjs/common";
 import { BaseService } from "@snipet/server-common";
-import { In } from "typeorm";
+import { EntityManager, In } from "typeorm";
 
 import type { MessageStore } from "#src/core/store/message.store.js";
 import type { LLMMessage } from "@snipet/shared/core";
@@ -11,6 +11,10 @@ import type { LLMMessage } from "@snipet/shared/core";
 /** The core's MessageStore on the agent_messages table. */
 @Injectable()
 export class DatabaseMessageStore extends BaseService<AppContext> implements MessageStore {
+  constructor(protected readonly manager: EntityManager) {
+    super(manager);
+  }
+
   async listRecent(ctx: AppContext, sessionId: string, runs: number): Promise<AgentMessage[]> {
     const recentRuns = await this.repositoryOf(ctx, AgentRun).find({
       select: { id: true },
