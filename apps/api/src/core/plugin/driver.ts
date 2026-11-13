@@ -1,28 +1,16 @@
 import type { BaseDriver } from "#src/core/manifest/driver.js";
 import type { HealthCheckDriver } from "#src/core/manifest/health-check.js";
-import type { HookEvent, HookName, HookResult, JsonObject } from "@snipet/shared";
-
-/** A tool as listed by a driver. */
-export interface Tool {
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-}
-
-/** The outcome of a tool call, flattened to text. */
-export interface ToolResult {
-  content: string;
-  isError: boolean;
-}
+import type { JsonObject } from "@snipet/shared";
+import type { HookEvent, HookName, HookResult, LLMTool, LLMToolResult } from "@snipet/shared/core";
 
 export interface ToolDriver<Opts = unknown> extends BaseDriver<Opts> {
-  listTools(connectionId: string, options: Opts): Promise<Tool[]>;
-  callTool(connectionId: string, name: string, parameters: Record<string, unknown>, options: Opts): Promise<ToolResult>;
+  listTools(options: Opts): Promise<LLMTool[]>;
+  callTool(name: string, parameters: Record<string, unknown>, options: Opts): Promise<LLMToolResult>;
 }
 
 export interface InstructionsDriver<Opts = unknown> extends BaseDriver<Opts> {
   /** How to use the plugin, or undefined when it has none. */
-  getInstructions(connectionId: string, options: Opts): Promise<string | undefined>;
+  getInstructions(options: Opts): Promise<string | undefined>;
 }
 
 /** What a hook handler gets besides the event and the manifest's options. */

@@ -1,7 +1,7 @@
 import { assertKey } from "#src/infra/storage/utils.js";
 import { slugify } from "#src/utils/slug/slug.js";
 
-import type { HookEvent } from "@snipet/shared";
+import type { HookEvent } from "@snipet/shared/core";
 
 /**
  * Where an event is saved:

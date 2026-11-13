@@ -6,7 +6,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { BaseDriver } from "#src/core/manifest/driver.js";
-import type { HookEvent, JsonObject, ManifestDriver } from "@snipet/shared";
+import type { JsonObject, ManifestDriver } from "@snipet/shared";
+import type { HookEvent } from "@snipet/shared/core";
 import type { AddressInfo } from "node:net";
 import type { HookContext } from "#src/core/plugin/driver.js";
 

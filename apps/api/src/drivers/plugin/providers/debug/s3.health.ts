@@ -30,7 +30,7 @@ export class DebugS3HealthCheckDriver
 {
   readonly key = "debug-s3";
 
-  async checkHealth(_connectionId: string, options: S3ConnectionOptions): Promise<HealthCheckResult> {
+  async checkHealth(options: S3ConnectionOptions): Promise<HealthCheckResult> {
     try {
       const client = await safeS3Client(options);
       await client.send(new HeadBucketCommand({ Bucket: options.bucket }), {

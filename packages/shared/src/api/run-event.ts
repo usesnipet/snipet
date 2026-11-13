@@ -1,8 +1,9 @@
 import z from "zod";
 
-import { agentRunSchema } from "../../agent-run.js";
-import { agentMessageSchema } from "../../agent-session.js";
+import { agentRunSchema } from "./agent-run.js";
+import { agentMessageSchema } from "./agent-session.js";
 
+/** Every event a run sends to the clients that follow it. */
 export enum RunEventType {
   TEXT_DELTA = "text_delta",
   MESSAGE = "message",
@@ -10,8 +11,8 @@ export enum RunEventType {
 }
 
 /**
- * SSE events of GET /agent-runs/:id/events. message events carry the
- * message id as the SSE id, so a client resumes with Last-Event-ID.
+ * SSE events of GET /agent-runs/:id/events. message events carry the stored
+ * message, whose id is the SSE id, so a client resumes with Last-Event-ID.
  */
 export const runEventSchema = z.discriminatedUnion("event", [
   z.object({ event: z.literal(RunEventType.TEXT_DELTA), data: z.object({ text: z.string() }) }),

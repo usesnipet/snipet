@@ -1,71 +1,57 @@
 import { Driver } from "#src/core/manifest/driver.js";
-import { ALL_HOOKS, hookHandlersOf, hooksCapabilitySchema, pluginManifestSchema } from "@snipet/shared";
+import {
+  hooksCapabilitySchema,
+  pluginManifestSchema,
+  HookAction,
+  HookMode,
+  HookName,
+  HookOnFailure,
+} from "@snipet/shared/core";
 import { z } from "zod";
 
 import { PluginDriverRegistry, PluginManifestRegistry } from "./plugin.registry.js";
 
-import type { HookName, HookResult } from "@snipet/shared";
+import type { HookResult } from "@snipet/shared/core";
 import type { HookDriver } from "./driver.js";
 
 /** The issue messages of a capability that fails to parse. */
-const issuesOf = (handlers: unknown[]) =>
+const issuesOf = (handlers: Record<string, unknown>) =>
   hooksCapabilitySchema.safeParse({ driver: "dbg", handlers }).error?.issues.map((issue) => issue.message) ?? [];
 
 describe("hooksCapabilitySchema", () => {
-  it("applies the handler defaults, the timeout depending on background", () => {
+  it("applies the handler defaults, the timeout depending on the mode", () => {
     const { handlers } = hooksCapabilitySchema.parse({
       driver: "dbg",
-      handlers: [{ hook: "run.start" }, { hook: "run.end", background: true }],
+      handlers: { [HookName.RUN_START]: {}, [HookName.RUN_END]: { mode: HookMode.BACKGROUND } },
     });
-    expect(handlers[0]).toEqual({
-      hook: "run.start",
-      actions: [],
-      background: false,
-      onFailure: "continue",
+    expect(handlers[HookName.RUN_START]).toEqual({
+      mode: HookMode.SEQUENTIAL,
+      onFailure: HookOnFailure.CONTINUE,
       optional: false,
       timeoutMs: 5000,
-      order: "default",
     });
-    expect(handlers[1].timeoutMs).toBe(30000);
+    expect(handlers[HookName.RUN_END]?.timeoutMs).toBe(30000);
   });
 
-  it("rejects two handlers on one hook, after expanding lists", () => {
-    expect(issuesOf([{ hook: ["run.start", "run.end"] }, { hook: "run.end" }])).toEqual(["two handlers on run.end"]);
-    expect(issuesOf([{ hook: ALL_HOOKS }, { hook: "tool.after" }])).toEqual(["two handlers on tool.after"]);
+  it("needs at least one handler", () => {
+    expect(issuesOf({})).toEqual(["no handlers"]);
   });
 
-  it("rejects actions the hook doesn't accept", () => {
-    expect(issuesOf([{ hook: "run.start", actions: ["modify"] }])).toEqual(["run.start doesn't accept modify"]);
-    expect(issuesOf([{ hook: ALL_HOOKS, actions: ["stop"] }])).toEqual(["run.end doesn't accept stop"]);
+  it("rejects a hook that doesn't exist", () => {
+    expect(issuesOf({ "tool.error": {} })).not.toEqual([]);
   });
 
-  it("rejects background handlers with actions", () => {
-    expect(issuesOf([{ hook: "tool.after", actions: ["modify"], background: true }])).toEqual([
-      "a background handler can't have actions",
+  it("only allows onFailure deny on hooks that accept deny", () => {
+    expect(issuesOf({ [HookName.TOOL_BEFORE]: { onFailure: HookOnFailure.DENY } })).toEqual([]);
+    expect(issuesOf({ [HookName.TOOL_AFTER]: { onFailure: HookOnFailure.DENY } })).toEqual([
+      'onFailure "deny" on tool.after',
     ]);
   });
 
-  it("only allows onFailure deny on tool.before", () => {
-    expect(issuesOf([{ hook: "tool.before", onFailure: "deny" }])).toEqual([]);
-    expect(issuesOf([{ hook: "tool.after", onFailure: "deny" }])).toEqual(['onFailure "deny" on tool.after']);
-  });
-});
-
-describe("hookHandlersOf", () => {
-  it("expands lists into one handler per hook, in loop order", () => {
-    const capability = hooksCapabilitySchema.parse({
-      driver: "dbg",
-      handlers: [
-        { hook: ["run.end", "run.start"], background: true },
-        { hook: "llm.request", actions: ["modify"] },
-      ],
-    });
-    const handlers = hookHandlersOf(capability);
-    expect([...handlers.keys()]).toEqual(["run.start", "llm.request", "run.end"]);
-    expect(handlers.get("llm.request")?.actions).toEqual(["modify"]);
-
-    const all = hookHandlersOf(hooksCapabilitySchema.parse({ driver: "dbg", handlers: [{ hook: ALL_HOOKS }] }));
-    expect(all.size).toBe(8);
+  it("rejects a background handler whose failure isn't continue", () => {
+    expect(issuesOf({ [HookName.TOOL_AFTER]: { mode: HookMode.BACKGROUND, onFailure: HookOnFailure.STOP } })).toEqual([
+      'onFailure "stop" in background: nothing waits for it',
+    ]);
   });
 });
 
@@ -78,9 +64,9 @@ describe("pluginManifestSchema", () => {
 
 class MemoryDriver extends Driver(z.object({})) implements HookDriver {
   readonly key = "memory";
-  readonly hooks: HookName[] = ["run.context", "run.end"];
+  readonly hooks: HookName[] = [HookName.RUN_CONTEXT, HookName.RUN_END];
   handle(): Promise<HookResult> {
-    return Promise.resolve({ action: "continue" });
+    return Promise.resolve({ action: HookAction.CONTINUE });
   }
 }
 
@@ -92,16 +78,16 @@ describe("PluginManifestRegistry", () => {
     hooks: [new MemoryDriver()],
     healthCheck: [],
   });
-  const plugin = (key: string, hook: string) => ({
+  const plugin = (key: string, hook: HookName) => ({
     key,
     name: key,
-    capabilities: { hooks: { driver: "memory", handlers: [{ hook }] } },
+    capabilities: { hooks: { driver: "memory", handlers: { [hook]: {} } } },
   });
 
   it("skips a manifest with a handler on a hook its driver doesn't implement", async () => {
     const loader = () => [
-      { source: "ok.json", raw: plugin("ok", "run.context") },
-      { source: "bad.json", raw: plugin("bad", "tool.before") },
+      { source: "ok.json", raw: plugin("ok", HookName.RUN_CONTEXT) },
+      { source: "bad.json", raw: plugin("bad", HookName.TOOL_BEFORE) },
     ];
     const registry = new PluginManifestRegistry("plugin", loader, pluginManifestSchema, drivers, logger);
     await registry.init();

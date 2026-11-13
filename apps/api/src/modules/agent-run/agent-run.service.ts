@@ -8,7 +8,8 @@ import {
 } from "@nestjs/common";
 import { BaseService } from "@snipet/server-common";
 import { AgentRunStatus } from "@snipet/shared";
-import { LLMMessagePartType, LLMRole, RunEvent, RunEventType } from "@snipet/shared/core";
+import { RunEvent, RunEventType } from "@snipet/shared";
+import { LLMMessagePartType, LLMRole } from "@snipet/shared/core";
 import { EntityManager, MoreThan } from "typeorm";
 
 import { AgentRunner } from "../../core/run/agent.runner.js";

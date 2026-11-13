@@ -1,8 +1,7 @@
 import { DriverRegistry } from "#src/core/manifest/driver.registry.js";
 import { ManifestRegistry } from "#src/core/manifest/manifest.registry.js";
-import { hookHandlersOf } from "@snipet/shared";
 
-import type { PluginManifest } from "@snipet/shared";
+import type { HookName, PluginManifest } from "@snipet/shared/core";
 import type { PluginDrivers } from "./driver.js";
 
 /** Plugin drivers per capability; a named subclass so Nest can inject it by class. */
@@ -16,7 +15,8 @@ export class PluginManifestRegistry extends ManifestRegistry<PluginManifest, Plu
     if (!hookCapability) return undefined;
     const driver = this.drivers.get("hooks", hookCapability.driver);
     const implemented = driver.hooks;
-    const missing = [...hookHandlersOf(hookCapability).keys()].filter((hook) => !implemented.includes(hook));
+    const handlers = Object.keys(hookCapability.handlers) as HookName[];
+    const missing = handlers.filter((hook) => !implemented.includes(hook));
     return missing.length
       ? `hooks driver "${hookCapability.driver}" doesn't implement ${missing.join(", ")}`
       : undefined;

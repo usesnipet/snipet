@@ -30,7 +30,7 @@ describe("DebugS3HealthCheckDriver", () => {
     server = createServer(listener);
     await new Promise<void>((done) => server!.listen(0, "127.0.0.2", done));
     const endpoint = `http://127.0.0.2:${(server.address() as AddressInfo).port}`;
-    return driver.checkHealth("c1", optionsOf({ ...required, endpoint, forcePathStyle: true, ...config }));
+    return driver.checkHealth(optionsOf({ ...required, endpoint, forcePathStyle: true, ...config }));
   }
 
   const answering =
@@ -83,7 +83,7 @@ describe("DebugS3HealthCheckDriver", () => {
     // Without path style the SDK puts the bucket in the name it looks up.
     ["a name", "http://localhost:9000", "logs.localhost"],
   ])("refuses a non-public endpoint given as %s", async (_kind, endpoint, host) => {
-    const result = await driver.checkHealth("c1", optionsOf({ ...required, endpoint }));
+    const result = await driver.checkHealth(optionsOf({ ...required, endpoint }));
     expect(result).toEqual({
       isHealthy: false,
       error: `endpoint not allowed: ${host} is a private or reserved address`,

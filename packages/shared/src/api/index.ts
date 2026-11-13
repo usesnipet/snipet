@@ -1,5 +1,6 @@
 export * from "./agent-run.js";
 export * from "./agent-session.js";
+export * from "./run-event.js";
 export * from "./agent.js";
 export * from "./api-key.js";
 export * from "./app.js";

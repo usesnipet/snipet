@@ -3,7 +3,7 @@ import { RateLimit } from "#src/common/rate-limit/rate-limit.js";
 import { Body, Controller, Get, Headers, HttpCode, Param, ParseUUIDPipe, Post, Query, Res } from "@nestjs/common";
 import { Ctx, ZodPipe } from "@snipet/server-common";
 import { findAgentRunsParamsSchema, startAgentRunSchema } from "@snipet/shared";
-import { RunEventType } from "@snipet/shared/core";
+import { RunEventType } from "@snipet/shared";
 
 import { AgentRunService } from "./agent-run.service.js";
 

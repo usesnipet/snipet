@@ -78,7 +78,7 @@ const runner = new LLMRunner(
 const run = (...refs: string[]) => ({
   targets: refs.map((ref): LLMTarget => {
     const [llm, model] = ref.split("/");
-    return { llm, model, connection: {} };
+    return { status: "success", llm, model, connection: {} };
   }),
   messages: [{ role: LLMRole.USER, parts: [{ type: LLMMessagePartType.TEXT as const, text: "hi" }] }],
 });
@@ -99,7 +99,7 @@ describe("LLMRunner", () => {
 
   it("fails over on any LLMError, including targets that arrive unusable", async () => {
     const ok = run("ok/m").targets[0];
-    const gone: LLMTarget = { model: "m", error: "connection gone" };
+    const gone: LLMTarget = { status: "error", model: "m", error: "connection gone" };
     await expect(runner.generate({ ...run(), targets: [gone, ok] })).resolves.toEqual(reply("ok"));
     expect((await collect(runner.stream({ ...run(), targets: [gone, ok] })))[0]).toEqual({
       event: "llm_skipped",

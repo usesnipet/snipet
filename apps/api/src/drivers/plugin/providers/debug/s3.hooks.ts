@@ -1,11 +1,11 @@
 import { Driver } from "#src/core/manifest/driver.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { ALL_HOOKS } from "@snipet/shared";
+import { ALL_HOOKS, HookAction } from "@snipet/shared/core";
+import type { HookEvent, HookResult } from "@snipet/shared/core";
 
 import { debugPath, eventJson } from "./event-file.js";
 import { S3ConnectionOptions, s3ConnectionSchema, safeS3Client } from "./s3-client.js";
 
-import type { HookEvent, HookResult } from "@snipet/shared";
 import type { HookContext, HookDriver } from "#src/core/plugin/driver.js";
 
 /** Saves each event as a JSON object in the connection's bucket; only observes. */
@@ -25,6 +25,6 @@ export class DebugS3Driver extends Driver(s3ConnectionSchema) implements HookDri
       }),
       { abortSignal: AbortSignal.any([signal, AbortSignal.timeout(options.timeout * 1000)]) },
     );
-    return { action: "continue" };
+    return { action: HookAction.CONTINUE };
   }
 }
