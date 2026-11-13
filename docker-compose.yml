@@ -8,6 +8,7 @@ services:
       PLUGINS_DIR: "/app/plugins"
       STORAGE_FS_DIR: "/app/storage"
       CORS_ORIGINS: "*"
+      ROOT_PASSWORD: ${ROOT_PASSWORD:-admin}
     # host.docker.internal is the host, for a local Ollama or LM Studio; Linux needs it declared.
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -15,7 +16,8 @@ services:
     depends_on:
       - db
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8852/api/system/health || exit 1"]
+      # The image has no curl.
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8852/api/system/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
       interval: 5s
       retries: 10
       timeout: 5s

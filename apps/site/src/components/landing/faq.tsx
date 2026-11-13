@@ -5,7 +5,7 @@ export const faqs: Question[] = [
   {
     question: "What is Snipet?",
     answer:
-      "Snipet is an open-source platform to build AI agents that use your tools, and to put them in front of your users: in a chat widget on your site or through the API from your own product.",
+      "Snipet is an open-source platform to build AI agents that work across all your apps. Connect agents to the tools you already use and call them from anywhere: your product, your backend, and soon the channels your users live in.",
   },
   {
     question: "Is Snipet free?",

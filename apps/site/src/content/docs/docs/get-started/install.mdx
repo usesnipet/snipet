@@ -16,7 +16,7 @@ Snipet is one server plus a Postgres database. Pick how you want to run it.
     docker compose up -d
     ```
 
-    Open [localhost:8852](http://localhost:8852).
+    Open [localhost:8852](http://localhost:8852) and [sign in](#sign-in).
   </TabItem>
   <TabItem label="From source">
     You need Node.js 22 or later, [pnpm](https://pnpm.io) and Postgres. The repo's `docker-compose.dev.yml` can run Postgres for you.
@@ -90,7 +90,7 @@ Where uploads, like agent avatars, are kept.
 | `CACHE_REDIS_ENABLED`, `CACHE_REDIS_URL` | `false` | Shared cache in Redis, for several server instances. The URL is required when enabled. |
 
 :::caution
-Set your own `JWT_SECRET` and `ENCRYPTION_KEY` before putting Snipet on a network. The defaults are public.
+Set your own `ROOT_PASSWORD`, `JWT_SECRET` and `ENCRYPTION_KEY` before putting Snipet on a network. The defaults are public.
 
 Generate them with:
 
