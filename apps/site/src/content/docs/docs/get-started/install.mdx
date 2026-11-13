@@ -35,7 +35,7 @@ Snipet is one server plus a Postgres database. Pick how you want to run it.
 
 ## Sign in
 
-On first boot Snipet creates an admin from `ROOT_USERNAME` and `ROOT_PASSWORD` (`admin` by default). Without a password set, a random one is generated and printed once in the server logs.
+On first boot Snipet creates an admin from `ROOT_USERNAME` (`admin` by default) and `ROOT_PASSWORD`. Without a password set, a random one is generated and printed once in the server logs. Add more people in [**Users**](/docs/concepts/users/).
 
 ## Configuration
 
@@ -47,11 +47,47 @@ Set these as environment variables, or in a `.env` file at the repo root when ru
 | `DATABASE_URL` | local Postgres | Postgres connection string. |
 | `JWT_SECRET` | insecure default | Signs sign-in and app tokens. At least 32 characters. |
 | `ENCRYPTION_KEY` | insecure default | Encrypts model and plugin credentials: 32 bytes, base64. Changing it makes stored credentials unreadable. |
-| `ROOT_USERNAME`, `ROOT_PASSWORD` | `admin` | First admin, created when there are no users. |
-| `CORS_ORIGINS` | unset | Sites allowed to call the API from a browser, comma-separated. Needed for the [chat widget](/docs/widget/). |
+| `ROOT_USERNAME` | `admin` | First admin's username, created when there are no users. |
+| `ROOT_PASSWORD` | random | First admin's password. Unset, a random one is printed once in the logs. |
+| `CORS_ORIGINS` | unset | Sites allowed to call the API from a browser, comma-separated, or `*` for any. Needed for the [chat widget](/docs/widget/). |
 | `PUBLIC_URL` | `http://localhost:$PORT` | URL the server is reached at, used in links to uploaded files. |
-| `PLUGINS_DIR` | built-in | Folder with your own [plugin manifests](/docs/concepts/plugins/#your-own-plugins). |
-| `STORAGE_DRIVER` | `fs` | Where uploads go: `fs` (a local folder) or `s3`. |
+| `TRUST_PROXY` | unset | Behind a reverse proxy, set it (`true`, or the number of proxies) so rate limits see the visitor's IP instead of the proxy's. |
+| `OUTBOUND_ALLOWLIST` | `localhost,127.0.0.0/8,::1,host.docker.internal` | Private hosts and ranges that model and plugin connections may reach, comma-separated. Others on private networks are blocked. Add the host of an Ollama or LM Studio running on another machine of your network. |
+
+### Storage
+
+Where uploads, like agent avatars, are kept.
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `STORAGE_DRIVER` | `fs` | `fs` (a local folder) or `s3`. |
+| `STORAGE_FS_DIR` | `storage` next to the server | Folder for `fs`. With Docker, mount a volume on it or uploads are lost when the container is recreated. |
+| `STORAGE_S3_BUCKET` | | Bucket for `s3`. Required with `s3`. |
+| `STORAGE_S3_REGION` | `us-east-1` | |
+| `STORAGE_S3_ENDPOINT` | AWS | Endpoint of an S3-compatible service, like MinIO or R2. |
+| `STORAGE_S3_ACCESS_KEY_ID`, `STORAGE_S3_SECRET_ACCESS_KEY` | | Credentials. |
+| `STORAGE_S3_PREFIX` | | Prefix for every key. |
+| `STORAGE_S3_FORCE_PATH_STYLE` | `false` | Set to `true` for services that need path-style URLs, like MinIO. |
+
+### Limits
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `REQUESTS_PER_CALLER_PER_MINUTE` | `300` | Requests per minute for each user, API key, end user, or IP when signed out. |
+| `AGENT_RUNS_PER_END_USER_PER_MINUTE` | `10` | Messages per minute each end user of an app can send. |
+| `ANONYMOUS_SIGNUPS_PER_IP_PER_HOUR` | `30` | New [anonymous users](/docs/auth/anonymous/) per IP per hour. |
+| `JWT_EXPIRES_IN_SECONDS` | `900` | How long a sign-in to Snipet's web app lasts before it is refreshed. |
+| `REFRESH_TOKEN_EXPIRES_IN_SECONDS` | `2592000` | How long a sign-in can be refreshed: 30 days. |
+
+### Advanced
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `LLMS_DIR` | built-in | Folder with the model provider manifests. |
+| `DB_AUTO_MIGRATE` | `true` | Runs database migrations on start. |
+| `CACHE_TTL_MS` | `60000` | How long cached lookups last. |
+| `CACHE_MEMORY_ENABLED` | `true` | In-memory cache. |
+| `CACHE_REDIS_ENABLED`, `CACHE_REDIS_URL` | `false` | Shared cache in Redis, for several server instances. The URL is required when enabled. |
 
 :::caution
 Set your own `JWT_SECRET` and `ENCRYPTION_KEY` before putting Snipet on a network. The defaults are public.

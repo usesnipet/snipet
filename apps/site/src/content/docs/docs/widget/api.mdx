@@ -23,7 +23,7 @@ import { Tabs, TabItem } from "@astrojs/starlight/components";
 | --- | --- |
 | `open` | |
 | `close` | |
-| `message` | `{ role: "user" \| "assistant", text, sessionId }`, once per new message |
+| `message` | `{ role: "user" \| "assistant", text, sessionId }`, once per new message with text. Thinking and plugin calls don't emit it. |
 | `error` | `{ message }`: a failed request, stream or sign-in |
 
 ## Examples

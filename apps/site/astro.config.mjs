@@ -49,7 +49,7 @@ export default defineConfig({
         },
         {
           label: "Concepts",
-          items: ["models", "plugins", "agents", "apps"].map((page) => ({ slug: `docs/concepts/${page}` })),
+          items: ["models", "plugins", "agents", "apps", "users"].map((page) => ({ slug: `docs/concepts/${page}` })),
         },
         {
           label: "Chat widget",

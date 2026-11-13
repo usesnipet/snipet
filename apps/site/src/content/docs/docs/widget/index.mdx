@@ -5,6 +5,12 @@ description: A chat with your agent, in the corner of any website.
 
 The widget adds a chat launcher and panel to your site, connected to one of your agents. It renders inside a Shadow DOM, so your page's CSS and the widget's never clash.
 
+Users keep their past chats in the history, and replies stream in as the agent writes them. While the agent works, the widget shows what it is doing, like "Thinking" or "Running tools", and each plugin call it makes.
+
+:::caution
+Your users see the name, arguments and result of every plugin call, and the model's thinking when it returns any. Keep what the agent's plugins return fit for them to read.
+:::
+
 ![Chat widget open on a page](/images/docs/widget-open.png)
 
 ## Before you start

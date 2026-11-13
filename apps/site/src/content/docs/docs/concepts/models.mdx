@@ -8,7 +8,10 @@ A model connection is a provider plus the credentials to use it. Agents pick the
 ## Providers
 
 - **Cloud**: OpenAI, Google Gemini, Mistral AI, Groq, OpenRouter, DeepSeek, xAI, Cerebras and Fireworks AI.
-- **Local**: Ollama and LM Studio. Point the connection at the server's URL, like `http://localhost:11434`; the API key is optional.
+- **Local**: Ollama, LM Studio and 9Router. Point the connection at the server's URL, like `http://localhost:11434`; the API key is optional.
+- **OpenAI Compatible**: any other service with an OpenAI-style API. Give it the base URL and the API key.
+
+From Docker, a server on your own machine is at `host.docker.internal` instead of `localhost`. For one on another machine of your network, add its host to [`OUTBOUND_ALLOWLIST`](/docs/get-started/install/#configuration).
 
 ## Add a connection
 

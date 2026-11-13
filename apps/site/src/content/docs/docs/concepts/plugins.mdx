@@ -11,7 +11,15 @@ A plugin is an integration with an external service, like GitHub, Linear or Stri
 
 ![Plugin catalog](/images/docs/plugins-catalog.png)
 
-When you save a connection, Snipet fetches the plugin's tools and keeps them in sync. Credentials are stored encrypted.
+When you save a connection, Snipet fetches the plugin's tools and keeps them in sync. Credentials are stored encrypted. A tool the plugin gains in a later sync stays off for agents that already use the connection, until you [turn it on](/docs/concepts/agents/#plugins) in the agent.
+
+The catalog has:
+
+- **Code and docs**: GitHub, GitMCP, DeepWiki, Context7, Hugging Face, Microsoft Learn, AWS Knowledge, Cloudflare Docs.
+- **Web search and scraping**: Exa, Tavily, Firecrawl, Apify.
+- **Work and data**: Linear, Stripe, Supabase, Neon.
+- **Debugging**: Debug (disk) and Debug (S3), see [hooks](#hooks).
+- **Any MCP server**: see [below](#any-mcp-server).
 
 ![Plugin connection form](/images/docs/plugins-connection-form.png)
 
