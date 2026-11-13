@@ -7,37 +7,60 @@ An agent answers messages by calling models and, when it needs to, plugin tools.
 
 ![Agent form](/images/docs/agents-form.png)
 
+## Name, description and avatar
+
+The name is how the agent introduces itself: Snipet tells the model its name on every run. The description and avatar are shown wherever users pick an agent to chat with.
+
+## Enabled
+
+A disabled agent keeps its settings and chats but can't be used: new messages to it are rejected. Users who can't manage agents only see the enabled ones, and only their name, description and avatar, never the prompt, models or plugins.
+
 ## System prompt
 
-What the agent is for and how it should behave. Snipet also tells it its name and adds the instructions of the plugins it may use.
+What the agent is for and how it should behave. Snipet sends the model, in this order: the agent's name, the user's name when it is known, this prompt, and the instructions of the plugins the agent may use.
 
 ## Models
 
 An agent has an ordered list of models. Snipet tries the first one; if that call fails, it moves on to the next. Use it to fall back from a cloud model to a local one, or from one provider to another.
 
+A model whose [connection](/docs/concepts/models/) was deleted, or that the connection no longer lists, is skipped instead of failing the run.
+
 ## Plugins
 
-Pick the [plugin connections](/docs/concepts/plugins/) the agent may use. By default it gets every tool of a connection; narrow it down with allow and deny patterns, like `search_*` or `delete_*`.
+Pick the [plugin connections](/docs/concepts/plugins/) the agent may use. When you add a connection, all its tools are selected; open **Configure** to turn off the ones the agent shouldn't call. Tools the connection gains in a later sync stay off until you select them.
 
-For plugins with hooks, turn off the optional hooks you don't want and fill in the plugin's settings for this agent, if it has any. The order of the list is the order their hooks run in; use the arrows to change it.
+For plugins with hooks, turn off the optional hooks you don't want and fill in the plugin's settings for this agent, if it has any. Settings are stored encrypted, since they may hold secrets. The order of the list is the order their hooks run in; use the arrows to change it.
 
 ## Turns
 
-Each time the agent calls a model is a turn. When the model asks for plugin tools, Snipet runs them and calls the model again with the results, until it answers in plain text. **Max turns** (20 by default) stops an agent that keeps calling tools.
+Each time the agent calls a model is a turn. When the model asks for plugin tools, Snipet runs them and calls the model again with the results, until it answers in plain text. **Max turns** (20 by default, up to 500) stops an agent that keeps calling tools; the run then ends as having hit its turn limit.
+
+## Chat history
+
+A conversation with an agent is a **session**, and each message the user sends starts a **run**: the agent's work to answer it, with all its turns and tool calls.
+
+**Chat history** (10 by default, up to 100) is how many earlier runs of the session the model sees besides the current one, each with the user's message and the agent's reply. Set it to 0 for an agent that answers each message on its own. To save tokens, tool results older than the previous run are replaced by a short placeholder; the model still sees which tools were called.
+
+## Runs
+
+A run answers in the background: the reply streams in as the model writes it, and leaving the chat doesn't stop it. Coming back to a session with a run still going picks the stream up where it is.
+
+A session runs one message at a time; sending another while a run is going is rejected. A run ends in one of these states:
+
+- **Completed**: the model answered in plain text.
+- **Max turns**: it hit the agent's turn limit first.
+- **Cancelled**: the user stopped it. Tool calls already asked for still get a result, so the next run's history stays valid.
+- **Failed**: every model failed, a plugin hook stopped it, or the server restarted mid-run. The chat shows why.
 
 ## Chat
 
-**Chat** talks to any of your agents. Every conversation is saved as a session, and you can open the arguments and result of each plugin call.
+**Chat** talks to any of your agents. Every conversation is saved as a session. While the agent works, the chat shows what it is doing; afterwards you can open its thinking, when the model returns it, and the arguments and result of each plugin call.
 
-![Chat with a tool call](/images/docs/agents-playground.png)
+![Chat](/images/docs/chat.png)
 
-## Debug mode
+## Debugging
 
-When an agent does something unexpected, turn on **Debug mode** in **Settings**. From then on every run saves what went in and out: the prompt, each model call, each plugin call and its result, and how long they took.
-
-![Debug mode in Settings](/images/docs/settings-debug.png)
-
-Debug logs are saved as JSON files in the configured storage (`STORAGE_DRIVER`), under `debug/`. While debug mode is on, chats show a notice that the conversation isn't private: logs hold everything users write. Turn it off when you're done.
+To see what goes in and out of an agent's runs, add a **Debug (disk)** or **Debug (S3)** [plugin](/docs/concepts/plugins/) connection to it. It saves every event of each run as a JSON file: the prompt, each model call, each plugin call and its result, and how long they took. The files hold whole conversations, so remove it when you're done.
 
 ## Related
 
