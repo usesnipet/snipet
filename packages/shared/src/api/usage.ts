@@ -59,13 +59,14 @@ export const usageReportRowSchema = z.object({
 });
 export type UsageReportRow = z.infer<typeof usageReportRowSchema>;
 
-/** from/to as in the report; the calls of a single day are the use. */
-export const usageCallsParamsSchema = usageReportParamsSchema.pick({ from: true, to: true, agentId: true });
-export type UsageCallsParams = z.infer<typeof usageCallsParamsSchema>;
+/** from/to as in the report, matched against a run's first call; the runs of a single day are the use. */
+export const usageRunsParamsSchema = usageReportParamsSchema.pick({ from: true, to: true, agentId: true });
+export type UsageRunsParams = z.infer<typeof usageRunsParamsSchema>;
 
 /** One LLM call with its cost in USD, null when its model had no price. */
 export const usageCallSchema = z.object({
   id: z.number().int(),
+  runId: z.uuid(),
   createdAt: z.coerce.date(),
   agentId: z.uuid(),
   /** Null when the agent was deleted. */
@@ -80,3 +81,13 @@ export const usageCallSchema = z.object({
   cost: z.number().nullable(),
 });
 export type UsageCall = z.infer<typeof usageCallSchema>;
+
+/** One agent reply and the LLM calls it made, oldest first; its calls may run past the day it started. */
+export const usageRunSchema = z.object({
+  runId: z.uuid(),
+  sessionId: z.uuid(),
+  /** Its first call. */
+  startedAt: z.coerce.date(),
+  calls: z.array(usageCallSchema),
+});
+export type UsageRun = z.infer<typeof usageRunSchema>;

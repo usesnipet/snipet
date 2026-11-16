@@ -1,12 +1,12 @@
 import { Private, UserAuth } from "#src/common/decorators/auth.decorator.js";
 import { Controller, Get, Query } from "@nestjs/common";
 import { Ctx, ZodPipe } from "@snipet/server-common";
-import { Role, usageCallsParamsSchema, usageReportParamsSchema } from "@snipet/shared";
+import { Role, usageRunsParamsSchema, usageReportParamsSchema } from "@snipet/shared";
 
 import { UsageService } from "./usage.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
-import type { UsageCallsParams, UsageReportParams } from "@snipet/shared";
+import type { UsageReportParams, UsageRunsParams } from "@snipet/shared";
 
 /** Usage of every agent, so admin only. */
 @Private(UserAuth(Role.Admin))
@@ -19,8 +19,8 @@ export class UsageController {
     return this.usageService.report(ctx, query);
   }
 
-  @Get("calls")
-  calls(@Ctx() ctx: AppContext, @Query(new ZodPipe(usageCallsParamsSchema)) query: UsageCallsParams) {
-    return this.usageService.calls(ctx, query);
+  @Get("runs")
+  runs(@Ctx() ctx: AppContext, @Query(new ZodPipe(usageRunsParamsSchema)) query: UsageRunsParams) {
+    return this.usageService.runs(ctx, query);
   }
 }

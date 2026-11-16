@@ -9,11 +9,11 @@ import { EntityManager } from "typeorm";
 
 import { UsageRecord } from "./usage-record.entity.js";
 
-import type { UsageCall, UsageCallsParams, UsageReportParams, UsageReportRow } from "@snipet/shared";
+import type { UsageCall, UsageReportParams, UsageReportRow, UsageRun, UsageRunsParams } from "@snipet/shared";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** The most calls one listing returns, newest first. */
-const CALLS_LIMIT = 500;
+/** The most runs one listing returns, newest first. */
+const RUNS_LIMIT = 200;
 
 /** The SQL each groupBy groups on. */
 const groupKeys: Record<UsageGroupBy, string> = {
@@ -35,10 +35,15 @@ export class UsageService extends BaseService<AppContext> {
     super(manager);
   }
 
+  getStartAndEnd(from: Date | undefined, to: Date | undefined): { start: Date; end: Date } {
+    const end = moment(to).endOf("day").toDate();
+    const start = from ?? moment(end).subtract(30, "days").startOf("day").toDate();
+    return { start, end };
+  }
+
   /** Tokens and cost per agent, model or day; groups by tokens, most first, days oldest first. */
   async report(ctx: AppContext, { from, to, groupBy, agentId }: UsageReportParams): Promise<UsageReportRow[]> {
-    const end = to ?? new Date();
-    const start = from ?? moment(end).subtract(30, "days").startOf("day").toDate();
+    const { start, end } = this.getStartAndEnd(from, to);
     const key = groupKeys[groupBy];
     const isByAgent = groupBy === UsageGroupBy.AGENT;
 
@@ -67,16 +72,39 @@ export class UsageService extends BaseService<AppContext> {
     }));
   }
 
-  /** The calls between from and to, newest first, each with its cost; at most CALLS_LIMIT of them. */
-  async calls(ctx: AppContext, { from, to, agentId }: UsageCallsParams): Promise<UsageCall[]> {
-    const end = to ?? new Date();
-    const start = from ?? new Date(end.getTime() - DAY_MS);
+  /**
+   * The runs whose first call is between from and to, newest first, at most RUNS_LIMIT of
+   * them, each with all its calls and their costs: a run started before midnight keeps the calls it made after.
+   */
+  async runs(ctx: AppContext, { from, to, agentId }: UsageRunsParams): Promise<UsageRun[]> {
+    const { start, end } = this.getStartAndEnd(from, to);
 
-    const query = this.repositoryOf(ctx, UsageRecord)
+    const runsQuery = this.repositoryOf(ctx, UsageRecord)
+      .createQueryBuilder("u")
+      .select(`u."runId"`, "runId")
+      .addSelect(`u."sessionId"`, "sessionId")
+      .addSelect(`MIN(u."createdAt")`, "startedAt")
+      .groupBy(`u."runId"`)
+      .addGroupBy(`u."sessionId"`)
+      .having(`MIN(u."createdAt") >= :start AND MIN(u."createdAt") < :end`, { start, end })
+      // Narrows the scan, yet reaches a day back so a run started before `start` is seen starting there,
+      // not at its first call after it. ponytail: a run over a day long would still show twice; reach further back if runs ever get that long.
+      .where(`u."createdAt" >= :lookback AND u."createdAt" < :end`, {
+        lookback: new Date(start.getTime() - DAY_MS),
+        end,
+      })
+      .orderBy(`MIN(u."createdAt")`, "DESC")
+      .limit(RUNS_LIMIT);
+    if (agentId) runsQuery.andWhere(`u."agentId" = :agentId`, { agentId });
+    const runs = await runsQuery.getRawMany<Omit<UsageRun, "calls">>();
+    if (runs.length === 0) return [];
+
+    const calls = await this.repositoryOf(ctx, UsageRecord)
       .createQueryBuilder("u")
       .leftJoin(Agent, "a", `a.id = u."agentId"`)
       .leftJoin(LlmConnection, "c", `c.id = u."connectionId"`)
       .select("u.id", "id")
+      .addSelect(`u."runId"`, "runId")
       .addSelect(`u."createdAt"`, "createdAt")
       .addSelect(`u."agentId"`, "agentId")
       .addSelect("a.name", "agentName")
@@ -88,10 +116,12 @@ export class UsageService extends BaseService<AppContext> {
       .addSelect(`u."cachedInputTokens"`, "cachedInputTokens")
       // Null when the model had no price, as both prices then are.
       .addSelect(`(${CALL_INPUT_COST} + ${CALL_OUTPUT_COST})::float8`, "cost")
-      .where(`u."createdAt" >= :start AND u."createdAt" < :end`, { start, end })
-      .orderBy(`u."createdAt"`, "DESC")
-      .limit(CALLS_LIMIT);
-    if (agentId) query.andWhere(`u."agentId" = :agentId`, { agentId });
-    return query.getRawMany<UsageCall>();
+      .where(`u."runId" IN (:...runIds)`, { runIds: runs.map((run) => run.runId) })
+      .orderBy(`u."createdAt"`, "ASC")
+      .getRawMany<UsageCall>();
+
+    const callsByRun = new Map<string, UsageCall[]>(runs.map((run) => [run.runId, []]));
+    for (const call of calls) callsByRun.get(call.runId)?.push(call);
+    return runs.map((run) => ({ ...run, calls: callsByRun.get(run.runId) ?? [] }));
   }
 }

@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { usageService } from "./service";
 
-import type { UsageCall, UsageCallsParams, UsageReportParams, UsageReportRow } from "@snipet/shared";
+import type { UsageReportParams, UsageReportRow, UsageRun, UsageRunsParams } from "@snipet/shared";
 import type { UseQueryResult } from "@tanstack/react-query";
 
 const BASE_QUERY_KEY = "usage";
@@ -16,10 +16,10 @@ export const useUsageReport = (params: UsageReportParams): UseQueryResult<UsageR
     placeholderData: keepPreviousData,
   });
 
-export const usageCallsQueryKey = (params: UsageCallsParams) => [BASE_QUERY_KEY, "calls", params] as const;
-export const useUsageCalls = (params: UsageCallsParams): UseQueryResult<UsageCall[], Error> =>
+export const usageRunsQueryKey = (params: UsageRunsParams) => [BASE_QUERY_KEY, "runs", params] as const;
+export const useUsageRuns = (params: UsageRunsParams): UseQueryResult<UsageRun[], Error> =>
   useQuery({
-    queryKey: usageCallsQueryKey(params),
-    queryFn: () => usageService.calls({ searchParams: params }),
+    queryKey: usageRunsQueryKey(params),
+    queryFn: () => usageService.runs({ searchParams: params }),
     placeholderData: keepPreviousData,
   });

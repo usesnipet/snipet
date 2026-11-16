@@ -22,6 +22,8 @@ export class UsageRecord implements UsageRecordContract {
   @Column({ type: "uuid" })
   sessionId: string;
 
+  /** Indexed: the usage page loads a day's runs by their ids. */
+  @Index("IDX_usage_records_runId")
   @Column({ type: "uuid" })
   runId: string;
 
