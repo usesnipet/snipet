@@ -1,0 +1,56 @@
+{
+  "key": "llmlingua",
+  "name": "LLMLingua compression",
+  "description": "Compresses long tool results and long system/instruction texts with LLMLingua-2 before they reach the model, through an llmlingua-api server.",
+  "tags": ["compression", "tokens"],
+  "auth": {
+    "type": "none"
+  },
+  "connection": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "title": "API URL",
+        "description": "Base URL of the llmlingua-api server, e.g. http://llmlingua:3030. A private address must be in OUTBOUND_ALLOWLIST."
+      }
+    },
+    "required": ["url"]
+  },
+  "settings": {
+    "type": "object",
+    "properties": {
+      "ratio": {
+        "type": "number",
+        "title": "Ratio",
+        "description": "Fraction of tokens to keep, in (0, 1]. Defaults to 0.5.",
+        "exclusiveMinimum": 0,
+        "maximum": 1
+      },
+      "minChars": {
+        "type": "integer",
+        "title": "Minimum length",
+        "description": "Texts shorter than this are left alone. Defaults to 2000.",
+        "minimum": 0
+      }
+    }
+  },
+  "capabilities": {
+    "hooks": {
+      "driver": "http",
+      "options": {
+        "url": "{{ connection.url }}/hooks"
+      },
+      "handlers": {
+        "run.context": {
+          "optional": true,
+          "timeoutMs": 30000
+        },
+        "tool.after": {
+          "optional": true,
+          "timeoutMs": 20000
+        }
+      }
+    }
+  }
+}

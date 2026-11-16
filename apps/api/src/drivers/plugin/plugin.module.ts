@@ -9,6 +9,7 @@ import { resolve } from "node:path";
 import { DebugFsDriver } from "./providers/debug/fs.hooks.js";
 import { DebugS3HealthCheckDriver } from "./providers/debug/s3.health.js";
 import { DebugS3Driver } from "./providers/debug/s3.hooks.js";
+import { HttpHooksDriver } from "./providers/http/http.hooks.js";
 import { MCPInstructionsDriver } from "./providers/mcp/mcp.instructions.js";
 import { MCPToolsDriver } from "./providers/mcp/mcp.tools.js";
 import { StaticInstructionsDriver } from "./providers/static/static.instructions.js";
@@ -21,7 +22,7 @@ import { StaticInstructionsDriver } from "./providers/static/static.instructions
         return new PluginDriverRegistry({
           tools: [new MCPToolsDriver()],
           instructions: [new MCPInstructionsDriver(), new StaticInstructionsDriver()],
-          hooks: [new DebugFsDriver(), new DebugS3Driver()],
+          hooks: [new DebugFsDriver(), new DebugS3Driver(), new HttpHooksDriver()],
           healthCheck: [new HttpHealthCheckDriver(), new DebugS3HealthCheckDriver()],
         });
       },
