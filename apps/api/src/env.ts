@@ -51,6 +51,13 @@ const envSchema = z
     PLUGINS_DIR: z.string().default(resolve(import.meta.dirname, "../plugins")),
     LLMS_DIR: z.string().default(resolve(import.meta.dirname, "../llms")),
 
+    // LiteLLM's model price list: the copy in the repo, replaced by the latest one
+    // on boot and every midnight. Same depth from src/ and dist/.
+    MODEL_PRICES_FILE: z.string().default(resolve(import.meta.dirname, "../data/model_prices.json")),
+    MODEL_PRICES_URL: z
+      .url()
+      .default("https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"),
+
     // Hosts (name or IP) and CIDRs that connections may reach although they
     // aren't public, comma-separated, e.g. adding "10.0.0.0/8". Everything else
     // non-public (cloud metadata included) is refused. The default lets a
