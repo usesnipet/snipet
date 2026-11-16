@@ -1,4 +1,5 @@
 import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
+import { authStatusOf } from "#src/core/manifest/oauth2.js";
 import { PluginDrivers } from "#src/core/plugin/driver.js";
 import { PluginDriverRegistry, PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
 import { Injectable, NotFoundException } from "@nestjs/common";
@@ -37,8 +38,17 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   override async updateById(ctx: AppContext, id: string, dto: QueryDeepPartialEntity<PluginConnection>): Promise<void> {
+    if (dto.pluginKey !== undefined && dto.pluginKey !== (await this.findById(ctx, id)).pluginKey) {
+      dto = { ...dto, credentials: null };
+    }
     await super.updateById(ctx, id, dto);
     if (dto.pluginKey !== undefined || dto.config !== undefined) void this.syncer.sync(ctx, id);
+  }
+
+  /** Also drops the OAuth tokens and says where the connection stands with them instead. */
+  override mask(ctx: AppContext, conn: PluginConnection): PluginConnection {
+    const auth = this.manifests.find(conn.pluginKey)?.auth;
+    return { ...super.mask(ctx, conn), credentials: undefined, authStatus: authStatusOf(auth, conn.credentials) };
   }
 
   sync(ctx: AppContext, id: string): Promise<void> {

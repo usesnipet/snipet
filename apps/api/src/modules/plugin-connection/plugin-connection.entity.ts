@@ -1,4 +1,5 @@
-import type { JsonObject, PluginConnection as PluginConnectionContract } from "@snipet/shared";
+import type { JsonObject, PluginAuthStatus, PluginConnection as PluginConnectionContract } from "@snipet/shared";
+import type { OAuth2Credentials } from "#src/core/manifest/oauth2.js";
 import { sealConfig } from "#src/infra/database/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
 import { LLMTool } from "@snipet/shared/core";
@@ -21,6 +22,17 @@ export class PluginConnection extends BaseEntity implements PluginConnectionCont
 
   @Column({ default: true })
   enabled: boolean;
+
+  /**
+   * The OAuth tokens, sealed like `config` but kept apart from it: `config` is
+   * what the user edits, these only come from the provider. `mask` drops them
+   * (sets undefined) before a connection leaves the API.
+   */
+  @Column({ type: "text", nullable: true, transformer: sealConfig })
+  credentials?: OAuth2Credentials | null;
+
+  /** Not stored: filled by `PluginConnectionService.mask` from the manifest and `credentials`. */
+  authStatus: PluginAuthStatus;
 
   /** What the tools driver listed on the last sync. Only loaded on request: it would weigh down every listing. */
   @Column({ type: "jsonb", default: [], select: false })

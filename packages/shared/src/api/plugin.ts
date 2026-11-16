@@ -7,6 +7,14 @@ import { paginatedSchema, paginationParamsSchema } from "./pagination.js";
 /** Longest plugin instructions put in a run's context, from the driver or the user. */
 export const MAX_PLUGIN_INSTRUCTIONS = 8000;
 
+/**
+ * Where a connection stands with its plugin's OAuth: `none` when the plugin
+ * has no OAuth, `missing` before the first authorization, `expired` once the
+ * token can no longer be refreshed and the user must authorize again.
+ */
+export const pluginAuthStatusSchema = z.enum(["none", "missing", "connected", "expired"]);
+export type PluginAuthStatus = z.infer<typeof pluginAuthStatusSchema>;
+
 /** An authenticated instance of a plugin. */
 export const pluginConnectionSchema = z.object({
   id: z.uuid(),
@@ -15,6 +23,7 @@ export const pluginConnectionSchema = z.object({
   pluginKey: z.string(),
   config: jsonObjectSchema,
   enabled: z.boolean(),
+  authStatus: pluginAuthStatusSchema,
   /** What the instructions driver returned on the last sync. */
   instructions: z.string().nullable(),
   /** Replaces `instructions` when set. */
