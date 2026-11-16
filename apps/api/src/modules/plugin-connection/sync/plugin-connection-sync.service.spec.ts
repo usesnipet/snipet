@@ -2,6 +2,7 @@ import { jest } from "@jest/globals";
 
 import { AppContext } from "#src/common/context/app-context.js";
 
+import type { PluginConnectionTokenService } from "../plugin-connection.token.service.js";
 import { PluginConnectionSyncService } from "./plugin-connection-sync.service.js";
 
 import type { PluginDriverRegistry, PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
@@ -29,6 +30,7 @@ function setup(listTools: Fn | null, getInstructions: Fn = () => Promise.resolve
     { getRepository: () => connections } as unknown as EntityManager,
     { get: () => ({}) } as unknown as PluginManifestRegistry,
     drivers as unknown as PluginDriverRegistry,
+    { authOf: () => Promise.resolve(undefined) } as unknown as PluginConnectionTokenService,
   );
   return { service, connections };
 }

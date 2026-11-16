@@ -1,0 +1,45 @@
+{
+  "key": "google-slides",
+  "name": "Google Slides",
+  "description": "Read and edit presentations through Google's hosted Slides MCP server",
+  "icon": "https://www.gstatic.com/images/branding/product/2x/slides_2020q4_48dp.png",
+  "tags": ["presentations", "google"],
+  "auth": {
+    "type": "oauth2",
+    "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+    "tokenUrl": "https://oauth2.googleapis.com/token",
+    "revokeUrl": "https://oauth2.googleapis.com/revoke",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.readonly",
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/presentations.readonly",
+      "https://www.googleapis.com/auth/presentations"
+    ],
+    "clientId": "{{ env.OAUTH_GOOGLE_CLIENT_ID }}",
+    "clientSecret": "{{ env.OAUTH_GOOGLE_CLIENT_SECRET }}",
+    "extraParams": {
+      "access_type": "offline",
+      "prompt": "consent"
+    }
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://slidesmcp.googleapis.com/mcp/v1",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://slidesmcp.googleapis.com/mcp/v1",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

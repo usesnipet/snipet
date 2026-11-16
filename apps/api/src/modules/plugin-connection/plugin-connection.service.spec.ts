@@ -4,6 +4,7 @@ import { pluginManifestSchema } from "@snipet/shared/core";
 import { PluginConnectionService } from "./plugin-connection.service.js";
 
 import type { PluginConnection } from "./plugin-connection.entity.js";
+import type { PluginConnectionTokenService } from "./plugin-connection.token.service.js";
 import type { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 import type { PluginDriverRegistry, PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
 import type { EntityManager } from "typeorm";
@@ -28,6 +29,7 @@ const service = new PluginConnectionService(
   manifests as unknown as PluginManifestRegistry,
   {} as PluginDriverRegistry,
   {} as PluginConnectionSyncService,
+  {} as PluginConnectionTokenService,
 );
 
 const ctx = AppContext.create("test");

@@ -55,3 +55,20 @@ export const findPluginConnectionsParamsSchema = paginationParamsSchema.extend({
   pluginKey: z.string().optional(),
 });
 export type FindPluginConnectionsParams = z.infer<typeof findPluginConnectionsParamsSchema>;
+
+/**
+ * Body of POST /plugin-connections/:id/oauth/authorize. `returnTo` is a path
+ * in the web app, never a full URL, so the callback can't be turned into an
+ * open redirect.
+ */
+export const authorizePluginConnectionSchema = z.object({
+  returnTo: z
+    .string()
+    .max(2048)
+    .regex(/^\/(?![/\\])/, "must be a path starting with a single /"),
+});
+export type AuthorizePluginConnection = z.infer<typeof authorizePluginConnectionSchema>;
+
+/** The provider's consent page to send the user to. */
+export const pluginConnectionAuthorizationSchema = z.object({ url: z.url() });
+export type PluginConnectionAuthorization = z.infer<typeof pluginConnectionAuthorizationSchema>;
