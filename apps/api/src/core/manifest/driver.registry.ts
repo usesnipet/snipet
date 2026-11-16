@@ -3,6 +3,7 @@ import { resolveOptions } from "./options.js";
 
 import type { BaseManifest, JsonObject } from "@snipet/shared";
 import type { BaseDriver } from "./driver.js";
+import type { ConnectionAuth } from "./options.js";
 
 /**
  * Driver interface per capability; the keys are the keys of a manifest's
@@ -42,16 +43,18 @@ export class DriverRegistry<D extends DriverTypes> {
 
   /**
    * The manifest's driver for `type` with its options resolved against the
-   * connection, or undefined when the manifest doesn't have that capability.
+   * connection (and its OAuth token, when it has one), or undefined when the
+   * manifest doesn't have that capability.
    */
   resolve<K extends keyof D>(
     manifest: BaseManifest,
     type: K,
     connection: JsonObject,
+    auth?: ConnectionAuth,
   ): { driver: D[K]; options: ReturnType<D[K]["validateOptions"]> } | undefined {
     const ref = driverOf(manifest, type);
     if (!ref) return undefined;
     const driver = this.get(type, ref.driver);
-    return { driver, options: resolveOptions(driver, ref, connection) as ReturnType<D[K]["validateOptions"]> };
+    return { driver, options: resolveOptions(driver, ref, connection, auth) as ReturnType<D[K]["validateOptions"]> };
   }
 }

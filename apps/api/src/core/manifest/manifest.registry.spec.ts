@@ -23,6 +23,13 @@ const base = {
   capabilities: { tools: { driver: "mcp" } },
 };
 
+const oauth = {
+  type: "oauth2",
+  authorizationUrl: "https://accounts.example.com/auth",
+  tokenUrl: "https://accounts.example.com/token",
+  clientId: "{{ env.OAUTH_EXAMPLE_ID }}",
+};
+
 describe("ManifestRegistry", () => {
   const warn = jest.fn();
   const logger = { log() {}, warn, error() {} };
@@ -37,6 +44,13 @@ describe("ManifestRegistry", () => {
     "bad-key.json": { ...base, key: "Not A Key" },
     "unknown-driver.json": { ...base, key: "gamma", capabilities: { tools: { driver: "nope" } } },
     "bad-schema.json": { ...base, key: "delta", connection: { type: "nope" } },
+    "oauth.json": {
+      ...base,
+      key: "omega",
+      auth: oauth,
+      capabilities: { tools: { driver: "mcp", options: { token: "Bearer {{ auth.accessToken }}" } } },
+    },
+    "oauth-no-token.json": { ...base, key: "epsilon", auth: oauth },
   };
   const loader = () => Object.entries(sources).map(([source, raw]) => ({ source, raw }));
 
@@ -51,9 +65,14 @@ describe("ManifestRegistry", () => {
 
   it("loads only the valid manifests, sorted by key, and logs the rest", async () => {
     const registry = await create();
-    expect(registry.getAll().map((m) => m.key)).toEqual(["alpha", "beta"]);
-    expect(warn).toHaveBeenCalledTimes(4);
+    expect(registry.getAll().map((m) => m.key)).toEqual(["alpha", "beta", "omega"]);
+    expect(warn).toHaveBeenCalledTimes(5);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('dup.json: key "alpha" registered twice'));
+  });
+
+  it("rejects an oauth2 manifest that never uses the access token", async () => {
+    await create();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("oauth-no-token.json: oauth2 manifest never uses"));
   });
 
   it("is empty until init", () => {
