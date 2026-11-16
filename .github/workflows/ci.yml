@@ -19,3 +19,23 @@ jobs:
       - run: pnpm lint
         continue-on-error: true
       - run: pnpm test
+
+  # Overwrites the dev tag on every develop push, so the dev environment always runs the latest build.
+  docker:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/snipet:dev
+          build-args: APP_VERSION=dev-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
