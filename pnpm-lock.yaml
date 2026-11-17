@@ -342,70 +342,6 @@ importers:
         specifier: ^8.1.1
         version: 8.3.4(@types/node@24.19.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
 
-  apps/widget:
-    devDependencies:
-      '@snipet/client':
-        specifier: workspace:*
-        version: link:../../packages/client
-      '@snipet/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@tanstack/react-query':
-        specifier: ^5.104.0
-        version: 5.104.0(react@19.3.0)
-      '@types/react':
-        specifier: ^19.2.17
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.3.0(@types/react@19.3.0)
-      dompurify:
-        specifier: ^3.4.17
-        version: 3.4.17
-      lucide-react:
-        specifier: ^1.26.0
-        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
-      marked:
-        specifier: ^18.0.14
-        version: 18.0.14
-      preact:
-        specifier: ^11.0.1
-        version: 11.0.1
-      react:
-        specifier: ^19.2.7
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.2.7
-        version: 19.3.0(react@19.3.0)
-      typescript:
-        specifier: ~6.0.2
-        version: 6.0.3
-      vite:
-        specifier: ^8.1.1
-        version: 8.3.4(@types/node@24.19.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
-      zod:
-        specifier: ^4.6.5
-        version: 4.6.7
-
-  packages/angular-widget:
-    dependencies:
-      '@snipet/widget':
-        specifier: workspace:*
-        version: link:../../apps/widget
-    devDependencies:
-      '@angular/common':
-        specifier: ^22.2.3
-        version: 22.2.3(@angular/core@22.2.3(rxjs@7.8.2))(rxjs@7.8.2)
-      '@angular/core':
-        specifier: ^22.2.3
-        version: 22.2.3(rxjs@7.8.2)
-      rxjs:
-        specifier: ^7.8.2
-        version: 7.8.2
-      typescript:
-        specifier: ~6.0.3
-        version: 6.0.3
-
   packages/client:
     dependencies:
       '@snipet/shared':
@@ -427,22 +363,6 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.6.7
-
-  packages/react-widget:
-    dependencies:
-      '@snipet/widget':
-        specifier: workspace:*
-        version: link:../../apps/widget
-    devDependencies:
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      typescript:
-        specifier: ~6.0.3
-        version: 6.0.3
 
   packages/server-common:
     dependencies:
@@ -501,6 +421,86 @@ importers:
       tailwindcss:
         specifier: ^4.0.0
         version: 4.3.3
+
+  sdks/angular-widget:
+    dependencies:
+      '@snipet/widget':
+        specifier: workspace:*
+        version: link:../widget
+    devDependencies:
+      '@angular/common':
+        specifier: ^22.2.3
+        version: 22.2.3(@angular/core@22.2.3(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core':
+        specifier: ^22.2.3
+        version: 22.2.3(rxjs@7.8.2)
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+
+  sdks/react-widget:
+    dependencies:
+      '@snipet/widget':
+        specifier: workspace:*
+        version: link:../widget
+    devDependencies:
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+
+  sdks/widget:
+    devDependencies:
+      '@snipet/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      '@snipet/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@tanstack/react-query':
+        specifier: ^5.104.0
+        version: 5.104.0(react@19.3.0)
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.3.0(@types/react@19.3.0)
+      dompurify:
+        specifier: ^3.4.17
+        version: 3.4.17
+      lucide-react:
+        specifier: ^1.26.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      marked:
+        specifier: ^18.0.14
+        version: 18.0.14
+      preact:
+        specifier: ^11.0.1
+        version: 11.0.1
+      react:
+        specifier: ^19.2.7
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.3.0(react@19.3.0)
+      typescript:
+        specifier: ~6.0.2
+        version: 6.0.3
+      vite:
+        specifier: ^8.1.1
+        version: 8.3.4(@types/node@24.19.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.7
 
 packages:
 

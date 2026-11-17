@@ -6,7 +6,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/usesnipet/snipet.git",
-    "directory": "apps/widget"
+    "directory": "sdks/widget"
   },
   "files": [
     "dist"

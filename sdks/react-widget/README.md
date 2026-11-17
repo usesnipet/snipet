@@ -1,6 +1,6 @@
 # @snipet/react-widget
 
-React bindings for the [Snipet chat widget](https://github.com/usesnipet/snipet/tree/main/apps/widget).
+React bindings for the [Snipet chat widget](https://github.com/usesnipet/snipet/tree/main/sdks/widget).
 
 ```bash
 npm install @snipet/react-widget
@@ -35,8 +35,8 @@ function HelpButton() {
 }
 ```
 
-- Props are the widget's [options](https://github.com/usesnipet/snipet/tree/main/apps/widget#options); changing one updates the widget.
-- Events: `onOpen`, `onClose`, `onMessage`, `onError` (see [events](https://github.com/usesnipet/snipet/tree/main/apps/widget#events)).
+- Props are the widget's [options](https://github.com/usesnipet/snipet/tree/main/sdks/widget#options); changing one updates the widget.
+- Events: `onOpen`, `onClose`, `onMessage`, `onError` (see [events](https://github.com/usesnipet/snipet/tree/main/sdks/widget#events)).
 - `src` overrides where the widget script loads from (default: unpkg, same version as this package).
 - Unmounting `<SnipetWidget />` removes the widget.
 
@@ -49,7 +49,7 @@ function HelpButton() {
 <SnipetWidget apiUrl={apiUrl} agentId={agentId} token={user?.snipetToken} getToken={refreshSnipetToken} />
 ```
 
-Issue tokens from your backend; see [signing in end users](https://github.com/usesnipet/snipet/tree/main/apps/widget#signing-in-end-users).
+Issue tokens from your backend; see [signing in end users](https://github.com/usesnipet/snipet/tree/main/sdks/widget#signing-in-end-users).
 Keep `getToken` stable (`useCallback` or a module function) so the widget isn't reconfigured on every render.
 
 Works with SSR frameworks (Next.js, Remix): the component is a client component and only touches the

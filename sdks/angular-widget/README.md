@@ -1,6 +1,6 @@
 # @snipet/angular-widget
 
-Angular bindings for the [Snipet chat widget](https://github.com/usesnipet/snipet/tree/main/apps/widget). Angular 19+.
+Angular bindings for the [Snipet chat widget](https://github.com/usesnipet/snipet/tree/main/sdks/widget). Angular 19+.
 
 ```bash
 npm install @snipet/angular-widget
@@ -26,7 +26,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-The config takes the widget's [options](https://github.com/usesnipet/snipet/tree/main/apps/widget#options). An optional second argument
+The config takes the widget's [options](https://github.com/usesnipet/snipet/tree/main/sdks/widget#options). An optional second argument
 overrides where the widget script loads from (default: unpkg, same version as this package).
 
 Control it anywhere with the `SNIPET` token:
@@ -50,7 +50,7 @@ export class HelpButtonComponent {
 ```
 
 `SNIPET` has `open`, `close`, `toggle`, `enable`, `disable`, `configure`, `setToken` and
-`on` (see [events](https://github.com/usesnipet/snipet/tree/main/apps/widget#events)). Calls made before the script loads are queued.
+`on` (see [events](https://github.com/usesnipet/snipet/tree/main/sdks/widget#events)). Calls made before the script loads are queued.
 
 ### Signed-in users
 
@@ -61,6 +61,6 @@ this.snipet.setToken(token); // null signs the user out
 this.snipet.configure({ getToken: () => firstValueFrom(this.api.snipetToken()) });
 ```
 
-Issue tokens from your backend; see [signing in end users](https://github.com/usesnipet/snipet/tree/main/apps/widget#signing-in-end-users).
+Issue tokens from your backend; see [signing in end users](https://github.com/usesnipet/snipet/tree/main/sdks/widget#signing-in-end-users).
 
 SSR-safe: on the server the widget doesn't mount and `SNIPET` calls do nothing.

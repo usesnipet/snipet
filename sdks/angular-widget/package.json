@@ -6,7 +6,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/usesnipet/snipet.git",
-    "directory": "packages/angular-widget"
+    "directory": "sdks/angular-widget"
   },
   "files": [
     "dist"
