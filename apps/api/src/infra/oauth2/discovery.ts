@@ -1,7 +1,7 @@
 import { safeFetch } from "#src/infra/http/safe-fetch.js";
 import { z } from "zod";
 
-import { OAuth2Error, TIMEOUT_MS } from "./oauth2.js";
+import { OAuth2Error, providerError, TIMEOUT_MS } from "./oauth2.js";
 
 import type { OAuth2Client, OAuth2Provider } from "./oauth2.js";
 
@@ -92,11 +92,8 @@ export async function registerClient(
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  const body = (await response.json().catch(() => undefined)) as { error?: unknown } | undefined;
-  if (!response.ok) {
-    throw new OAuth2Error(typeof body?.error === "string" ? body.error : `http_${response.status}`);
-  }
-  const parsed = registrationResponseSchema.safeParse(body);
+  if (!response.ok) throw await providerError(response);
+  const parsed = registrationResponseSchema.safeParse(await response.json().catch(() => undefined));
   if (!parsed.success) throw new OAuth2Error("invalid_registration_response");
   const { client_id, client_secret, client_secret_expires_at } = parsed.data;
   return {
@@ -169,7 +166,7 @@ async function probe(resourceUrl: string): Promise<{ metadataUrl?: string; scope
     const header = response.status === 401 ? (response.headers.get("www-authenticate") ?? "") : "";
     return {
       metadataUrl: /resource_metadata="([^"]+)"/.exec(header)?.[1],
-      scope: /scope="([^"]+)"/.exec(header)?.[1],
+      scope: /\bscope="([^"]+)"/.exec(header)?.[1],
     };
   } catch {
     return {};

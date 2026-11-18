@@ -145,6 +145,10 @@ describe("PluginConnectionOAuthService", () => {
     conn.credentials = saved;
     expect(queryOf((await service.authorize(ctx, "c1", "/")).url).client_id).toBe("registered-1");
     expect(provider.registrations).toBe(1);
+
+    // A client registered for another redirect URI (PUBLIC_URL changed) is registered again.
+    conn.credentials = { ...saved!, discovered: { ...saved!.discovered!, redirectUri: "https://old.example/cb" } };
+    expect(queryOf((await service.authorize(ctx, "c1", "/")).url).client_id).toBe("registered-2");
   });
 
   it("refuses a plugin without OAuth or without a client", async () => {

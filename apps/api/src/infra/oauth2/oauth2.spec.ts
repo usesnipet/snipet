@@ -1,4 +1,5 @@
 import { oauth2ManifestAuthSchema } from "@snipet/shared";
+import { seal } from "@snipet/server-common";
 import { createHash, randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 
@@ -8,7 +9,7 @@ import {
   exchangeCode,
   OAuth2Error,
   openCallback,
-  refreshCredentials,
+  refreshTokens,
   startAuthorization,
 } from "./oauth2.js";
 
@@ -87,23 +88,25 @@ describe("startAuthorization and openCallback", () => {
   });
 
   it("returns the provider's error with the data", () => {
-    const url = startAuthorization(authOf(), client, { redirectUri: "https://r", data: 1, key }, 0);
+    const url = startAuthorization(authOf(), client, { redirectUri: "https://r", data: { id: 1 }, key }, 0);
     expect(openCallback({ error: "access_denied", state: stateOf(url) }, key, 1)).toEqual({
-      data: 1,
+      data: { id: 1 },
       error: "access_denied",
     });
-    expect(openCallback({ state: stateOf(url) }, key, 1)).toEqual({ data: 1, error: "missing_code" });
+    expect(openCallback({ state: stateOf(url) }, key, 1)).toEqual({ data: { id: 1 }, error: "missing_code" });
   });
 
-  it("is undefined for a missing, tampered, foreign or expired state", () => {
-    const url = startAuthorization(authOf(), client, { redirectUri: "https://r", data: 1, key }, 0);
+  it("is undefined for a missing, tampered, foreign, expired or older-shaped state", () => {
+    const url = startAuthorization(authOf(), client, { redirectUri: "https://r", data: { id: 1 }, key }, 0);
     const state = stateOf(url);
+    const older = seal(JSON.stringify({ connectionId: "c1", expiresAt: 60_000 }), key);
     for (const [query, opener, now] of [
       [{ code: "c" }, key, 1],
       // A char in the middle: one appended to base64url may decode to the same bytes.
       [{ code: "c", state: `${state.slice(0, 20)}${state[20] === "A" ? "B" : "A"}${state.slice(21)}` }, key, 1],
       [{ code: "c", state }, randomBytes(32), 1],
       [{ code: "c", state }, key, 10 * 60_000],
+      [{ code: "c", state: older }, key, 1],
     ] as const) {
       expect(openCallback(query, opener, now)).toBeUndefined();
     }
@@ -149,18 +152,18 @@ describe("exchangeCode", () => {
   });
 });
 
-describe("refreshCredentials", () => {
+describe("refreshTokens", () => {
   it("keeps the refresh token when the provider doesn't rotate it", async () => {
     provider.status = 200;
     provider.body = { access_token: "at2" };
-    const renewed = await refreshCredentials(authOf(), client, { refreshToken: "rt" });
+    const renewed = await refreshTokens(authOf(), client, { refreshToken: "rt" });
     expect(provider.form.get("grant_type")).toBe("refresh_token");
     expect(provider.form.get("refresh_token")).toBe("rt");
     expect(renewed).toMatchObject({ accessToken: "at2", refreshToken: "rt" });
   });
 
   it("is invalid_grant without a refresh token", async () => {
-    await expect(refreshCredentials(authOf(), client, {})).rejects.toMatchObject({
+    await expect(refreshTokens(authOf(), client, {})).rejects.toMatchObject({
       code: "invalid_grant",
     });
   });

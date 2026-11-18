@@ -5,10 +5,11 @@ import { exchangeCode, OAuth2Error, openCallback, revokeToken, startAuthorizatio
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 
 import { PluginConnectionService } from "./plugin-connection.service.js";
+import { authorizedOAuthOf } from "./plugin-connection.token.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
 import type { OAuth2CallbackQuery, OAuth2Client, OAuth2Provider } from "#src/infra/oauth2/oauth2.js";
-import type { PluginConnectionAuthorization } from "@snipet/shared";
+import type { OAuth2DiscoveryManifestAuth, PluginConnectionAuthorization } from "@snipet/shared";
 import type { DiscoveredOAuth2, PluginConnection } from "./plugin-connection.entity.js";
 
 /** Where providers send the user back; register it as the redirect URI of every OAuth app. */
@@ -29,7 +30,7 @@ interface ConnectionAuthorization {
   discovered?: DiscoveredOAuth2;
 }
 
-/** Who to authorize with: the provider and the client registered there. */
+/** Who to authorize with; `discovered` when they were found rather than taken from the manifest. */
 interface ConnectionOAuth {
   provider: OAuth2Provider;
   client: OAuth2Client;
@@ -92,20 +93,17 @@ export class PluginConnectionOAuthService {
   /** Revokes the tokens at the provider (best effort) and forgets them. */
   async disconnect(ctx: AppContext, id: string): Promise<void> {
     const conn = await this.pluginConnectionService.findById(ctx, id);
-    const token = conn.credentials?.refreshToken ?? conn.credentials?.accessToken;
+    if (!conn.credentials) return;
+    const token = conn.credentials.refreshToken ?? conn.credentials.accessToken;
     const auth = this.pluginConnectionService.listManifests(ctx).find((m) => m.key === conn.pluginKey)?.auth;
-    const oauth =
-      conn.credentials?.discovered ??
-      (auth?.type === "oauth2"
-        ? { provider: auth, client: resolveOAuth2Client(auth, conn.config, process.env) }
-        : undefined);
+    const oauth = authorizedOAuthOf(auth, conn.credentials, conn.config);
     if (token && oauth) {
       // The user wants out either way; a provider that won't revoke must not keep the tokens here.
       await revokeToken(oauth.provider, oauth.client, token).catch((err: Error) =>
         this.logger.warn(`oauth revoke for connection ${id}: ${err.message}`),
       );
     }
-    if (conn.credentials) await this.pluginConnectionService.saveCredentials(ctx, id, null);
+    await this.pluginConnectionService.saveCredentials(ctx, id, null);
   }
 
   /**
@@ -124,17 +122,26 @@ export class PluginConnectionOAuthService {
       }
       return { provider: auth, client };
     }
+    const discovered = await this.discoveredOf(conn, auth);
+    return { provider: discovered.provider, client: discovered.client, discovered };
+  }
 
+  /**
+   * The provider of the connection's resource and the client registered
+   * there: the stored ones while the resource, the redirect URI and the
+   * client's secret still hold, else found and registered again.
+   */
+  private async discoveredOf(conn: PluginConnection, auth: OAuth2DiscoveryManifestAuth): Promise<DiscoveredOAuth2> {
     const resourceUrl = resolveResource(auth, conn.config);
     if (!URL.canParse(resourceUrl)) throw new BadRequestException(`OAuth resource "${resourceUrl}" is not a URL`);
     const stored = conn.credentials?.discovered;
-    if (stored?.resourceUrl === resourceUrl && !isClientExpired(stored.client))
-      return { ...stored, discovered: stored };
+    const isReusable =
+      stored?.resourceUrl === resourceUrl && stored.redirectUri === redirectUri() && !isClientExpired(stored.client);
+    if (isReusable) return stored;
     try {
       const provider = await discoverProvider(resourceUrl, auth.scopes);
       const client = await registerClient(provider, { redirectUri: redirectUri(), clientName: CLIENT_NAME });
-      const discovered = { resourceUrl, provider, client };
-      return { provider, client, discovered };
+      return { resourceUrl, redirectUri: redirectUri(), provider, client };
     } catch (err) {
       if (!(err instanceof OAuth2Error)) throw err;
       throw new BadRequestException(`OAuth discovery for plugin "${conn.pluginKey}" failed: ${err.code}`);

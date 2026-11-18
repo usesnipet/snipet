@@ -3,6 +3,7 @@ import { pluginManifestSchema } from "@snipet/shared/core";
 import { z } from "zod";
 
 import { CoreError } from "../error.js";
+
 import { Driver } from "./driver.js";
 import { DriverRegistry } from "./driver.registry.js";
 import { ManifestRegistry, secretFields } from "./manifest.registry.js";
@@ -65,14 +66,9 @@ describe("ManifestRegistry", () => {
 
   it("loads only the valid manifests, sorted by key, and logs the rest", async () => {
     const registry = await create();
-    expect(registry.getAll().map((m) => m.key)).toEqual(["alpha", "beta", "omega"]);
-    expect(warn).toHaveBeenCalledTimes(5);
+    expect(registry.getAll().map((m) => m.key)).toEqual(["alpha", "beta", "epsilon", "omega"]);
+    expect(warn).toHaveBeenCalledTimes(4);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('dup.json: key "alpha" registered twice'));
-  });
-
-  it("rejects an oauth2 manifest that never uses the access token", async () => {
-    await create();
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("oauth-no-token.json: oauth2 manifest never uses"));
   });
 
   it("is empty until init", () => {

@@ -95,9 +95,9 @@ export function createPkce(): { verifier: string; challenge: string } {
 
 /**
  * The provider's consent page, with `data` sealed into its `state` under
- * `key`; `openCallback` gets it back. `data` must be JSON.
+ * `key`; `openCallback` gets it back. `data` must be a JSON object.
  */
-export function startAuthorization<T>(
+export function startAuthorization<T extends object>(
   provider: OAuth2Provider,
   client: OAuth2Client,
   params: { redirectUri: string; data: T; key: Buffer },
@@ -117,7 +117,7 @@ export function startAuthorization<T>(
  * tampered with or expired, so there is no `data` to trust.
  */
 // ponytail: a state can be replayed until it expires; harmless while providers keep codes single-use.
-export function openCallback<T>(
+export function openCallback<T extends object>(
   query: OAuth2CallbackQuery,
   key: Buffer,
   now = Date.now(),
@@ -129,7 +129,8 @@ export function openCallback<T>(
   } catch {
     return undefined;
   }
-  if (state.expiresAt <= now) return undefined;
+  // A state sealed by an older shape of this code has no `data` to hand back.
+  if (typeof state?.data !== "object" || state.data === null || !(state.expiresAt > now)) return undefined;
   if (query.error || !query.code) return { data: state.data, error: query.error ?? "missing_code" };
   return { data: state.data, code: query.code, codeVerifier: state.codeVerifier };
 }
@@ -180,7 +181,7 @@ export function exchangeCode(
  * Renews the access token. A provider that doesn't rotate the refresh token
  * (Google) sends none back, so the current one is kept.
  */
-export async function refreshCredentials(
+export async function refreshTokens(
   provider: OAuth2Provider,
   client: OAuth2Client,
   credentials: { refreshToken?: string },
@@ -200,7 +201,7 @@ export async function refreshCredentials(
 export async function revokeToken(provider: OAuth2Provider, client: OAuth2Client, token: string): Promise<void> {
   if (!provider.revokeUrl) return;
   const response = await post(provider.revokeUrl, { token, ...clientParams(client) });
-  if (!response.ok) throw new OAuth2Error(`http_${response.status}`);
+  if (!response.ok) throw await providerError(response);
 }
 
 /** POSTs a token request and turns the answer into credentials. */
@@ -212,11 +213,8 @@ async function requestToken(
 ): Promise<OAuth2Tokens> {
   const resource: Record<string, string> = provider.resource ? { resource: provider.resource } : {};
   const response = await post(provider.tokenUrl, { ...params, ...resource, ...clientParams(client) });
-  const body = (await response.json().catch(() => undefined)) as { error?: unknown } | undefined;
-  if (!response.ok) {
-    throw new OAuth2Error(typeof body?.error === "string" ? body.error : `http_${response.status}`);
-  }
-  const parsed = tokenResponseSchema.safeParse(body);
+  if (!response.ok) throw await providerError(response);
+  const parsed = tokenResponseSchema.safeParse(await response.json().catch(() => undefined));
   if (!parsed.success) throw new OAuth2Error("invalid_token_response");
   const token = parsed.data;
   return {
@@ -226,6 +224,15 @@ async function requestToken(
     scope: token.scope,
     tokenType: token.token_type,
   };
+}
+
+/**
+ * A provider's refusal from its error response: the OAuth `error` (RFC 6749
+ * §5.2), or `http_<status>` when the body doesn't say.
+ */
+export async function providerError(response: Response): Promise<OAuth2Error> {
+  const body = (await response.json().catch(() => undefined)) as { error?: unknown } | undefined;
+  return new OAuth2Error(typeof body?.error === "string" ? body.error : `http_${response.status}`);
 }
 
 /** The client's credentials as body params (client_secret_post). */

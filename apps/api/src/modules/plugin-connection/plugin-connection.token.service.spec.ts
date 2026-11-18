@@ -127,12 +127,24 @@ describe("PluginConnectionTokenService.authOf", () => {
   it("renews a discovered connection at its provider, with its registered client", async () => {
     const discovered = {
       resourceUrl: "https://mcp.example/mcp",
+      redirectUri: "https://app/api/oauth/callback",
       provider: { authorizationUrl: "https://a", tokenUrl, scopes: [], pkce: true, extraParams: {} },
       client: { clientId: "registered" },
     };
     const { service, row } = setup(stale({ discovered }), "remote");
     await expect(service.authOf(ctx, row)).resolves.toEqual({ accessToken: "new" });
     expect(row.credentials).toMatchObject({ accessToken: "new", discovered });
+  });
+
+  it("refuses a discovered token issued for another resource than the connection's", async () => {
+    const discovered = {
+      resourceUrl: "https://old.example/mcp",
+      redirectUri: "https://app/api/oauth/callback",
+      provider: { authorizationUrl: "https://a", tokenUrl, scopes: [], pkce: true, extraParams: {} },
+      client: { clientId: "registered" },
+    };
+    const { service, row } = setup(stale({ expiresAt: Date.now() + 3_600_000, discovered }), "remote");
+    await expect(service.authOf(ctx, row)).rejects.toThrow(AUTHORIZATION_EXPIRED);
   });
 
   it("refreshes once when two callers race", async () => {

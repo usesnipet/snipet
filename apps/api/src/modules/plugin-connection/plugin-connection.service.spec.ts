@@ -1,4 +1,5 @@
 import { AppContext } from "#src/common/context/app-context.js";
+import { jest } from "@jest/globals";
 import { pluginManifestSchema } from "@snipet/shared/core";
 
 import { PluginConnectionService } from "./plugin-connection.service.js";
@@ -22,7 +23,19 @@ const manifest = pluginManifestSchema.parse({
   capabilities: { tools: { driver: "mcp", options: { token: "Bearer {{ auth.accessToken }}" } } },
 });
 
-const manifests = { getAll: () => [manifest], find: (key: string) => (key === "google" ? manifest : undefined) };
+const remote = pluginManifestSchema.parse({
+  key: "remote",
+  name: "Remote MCP",
+  auth: { type: "oauth2_discovery", resource: "{{ connection.url }}" },
+  connection: { type: "object", properties: { url: { type: "string" }, team: { type: "string" } } },
+  capabilities: { tools: { driver: "mcp", options: { token: "Bearer {{ auth.accessToken }}" } } },
+});
+
+const manifests = {
+  getAll: () => [manifest, remote],
+  find: (key: string) => ({ google: manifest, remote })[key],
+  get: (key: string) => ({ google: manifest, remote })[key],
+};
 
 const service = new PluginConnectionService(
   {} as EntityManager,
@@ -57,5 +70,31 @@ describe("PluginConnectionService.mask", () => {
     const conn = { id: "c1", pluginKey: "google", config: {}, credentials: null } as unknown as PluginConnection;
     expect(service.mask(ctx, conn).authStatus).toBe("missing");
     expect(service.mask(ctx, { ...conn, pluginKey: "gone" }).authStatus).toBe("none");
+  });
+});
+
+describe("PluginConnectionService.checkUpdate", () => {
+  const existing = {
+    id: "c1",
+    pluginKey: "remote",
+    config: { url: "https://mcp.example/mcp", team: "a" },
+    credentials: { accessToken: "at", tokenType: "Bearer" },
+  } as unknown as PluginConnection;
+  const checkUpdate = (dto: object) => {
+    jest.spyOn(service, "findById").mockResolvedValue(existing);
+    jest.spyOn(service, "validateConfig").mockImplementation((_ctx, _key, config) => config ?? {});
+    return (service as unknown as { checkUpdate: (...args: unknown[]) => Promise<object> }).checkUpdate(ctx, "c1", dto);
+  };
+
+  it("drops the tokens when the plugin or a discovered resource changes", async () => {
+    await expect(checkUpdate({ config: { url: "https://evil.example/mcp" } })).resolves.toMatchObject({
+      credentials: null,
+    });
+    await expect(checkUpdate({ pluginKey: "google" })).resolves.toMatchObject({ credentials: null });
+  });
+
+  it("keeps them when the resource stays the same", async () => {
+    const checked = await checkUpdate({ config: { url: "https://mcp.example/mcp", team: "b" } });
+    expect(checked).not.toHaveProperty("credentials");
   });
 });

@@ -10,6 +10,8 @@ import { Column, Entity, Index } from "typeorm";
 export interface DiscoveredOAuth2 {
   /** The resource URL it was found from; another one (the config changed) means discovering again. */
   resourceUrl: string;
+  /** The redirect URI the client was registered with; another one (PUBLIC_URL changed) means registering again. */
+  redirectUri: string;
   provider: DiscoveredProvider;
   client: RegisteredClient;
 }

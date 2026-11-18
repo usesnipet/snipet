@@ -1,5 +1,5 @@
 import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
-import { authStatusOf, hasOAuth2Client } from "#src/core/manifest/oauth2.js";
+import { authStatusOf, hasOAuth2Client, resolveResource } from "#src/core/manifest/oauth2.js";
 import { PluginDrivers } from "#src/core/plugin/driver.js";
 import { PluginDriverRegistry, PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
 import { Injectable, NotFoundException } from "@nestjs/common";
@@ -11,6 +11,7 @@ import { PluginConnectionTokenService } from "./plugin-connection.token.service.
 import { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
+import type { JsonObject } from "@snipet/shared";
 import type { PluginConnectionCredentials } from "./plugin-connection.entity.js";
 import type { LLMTool, LLMToolResult, PluginManifest } from "@snipet/shared/core";
 
@@ -41,11 +42,35 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   override async updateById(ctx: AppContext, id: string, dto: QueryDeepPartialEntity<PluginConnection>): Promise<void> {
-    if (dto.pluginKey !== undefined && dto.pluginKey !== (await this.findById(ctx, id)).pluginKey) {
-      dto = { ...dto, credentials: null };
-    }
     await super.updateById(ctx, id, dto);
     if (dto.pluginKey !== undefined || dto.config !== undefined) void this.syncer.sync(ctx, id);
+  }
+
+  /**
+   * Also drops the OAuth tokens when they'd no longer fit: another plugin,
+   * or another resource for a discovered one, whose driver would send them
+   * to a server they weren't issued for.
+   */
+  protected override async checkUpdate(
+    ctx: AppContext,
+    id: string,
+    dto: QueryDeepPartialEntity<PluginConnection>,
+  ): Promise<QueryDeepPartialEntity<PluginConnection>> {
+    const checked = await super.checkUpdate(ctx, id, dto);
+    if (checked.pluginKey === undefined && checked.config === undefined) return checked;
+    const existing = await this.findById(ctx, id);
+    const pluginKey = (checked.pluginKey as string | undefined) ?? existing.pluginKey;
+    const config = (checked.config as JsonObject | undefined) ?? existing.config;
+    const isStale =
+      pluginKey !== existing.pluginKey ||
+      this.resourceOf(pluginKey, config) !== this.resourceOf(existing.pluginKey, existing.config);
+    return isStale ? { ...checked, credentials: null } : checked;
+  }
+
+  /** The resource a discovered OAuth authorizes for; undefined for any other auth. */
+  private resourceOf(pluginKey: string, config: JsonObject): string | undefined {
+    const auth = this.manifests.find(pluginKey)?.auth;
+    return auth?.type === "oauth2_discovery" ? resolveResource(auth, config) : undefined;
   }
 
   /** Leaves out OAuth plugins whose client isn't configured: nobody could authorize them. */

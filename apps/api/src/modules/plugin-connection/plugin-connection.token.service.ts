@@ -1,6 +1,6 @@
-import { resolveOAuth2Client } from "#src/core/manifest/oauth2.js";
+import { resolveOAuth2Client, resolveResource } from "#src/core/manifest/oauth2.js";
 import { PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
-import { OAuth2Error, refreshCredentials } from "#src/infra/oauth2/oauth2.js";
+import { OAuth2Error, refreshTokens } from "#src/infra/oauth2/oauth2.js";
 import { Injectable, Logger } from "@nestjs/common";
 import { BaseService } from "@snipet/server-common";
 import { EntityManager } from "typeorm";
@@ -10,7 +10,9 @@ import { PluginConnection } from "./plugin-connection.entity.js";
 import type { AppContext } from "#src/common/context/app-context.js";
 import type { OAuth2Credentials } from "#src/core/manifest/oauth2.js";
 import type { ConnectionAuth } from "#src/core/manifest/options.js";
+import type { OAuth2Client, OAuth2Provider } from "#src/infra/oauth2/oauth2.js";
 import type { JsonObject, ManifestAuth } from "@snipet/shared";
+import type { PluginConnectionCredentials } from "./plugin-connection.entity.js";
 
 /**
  * A token closer than this to its expiry is renewed before use, so it outlives
@@ -52,6 +54,13 @@ export class PluginConnectionTokenService extends BaseService<AppContext> {
     const credentials = conn.credentials;
     if (!credentials) throw new Error(NOT_AUTHORIZED);
     if (!credentials.accessToken) throw new Error(AUTHORIZATION_EXPIRED);
+    // A token for another resource must not reach the driver, which sends it to this one.
+    if (
+      auth.type === "oauth2_discovery" &&
+      credentials.discovered?.resourceUrl !== resolveResource(auth, conn.config)
+    ) {
+      throw new Error(AUTHORIZATION_EXPIRED);
+    }
     if (isFresh(credentials)) return { accessToken: credentials.accessToken };
     return { accessToken: await this.refresh(ctx, conn.id, auth, conn.config) };
   }
@@ -75,15 +84,10 @@ export class PluginConnectionTokenService extends BaseService<AppContext> {
       if (!current.accessToken) return { error: AUTHORIZATION_EXPIRED };
       if (isFresh(current)) return { accessToken: current.accessToken };
 
-      // A discovered provider renews with the client registered there; a manifest's with its own.
-      const oauth =
-        current.discovered ??
-        (auth.type === "oauth2"
-          ? { provider: auth, client: resolveOAuth2Client(auth, config, process.env) }
-          : undefined);
+      const oauth = authorizedOAuthOf(auth, current, config);
       if (!oauth) return { error: NOT_AUTHORIZED };
       try {
-        const renewed = await refreshCredentials(oauth.provider, oauth.client, current);
+        const renewed = await refreshTokens(oauth.provider, oauth.client, current);
         await repository.update(id, { credentials: { ...renewed, discovered: current.discovered } });
         return { accessToken: renewed.accessToken };
       } catch (err) {
@@ -101,6 +105,21 @@ export class PluginConnectionTokenService extends BaseService<AppContext> {
     if (outcome.error !== undefined) throw new Error(outcome.error);
     return outcome.accessToken;
   }
+}
+
+/**
+ * Who an authorized connection renews and revokes its tokens with: the
+ * provider it discovered and the client registered there, else the
+ * manifest's. Undefined when neither applies.
+ */
+export function authorizedOAuthOf(
+  auth: ManifestAuth | undefined,
+  credentials: PluginConnectionCredentials,
+  config: JsonObject,
+): { provider: OAuth2Provider; client: OAuth2Client } | undefined {
+  if (credentials.discovered) return credentials.discovered;
+  if (auth?.type === "oauth2") return { provider: auth, client: resolveOAuth2Client(auth, config, process.env) };
+  return undefined;
 }
 
 /** A manifest auth that goes through OAuth. */
