@@ -4,10 +4,12 @@ import { pluginConnectionService } from "./service";
 import { syncState } from "./utils";
 
 import type {
+  AuthorizePluginConnection,
   CreatePluginConnection,
   FindPluginConnectionsParams,
   Paginated,
   PluginConnection,
+  PluginConnectionAuthorization,
   UpdatePluginConnection,
 } from "@snipet/shared";
 import type { LLMTool, PluginManifest } from "@snipet/shared/core";
@@ -86,6 +88,26 @@ export const useSyncPluginConnection = (
   return useMutation({
     mutationFn: (id: string) => pluginConnectionService.sync(id, opts),
     meta: { successMessage: "Plugin connection synced", errorMessage: "Failed to sync plugin connection" },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: listPluginConnectionsQueryKey() }),
+  });
+};
+
+/** The provider's consent page URL; the caller sends the browser there. */
+export const useAuthorizePluginConnection = (
+  opts?: ServicePostOptions<AuthorizePluginConnection, PluginConnectionAuthorization>,
+): UseMutationResult<PluginConnectionAuthorization, Error, { id: string; data: AuthorizePluginConnection }> =>
+  useMutation({
+    mutationFn: ({ id, data }) => pluginConnectionService.authorize(id, data, opts),
+    meta: { errorMessage: "Failed to start the authorization" },
+  });
+
+export const useDisconnectPluginConnection = (
+  opts?: ServiceDeleteOptions<void>,
+): UseMutationResult<void, Error, string> => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pluginConnectionService.disconnect(id, opts),
+    meta: { successMessage: "Plugin connection disconnected", errorMessage: "Failed to disconnect plugin connection" },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: listPluginConnectionsQueryKey() }),
   });
 };

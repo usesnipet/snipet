@@ -5,6 +5,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import type { BaseManifest } from "@snipet/shared";
 import type { EntityManager, EntityTarget, FindOptionsWhere, Repository } from "typeorm";
 import type { ConnectionEntity } from "./connection.service.js";
+import type { ConnectionAuth } from "#src/core/manifest/options.js";
 import type { DriverRegistry, DriverTypes } from "#src/core/manifest/driver.registry.js";
 import type { HealthCheckDriver } from "#src/core/manifest/health-check.js";
 import type { ManifestRegistry } from "#src/core/manifest/manifest.registry.js";
@@ -44,7 +45,12 @@ export abstract class ConnectionSyncService<
   }
 
   /** The connection's fields as its drivers list them; one left out keeps its stored value. */
-  protected abstract fields(ctx: AppContext, conn: E, manifest: M): Promise<Partial<E>>;
+  protected abstract fields(ctx: AppContext, conn: E, manifest: M, auth?: ConnectionAuth): Promise<Partial<E>>;
+
+  /** The connection's OAuth token for the drivers' `{{auth.x}}`; none by default. Throws when it can't be had. */
+  protected authOf(_ctx: AppContext, _conn: E): Promise<ConnectionAuth | undefined> {
+    return Promise.resolve(undefined);
+  }
 
   onApplicationBootstrap() {
     void this.syncAll(AppContext.create(`bootstrap:${this.constructor.name}`));
@@ -81,12 +87,13 @@ export abstract class ConnectionSyncService<
   private async syncConnection(ctx: AppContext, conn: E): Promise<Partial<E>> {
     const manifest = this.manifests.get(conn[this.keyField] as string);
 
-    const health = this.drivers.resolve(manifest, "healthCheck", conn.config);
+    const auth = await this.authOf(ctx, conn);
+    const health = this.drivers.resolve(manifest, "healthCheck", conn.config, auth);
     if (health) {
       const result = await health.driver.checkHealth(health.options);
       if (!result.isHealthy) throw new Error(`health check failed: ${result.error ?? "unknown error"}`);
     }
 
-    return this.fields(ctx, conn, manifest);
+    return this.fields(ctx, conn, manifest, auth);
   }
 }

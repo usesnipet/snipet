@@ -92,7 +92,7 @@ export class PluginResolver {
     grant: AgentPluginConnection,
     denied: DeniedTool[],
   ): PluginTool[] {
-    const resolved = this.pluginDriverRegistry.resolve(manifest, "tools", connection.config);
+    const resolved = this.pluginDriverRegistry.resolve(manifest, "tools", connection.config, connection.auth);
     if (!resolved) return [];
     const { driver, options } = resolved;
     const source = { id: connection.id, name: connection.name };
@@ -118,7 +118,7 @@ export class PluginResolver {
     grant: AgentPluginConnection,
   ): BoundHandler[] {
     const capability = manifest.capabilities.hooks;
-    const resolved = this.pluginDriverRegistry.resolve(manifest, "hooks", connection.config);
+    const resolved = this.pluginDriverRegistry.resolve(manifest, "hooks", connection.config, connection.auth);
     if (!capability || !resolved) return [];
     const plugin = { id: connection.id, name: connection.name };
     return (Object.entries(capability.handlers) as [HookName, HookHandler][])

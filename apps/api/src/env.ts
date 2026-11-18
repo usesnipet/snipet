@@ -25,6 +25,13 @@ const envSchema = z
       .optional()
       .transform((v) => v?.replace(/\/+$/, "")),
 
+    // Base URL of the web app, where the OAuth callback sends the user back.
+    // Defaults to PUBLIC_URL (the API serves the web build); in dev, the Vite server.
+    WEB_URL: z
+      .url()
+      .optional()
+      .transform((v) => v?.replace(/\/+$/, "")),
+
     // The built web app, served when it holds an index.html. Defaults to
     // apps/web/dist (same depth from src/ and dist/).
     WEB_DIR: z.string().default(resolve(import.meta.dirname, "../../web/dist")),
@@ -136,6 +143,9 @@ const envSchema = z
     message: "CACHE_REDIS_URL is required when CACHE_REDIS_ENABLED=true",
     path: ["CACHE_REDIS_URL"],
   })
-  .transform((e) => ({ ...e, PUBLIC_URL: e.PUBLIC_URL ?? `http://localhost:${e.PORT}` }));
+  .transform((e) => {
+    const publicUrl = e.PUBLIC_URL ?? `http://localhost:${e.PORT}`;
+    return { ...e, PUBLIC_URL: publicUrl, WEB_URL: e.WEB_URL ?? publicUrl };
+  });
 
 export const env = envSchema.parse(process.env);

@@ -6,8 +6,10 @@ import { MAX_PLUGIN_INSTRUCTIONS } from "@snipet/shared";
 import { EntityManager } from "typeorm";
 
 import { PluginConnection } from "../plugin-connection.entity.js";
+import { PluginConnectionTokenService } from "../plugin-connection.token.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
+import type { ConnectionAuth } from "#src/core/manifest/options.js";
 import type { PluginDrivers } from "#src/core/plugin/driver.js";
 import type { PluginManifest } from "@snipet/shared/core";
 
@@ -20,14 +22,23 @@ export class PluginConnectionSyncService extends ConnectionSyncService<
 > {
   protected readonly keyField = "pluginKey";
 
-  constructor(manager: EntityManager, plugins: PluginManifestRegistry, drivers: PluginDriverRegistry) {
+  constructor(
+    manager: EntityManager,
+    plugins: PluginManifestRegistry,
+    drivers: PluginDriverRegistry,
+    private readonly pluginConnectionTokenService: PluginConnectionTokenService,
+  ) {
     super(manager, PluginConnection, plugins, drivers);
   }
 
-  protected async fields(ctx: AppContext, conn: PluginConnection, manifest: PluginManifest) {
-    const lister = this.drivers.resolve(manifest, "tools", conn.config);
+  protected override authOf(ctx: AppContext, conn: PluginConnection): Promise<ConnectionAuth | undefined> {
+    return this.pluginConnectionTokenService.authOf(ctx, conn);
+  }
+
+  protected async fields(ctx: AppContext, conn: PluginConnection, manifest: PluginManifest, auth?: ConnectionAuth) {
+    const lister = this.drivers.resolve(manifest, "tools", conn.config, auth);
     const tools = lister && (await lister.driver.listTools(lister.options));
-    const resolved = this.drivers.resolve(manifest, "instructions", conn.config);
+    const resolved = this.drivers.resolve(manifest, "instructions", conn.config, auth);
     const instructions = resolved && (await resolved.driver.getInstructions(resolved.options));
     if (instructions && instructions.length > MAX_PLUGIN_INSTRUCTIONS)
       this.logger.warn(`Instructions for ${conn.id} are too long`);

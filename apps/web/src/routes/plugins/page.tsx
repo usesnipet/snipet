@@ -1,7 +1,10 @@
 import { RegistryCatalog, UninstalledCatalogCard } from "@/components/catalog";
 import { Page } from "@/components/page";
 import { PluginCatalogCard } from "@/features/plugin-connection/components/plugin-catalog-card";
-import { useMemo } from "react";
+import { PluginConnectionListDialog } from "@/features/plugin-connection/components/dialogs";
+import { useOAuthReturn } from "@/features/plugin-connection/oauth";
+import { useDialog } from "@/lib/dialog";
+import { useEffect, useMemo, useRef } from "react";
 
 import { useDeletePluginConnection, useListPluginConnections, usePlugins } from "@snipet/client";
 
@@ -14,6 +17,19 @@ export const PluginsPage = () => {
   const connections = useListPluginConnections();
   const { mutateAsync: deleteConnection } = useDeletePluginConnection();
   const byKey = useMemo(() => new Map(plugins.data?.map((p) => [p.key, p])), [plugins.data]);
+  const { openDialog } = useDialog();
+
+  // Back from an OAuth provider: reopen the plugin's connections once they're loaded, where the new status shows.
+  // A ref, not state: the effect below runs right after the return is read, and again when the data arrives.
+  const returnedId = useRef<string>(undefined);
+  useOAuthReturn((connectionId) => (returnedId.current = connectionId));
+  useEffect(() => {
+    if (!returnedId.current || !connections.data || !plugins.data) return;
+    const pluginKey = connections.data.data.find((c) => c.id === returnedId.current)?.pluginKey;
+    const plugin = pluginKey && byKey.get(pluginKey);
+    if (plugin) openDialog({ component: PluginConnectionListDialog, props: { plugin } });
+    returnedId.current = undefined;
+  }, [connections.data, plugins.data, byKey, openDialog]);
 
   return (
     <Page

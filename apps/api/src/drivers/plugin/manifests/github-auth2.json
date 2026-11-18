@@ -1,0 +1,35 @@
+{
+  "key": "github-oauth2",
+  "name": "GitHub OAuth2",
+  "description": "Manage repositories, issues and pull requests through GitHub's hosted MCP server",
+  "icon": "https://github.com/github.png",
+  "tags": ["git"],
+  "auth": {
+    "type": "oauth2",
+    "authorizationUrl": "https://github.com/login/oauth/authorize",
+    "tokenUrl": "https://github.com/login/oauth/access_token",
+    "scopes": ["repo", "read:user"],
+    "clientId": "{{env.OAUTH_GITHUB_CLIENT_ID}}",
+    "clientSecret": "{{env.OAUTH_GITHUB_CLIENT_SECRET}}"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://api.githubcopilot.com/mcp/",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://api.githubcopilot.com/mcp/",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

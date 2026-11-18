@@ -1,4 +1,5 @@
 import { ConnectionService } from "#src/common/connection-sync/connection.service.js";
+import { authStatusOf, hasOAuth2Client } from "#src/core/manifest/oauth2.js";
 import { PluginDrivers } from "#src/core/plugin/driver.js";
 import { PluginDriverRegistry, PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
 import { Injectable, NotFoundException } from "@nestjs/common";
@@ -6,9 +7,11 @@ import { validateJson } from "@snipet/server-common";
 import { DeepPartial, EntityManager, In, QueryDeepPartialEntity } from "typeorm";
 
 import { PluginConnection } from "./plugin-connection.entity.js";
+import { PluginConnectionTokenService } from "./plugin-connection.token.service.js";
 import { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
+import type { OAuth2Credentials } from "#src/core/manifest/oauth2.js";
 import type { LLMTool, LLMToolResult, PluginManifest } from "@snipet/shared/core";
 
 /** A synced tool with the connection it comes from. */
@@ -26,6 +29,7 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
     plugins: PluginManifestRegistry,
     drivers: PluginDriverRegistry,
     private readonly syncer: PluginConnectionSyncService,
+    private readonly pluginConnectionTokenService: PluginConnectionTokenService,
   ) {
     super(manager, PluginConnection, plugins, drivers);
   }
@@ -37,12 +41,36 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
   }
 
   override async updateById(ctx: AppContext, id: string, dto: QueryDeepPartialEntity<PluginConnection>): Promise<void> {
+    if (dto.pluginKey !== undefined && dto.pluginKey !== (await this.findById(ctx, id)).pluginKey) {
+      dto = { ...dto, credentials: null };
+    }
     await super.updateById(ctx, id, dto);
     if (dto.pluginKey !== undefined || dto.config !== undefined) void this.syncer.sync(ctx, id);
   }
 
+  /** Leaves out OAuth plugins whose client isn't configured: nobody could authorize them. */
+  override listManifests(ctx: AppContext): PluginManifest[] {
+    return super
+      .listManifests(ctx)
+      .filter((manifest) => manifest.auth.type !== "oauth2" || hasOAuth2Client(manifest.auth, process.env));
+  }
+
+  /** Also drops the OAuth tokens and says where the connection stands with them instead. */
+  override mask(ctx: AppContext, conn: PluginConnection): PluginConnection {
+    const auth = this.manifests.find(conn.pluginKey)?.auth;
+    return { ...super.mask(ctx, conn), credentials: undefined, authStatus: authStatusOf(auth, conn.credentials) };
+  }
+
   sync(ctx: AppContext, id: string): Promise<void> {
     return this.syncer.sync(ctx, id);
+  }
+
+  /**
+   * Stores the OAuth tokens, or clears them with null. Bypasses `updateById`:
+   * credentials come from the provider, not from a user-edited config.
+   */
+  async saveCredentials(ctx: AppContext, id: string, credentials: OAuth2Credentials | null): Promise<void> {
+    await this.repository(ctx).update(id, { credentials, lastSyncedError: null });
   }
 
   /**
@@ -125,7 +153,8 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
       return { content: "plugin connection is unavailable", isError: true };
     }
 
-    const { driver, options } = this.drivers.resolve(manifest, "tools", conn.config)!;
+    const auth = await this.pluginConnectionTokenService.authOf(ctx, conn);
+    const { driver, options } = this.drivers.resolve(manifest, "tools", conn.config, auth)!;
     return driver.callTool(tool.name, validateJson(tool.inputSchema, args), options);
   }
 }

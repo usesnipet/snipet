@@ -18,6 +18,7 @@ import { AgentMessage } from "#src/modules/agent-session/agent-message.entity.js
 import { LlmConnection } from "#src/modules/llm-connection/llm-connection.entity.js";
 import { PluginConnection } from "#src/modules/plugin-connection/plugin-connection.entity.js";
 import { UsageRecord } from "#src/modules/usage/usage-record.entity.js";
+import { PluginConnectionModule } from "#src/modules/plugin-connection/plugin-connection.module.js";
 import { UsageModule } from "#src/modules/usage/usage.module.js";
 import { Logger, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -38,6 +39,7 @@ import { DatabaseUsageStore } from "./stores/usage.store.js";
     TypeOrmModule.forFeature([AgentRun, AgentMessage, PluginConnection, LlmConnection, UsageRecord]),
     LLMModule,
     PluginModule,
+    PluginConnectionModule,
     UsageModule,
   ],
   providers: [

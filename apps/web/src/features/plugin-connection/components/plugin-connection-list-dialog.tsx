@@ -23,11 +23,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDialog } from "@/lib/dialog";
 import { cn } from "@/lib/utils";
-import { ChevronRight, MoreHorizontal, Pencil, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react";
+import {
+  ChevronRight,
+  KeyRound,
+  MoreHorizontal,
+  Pencil,
+  Power,
+  PowerOff,
+  RefreshCw,
+  Trash2,
+  Unplug,
+} from "lucide-react";
 
 import {
   syncState,
   useDeletePluginConnection,
+  useDisconnectPluginConnection,
   useListAgents,
   useListPluginConnections,
   usePluginConnectionTools,
@@ -36,6 +47,7 @@ import {
 } from "@snipet/client";
 
 import { handlersOf } from "../capabilities";
+import { authStatusLabel, useConnectOAuth, usesOAuth } from "../oauth";
 
 import { PluginConnectionFormDialog } from "./dialogs";
 
@@ -103,6 +115,10 @@ function PluginConnectionRow({ plugin, connection }: { plugin: PluginManifest; c
   const hasTools = !!plugin.capabilities.tools;
   const { data: tools } = usePluginConnectionTools(connection, { enabled: hasTools && syncStatus.kind === "synced" });
   const hookCount = plugin.capabilities.hooks ? handlersOf(plugin.capabilities.hooks).length : 0;
+  const { connect, isPending: isConnecting } = useConnectOAuth();
+  const { mutate: disconnect } = useDisconnectPluginConnection();
+  const authLabel = authStatusLabel(connection.authStatus);
+  const isAuthorized = connection.authStatus === "connected";
 
   const openEdit = () => openDialog({ component: PluginConnectionFormDialog, props: { plugin, connection } });
   const openDelete = () =>
@@ -126,6 +142,7 @@ function PluginConnectionRow({ plugin, connection }: { plugin: PluginManifest; c
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-medium leading-none">{connection.name}</span>
           {!connection.enabled && <Badge variant="outline">Disabled</Badge>}
+          {authLabel && <Badge variant="destructive">{authLabel}</Badge>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <IconAction tooltip={syncLabel(plugin)}>
@@ -158,6 +175,18 @@ function PluginConnectionRow({ plugin, connection }: { plugin: PluginManifest; c
                 {connection.enabled ? <PowerOff /> : <Power />}
                 {connection.enabled ? "Disable" : "Enable"}
               </DropdownMenuItem>
+              {usesOAuth(plugin) && (
+                <DropdownMenuItem disabled={isConnecting} onClick={() => void connect(connection.id)}>
+                  <KeyRound />
+                  {isAuthorized ? "Reconnect" : "Connect"}
+                </DropdownMenuItem>
+              )}
+              {usesOAuth(plugin) && connection.authStatus !== "missing" && (
+                <DropdownMenuItem onClick={() => disconnect(connection.id)}>
+                  <Unplug />
+                  Disconnect
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={openDelete}>
                 <Trash2 />
@@ -187,10 +216,22 @@ function PluginConnectionRow({ plugin, connection }: { plugin: PluginManifest; c
             </span>
           )}
         </div>
-        {syncStatus.kind === "error" && (
-          <Button variant="link" size="xs" className="h-auto shrink-0 p-0" onClick={openEdit}>
-            Edit
+        {authLabel ? (
+          <Button
+            variant="link"
+            size="xs"
+            className="h-auto shrink-0 p-0"
+            disabled={isConnecting}
+            onClick={() => void connect(connection.id)}
+          >
+            {connection.authStatus === "expired" ? "Reconnect" : "Connect"}
           </Button>
+        ) : (
+          syncStatus.kind === "error" && (
+            <Button variant="link" size="xs" className="h-auto shrink-0 p-0" onClick={openEdit}>
+              Edit
+            </Button>
+          )
         )}
       </div>
       {tools && tools.length > 0 && (

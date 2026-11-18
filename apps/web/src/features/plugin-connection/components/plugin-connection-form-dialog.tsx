@@ -27,6 +27,7 @@ import { createPluginConnectionSchema } from "@snipet/shared";
 import { HookMode } from "@snipet/shared/core";
 
 import { describeHandler, handlersOf } from "../capabilities";
+import { useConnectOAuth, usesOAuth } from "../oauth";
 import { PluginConnectionListDialog } from "./dialogs";
 
 import type { RJSFSchema } from "@rjsf/utils";
@@ -68,7 +69,10 @@ export function PluginConnectionFormDialog({
 
   const { mutateAsync: create, isPending: isCreating } = useCreatePluginConnection();
   const { mutateAsync: update, isPending: isUpdating } = useUpdatePluginConnection();
-  const isPending = isCreating || isUpdating;
+  const { connect, isPending: isConnecting } = useConnectOAuth();
+  const isPending = isCreating || isUpdating || isConnecting;
+  // A new OAuth connection is useless until authorized, so creating it goes straight to the provider.
+  const connectsOnCreate = !isEditing && usesOAuth(plugin);
 
   const schema = plugin.connection as RJSFSchema;
   const hasConfig = Object.keys(schema.properties ?? {}).length > 0;
@@ -81,7 +85,10 @@ export function PluginConnectionFormDialog({
     // An emptied textarea goes back to the plugin's own instructions.
     values = { ...values, customInstructions: values.customInstructions?.trim() || null };
     if (connection) await update({ id: connection.id, data: values });
-    else await create({ data: values });
+    else {
+      const created = await create({ data: values });
+      if (connectsOnCreate) return connect(created.id);
+    }
     close();
     if (!connection && openListOnCreate) openDialog({ component: PluginConnectionListDialog, props: { plugin } });
   });
@@ -159,7 +166,7 @@ export function PluginConnectionFormDialog({
         </DialogClose>
         <Button type="submit" form={formId} disabled={isPending}>
           {isPending && <Spinner size="sm" />}
-          {isEditing ? "Save changes" : "Create connection"}
+          {isEditing ? "Save changes" : connectsOnCreate ? `Create and connect ${plugin.name}` : "Create connection"}
         </Button>
       </DialogFooter>
     </DialogContent>

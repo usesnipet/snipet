@@ -1,9 +1,11 @@
 import http from "../http";
 
 import {
+  authorizePluginConnectionSchema,
   createPluginConnectionSchema,
   findPluginConnectionsParamsSchema,
   paginatedPluginConnectionSchema,
+  pluginConnectionAuthorizationSchema,
   pluginConnectionSchema,
   updatePluginConnectionSchema,
 } from "@snipet/shared";
@@ -11,10 +13,12 @@ import { llmToolSchema, pluginManifestSchema } from "@snipet/shared/core";
 import { z } from "zod";
 
 import type {
+  AuthorizePluginConnection,
   CreatePluginConnection,
   FindPluginConnectionsParams,
   Paginated,
   PluginConnection,
+  PluginConnectionAuthorization,
   UpdatePluginConnection,
 } from "@snipet/shared";
 import type { LLMTool, PluginManifest } from "@snipet/shared/core";
@@ -87,6 +91,28 @@ const sync = async (id: string, opts: ServicePostOptions<void, void> = {}): Prom
     ...opts,
   });
 
+/** The provider's consent page for an OAuth connection; the user comes back to `returnTo`. */
+const authorize = async (
+  id: string,
+  body: AuthorizePluginConnection,
+  opts: ServicePostOptions<AuthorizePluginConnection, PluginConnectionAuthorization> = {},
+): Promise<PluginConnectionAuthorization> =>
+  http.post({
+    url: `${PLUGIN_CONNECTION_URL}/{id}/oauth/authorize`,
+    params: { id },
+    body,
+    schemas: { body: authorizePluginConnectionSchema, response: pluginConnectionAuthorizationSchema },
+    ...opts,
+  });
+
+/** Revokes and forgets an OAuth connection's tokens. */
+const disconnect = async (id: string, opts: ServiceDeleteOptions<void> = {}): Promise<void> =>
+  http.delete({
+    url: `${PLUGIN_CONNECTION_URL}/{id}/oauth`,
+    params: { id },
+    ...opts,
+  });
+
 export const pluginConnectionService = {
   list,
   listPlugins,
@@ -95,4 +121,6 @@ export const pluginConnectionService = {
   update,
   delete: remove,
   sync,
+  authorize,
+  disconnect,
 };
