@@ -54,15 +54,16 @@ pnpm dev
 
 The web app opens at [localhost:5173](http://localhost:5173). Sign in as `admin` with the password `admin`.
 
-| Path                                                                                                                   | What it is                                       |
-| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| [`apps/api`](apps/api)                                                                                                 | The server, a NestJS API                         |
-| [`apps/web`](apps/web)                                                                                                 | The admin web app                                |
-| [`apps/site`](apps/site)                                                                                               | The website and documentation                    |
-| [`sdks/widget`](sdks/widget)                                                                                           | The embeddable chat widget                       |
-| [`sdks/react-widget`](sdks/react-widget), [`sdks/angular-widget`](sdks/angular-widget)                                 | Widget libraries for React and Angular           |
-| [`packages/client`](packages/client)                                                                                   | Typed client for the API                         |
-| [`packages/shared`](packages/shared), [`packages/server-common`](packages/server-common), [`packages/ui`](packages/ui) | Shared schemas, server helpers and UI components |
+| Path                                                                                                                   | What it is                                                    |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [`apps/api`](apps/api)                                                                                                 | The server, a NestJS API                                      |
+| [`apps/web`](apps/web)                                                                                                 | The admin web app                                             |
+| [`apps/site`](apps/site)                                                                                               | The website and documentation                                 |
+| [`sdks/widget`](sdks/widget)                                                                                           | The embeddable chat widget                                    |
+| [`sdks/react-widget`](sdks/react-widget), [`sdks/angular-widget`](sdks/angular-widget)                                 | Widget libraries for React and Angular                        |
+| [`sdks/hooks`](sdks/hooks)                                                                                             | Types and a request handler for plugin hooks served over HTTP |
+| [`packages/client`](packages/client)                                                                                   | Typed client for the API                                      |
+| [`packages/shared`](packages/shared), [`packages/server-common`](packages/server-common), [`packages/ui`](packages/ui) | Shared schemas, server helpers and UI components              |
 
 ## License
 

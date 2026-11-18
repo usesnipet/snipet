@@ -1,0 +1,38 @@
+{
+  "name": "@snipet/hooks",
+  "version": "0.0.0",
+  "description": "Types and a request handler for Snipet plugin hooks served over HTTP.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usesnipet/snipet.git",
+    "directory": "sdks/hooks"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown --config-loader native",
+    "test": "pnpm build && node --test"
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@snipet/shared": "workspace:*",
+    "tsdown": "0.23.4",
+    "typescript": "~6.0.3",
+    "zod": "^4.6.5"
+  },
+  "license": "Apache-2.0"
+}
