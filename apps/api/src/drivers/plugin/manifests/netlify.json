@@ -1,0 +1,31 @@
+{
+  "key": "netlify",
+  "name": "Netlify",
+  "description": "Create, deploy and manage Netlify sites",
+  "icon": "https://github.com/netlify.png",
+  "tags": ["deploy"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.netlify.com/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.netlify.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.netlify.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

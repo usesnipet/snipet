@@ -1,0 +1,31 @@
+{
+  "key": "sentry",
+  "name": "Sentry",
+  "description": "Search Sentry issues, errors and traces and debug them with Seer",
+  "icon": "https://github.com/getsentry.png",
+  "tags": ["monitoring"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.sentry.dev/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.sentry.dev/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.sentry.dev/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

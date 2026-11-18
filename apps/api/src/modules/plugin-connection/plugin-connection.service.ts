@@ -11,7 +11,7 @@ import { PluginConnectionTokenService } from "./plugin-connection.token.service.
 import { PluginConnectionSyncService } from "./sync/plugin-connection-sync.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
-import type { OAuth2Credentials } from "#src/core/manifest/oauth2.js";
+import type { PluginConnectionCredentials } from "./plugin-connection.entity.js";
 import type { LLMTool, LLMToolResult, PluginManifest } from "@snipet/shared/core";
 
 /** A synced tool with the connection it comes from. */
@@ -69,7 +69,7 @@ export class PluginConnectionService extends ConnectionService<PluginConnection,
    * Stores the OAuth tokens, or clears them with null. Bypasses `updateById`:
    * credentials come from the provider, not from a user-edited config.
    */
-  async saveCredentials(ctx: AppContext, id: string, credentials: OAuth2Credentials | null): Promise<void> {
+  async saveCredentials(ctx: AppContext, id: string, credentials: PluginConnectionCredentials | null): Promise<void> {
     await this.repository(ctx).update(id, { credentials, lastSyncedError: null });
   }
 

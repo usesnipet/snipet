@@ -1,0 +1,31 @@
+{
+  "key": "linear-oauth2",
+  "name": "Linear OAuth2",
+  "description": "Manage Linear issues, projects and comments",
+  "icon": "https://github.com/linear.png",
+  "tags": ["issues"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.linear.app/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.linear.app/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.linear.app/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

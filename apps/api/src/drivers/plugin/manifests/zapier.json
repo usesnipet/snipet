@@ -1,0 +1,31 @@
+{
+  "key": "zapier",
+  "name": "Zapier",
+  "description": "Run actions across thousands of apps through Zapier",
+  "icon": "https://github.com/zapier.png",
+  "tags": ["automation"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.zapier.com/api/mcp/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.zapier.com/api/mcp/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.zapier.com/api/mcp/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

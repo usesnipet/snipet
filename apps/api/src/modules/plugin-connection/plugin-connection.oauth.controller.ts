@@ -6,7 +6,7 @@ import { Public } from "#src/common/decorators/auth.decorator.js";
 import { PluginConnectionOAuthService } from "./plugin-connection.oauth.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
-import type { OAuthCallbackQuery } from "./plugin-connection.oauth.service.js";
+import type { OAuth2CallbackQuery } from "#src/infra/oauth2/oauth2.js";
 
 /**
  * Where OAuth providers send the user back. Public: the browser arrives from
@@ -26,7 +26,7 @@ export class OAuthController {
 }
 
 /** The query's string params only: express turns `?code[]=x` into an array. */
-function pickStrings(query: Record<string, unknown>): OAuthCallbackQuery {
+function pickStrings(query: Record<string, unknown>): OAuth2CallbackQuery {
   const string = (value: unknown) => (typeof value === "string" ? value : undefined);
   return { code: string(query.code), state: string(query.state), error: string(query.error) };
 }

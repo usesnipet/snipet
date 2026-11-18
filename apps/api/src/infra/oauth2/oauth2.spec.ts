@@ -1,8 +1,16 @@
 import { oauth2ManifestAuthSchema } from "@snipet/shared";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 
-import { buildAuthorizeUrl, createPkce, exchangeCode, OAuth2Error, refreshCredentials } from "./oauth2.js";
+import {
+  buildAuthorizeUrl,
+  createPkce,
+  exchangeCode,
+  OAuth2Error,
+  openCallback,
+  refreshCredentials,
+  startAuthorization,
+} from "./oauth2.js";
 
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
@@ -65,6 +73,43 @@ describe("buildAuthorizeUrl", () => {
   });
 });
 
+describe("startAuthorization and openCallback", () => {
+  const key = randomBytes(32);
+  const stateOf = (url: string) => new URL(url).searchParams.get("state")!;
+
+  it("carries the data and the PKCE verifier through the state", () => {
+    const url = startAuthorization(authOf(), client, { redirectUri: "https://r", data: { id: "c1" }, key }, 0);
+    const challenge = new URL(url).searchParams.get("code_challenge");
+    const callback = openCallback<{ id: string }>({ code: "code-1", state: stateOf(url) }, key, 1);
+    expect(callback).toMatchObject({ data: { id: "c1" }, code: "code-1" });
+    const { codeVerifier } = callback as { codeVerifier: string };
+    expect(createHash("sha256").update(codeVerifier).digest("base64url")).toBe(challenge);
+  });
+
+  it("returns the provider's error with the data", () => {
+    const url = startAuthorization(authOf(), client, { redirectUri: "https://r", data: 1, key }, 0);
+    expect(openCallback({ error: "access_denied", state: stateOf(url) }, key, 1)).toEqual({
+      data: 1,
+      error: "access_denied",
+    });
+    expect(openCallback({ state: stateOf(url) }, key, 1)).toEqual({ data: 1, error: "missing_code" });
+  });
+
+  it("is undefined for a missing, tampered, foreign or expired state", () => {
+    const url = startAuthorization(authOf(), client, { redirectUri: "https://r", data: 1, key }, 0);
+    const state = stateOf(url);
+    for (const [query, opener, now] of [
+      [{ code: "c" }, key, 1],
+      // A char in the middle: one appended to base64url may decode to the same bytes.
+      [{ code: "c", state: `${state.slice(0, 20)}${state[20] === "A" ? "B" : "A"}${state.slice(21)}` }, key, 1],
+      [{ code: "c", state }, randomBytes(32), 1],
+      [{ code: "c", state }, key, 10 * 60_000],
+    ] as const) {
+      expect(openCallback(query, opener, now)).toBeUndefined();
+    }
+  });
+});
+
 describe("exchangeCode", () => {
   it("sends the code, verifier and client, and maps the tokens", async () => {
     provider.status = 200;
@@ -108,20 +153,14 @@ describe("refreshCredentials", () => {
   it("keeps the refresh token when the provider doesn't rotate it", async () => {
     provider.status = 200;
     provider.body = { access_token: "at2" };
-    const renewed = await refreshCredentials(authOf(), client, {
-      accessToken: "at",
-      refreshToken: "rt",
-      tokenType: "Bearer",
-    });
+    const renewed = await refreshCredentials(authOf(), client, { refreshToken: "rt" });
     expect(provider.form.get("grant_type")).toBe("refresh_token");
     expect(provider.form.get("refresh_token")).toBe("rt");
     expect(renewed).toMatchObject({ accessToken: "at2", refreshToken: "rt" });
   });
 
   it("is invalid_grant without a refresh token", async () => {
-    await expect(
-      refreshCredentials(authOf(), client, { accessToken: "at", tokenType: "Bearer" }),
-    ).rejects.toMatchObject({
+    await expect(refreshCredentials(authOf(), client, {})).rejects.toMatchObject({
       code: "invalid_grant",
     });
   });

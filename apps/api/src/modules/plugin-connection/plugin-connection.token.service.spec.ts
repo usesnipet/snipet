@@ -8,7 +8,7 @@ import {
   PluginConnectionTokenService,
 } from "./plugin-connection.token.service.js";
 
-import type { OAuth2Credentials } from "#src/core/manifest/oauth2.js";
+import type { PluginConnectionCredentials } from "./plugin-connection.entity.js";
 import type { PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
@@ -37,7 +37,7 @@ beforeAll(async () => {
 afterAll(() => new Promise((resolve) => server.close(resolve)));
 
 const ctx = AppContext.create("test");
-const stale = (extra: Partial<OAuth2Credentials> = {}): OAuth2Credentials => ({
+const stale = (extra: Partial<PluginConnectionCredentials> = {}): PluginConnectionCredentials => ({
   accessToken: "old",
   refreshToken: "rt",
   expiresAt: Date.now() + 1000,
@@ -49,14 +49,20 @@ const stale = (extra: Partial<OAuth2Credentials> = {}): OAuth2Credentials => ({
  * A service on a one-row fake table. Transactions run one at a time, which
  * stands in for the row lock (`SELECT ... FOR UPDATE`).
  */
-function setup(credentials: OAuth2Credentials | null) {
+function setup(credentials: PluginConnectionCredentials | null, pluginKey = "google") {
   const manifest = pluginManifestSchema.parse({
     key: "google",
     name: "Google",
     auth: { type: "oauth2", authorizationUrl: "https://a.example/auth", tokenUrl, clientId: "cid" },
     capabilities: { tools: { driver: "mcp", options: { token: "Bearer {{ auth.accessToken }}" } } },
   });
-  const row = { id: "c1", pluginKey: "google", config: {}, credentials, lastSyncedError: null as string | null };
+  const remote = pluginManifestSchema.parse({
+    key: "remote",
+    name: "Remote MCP",
+    auth: { type: "oauth2_discovery", resource: "https://mcp.example/mcp" },
+    capabilities: { tools: { driver: "mcp", options: { token: "Bearer {{ auth.accessToken }}" } } },
+  });
+  const row = { id: "c1", pluginKey, config: {}, credentials, lastSyncedError: null as string | null };
   const repository = {
     createQueryBuilder: () => {
       const query = { setLock: () => query, where: () => query, getOne: () => Promise.resolve({ ...row }) };
@@ -79,7 +85,7 @@ function setup(credentials: OAuth2Credentials | null) {
       return run;
     },
   };
-  const registry = { find: (key: string) => (key === "google" ? manifest : undefined) };
+  const registry = { find: (key: string) => ({ google: manifest, remote })[key] };
   const service = new PluginConnectionTokenService(
     manager as unknown as EntityManager,
     registry as unknown as PluginManifestRegistry,
@@ -116,6 +122,17 @@ describe("PluginConnectionTokenService.authOf", () => {
     const { service, row } = setup(stale());
     await expect(service.authOf(ctx, row)).resolves.toEqual({ accessToken: "new" });
     expect(row.credentials).toMatchObject({ accessToken: "new", refreshToken: "rt" });
+  });
+
+  it("renews a discovered connection at its provider, with its registered client", async () => {
+    const discovered = {
+      resourceUrl: "https://mcp.example/mcp",
+      provider: { authorizationUrl: "https://a", tokenUrl, scopes: [], pkce: true, extraParams: {} },
+      client: { clientId: "registered" },
+    };
+    const { service, row } = setup(stale({ discovered }), "remote");
+    await expect(service.authOf(ctx, row)).resolves.toEqual({ accessToken: "new" });
+    expect(row.credentials).toMatchObject({ accessToken: "new", discovered });
   });
 
   it("refreshes once when two callers race", async () => {

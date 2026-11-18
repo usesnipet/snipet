@@ -1,0 +1,31 @@
+{
+  "key": "stripe-oauth2",
+  "name": "Stripe OAuth2",
+  "description": "Manage Stripe customers, payments, invoices and products",
+  "icon": "https://github.com/stripe.png",
+  "tags": ["payments"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.stripe.com"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.stripe.com",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.stripe.com",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

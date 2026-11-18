@@ -1,0 +1,31 @@
+{
+  "key": "canva",
+  "name": "Canva",
+  "description": "Search, create and edit Canva designs",
+  "icon": "https://github.com/canva.png",
+  "tags": ["design"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.canva.com/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.canva.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.canva.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

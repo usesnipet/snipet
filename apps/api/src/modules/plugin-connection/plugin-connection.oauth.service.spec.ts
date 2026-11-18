@@ -15,9 +15,10 @@ import type { Server } from "node:http";
 
 type Fn = (...args: unknown[]) => Promise<unknown>;
 
-/** The fake provider's last token request and its next answer. */
-const provider = { form: new URLSearchParams(), status: 200, body: {} as unknown };
+/** The fake provider's last token request and its next answer, and how many clients registered there. */
+const provider = { form: new URLSearchParams(), status: 200, body: {} as unknown, registrations: 0 };
 let server: Server;
+let origin: string;
 let tokenUrl: string;
 
 beforeAll(async () => {
@@ -25,12 +26,28 @@ beforeAll(async () => {
     let raw = "";
     req.on("data", (chunk: Buffer) => (raw += chunk.toString()));
     req.on("end", () => {
+      const reply = (status: number, body: unknown) =>
+        res.writeHead(status, { "Content-Type": "application/json" }).end(JSON.stringify(body));
+      // Discovery: an authorization server at the origin, with registration.
+      if (req.url === "/.well-known/oauth-authorization-server") {
+        return reply(200, {
+          issuer: origin,
+          authorization_endpoint: `${origin}/authorize`,
+          token_endpoint: tokenUrl,
+          registration_endpoint: `${origin}/register`,
+          code_challenge_methods_supported: ["S256"],
+          token_endpoint_auth_methods_supported: ["none"],
+        });
+      }
+      if (req.url === "/register") return reply(201, { client_id: `registered-${++provider.registrations}` });
+      if (req.url !== "/token") return reply(404, {});
       provider.form = new URLSearchParams(raw);
-      res.writeHead(provider.status, { "Content-Type": "application/json" }).end(JSON.stringify(provider.body));
+      reply(provider.status, provider.body);
     });
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  tokenUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}/token`;
+  origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  tokenUrl = `${origin}/token`;
 });
 
 afterAll(() => new Promise((resolve) => server.close(resolve)));
@@ -51,11 +68,20 @@ function setup(pluginKey = "google") {
     capabilities: { tools: { driver: "mcp", options: { token: "Bearer {{ auth.accessToken }}" } } },
   });
   const plain = pluginManifestSchema.parse({ key: "plain", name: "Plain", capabilities: { tools: { driver: "mcp" } } });
-  const conn = { id: "c1", pluginKey, config: { clientId: "cid" }, credentials: null } as unknown as PluginConnection;
+  const remote = pluginManifestSchema.parse({
+    key: "remote",
+    name: "Remote MCP",
+    auth: { type: "oauth2_discovery", resource: "{{ connection.url }}" },
+    connection: { type: "object", properties: { url: { type: "string" } } },
+    capabilities: { tools: { driver: "mcp", options: { token: "Bearer {{ auth.accessToken }}" } } },
+  });
+  const manifests = { google: manifest, plain, remote };
+  const config = { clientId: "cid", url: `${origin}/mcp` };
+  const conn = { id: "c1", pluginKey, config, credentials: null } as unknown as PluginConnection;
   const pluginConnectionService = {
     findById: jest.fn<Fn>().mockResolvedValue(conn),
-    getManifest: jest.fn((_ctx: unknown, key: string) => (key === "google" ? manifest : plain)),
-    listManifests: () => [manifest, plain],
+    getManifest: jest.fn((_ctx: unknown, key: string) => manifests[key as keyof typeof manifests]),
+    listManifests: () => Object.values(manifests),
     saveCredentials: jest.fn<Fn>().mockResolvedValue(undefined),
     sync: jest.fn<Fn>().mockResolvedValue(undefined),
   };
@@ -95,6 +121,32 @@ describe("PluginConnectionOAuthService", () => {
     expect(pluginConnectionService.sync).toHaveBeenCalledWith(ctx, "c1");
   });
 
+  it("discovers the provider, registers a client once and keeps it with the tokens", async () => {
+    const { service, pluginConnectionService, conn } = setup("remote");
+    provider.registrations = 0;
+    const { url } = await service.authorize(ctx, "c1", "/plugins");
+    expect(queryOf(url)).toMatchObject({ client_id: "registered-1", resource: `${origin}/mcp` });
+
+    const back = await service.callback(ctx, { code: "code-1", state: stateOf(url) });
+    expect(queryOf(back)).toMatchObject({ oauth: "success" });
+    expect(provider.form.get("client_id")).toBe("registered-1");
+    expect(provider.form.get("resource")).toBe(`${origin}/mcp`);
+    const [, , saved] = pluginConnectionService.saveCredentials.mock.calls[0] as [
+      unknown,
+      unknown,
+      PluginConnection["credentials"],
+    ];
+    expect(saved).toMatchObject({
+      accessToken: "at",
+      discovered: { resourceUrl: `${origin}/mcp`, client: { clientId: "registered-1" } },
+    });
+
+    // Authorizing again reuses the client while the resource is the same.
+    conn.credentials = saved;
+    expect(queryOf((await service.authorize(ctx, "c1", "/")).url).client_id).toBe("registered-1");
+    expect(provider.registrations).toBe(1);
+  });
+
   it("refuses a plugin without OAuth or without a client", async () => {
     await expect(setup("plain").service.authorize(ctx, "c1", "/")).rejects.toThrow(BadRequestException);
     const { service, conn } = setup();
@@ -106,11 +158,14 @@ describe("PluginConnectionOAuthService", () => {
     const { service, pluginConnectionService } = setup();
     const { url } = await service.authorize(ctx, "c1", "/plugins");
     const expired = seal(
-      JSON.stringify({ connectionId: "c1", returnTo: "/plugins", expiresAt: Date.now() - 1 }),
+      JSON.stringify({ data: { connectionId: "c1", returnTo: "/plugins" }, expiresAt: Date.now() - 1 }),
       env.ENCRYPTION_KEY,
     );
 
-    for (const state of [undefined, `${stateOf(url)}x`, expired]) {
+    const state = stateOf(url);
+    // A char in the middle: one appended to base64url may decode to the same bytes.
+    const tampered = `${state.slice(0, 20)}${state[20] === "A" ? "B" : "A"}${state.slice(21)}`;
+    for (const state of [undefined, tampered, expired]) {
       const back = await service.callback(ctx, { code: "code-1", state });
       expect(back).toBe(`${env.WEB_URL}/?oauth=error&reason=invalid_state`);
     }

@@ -1,42 +1,39 @@
-import { resolveOAuth2Client } from "#src/core/manifest/oauth2.js";
+import { resolveOAuth2Client, resolveResource } from "#src/core/manifest/oauth2.js";
 import { env } from "#src/env.js";
-import { buildAuthorizeUrl, createPkce, exchangeCode, OAuth2Error, revokeToken } from "#src/infra/http/oauth2.js";
+import { discoverProvider, isClientExpired, registerClient } from "#src/infra/oauth2/discovery.js";
+import { exchangeCode, OAuth2Error, openCallback, revokeToken, startAuthorization } from "#src/infra/oauth2/oauth2.js";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { open, seal } from "@snipet/server-common";
 
 import { PluginConnectionService } from "./plugin-connection.service.js";
 
 import type { AppContext } from "#src/common/context/app-context.js";
-import type { OAuth2Client } from "#src/core/manifest/oauth2.js";
-import type { OAuth2ManifestAuth, PluginConnectionAuthorization } from "@snipet/shared";
-import type { PluginConnection } from "./plugin-connection.entity.js";
+import type { OAuth2CallbackQuery, OAuth2Client, OAuth2Provider } from "#src/infra/oauth2/oauth2.js";
+import type { PluginConnectionAuthorization } from "@snipet/shared";
+import type { DiscoveredOAuth2, PluginConnection } from "./plugin-connection.entity.js";
 
 /** Where providers send the user back; register it as the redirect URI of every OAuth app. */
 export const OAUTH_CALLBACK_PATH = "/api/oauth/callback";
 
-/** How long the user has to go through the provider's consent page. */
-const STATE_TTL_MS = 10 * 60_000;
-
 /** A provider's `error` is echoed to the web app only when it looks like an OAuth error code. */
 const ERROR_CODE = /^[a-z0-9_.-]{1,64}$/i;
 
-/**
- * What the `state` param carries through the provider. Sealed with
- * ENCRYPTION_KEY, so it can be neither forged nor read (it holds the PKCE
- * verifier), and nothing has to be stored between authorize and callback.
- */
-interface OAuthState {
+/** The name a discovered provider shows for the clients registered there. */
+const CLIENT_NAME = "Snipet";
+
+/** What the `state` carries through the provider, sealed with ENCRYPTION_KEY. */
+interface ConnectionAuthorization {
   connectionId: string;
-  codeVerifier?: string;
+  /** The web app path the user comes back to. */
   returnTo: string;
-  expiresAt: number;
+  /** The provider and client found on authorize, stored with the tokens once they come. */
+  discovered?: DiscoveredOAuth2;
 }
 
-/** Query of the provider's redirect to the callback (RFC 6749 §4.1.2). */
-export interface OAuthCallbackQuery {
-  code?: string;
-  state?: string;
-  error?: string;
+/** Who to authorize with: the provider and the client registered there. */
+interface ConnectionOAuth {
+  provider: OAuth2Provider;
+  client: OAuth2Client;
+  discovered?: DiscoveredOAuth2;
 }
 
 /**
@@ -52,18 +49,11 @@ export class PluginConnectionOAuthService {
   /** The provider's consent page for the connection; the user comes back to `returnTo` in the web app. */
   async authorize(ctx: AppContext, id: string, returnTo: string): Promise<PluginConnectionAuthorization> {
     const conn = await this.pluginConnectionService.findById(ctx, id);
-    const { auth, client } = this.oauthOf(ctx, conn);
-    const pkce = auth.pkce ? createPkce() : undefined;
-    const state: OAuthState = {
-      connectionId: id,
-      codeVerifier: pkce?.verifier,
-      returnTo,
-      expiresAt: Date.now() + STATE_TTL_MS,
-    };
-    const url = buildAuthorizeUrl(auth, client, {
-      state: seal(JSON.stringify(state), env.ENCRYPTION_KEY),
+    const { provider, client, discovered } = await this.oauthOf(ctx, conn);
+    const url = startAuthorization<ConnectionAuthorization>(provider, client, {
       redirectUri: redirectUri(),
-      codeChallenge: pkce?.challenge,
+      data: { connectionId: id, returnTo, discovered },
+      key: env.ENCRYPTION_KEY,
     });
     return { url };
   }
@@ -73,28 +63,28 @@ export class PluginConnectionOAuthService {
    * app, with `oauth=success|error` in the query. Never throws, the user is
    * always sent somewhere they can see what happened.
    */
-  async callback(ctx: AppContext, query: OAuthCallbackQuery): Promise<string> {
-    // ponytail: a state can be replayed until it expires; harmless while providers keep codes single-use.
-    const state = openState(query.state);
-    if (!state) return webUrl("/", { oauth: "error", reason: "invalid_state" });
-    const back = (params: Record<string, string>) =>
-      webUrl(state.returnTo, { connectionId: state.connectionId, ...params });
+  async callback(ctx: AppContext, query: OAuth2CallbackQuery): Promise<string> {
+    const callback = openCallback<ConnectionAuthorization>(query, env.ENCRYPTION_KEY);
+    if (!callback) return webUrl("/", { oauth: "error", reason: "invalid_state" });
+    const { connectionId, returnTo, discovered } = callback.data;
+    const back = (params: Record<string, string>) => webUrl(returnTo, { connectionId, ...params });
 
-    if (query.error || !query.code) return back({ oauth: "error", reason: errorCode(query.error ?? "missing_code") });
+    if (callback.error !== undefined) return back({ oauth: "error", reason: errorCode(callback.error) });
     try {
-      const conn = await this.pluginConnectionService.findById(ctx, state.connectionId);
-      const { auth, client } = this.oauthOf(ctx, conn);
-      const credentials = await exchangeCode(auth, client, {
-        code: query.code,
+      const conn = await this.pluginConnectionService.findById(ctx, connectionId);
+      // The client the code was issued to: the one registered on authorize, if any.
+      const { provider, client } = discovered ?? (await this.oauthOf(ctx, conn));
+      const tokens = await exchangeCode(provider, client, {
+        code: callback.code,
         redirectUri: redirectUri(),
-        codeVerifier: state.codeVerifier,
+        codeVerifier: callback.codeVerifier,
       });
-      await this.pluginConnectionService.saveCredentials(ctx, conn.id, credentials);
+      await this.pluginConnectionService.saveCredentials(ctx, conn.id, { ...tokens, discovered });
       void this.pluginConnectionService.sync(ctx, conn.id);
       return back({ oauth: "success" });
     } catch (err) {
       const reason = err instanceof OAuth2Error ? errorCode(err.code) : "failed";
-      this.logger.warn(`oauth callback for connection ${state.connectionId}: ${(err as Error).message}`);
+      this.logger.warn(`oauth callback for connection ${connectionId}: ${(err as Error).message}`);
       return back({ oauth: "error", reason });
     }
   }
@@ -103,24 +93,52 @@ export class PluginConnectionOAuthService {
   async disconnect(ctx: AppContext, id: string): Promise<void> {
     const conn = await this.pluginConnectionService.findById(ctx, id);
     const token = conn.credentials?.refreshToken ?? conn.credentials?.accessToken;
-    const manifest = this.pluginConnectionService.listManifests(ctx).find((m) => m.key === conn.pluginKey);
-    if (token && manifest?.auth.type === "oauth2") {
-      const client = resolveOAuth2Client(manifest.auth, conn.config, process.env);
+    const auth = this.pluginConnectionService.listManifests(ctx).find((m) => m.key === conn.pluginKey)?.auth;
+    const oauth =
+      conn.credentials?.discovered ??
+      (auth?.type === "oauth2"
+        ? { provider: auth, client: resolveOAuth2Client(auth, conn.config, process.env) }
+        : undefined);
+    if (token && oauth) {
       // The user wants out either way; a provider that won't revoke must not keep the tokens here.
-      await revokeToken(manifest.auth, client, token).catch((err: Error) =>
+      await revokeToken(oauth.provider, oauth.client, token).catch((err: Error) =>
         this.logger.warn(`oauth revoke for connection ${id}: ${err.message}`),
       );
     }
     if (conn.credentials) await this.pluginConnectionService.saveCredentials(ctx, id, null);
   }
 
-  /** The connection's OAuth settings, its client resolved; 400 when the plugin has no OAuth or no client. */
-  private oauthOf(ctx: AppContext, conn: PluginConnection): { auth: OAuth2ManifestAuth; client: OAuth2Client } {
+  /**
+   * The provider and client the connection authorizes with; 400 when the
+   * plugin has no OAuth or no client. A discovered provider is found and a
+   * client registered there on first use, then reused while the resource and
+   * the client's secret stay the same.
+   */
+  private async oauthOf(ctx: AppContext, conn: PluginConnection): Promise<ConnectionOAuth> {
     const { auth } = this.pluginConnectionService.getManifest(ctx, conn.pluginKey);
-    if (auth.type !== "oauth2") throw new BadRequestException(`plugin "${conn.pluginKey}" doesn't use OAuth`);
-    const client = resolveOAuth2Client(auth, conn.config, process.env);
-    if (!client.clientId) throw new BadRequestException(`OAuth client of plugin "${conn.pluginKey}" is not configured`);
-    return { auth, client };
+    if (auth.type === "none") throw new BadRequestException(`plugin "${conn.pluginKey}" doesn't use OAuth`);
+    if (auth.type === "oauth2") {
+      const client = resolveOAuth2Client(auth, conn.config, process.env);
+      if (!client.clientId) {
+        throw new BadRequestException(`OAuth client of plugin "${conn.pluginKey}" is not configured`);
+      }
+      return { provider: auth, client };
+    }
+
+    const resourceUrl = resolveResource(auth, conn.config);
+    if (!URL.canParse(resourceUrl)) throw new BadRequestException(`OAuth resource "${resourceUrl}" is not a URL`);
+    const stored = conn.credentials?.discovered;
+    if (stored?.resourceUrl === resourceUrl && !isClientExpired(stored.client))
+      return { ...stored, discovered: stored };
+    try {
+      const provider = await discoverProvider(resourceUrl, auth.scopes);
+      const client = await registerClient(provider, { redirectUri: redirectUri(), clientName: CLIENT_NAME });
+      const discovered = { resourceUrl, provider, client };
+      return { provider, client, discovered };
+    } catch (err) {
+      if (!(err instanceof OAuth2Error)) throw err;
+      throw new BadRequestException(`OAuth discovery for plugin "${conn.pluginKey}" failed: ${err.code}`);
+    }
   }
 }
 
@@ -140,17 +158,6 @@ function webUrl(path: string, params: Record<string, string>): string {
   if (url.origin !== base.origin) url = base;
   for (const [name, value] of Object.entries(params)) url.searchParams.set(name, value);
   return url.toString();
-}
-
-/** The state, or undefined when it's missing, tampered with or expired. */
-function openState(sealed: string | undefined): OAuthState | undefined {
-  if (!sealed) return undefined;
-  try {
-    const state = JSON.parse(open(sealed, env.ENCRYPTION_KEY)) as OAuthState;
-    return state.expiresAt > Date.now() ? state : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 /** `code` when it looks like an OAuth error code, else a generic one: it ends up in a URL shown to the user. */

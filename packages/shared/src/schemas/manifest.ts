@@ -32,10 +32,26 @@ export const oauth2ManifestAuthSchema = z.object({
 });
 export type OAuth2ManifestAuth = z.infer<typeof oauth2ManifestAuthSchema>;
 
+/**
+ * OAuth2 found at run time, as MCP servers do: the resource's metadata
+ * (RFC 9728) names its authorization server, and each connection registers
+ * its own client there (RFC 7591), so nothing is set up beforehand.
+ * `resource` may hold `{{connection.<field>}}` placeholders.
+ */
+export const oauth2DiscoveryManifestAuthSchema = z.object({
+  type: z.literal("oauth2_discovery"),
+  /** The protected resource's URL, e.g. the MCP server's. */
+  resource: z.string().min(1),
+  /** Replaces the scopes the resource asks for. */
+  scopes: z.array(z.string()).optional(),
+});
+export type OAuth2DiscoveryManifestAuth = z.infer<typeof oauth2DiscoveryManifestAuthSchema>;
+
 /** How a connection authenticates beyond its `connection` fields. */
 export const manifestAuthSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("none") }),
   oauth2ManifestAuthSchema,
+  oauth2DiscoveryManifestAuthSchema,
 ]);
 export type ManifestAuth = z.infer<typeof manifestAuthSchema>;
 

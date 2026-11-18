@@ -8,7 +8,7 @@ import type { PluginAuthStatus } from "@snipet/shared";
 import type { PluginManifest } from "@snipet/shared/core";
 
 /** Whether connections of this plugin authorize through OAuth. */
-export const usesOAuth = (plugin: PluginManifest) => plugin.auth.type === "oauth2";
+export const usesOAuth = (plugin: PluginManifest) => plugin.auth.type !== "none";
 
 /** Badge text for a status that needs the user's attention; undefined when there's nothing to say. */
 export function authStatusLabel(status: PluginAuthStatus): string | undefined {

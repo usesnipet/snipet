@@ -1,0 +1,31 @@
+{
+  "key": "paypal",
+  "name": "PayPal",
+  "description": "Manage PayPal invoices, orders, payments and disputes",
+  "icon": "https://github.com/paypal.png",
+  "tags": ["payments"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.paypal.com/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.paypal.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.paypal.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

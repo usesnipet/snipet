@@ -1,6 +1,6 @@
 import { resolveOAuth2Client } from "#src/core/manifest/oauth2.js";
 import { PluginManifestRegistry } from "#src/core/plugin/plugin.registry.js";
-import { OAuth2Error, refreshCredentials } from "#src/infra/http/oauth2.js";
+import { OAuth2Error, refreshCredentials } from "#src/infra/oauth2/oauth2.js";
 import { Injectable, Logger } from "@nestjs/common";
 import { BaseService } from "@snipet/server-common";
 import { EntityManager } from "typeorm";
@@ -10,7 +10,7 @@ import { PluginConnection } from "./plugin-connection.entity.js";
 import type { AppContext } from "#src/common/context/app-context.js";
 import type { OAuth2Credentials } from "#src/core/manifest/oauth2.js";
 import type { ConnectionAuth } from "#src/core/manifest/options.js";
-import type { JsonObject, OAuth2ManifestAuth } from "@snipet/shared";
+import type { JsonObject, ManifestAuth } from "@snipet/shared";
 
 /**
  * A token closer than this to its expiry is renewed before use, so it outlives
@@ -48,7 +48,7 @@ export class PluginConnectionTokenService extends BaseService<AppContext> {
    */
   async authOf(ctx: AppContext, conn: AuthorizableConnection): Promise<ConnectionAuth | undefined> {
     const auth = this.pluginManifestRegistry.find(conn.pluginKey)?.auth;
-    if (auth?.type !== "oauth2") return undefined;
+    if (!auth || auth.type === "none") return undefined;
     const credentials = conn.credentials;
     if (!credentials) throw new Error(NOT_AUTHORIZED);
     if (!credentials.accessToken) throw new Error(AUTHORIZATION_EXPIRED);
@@ -62,7 +62,7 @@ export class PluginConnectionTokenService extends BaseService<AppContext> {
    * out. Whoever waited on the lock reuses the token the first one got.
    */
   // ponytail: holds the row lock during the provider call (10 s timeout at most); fine at this scale.
-  private async refresh(ctx: AppContext, id: string, auth: OAuth2ManifestAuth, config: JsonObject): Promise<string> {
+  private async refresh(ctx: AppContext, id: string, auth: OAuthManifestAuth, config: JsonObject): Promise<string> {
     const outcome = await this.transaction(ctx, async (ctx): Promise<RefreshOutcome> => {
       const repository = this.repositoryOf(ctx, PluginConnection);
       const locked = await repository
@@ -75,10 +75,17 @@ export class PluginConnectionTokenService extends BaseService<AppContext> {
       if (!current.accessToken) return { error: AUTHORIZATION_EXPIRED };
       if (isFresh(current)) return { accessToken: current.accessToken };
 
+      // A discovered provider renews with the client registered there; a manifest's with its own.
+      const oauth =
+        current.discovered ??
+        (auth.type === "oauth2"
+          ? { provider: auth, client: resolveOAuth2Client(auth, config, process.env) }
+          : undefined);
+      if (!oauth) return { error: NOT_AUTHORIZED };
       try {
-        const renewed = await refreshCredentials(auth, resolveOAuth2Client(auth, config, process.env), current);
-        await repository.update(id, { credentials: renewed });
-        return { accessToken: renewed.accessToken! };
+        const renewed = await refreshCredentials(oauth.provider, oauth.client, current);
+        await repository.update(id, { credentials: { ...renewed, discovered: current.discovered } });
+        return { accessToken: renewed.accessToken };
       } catch (err) {
         if (!(err instanceof OAuth2Error && err.code === "invalid_grant")) throw err;
         // Revoked or expired for good: drop the access token so the connection shows as expired.
@@ -95,6 +102,9 @@ export class PluginConnectionTokenService extends BaseService<AppContext> {
     return outcome.accessToken;
   }
 }
+
+/** A manifest auth that goes through OAuth. */
+type OAuthManifestAuth = Exclude<ManifestAuth, { type: "none" }>;
 
 /** A refresh's result: the token, or why there is none. */
 type RefreshOutcome = { accessToken: string; error?: undefined } | { error: string; accessToken?: undefined };

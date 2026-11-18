@@ -1,0 +1,31 @@
+{
+  "key": "apify-oauth2",
+  "name": "Apify OAuth2",
+  "description": "Run Apify Actors to scrape and automate thousands of websites",
+  "icon": "https://github.com/apify.png",
+  "tags": ["scraping", "web"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.apify.com"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.apify.com",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.apify.com",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

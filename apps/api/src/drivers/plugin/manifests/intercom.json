@@ -1,0 +1,31 @@
+{
+  "key": "intercom",
+  "name": "Intercom",
+  "description": "Search Intercom conversations, contacts and tickets",
+  "icon": "https://github.com/intercom.png",
+  "tags": ["support"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.intercom.com/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.intercom.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.intercom.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

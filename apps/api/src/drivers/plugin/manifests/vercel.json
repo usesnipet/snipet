@@ -1,0 +1,31 @@
+{
+  "key": "vercel",
+  "name": "Vercel",
+  "description": "Manage Vercel projects and deployments and read their logs",
+  "icon": "https://github.com/vercel.png",
+  "tags": ["deploy"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.vercel.com"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.vercel.com",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.vercel.com",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

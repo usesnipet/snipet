@@ -1,0 +1,31 @@
+{
+  "key": "prisma",
+  "name": "Prisma Postgres",
+  "description": "Manage Prisma Postgres databases and run migrations",
+  "icon": "https://github.com/prisma.png",
+  "tags": ["database", "postgres"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.prisma.io/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.prisma.io/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.prisma.io/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

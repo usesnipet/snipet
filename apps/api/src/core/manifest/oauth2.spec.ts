@@ -1,6 +1,6 @@
 import { oauth2ManifestAuthSchema } from "@snipet/shared";
 
-import { authStatusOf, hasOAuth2Client, resolveOAuth2Client, usesAccessToken } from "./oauth2.js";
+import { authStatusOf, hasOAuth2Client, resolveOAuth2Client } from "./oauth2.js";
 import { resolveOptions } from "./options.js";
 
 import type { BaseDriver } from "./driver.js";
@@ -29,15 +29,6 @@ describe("resolveOAuth2Client", () => {
 
   it("renders an unset env var as an empty clientId", () => {
     expect(resolveOAuth2Client(auth, {}, {}).clientId).toBe("");
-  });
-});
-
-describe("usesAccessToken", () => {
-  it("finds the placeholder anywhere, with or without a default", () => {
-    expect(usesAccessToken({ tools: { options: { headers: { a: "Bearer {{auth.accessToken}}" } } } })).toBe(true);
-    expect(usesAccessToken(['x {{ auth.accessToken || "" }}'])).toBe(true);
-    expect(usesAccessToken({ a: "{{ connection.accessToken }}", b: "{{ auth.accessTokenX }}" })).toBe(false);
-    expect(usesAccessToken(undefined)).toBe(false);
   });
 });
 

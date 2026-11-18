@@ -1,9 +1,21 @@
 import type { JsonObject, PluginAuthStatus, PluginConnection as PluginConnectionContract } from "@snipet/shared";
 import type { OAuth2Credentials } from "#src/core/manifest/oauth2.js";
+import type { DiscoveredProvider, RegisteredClient } from "#src/infra/oauth2/discovery.js";
 import { sealConfig } from "#src/infra/database/seal-config.js";
 import { BaseEntity } from "@snipet/server-common";
 import { LLMTool } from "@snipet/shared/core";
 import { Column, Entity, Index } from "typeorm";
+
+/** The provider found for an `oauth2_discovery` connection and the client it registered there. */
+export interface DiscoveredOAuth2 {
+  /** The resource URL it was found from; another one (the config changed) means discovering again. */
+  resourceUrl: string;
+  provider: DiscoveredProvider;
+  client: RegisteredClient;
+}
+
+/** The OAuth tokens, plus the discovered provider and client they renew with. */
+export type PluginConnectionCredentials = OAuth2Credentials & { discovered?: DiscoveredOAuth2 };
 
 @Entity("plugin_connections")
 export class PluginConnection extends BaseEntity implements PluginConnectionContract {
@@ -29,7 +41,7 @@ export class PluginConnection extends BaseEntity implements PluginConnectionCont
    * (sets undefined) before a connection leaves the API.
    */
   @Column({ type: "text", nullable: true, transformer: sealConfig })
-  credentials?: OAuth2Credentials | null;
+  credentials?: PluginConnectionCredentials | null;
 
   /** Not stored: filled by `PluginConnectionService.mask` from the manifest and `credentials`. */
   authStatus: PluginAuthStatus;

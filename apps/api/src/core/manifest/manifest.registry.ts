@@ -1,6 +1,5 @@
 import { CoreError, CoreErrorCode } from "../error.js";
 import { isValidJsonSchema } from "../json-schema/json-schema.js";
-import { usesAccessToken } from "./oauth2.js";
 
 import type { BaseManifest, JsonObject, ManifestDriver } from "@snipet/shared";
 import type { z } from "zod";
@@ -71,11 +70,6 @@ export class ManifestRegistry<M extends BaseManifest, D extends DriverTypes> {
       if (ref && !this.drivers.has(type, ref.driver)) return `unknown ${String(type)} driver "${ref.driver}"`;
     }
     if (!isValidJsonSchema(m.connection)) return "invalid connection schema";
-    // The template is the only way the token reaches a driver: without it the authorization would be useless.
-    const capabilities = (m as { capabilities?: unknown }).capabilities;
-    if (m.auth.type === "oauth2" && !usesAccessToken(capabilities)) {
-      return "oauth2 manifest never uses {{ auth.accessToken }}";
-    }
     const error = this.check(m);
     if (error) return error;
     manifests.set(m.key, m);

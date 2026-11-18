@@ -1,0 +1,31 @@
+{
+  "key": "neon-oauth2",
+  "name": "Neon OAuth2",
+  "description": "Manage Neon Postgres projects, branches and run SQL",
+  "icon": "https://github.com/neondatabase.png",
+  "tags": ["database", "postgres"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.neon.tech/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.neon.tech/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.neon.tech/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

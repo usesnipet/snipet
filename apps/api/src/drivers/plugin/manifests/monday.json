@@ -1,0 +1,31 @@
+{
+  "key": "monday",
+  "name": "monday.com",
+  "description": "Manage monday.com boards, items and updates",
+  "icon": "https://github.com/mondaycom.png",
+  "tags": ["project-management"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.monday.com/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.monday.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.monday.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}

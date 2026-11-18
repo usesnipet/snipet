@@ -1,0 +1,31 @@
+{
+  "key": "webflow",
+  "name": "Webflow",
+  "description": "Manage Webflow sites, pages and CMS collections",
+  "icon": "https://github.com/webflow.png",
+  "tags": ["cms", "web"],
+  "auth": {
+    "type": "oauth2_discovery",
+    "resource": "https://mcp.webflow.com/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.webflow.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    },
+    "instructions": {
+      "driver": "mcp",
+      "options": {
+        "url": "https://mcp.webflow.com/mcp",
+        "headers": {
+          "Authorization": "Bearer {{ auth.accessToken }}"
+        }
+      }
+    }
+  }
+}
